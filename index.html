@@ -598,51 +598,31 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     </div>
 
     <!-- MODULE FRAME (New Tab approach - works with local file://) -->
-    <div id="view-modframe" class="view">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg)">
+    <div id="view-modframe" class="view" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 60px)">
+      <!-- Topbar -->
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0">
         <button class="btn btn-secondary btn-sm" onclick="closeModFrame()">← กลับ Module Hub</button>
-        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
-          <span id="mf-icon" style="font-size:20px"></span>
-          <div>
-            <div class="fw6" id="mf-name" style="font-size:15px"></div>
-            <div style="font-size:10px;color:var(--text3)" id="mf-file"></div>
-          </div>
+        <span id="mf-icon" style="font-size:16px"></span>
+        <div style="flex:1;min-width:0">
+          <div class="fw6" id="mf-name" style="font-size:13px"></div>
+          <div style="font-size:9px;color:var(--text3)" id="mf-file"></div>
         </div>
-        <button class="btn btn-primary" onclick="openFrameTab()" id="mf-open-btn">
-          🚀 เปิด Module
-        </button>
+        <button class="btn btn-secondary btn-sm" onclick="reloadModFrame()">↻ Reload</button>
+        <button class="btn btn-primary btn-sm" id="mf-open-btn" onclick="openFrameTab()">⬡ New Tab</button>
       </div>
-      <!-- Info card -->
-      <div id="mf-info-card" style="max-width:600px;margin:0 auto">
-        <div style="text-align:center;padding:40px 20px 28px">
-          <div id="mf-card-icon" style="font-size:64px;margin-bottom:16px"></div>
-          <div class="ffd fw7" id="mf-card-name" style="font-size:24px;margin-bottom:8px"></div>
-          <div id="mf-card-desc" style="font-size:14px;color:var(--text3);margin-bottom:24px"></div>
-        </div>
-        <!-- Step guide: admin only -->
-        <div id="mf-admin-guide" style="display:none">
-          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px">
-            <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px">📋 วิธีเปิด Module (Admin)</div>
-            <div style="display:flex;flex-direction:column;gap:12px">
-              <div style="display:flex;align-items:flex-start;gap:12px">
-                <div style="width:24px;height:24px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">1</div>
-                <div><div style="font-size:13px;font-weight:600;color:var(--text)">ตรวจสอบไฟล์ Module อยู่ในโฟลเดอร์เดียวกัน</div><div style="font-size:12px;color:var(--text3);margin-top:2px">วางไฟล์ <span class="tag ffm" id="mf-step-file"></span> ไว้ในโฟลเดอร์เดียวกับ <span class="tag ffm">TKO_iMATOMs_Tech_v2_0.html</span></div></div>
-              </div>
-              <div style="display:flex;align-items:flex-start;gap:12px">
-                <div style="width:24px;height:24px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">2</div>
-                <div><div style="font-size:13px;font-weight:600;color:var(--text)">กดปุ่ม "🚀 เปิด Module" ด้านบน</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Module จะเปิดใน Tab ใหม่</div></div>
-              </div>
-              <div style="display:flex;align-items:flex-start;gap:12px">
-                <div style="width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">3</div>
-                <div><div style="font-size:13px;font-weight:600;color:var(--text)">กลับ iMATOMs Platform</div><div style="font-size:12px;color:var(--text3);margin-top:2px">คลิกแท็บ Browser ที่เปิด v2.0 ไว้</div></div>
-              </div>
-            </div>
-          </div>
-          <div class="alr alr-i" style="font-size:12px">
-            💡 <strong>Browser Security:</strong> file:// → iframe ถูก block → เปิดเป็น New Tab แทน
-          </div>
-        </div>
+      <!-- Loading state -->
+      <div id="mf-loading" style="display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:12px;color:var(--text3)">
+        <div style="font-size:40px;animation:fpcritpulse 1s infinite">⚙</div>
+        <div style="font-family:var(--font-display);font-size:13px">กำลังโหลด Module...</div>
       </div>
+      <!-- iframe - full height -->
+      <iframe id="mod-iframe" src="" style="flex:1;border:none;width:100%;display:none"></iframe>
+      <!-- Hidden compatibility elements -->
+      <span id="mf-card-icon" style="display:none"></span>
+      <span id="mf-card-name" style="display:none"></span>
+      <span id="mf-card-desc" style="display:none"></span>
+      <span id="mf-step-file" style="display:none"></span>
+      <div id="mf-admin-guide" style="display:none"></div>
     </div>
 
     <!-- MODULE HUB -->
@@ -2856,27 +2836,49 @@ let _curModFile='';
 
 function openModFile(f,icon,name,desc){
   _curModFile=f;
-  // Update modframe info
   document.getElementById('mf-icon').textContent=icon||'📦';
   document.getElementById('mf-name').textContent=name||f;
   document.getElementById('mf-file').textContent=f;
-  document.getElementById('mf-card-icon').textContent=icon||'📦';
-  document.getElementById('mf-card-name').textContent=name||f;
-  document.getElementById('mf-card-desc').textContent=desc||'';
-  document.getElementById('mf-step-file').textContent=f;
-  // ── Reset open button to use THIS module file ──
   const btn=document.getElementById('mf-open-btn');
-  if(btn) btn.onclick=()=>{ window.open(f,'_blank'); };
-  // Show modframe view
+  if(btn) btn.onclick=()=>window.open(f,'_blank');
   showView('modframe');
   document.getElementById('tb-t').textContent=(icon||'')+' '+name;
   document.getElementById('tb-b').textContent='Module Hub › '+name;
-  // Show admin guide only for admin
-  const mg=document.getElementById('mf-admin-guide');
-  if(mg) mg.style.display=(CU?.role==='admin')?'block':'none';
+  loadModIframe(f);
+}
+
+function loadModIframe(f){
+  const iframe=document.getElementById('mod-iframe');
+  const loading=document.getElementById('mf-loading');
+  if(!iframe)return;
+  // Show loading
+  iframe.style.display='none';
+  if(loading) loading.style.display='flex';
+  // Load iframe
+  iframe.src='';
+  setTimeout(()=>{
+    iframe.src=f;
+    iframe.onload=()=>{
+      if(loading) loading.style.display='none';
+      iframe.style.display='block';
+    };
+    iframe.onerror=()=>{
+      if(loading){
+        loading.innerHTML=`<div style="text-align:center"><div style="font-size:36px;margin-bottom:12px">⚠</div><div style="font-family:var(--font-display);font-size:13px;color:var(--red)">ไม่พบไฟล์ ${f}</div><div style="font-size:11px;color:var(--text3);margin-top:8px">ตรวจสอบว่าไฟล์อยู่ใน Repository เดียวกัน</div></div>`;
+      }
+    };
+  },100);
+}
+
+function reloadModFrame(){
+  if(_curModFile) loadModIframe(_curModFile);
 }
 
 function closeModFrame(){
+  const iframe=document.getElementById('mod-iframe');
+  if(iframe){iframe.src='';iframe.style.display='none';}
+  const loading=document.getElementById('mf-loading');
+  if(loading){loading.style.display='flex';loading.innerHTML='<div style="text-align:center"><div style="font-size:40px;animation:fpcritpulse 1s infinite">⚙</div><div style="font-family:var(--font-display);font-size:13px">กำลังโหลด Module...</div></div>';}
   _curModFile='';
   showView('modules');
 }
