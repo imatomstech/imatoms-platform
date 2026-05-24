@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TKO ● iMATOMs Tech — Healthcare Module v1.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0D1117;--bg2:#161B22;--bg3:#1C2333;--bg4:#21262D;
+  --border:#30363D;--border2:#3D444D;
+  --orange:#F97316;--orange2:#EA6C0A;--orange-dim:rgba(249,115,22,0.12);
+  --green:#22C55E;--green-dim:rgba(34,197,94,0.12);
+  --yellow:#EAB308;--yellow-dim:rgba(234,179,8,0.12);
+  --red:#EF4444;--red-dim:rgba(239,68,68,0.12);
+  --blue:#3B82F6;--blue-dim:rgba(59,130,246,0.12);
+  --purple:#A855F7;--purple-dim:rgba(168,85,247,0.12);
+  --teal:#14B8A6;--teal-dim:rgba(20,184,166,0.12);
+  --pink:#EC4899;--pink-dim:rgba(236,72,153,0.12);
+  --text:#E6EDF3;--text2:#8B949E;--text3:#6E7681;
+  --sidebar-w:250px;--header-h:56px;
+  --font:'Sarabun',sans-serif;--font-display:'Rajdhani',sans-serif;--font-mono:'JetBrains Mono',monospace;
+  --radius:8px;--radius-lg:12px;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ─── SIDEBAR ─── */
+#sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;overflow-y:auto}
+.sidebar-header{padding:16px 16px 12px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-family:var(--font-display);font-size:10px;font-weight:700;letter-spacing:2px;color:var(--orange);text-transform:uppercase;margin-bottom:2px}
+.sidebar-title{font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--text);line-height:1.2}
+.sidebar-sub{font-size:10px;color:var(--text3);letter-spacing:1px;margin-top:2px}
+.sidebar-section{padding:12px 8px 4px;font-size:10px;font-weight:600;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;padding-left:12px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius);margin:1px 8px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .15s;border:1px solid transparent}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--orange-dim);color:var(--orange);border-color:rgba(249,115,22,0.25)}
+.nav-icon{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.nav-item.active .nav-icon{opacity:1}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 5px;border-radius:8px;min-width:18px;text-align:center}
+.nav-badge-yellow{margin-left:auto;background:var(--yellow);color:#000;font-size:10px;font-weight:600;padding:1px 5px;border-radius:8px;min-width:18px;text-align:center}
+.sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
+.sidebar-module-tag{display:inline-block;background:rgba(236,72,153,0.15);border:1px solid rgba(236,72,153,0.3);color:var(--pink);font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 6px;border-radius:4px;margin-top:4px}
+
+/* ─── MAIN ─── */
+#main{margin-left:var(--sidebar-w);min-height:100vh}
+#topbar{position:sticky;top:0;height:var(--header-h);background:rgba(13,17,23,0.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;z-index:50}
+.topbar-title{font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--text)}
+.topbar-breadcrumb{font-size:12px;color:var(--text3)}
+.topbar-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+#content{padding:24px}
+
+/* ─── VIEWS ─── */
+.view{display:none}.view.active{display:block}
+
+/* ─── CARDS ─── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px}
+.card-sm{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+
+/* ─── KPI ─── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi-grid-6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.orange::before{background:var(--orange)}.kpi.green::before{background:var(--green)}.kpi.yellow::before{background:var(--yellow)}.kpi.red::before{background:var(--red)}.kpi.blue::before{background:var(--blue)}.kpi.teal::before{background:var(--teal)}.kpi.pink::before{background:var(--pink)}.kpi.purple::before{background:var(--purple)}
+.kpi-label{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.kpi-value{font-family:var(--font-display);font-size:26px;font-weight:700;line-height:1}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.kpi-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:26px;opacity:.12}
+
+/* ─── BUTTONS ─── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:13px;font-family:var(--font);cursor:pointer;border:1px solid;transition:all .15s;font-weight:500}
+.btn-primary{background:var(--orange);border-color:var(--orange);color:#fff}.btn-primary:hover{background:var(--orange2)}
+.btn-secondary{background:transparent;border-color:var(--border2);color:var(--text2)}.btn-secondary:hover{background:var(--bg3);color:var(--text)}
+.btn-success{background:transparent;border-color:var(--green);color:var(--green)}.btn-success:hover{background:var(--green-dim)}
+.btn-danger{background:transparent;border-color:var(--red);color:var(--red)}.btn-danger:hover{background:var(--red-dim)}
+.btn-blue{background:transparent;border-color:var(--blue);color:var(--blue)}.btn-blue:hover{background:var(--blue-dim)}
+.btn-pink{background:var(--pink);border-color:var(--pink);color:#fff}.btn-pink:hover{opacity:.85}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-icon{padding:6px;border-radius:var(--radius)}
+
+/* ─── TABLE ─── */
+.table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3);color:var(--text)}
+
+/* ─── BADGES ─── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.5px}
+.badge-green{background:var(--green-dim);color:var(--green)}.badge-yellow{background:var(--yellow-dim);color:var(--yellow)}.badge-red{background:var(--red-dim);color:var(--red)}.badge-blue{background:var(--blue-dim);color:var(--blue)}.badge-orange{background:var(--orange-dim);color:var(--orange)}.badge-gray{background:rgba(139,148,158,.12);color:var(--text2)}.badge-teal{background:var(--teal-dim);color:var(--teal)}.badge-pink{background:var(--pink-dim);color:var(--pink)}.badge-purple{background:var(--purple-dim);color:var(--purple)}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* ─── FORMS ─── */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
+.form-control{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;transition:border .15s}
+.form-control:focus{border-color:var(--orange)}
+select.form-control option{background:var(--bg3)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* ─── MODAL ─── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;width:680px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-lg{width:860px}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.modal-title{font-family:var(--font-display);font-size:18px;font-weight:600}
+
+/* ─── TABS ─── */
+.tabs{display:flex;gap:2px;background:var(--bg3);border-radius:var(--radius);padding:3px;margin-bottom:20px}
+.tab{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);transition:all .15s;font-weight:500}
+.tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* ─── SECTION HEADER ─── */
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.section-title{font-family:var(--font-display);font-size:22px;font-weight:700}
+.section-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.search-input{flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none}
+.search-input:focus{border-color:var(--orange)}
+
+/* ─── CHART ─── */
+.chart-wrap{position:relative;height:240px}
+
+/* ─── GRID ─── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* ─── UTILS ─── */
+.text-orange{color:var(--orange)}.text-green{color:var(--green)}.text-yellow{color:var(--yellow)}.text-red{color:var(--red)}.text-blue{color:var(--blue)}.text-teal{color:var(--teal)}.text-pink{color:var(--pink)}.text-muted{color:var(--text3)}.text-secondary{color:var(--text2)}
+.fw-700{font-weight:700}.fw-600{font-weight:600}.ff-display{font-family:var(--font-display)}.ff-mono{font-family:var(--font-mono)}
+.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}.mt-20{margin-top:20px}
+.mb-8{margin-bottom:8px}.mb-12{margin-bottom:12px}.mb-16{margin-bottom:16px}.mb-20{margin-bottom:20px}
+.flex{display:flex}.flex-center{align-items:center}.gap-6{gap:6px}.gap-8{gap:8px}.gap-12{gap:12px}.gap-16{gap:16px}
+.w-full{width:100%}.justify-between{justify-content:space-between}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.tag{display:inline-block;background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:11px;font-family:var(--font-mono);color:var(--text2)}
+.metric-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.metric-row:last-child{border-bottom:none}
+.alert{padding:12px 16px;border-radius:var(--radius);margin-bottom:10px;font-size:13px}
+.alert-warning{background:var(--yellow-dim);border:1px solid rgba(234,179,8,.3);color:var(--yellow)}
+.alert-danger{background:var(--red-dim);border:1px solid rgba(239,68,68,.3);color:var(--red)}
+.alert-success{background:var(--green-dim);border:1px solid rgba(34,197,94,.3);color:var(--green)}
+.alert-info{background:var(--blue-dim);border:1px solid rgba(59,130,246,.3);color:var(--blue)}
+.progress{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.progress-bar{height:100%;border-radius:3px;transition:width .4s}
+
+/* ─── HEALTHCARE SPECIFIC ─── */
+.risk-class-I{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+.risk-class-II{background:rgba(234,179,8,.15);color:var(--yellow);border:1px solid rgba(234,179,8,.3);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+.risk-class-III{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+.compliance-bar{height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;margin:4px 0}
+.compliance-fill{height:100%;border-radius:4px;transition:width .5s}
+.jci-chapter{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.jci-chapter:hover{border-color:var(--orange);background:var(--bg4)}
+.risk-matrix-cell{width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:transform .1s;border:1px solid transparent}
+.risk-matrix-cell:hover{transform:scale(1.1)}
+.incident-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;border-left:3px solid}
+.incident-card.critical{border-left-color:var(--red)}.incident-card.major{border-left-color:var(--orange)}.incident-card.moderate{border-left-color:var(--yellow)}.incident-card.minor{border-left-color:var(--green)}
+.pm-status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+.calib-due-soon{animation:pulse-yellow 2s infinite}
+@keyframes pulse-yellow{0%,100%{box-shadow:0 0 0 0 rgba(234,179,8,.4)}50%{box-shadow:0 0 0 4px rgba(234,179,8,0)}}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 4px rgba(239,68,68,0)}}
+.ipsg-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;position:relative;overflow:hidden}
+.ipsg-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.ipsg-card.done::after{background:var(--green)}.ipsg-card.partial::after{background:var(--yellow)}.ipsg-card.pending::after{background:var(--red)}
+.score-ring{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.biotrack-step{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.biotrack-step:last-child{border-bottom:none}
+.biotrack-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px}
+.biotrack-line{position:relative}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:1100px){.kpi-grid-6{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.kpi-grid{grid-template-columns:1fr 1fr}.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+@media(max-width:768px){#sidebar{display:none}#main{margin-left:0}.form-row,.form-row-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════════════════ -->
+<nav id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">TKO ● iMATOMs Tech</div>
+    <div class="sidebar-title">Healthcare Module</div>
+    <div class="sidebar-sub">Medical · JCI/HA · Biomedical · Safety</div>
+    <div class="sidebar-module-tag">🏥 HEALTHCARE v1.0</div>
+  </div>
+
+  <div class="sidebar-section">Overview</div>
+  <div class="nav-item active" onclick="showView('hc-dashboard')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    HC Dashboard
+  </div>
+
+  <div class="sidebar-section">🔬 Medical Equipment</div>
+  <div class="nav-item" onclick="showView('bme-register')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 2a5 5 0 110 10A5 5 0 018 3zm0 3v2.5l2 1.5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+    Biomedical Asset Register
+  </div>
+  <div class="nav-item" onclick="showView('bme-pm')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v4M11 1v4M1 7h14" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+    PM & Calibration Schedule
+    <span class="nav-badge" id="nb-pm-due">3</span>
+  </div>
+  <div class="nav-item" onclick="showView('bme-lifecycle')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8 4v4l3 2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+    Biomedical Lifecycle
+  </div>
+  <div class="nav-item" onclick="showView('bme-electrical')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M9 2L5 9h4l-2 5 6-7H9l2-5z" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+    Electrical Safety Test
+    <span class="nav-badge-yellow" id="nb-est">2</span>
+  </div>
+
+  <div class="sidebar-section">🏅 Compliance</div>
+  <div class="nav-item" onclick="showView('jci-compliance')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L2 4v4c0 3.3 2.5 6.4 6 7 3.5-.6 6-3.7 6-7V4L8 1z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+    JCI / HA Compliance
+  </div>
+  <div class="nav-item" onclick="showView('ipsg')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2c-.8 0-1.5.3-2 .8L3 7H1v2h2l1 5h8l1-5h2V7h-2L11 2.8C10.5 2.3 9.8 2 9 2H8z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
+    IPSG — Patient Safety Goals
+  </div>
+  <div class="nav-item" onclick="showView('fms')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M1 13V3l7-2 7 2v10l-7 2-7-2z" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 1v14M1 7h14" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+    FMS — Facility & Equipment
+  </div>
+
+  <div class="sidebar-section">🛡 Patient Safety</div>
+  <div class="nav-item" onclick="showView('incident')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2L1 14h14L8 2zm0 3v5m0 2v1" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+    Incident Report (AE/Near-miss)
+    <span class="nav-badge" id="nb-incident">2</span>
+  </div>
+  <div class="nav-item" onclick="showView('risk-matrix')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="14" height="14" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6v6H5z" fill="none" stroke="currentColor" stroke-width="1"/><rect x="7" y="7" width="2" height="2"/></svg>
+    Risk Matrix & CAPA
+  </div>
+  <div class="nav-item" onclick="showView('rca')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2v4m0 0l-3 5m3-5l3 5m-6 0h6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+    Root Cause Analysis (RCA)
+  </div>
+
+  <div class="sidebar-footer">
+    <div onclick="goBackPlatform()" style="cursor:pointer;margin-bottom:6px;color:var(--text3);transition:color .15s" onmouseover="this.style.color='var(--orange)'" onmouseout="this.style.color='var(--text3)'">← กลับ iMATOMs Platform</div>
+    <div style="color:var(--pink);font-family:var(--font-display);font-size:11px;font-weight:700">TKO ● iMATOMs Tech</div>
+    <div style="font-size:10px;margin-top:2px">Healthcare Module · v1.0 · 2026</div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════════════════ -->
+<main id="main">
+  <div id="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">🏥 Healthcare Dashboard</div>
+      <div class="topbar-breadcrumb" id="topbar-breadcrumb">TKO iMATOMs Tech › Healthcare Module › Overview</div>
+    </div>
+    <div class="topbar-actions">
+      <span id="clock" style="font-family:var(--font-mono);font-size:12px;color:var(--text3)"></span>
+      <button class="btn btn-pink btn-sm" onclick="openModal('addBMEModal')">+ เพิ่มอุปกรณ์การแพทย์</button>
+      <button class="btn btn-secondary btn-sm" onclick="openModal('incidentModal')">🚨 รายงาน Incident</button>
+    </div>
+  </div>
+
+  <div id="content">
+
+  <!-- ══════════════ HC DASHBOARD ══════════════ -->
+  <div id="view-hc-dashboard" class="view active">
+    <div class="section-header">
+      <div>
+        <div class="section-title">🏥 Healthcare Overview — 2026</div>
+        <div class="section-sub">Medical Equipment · JCI/HA Compliance · Patient Safety · Real-time Analytics</div>
+      </div>
+      <div class="flex gap-8">
+        <span class="badge badge-pink">🏥 Healthcare Module</span>
+        <button class="btn btn-secondary btn-sm" onclick="refreshHCDash()">↻ Refresh</button>
+      </div>
+    </div>
+
+    <!-- KPI Row 1 -->
+    <div class="kpi-grid">
+      <div class="kpi pink"><div class="kpi-label">Medical Devices</div><div class="kpi-value ff-display" id="kpi-bme-total">148</div><div class="kpi-sub">อุปกรณ์การแพทย์ทั้งหมด</div><div class="kpi-icon">🔬</div></div>
+      <div class="kpi green"><div class="kpi-label">Fully Operational</div><div class="kpi-value ff-display text-green" id="kpi-bme-ok">132</div><div class="kpi-sub">พร้อมใช้งาน</div><div class="kpi-icon">✅</div></div>
+      <div class="kpi yellow"><div class="kpi-label">PM Due (30d)</div><div class="kpi-value ff-display text-yellow" id="kpi-pm-due">11</div><div class="kpi-sub">ถึงกำหนด PM</div><div class="kpi-icon">⚙️</div></div>
+      <div class="kpi red"><div class="kpi-label">Out of Service</div><div class="kpi-value ff-display text-red" id="kpi-oos">5</div><div class="kpi-sub">งดใช้งาน / ส่งซ่อม</div><div class="kpi-icon">🚫</div></div>
+    </div>
+
+    <!-- KPI Row 2 -->
+    <div class="kpi-grid-6">
+      <div class="kpi blue"><div class="kpi-label">JCI Score</div><div class="kpi-value ff-display text-blue" style="font-size:22px">87%</div><div class="kpi-sub">Overall Compliance</div></div>
+      <div class="kpi teal"><div class="kpi-label">HA Score</div><div class="kpi-value ff-display text-teal" style="font-size:22px">91%</div><div class="kpi-sub">Thai HA Accreditation</div></div>
+      <div class="kpi orange"><div class="kpi-label">Calibration Due</div><div class="kpi-value ff-display text-orange" style="font-size:22px">7</div><div class="kpi-sub">ภายใน 30 วัน</div></div>
+      <div class="kpi purple"><div class="kpi-label">EST Overdue</div><div class="kpi-value ff-display text-purple" style="font-size:22px">2</div><div class="kpi-sub">Electrical Safety Test</div></div>
+      <div class="kpi red"><div class="kpi-label">Open Incidents</div><div class="kpi-value ff-display text-red" style="font-size:22px">4</div><div class="kpi-sub">AE + Near-miss</div></div>
+      <div class="kpi yellow"><div class="kpi-label">CAPA Open</div><div class="kpi-value ff-display text-yellow" style="font-size:22px">6</div><div class="kpi-sub">Corrective Actions</div></div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid-2 mb-16">
+      <div class="card">
+        <div class="flex flex-center justify-between mb-16">
+          <div><div style="font-family:var(--font-display);font-size:15px;font-weight:600">Device Status Distribution</div><div class="text-muted" style="font-size:11px">สัดส่วนสถานะอุปกรณ์การแพทย์</div></div>
+        </div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chartBMEStatus"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="flex flex-center justify-between mb-16">
+          <div><div style="font-family:var(--font-display);font-size:15px;font-weight:600">Equipment by Risk Class</div><div class="text-muted" style="font-size:11px">แบ่งตาม FDA Risk Classification</div></div>
+        </div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chartRiskClass"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid-2 mb-16">
+      <div class="card">
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:600;margin-bottom:12px">JCI Chapter Compliance Scores</div>
+        <div id="jci-score-bars"></div>
+      </div>
+      <div class="card">
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:600;margin-bottom:12px">PM & Calibration Timeline</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chartPMTimeline"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Alerts + Recent Incidents -->
+    <div class="grid-2">
+      <div class="card">
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:600;margin-bottom:12px">⚠ Critical Alerts</div>
+        <div class="alert alert-danger">🚨 Defibrillator (BME-004) — Calibration OVERDUE 15 วัน</div>
+        <div class="alert alert-danger">🚨 Infusion Pump (BME-021) — Electrical Safety Test หมดอายุ</div>
+        <div class="alert alert-warning">⚠ Ventilator (BME-007) — PM กำหนดใน 5 วัน</div>
+        <div class="alert alert-warning">⚠ Patient Monitor (BME-012) — ใกล้หมดสัญญา MA</div>
+        <div class="alert alert-info">ℹ JCI FMS.4.1 — Evidence upload ครบ 85% — ต้องการ 100%</div>
+      </div>
+      <div class="card">
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:600;margin-bottom:12px">🛡 Recent Incidents (30d)</div>
+        <div class="incident-card critical">
+          <div class="flex flex-center justify-between"><span style="font-weight:600;font-size:13px">AE-2026-041 · Infusion Pump Malfunction</span><span class="badge badge-red">Critical</span></div>
+          <div style="font-size:12px;color:var(--text3);margin-top:4px">ICU · 12 พ.ค. 2026 · RCA In-progress</div>
+        </div>
+        <div class="incident-card major">
+          <div class="flex flex-center justify-between"><span style="font-weight:600;font-size:13px">NM-2026-038 · Alarm Fatigue — Ventilator</span><span class="badge badge-orange">Near-miss</span></div>
+          <div style="font-size:12px;color:var(--text3);margin-top:4px">CCU · 8 พ.ค. 2026 · CAPA Assigned</div>
+        </div>
+        <div class="incident-card moderate">
+          <div class="flex flex-center justify-between"><span style="font-weight:600;font-size:13px">AE-2026-035 · ECG Lead Failure</span><span class="badge badge-yellow">Moderate</span></div>
+          <div style="font-size:12px;color:var(--text3);margin-top:4px">ER · 3 พ.ค. 2026 · Closed</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ BME REGISTER ══════════════ -->
+  <div id="view-bme-register" class="view">
+    <div class="section-header">
+      <div><div class="section-title">🔬 Biomedical Asset Register</div><div class="section-sub">ทะเบียนอุปกรณ์การแพทย์ — Medical Device Inventory & Classification</div></div>
+      <div class="flex gap-8">
+        <button class="btn btn-secondary btn-sm" onclick="exportBME()">⬇ Export</button>
+        <button class="btn btn-pink btn-sm" onclick="openModal('addBMEModal')">+ เพิ่มอุปกรณ์</button>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <input class="search-input" placeholder="🔍 ค้นหา BME ID / ชื่ออุปกรณ์ / ward..." oninput="filterBME(this.value)">
+      <select class="form-control" style="width:140px" onchange="filterBMEClass(this.value)">
+        <option value="">ทุก Risk Class</option>
+        <option>Class I</option><option>Class II</option><option>Class III</option>
+      </select>
+      <select class="form-control" style="width:150px" onchange="filterBMEDept(this.value)">
+        <option value="">ทุก Ward/แผนก</option>
+        <option>ICU</option><option>CCU</option><option>ER</option><option>OR</option><option>Wards</option><option>Lab</option><option>Radiology</option>
+      </select>
+      <select class="form-control" style="width:130px" onchange="filterBMEStatus(this.value)">
+        <option value="">ทุกสถานะ</option>
+        <option>Active</option><option>Out of Service</option><option>Under Repair</option><option>Disposed</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>BME ID</th><th>ชื่ออุปกรณ์</th><th>ประเภท</th><th>Ward/แผนก</th><th>Risk Class</th>
+            <th>Serial No.</th><th>Next PM</th><th>Next Calibration</th><th>สถานะ</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bme-table-body"></tbody>
+      </table>
+    </div>
+    <div id="bme-pagination" class="flex flex-center gap-8 mt-16" style="justify-content:center"></div>
+  </div>
+
+  <!-- ══════════════ PM & CALIBRATION ══════════════ -->
+  <div id="view-bme-pm" class="view">
+    <div class="section-header">
+      <div><div class="section-title">📅 PM & Calibration Schedule</div><div class="section-sub">แผนซ่อมบำรุงเชิงป้องกัน และ Calibration อุปกรณ์การแพทย์</div></div>
+      <div class="flex gap-8">
+        <button class="btn btn-secondary btn-sm" onclick="openModal('addPMModal')">+ เพิ่ม PM Task</button>
+        <button class="btn btn-pink btn-sm" onclick="openModal('addCalibModal')">⊕ Calibration Record</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchPMTab('pm-list')">📋 PM Schedule</div>
+      <div class="tab" onclick="switchPMTab('calib-list')">🎯 Calibration</div>
+      <div class="tab" onclick="switchPMTab('pm-calendar')">🗓 Calendar View</div>
+    </div>
+
+    <!-- PM List -->
+    <div id="pm-list" class="tab-content active">
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi green"><div class="kpi-label">ทำแล้ว (เดือนนี้)</div><div class="kpi-value ff-display text-green">24</div></div>
+        <div class="kpi yellow"><div class="kpi-label">Due ใน 30 วัน</div><div class="kpi-value ff-display text-yellow">11</div></div>
+        <div class="kpi red"><div class="kpi-label">Overdue</div><div class="kpi-value ff-display text-red">3</div></div>
+        <div class="kpi blue"><div class="kpi-label">Pending Approval</div><div class="kpi-value ff-display text-blue">5</div></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>PM ID</th><th>BME ID / อุปกรณ์</th><th>Ward</th><th>PM Type</th><th>กำหนด</th><th>Technician</th><th>สถานะ</th><th>Action</th></tr></thead>
+          <tbody id="pm-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Calibration List -->
+    <div id="calib-list" class="tab-content">
+      <div class="alert alert-warning">⚠ อุปกรณ์ที่ Calibration Due ใน 30 วัน: <strong>7 รายการ</strong> — กรุณาวางแผนและประสาน Lab/Vendor</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>BME ID</th><th>อุปกรณ์</th><th>Ward</th><th>Calibration Type</th><th>Last Calib.</th><th>Next Due</th><th>Reference Std.</th><th>สถานะ</th><th>Action</th></tr></thead>
+          <tbody id="calib-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Calendar -->
+    <div id="pm-calendar" class="tab-content">
+      <div id="pm-calendar-render"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════ BIOMEDICAL LIFECYCLE ══════════════ -->
+  <div id="view-bme-lifecycle" class="view">
+    <div class="section-header">
+      <div><div class="section-title">🔄 Biomedical Device Lifecycle</div><div class="section-sub">วงจรชีวิตอุปกรณ์การแพทย์ — Planning → Disposal · IEC 62353 Compliant</div></div>
+      <select class="form-control" style="width:260px" id="bme-lc-select" onchange="loadBMELifecycle(this.value)">
+        <option value="">-- เลือกอุปกรณ์การแพทย์ --</option>
+      </select>
+    </div>
+
+    <div class="grid-2 mb-16">
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:16px;color:var(--text3);font-size:12px;letter-spacing:1px">DEVICE LIFECYCLE STAGES</div>
+        <div id="bme-lc-bar" style="display:flex;gap:0;border-radius:var(--radius-lg);overflow:hidden"></div>
+      </div>
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">📊 Device Health Score</div>
+        <div id="bme-health-score" style="text-align:center;padding:20px">
+          <div style="font-family:var(--font-display);font-size:56px;font-weight:700;color:var(--green)" id="health-val">—</div>
+          <div style="color:var(--text3);font-size:12px;margin-top:4px">เลือกอุปกรณ์เพื่อดู Score</div>
+          <div class="progress mt-12" style="height:10px"><div class="progress-bar" id="health-bar" style="background:var(--green);width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="bme-lc-detail">
+      <div class="card" style="text-align:center;padding:40px;color:var(--text3)">
+        <div style="font-size:32px;margin-bottom:12px">🔬</div>
+        <div>เลือกอุปกรณ์การแพทย์เพื่อดู Lifecycle Detail</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ ELECTRICAL SAFETY TEST ══════════════ -->
+  <div id="view-bme-electrical" class="view">
+    <div class="section-header">
+      <div><div class="section-title">⚡ Electrical Safety Test (EST)</div><div class="section-sub">IEC 62353 · IEC 60601 · ทดสอบความปลอดภัยทางไฟฟ้าสำหรับอุปกรณ์การแพทย์</div></div>
+      <button class="btn btn-pink btn-sm" onclick="openModal('addESTModal')">+ บันทึก EST Result</button>
+    </div>
+
+    <div class="alert alert-danger">🚨 พบ <strong>2 รายการ</strong> ที่ EST หมดอายุแล้ว — ห้ามใช้งานจนกว่าจะผ่าน EST ใหม่ (JCI FMS.8.1)</div>
+    <div class="alert alert-warning">⚠ พบ <strong>4 รายการ</strong> ที่ EST จะหมดอายุใน 30 วัน</div>
+
+    <div class="grid-3 mb-16">
+      <div class="kpi green"><div class="kpi-label">ผ่าน EST</div><div class="kpi-value ff-display text-green">118</div><div class="kpi-sub">Pass — In Date</div></div>
+      <div class="kpi yellow"><div class="kpi-label">Due (30d)</div><div class="kpi-value ff-display text-yellow">4</div><div class="kpi-sub">ใกล้หมดอายุ</div></div>
+      <div class="kpi red"><div class="kpi-label">Overdue</div><div class="kpi-value ff-display text-red">2</div><div class="kpi-sub" style="animation:pulse-red 2s infinite">งดใช้งานทันที</div></div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>BME ID</th><th>อุปกรณ์</th><th>Ward</th><th>Risk Class</th><th>Standard</th><th>Test Date</th><th>Result</th><th>Next Due</th><th>สถานะ</th><th>Action</th></tr></thead>
+        <tbody id="est-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════ JCI/HA COMPLIANCE ══════════════ -->
+  <div id="view-jci-compliance" class="view">
+    <div class="section-header">
+      <div><div class="section-title">🏅 JCI / HA Compliance Tracker</div><div class="section-sub">Joint Commission International · Hospital Accreditation Thailand (HA)</div></div>
+      <div class="flex gap-8">
+        <button class="btn btn-secondary btn-sm" onclick="exportCompliance()">⬇ Export Report</button>
+        <button class="btn btn-blue btn-sm" onclick="openModal('addEvidenceModal')">📎 Upload Evidence</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchCompTab('jci-tab')">🌐 JCI Standards</div>
+      <div class="tab" onclick="switchCompTab('ha-tab')">🏥 Thai HA</div>
+      <div class="tab" onclick="switchCompTab('gap-analysis')">📊 Gap Analysis</div>
+    </div>
+
+    <!-- JCI Tab -->
+    <div id="jci-tab" class="tab-content active">
+      <div class="kpi-grid mb-20">
+        <div class="kpi blue"><div class="kpi-label">Overall JCI Score</div><div class="kpi-value ff-display text-blue">87%</div><div class="kpi-sub">Target ≥ 90%</div></div>
+        <div class="kpi green"><div class="kpi-label">Fully Met (ME)</div><div class="kpi-value ff-display text-green">124</div><div class="kpi-sub">Measurable Elements</div></div>
+        <div class="kpi yellow"><div class="kpi-label">Partially Met</div><div class="kpi-value ff-display text-yellow">18</div><div class="kpi-sub">ต้องปรับปรุง</div></div>
+        <div class="kpi red"><div class="kpi-label">Not Met</div><div class="kpi-value ff-display text-red">4</div><div class="kpi-sub">ต้องดำเนินการเร่งด่วน</div></div>
+      </div>
+
+      <div id="jci-chapters-list"></div>
+    </div>
+
+    <!-- HA Tab -->
+    <div id="ha-tab" class="tab-content">
+      <div class="kpi-grid mb-20">
+        <div class="kpi teal"><div class="kpi-label">Overall HA Score</div><div class="kpi-value ff-display text-teal">91%</div><div class="kpi-sub">Thai HA Accreditation</div></div>
+        <div class="kpi green"><div class="kpi-label">ผ่านเกณฑ์</div><div class="kpi-value ff-display text-green">87</div><div class="kpi-sub">ข้อกำหนด</div></div>
+        <div class="kpi yellow"><div class="kpi-label">ต้องปรับปรุง</div><div class="kpi-value ff-display text-yellow">8</div><div class="kpi-sub">Improvement Required</div></div>
+        <div class="kpi orange"><div class="kpi-label">Audit Next</div><div class="kpi-value ff-display text-orange" style="font-size:18px">28 ก.ย.</div><div class="kpi-sub">2026</div></div>
+      </div>
+      <div id="ha-chapters-list"></div>
+    </div>
+
+    <!-- Gap Analysis -->
+    <div id="gap-analysis" class="tab-content">
+      <div class="chart-wrap mb-20" style="height:300px"><canvas id="chartGapRadar"></canvas></div>
+      <div id="gap-table-wrap">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Standard</th><th>Chapter</th><th>Score</th><th>Gap</th><th>Priority</th><th>Action Required</th><th>Due</th></tr></thead>
+            <tbody id="gap-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ IPSG ══════════════ -->
+  <div id="view-ipsg" class="view">
+    <div class="section-header">
+      <div><div class="section-title">🛡 International Patient Safety Goals (IPSG)</div><div class="section-sub">JCI IPSG 1–6 · ความปลอดภัยผู้ป่วยระดับสากล</div></div>
+      <button class="btn btn-blue btn-sm" onclick="openModal('addIPSGModal')">📎 Update Evidence</button>
+    </div>
+
+    <div class="kpi-grid mb-20">
+      <div class="kpi blue"><div class="kpi-label">IPSG Overall</div><div class="kpi-value ff-display text-blue">89%</div><div class="kpi-sub">6 Goals</div></div>
+      <div class="kpi green"><div class="kpi-label">Fully Compliant</div><div class="kpi-value ff-display text-green">4</div><div class="kpi-sub">Goals</div></div>
+      <div class="kpi yellow"><div class="kpi-label">Partial</div><div class="kpi-value ff-display text-yellow">2</div><div class="kpi-sub">Goals</div></div>
+      <div class="kpi red"><div class="kpi-label">Evidence Gap</div><div class="kpi-value ff-display text-red">0</div><div class="kpi-sub">Critical Gaps</div></div>
+    </div>
+
+    <div class="grid-3 mb-16" id="ipsg-cards"></div>
+  </div>
+
+  <!-- ══════════════ FMS ══════════════ -->
+  <div id="view-fms" class="view">
+    <div class="section-header">
+      <div><div class="section-title">🏗 FMS — Facility Management & Safety</div><div class="section-sub">JCI FMS Standards · Medical Equipment Program · Utility Systems</div></div>
+      <button class="btn btn-secondary btn-sm" onclick="openModal('addFMSModal')">+ บันทึก Inspection</button>
+    </div>
+    <div class="grid-3 mb-16">
+      <div class="kpi blue"><div class="kpi-label">FMS Score</div><div class="kpi-value ff-display text-blue">85%</div><div class="kpi-sub">Facility Management</div></div>
+      <div class="kpi green"><div class="kpi-label">ME Program</div><div class="kpi-value ff-display text-green">88%</div><div class="kpi-sub">Medical Equip. Program</div></div>
+      <div class="kpi yellow"><div class="kpi-label">Utility Systems</div><div class="kpi-value ff-display text-yellow">82%</div><div class="kpi-sub">FMS.9</div></div>
+    </div>
+    <div id="fms-chapters-list"></div>
+  </div>
+
+  <!-- ══════════════ INCIDENT REPORT ══════════════ -->
+  <div id="view-incident" class="view">
+    <div class="section-header">
+      <div><div class="section-title">🚨 Incident Report — AE & Near-miss</div><div class="section-sub">Adverse Event · Near-miss · Sentinel Event · Equipment-related Safety Incidents</div></div>
+      <div class="flex gap-8">
+        <button class="btn btn-secondary btn-sm" onclick="exportIncidents()">⬇ Export</button>
+        <button class="btn btn-danger btn-sm" onclick="openModal('incidentModal')">+ รายงาน Incident</button>
+      </div>
+    </div>
+
+    <div class="kpi-grid mb-20">
+      <div class="kpi red"><div class="kpi-label">Open Incidents</div><div class="kpi-value ff-display text-red" id="kpi-inc-open">4</div><div class="kpi-sub">รอดำเนินการ</div></div>
+      <div class="kpi orange"><div class="kpi-label">Adverse Events</div><div class="kpi-value ff-display text-orange" id="kpi-inc-ae">2</div><div class="kpi-sub">เหตุการณ์ไม่พึงประสงค์</div></div>
+      <div class="kpi yellow"><div class="kpi-label">Near-miss</div><div class="kpi-value ff-display text-yellow" id="kpi-inc-nm">12</div><div class="kpi-sub">เหตุการณ์เกือบพลาด</div></div>
+      <div class="kpi green"><div class="kpi-label">Closed (30d)</div><div class="kpi-value ff-display text-green" id="kpi-inc-closed">8</div><div class="kpi-sub">ปิดแล้ว</div></div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Incident ID</th><th>ประเภท</th><th>วันที่</th><th>อุปกรณ์/BME</th><th>Ward</th><th>ความรุนแรง</th><th>สถานะ</th><th>RCA</th><th>Action</th></tr></thead>
+        <tbody id="incident-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════ RISK MATRIX ══════════════ -->
+  <div id="view-risk-matrix" class="view">
+    <div class="section-header">
+      <div><div class="section-title">⬡ Risk Matrix & CAPA</div><div class="section-sub">Risk Assessment (5×5) · Corrective & Preventive Action Tracker</div></div>
+      <button class="btn btn-secondary btn-sm" onclick="openModal('addCAPAModal')">+ เพิ่ม CAPA</button>
+    </div>
+
+    <div class="grid-2 mb-20">
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:16px">Risk Matrix (Likelihood × Severity)</div>
+        <div id="risk-matrix-grid"></div>
+        <div class="flex gap-12 mt-12" style="flex-wrap:wrap">
+          <div class="flex flex-center gap-6"><div style="width:14px;height:14px;background:#EF4444;border-radius:3px"></div><span style="font-size:11px;color:var(--text3)">Extreme (≥15)</span></div>
+          <div class="flex flex-center gap-6"><div style="width:14px;height:14px;background:#F97316;border-radius:3px"></div><span style="font-size:11px;color:var(--text3)">High (9–14)</span></div>
+          <div class="flex flex-center gap-6"><div style="width:14px;height:14px;background:#EAB308;border-radius:3px"></div><span style="font-size:11px;color:var(--text3)">Medium (4–8)</span></div>
+          <div class="flex flex-center gap-6"><div style="width:14px;height:14px;background:#22C55E;border-radius:3px"></div><span style="font-size:11px;color:var(--text3)">Low (1–3)</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">CAPA Status Overview</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chartCAPA"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-family:var(--font-display);font-weight:600;margin-bottom:16px">📋 CAPA Register</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>CAPA ID</th><th>Incident Ref.</th><th>Root Cause</th><th>Action</th><th>Owner</th><th>Due</th><th>สถานะ</th><th>ประสิทธิผล</th></tr></thead>
+          <tbody id="capa-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ RCA ══════════════ -->
+  <div id="view-rca" class="view">
+    <div class="section-header">
+      <div><div class="section-title">🔍 Root Cause Analysis (RCA)</div><div class="section-sub">Fishbone Diagram · 5 Why Analysis · FMEA Integration</div></div>
+      <button class="btn btn-secondary btn-sm" onclick="openModal('addRCAModal')">+ New RCA</button>
+    </div>
+    <div id="rca-list"></div>
+  </div>
+
+  </div><!-- /content -->
+</main>
+
+<!-- ══════════════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════════════ -->
+
+<!-- Add BME Modal -->
+<div class="modal-overlay" id="addBMEModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title">🔬 เพิ่มอุปกรณ์การแพทย์</div>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('addBMEModal')">✕</button>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchBMETab('bme-info')">ข้อมูลทั่วไป</div>
+      <div class="tab" onclick="switchBMETab('bme-tech')">Tech Specs</div>
+      <div class="tab" onclick="switchBMETab('bme-pm-plan')">PM Plan</div>
+      <div class="tab" onclick="switchBMETab('bme-risk')">Risk & Compliance</div>
+    </div>
+    <div id="bme-info" class="tab-content active">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">BME ID *</label><input class="form-control" id="bme-id" placeholder="BME-001" value="BME-149"></div>
+        <div class="form-group"><label class="form-label">ชื่ออุปกรณ์ *</label><input class="form-control" id="bme-name" placeholder="เช่น Infusion Pump, Ventilator"></div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group"><label class="form-label">ประเภทอุปกรณ์</label>
+          <select class="form-control" id="bme-type">
+            <option>Life Support</option><option>Diagnostic</option><option>Therapeutic</option><option>Monitoring</option><option>Laboratory</option><option>Imaging</option><option>Surgical</option><option>Rehabilitation</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">FDA Risk Class</label>
+          <select class="form-control" id="bme-class">
+            <option>Class I — Low Risk</option><option>Class II — Moderate Risk</option><option>Class III — High Risk</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Ward / แผนก</label>
+          <select class="form-control" id="bme-ward">
+            <option>ICU</option><option>CCU</option><option>ER</option><option>OR</option><option>Wards</option><option>Lab</option><option>Radiology</option><option>OPD</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">ผู้ผลิต (Manufacturer)</label><input class="form-control" id="bme-mfr" placeholder="Philips, GE, Mindray..."></div>
+        <div class="form-group"><label class="form-label">Serial Number</label><input class="form-control" id="bme-serial" placeholder="SN-XXXXXXXX"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">วันที่รับมอบ</label><input class="form-control" id="bme-recv" type="date"></div>
+        <div class="form-group"><label class="form-label">อายุใช้งาน (ปี)</label><input class="form-control" id="bme-life" type="number" value="10"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">มูลค่าซื้อ (฿)</label><input class="form-control" id="bme-cost" type="number" placeholder="0"></div>
+        <div class="form-group"><label class="form-label">สถานะ</label>
+          <select class="form-control" id="bme-status">
+            <option>Active</option><option>Out of Service</option><option>Under Repair</option><option>Standby</option><option>Disposed</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="bme-tech" class="tab-content">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Model Number</label><input class="form-control" placeholder="Model XYZ-2000"></div>
+        <div class="form-group"><label class="form-label">Firmware Version</label><input class="form-control" placeholder="v2.5.1"></div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group"><label class="form-label">Power (Watts)</label><input class="form-control" type="number" placeholder="0"></div>
+        <div class="form-group"><label class="form-label">Voltage</label><input class="form-control" placeholder="220V AC"></div>
+        <div class="form-group"><label class="form-label">IEC Standard</label><input class="form-control" placeholder="IEC 60601-1-X"></div>
+      </div>
+      <div class="form-group"><label class="form-label">ข้อกำหนดพิเศษ / Special Requirements</label><textarea class="form-control" rows="3" placeholder="เงื่อนไขสภาพแวดล้อม, ข้อกำหนดการติดตั้ง..."></textarea></div>
+    </div>
+    <div id="bme-pm-plan" class="tab-content">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">PM Frequency</label>
+          <select class="form-control">
+            <option>ทุก 3 เดือน</option><option>ทุก 6 เดือน</option><option>ทุก 12 เดือน</option><option>ตามผู้ผลิต</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Calibration Frequency</label>
+          <select class="form-control">
+            <option>ทุก 6 เดือน</option><option>ทุก 12 เดือน</option><option>ทุก 24 เดือน</option><option>ไม่ต้อง Calibration</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">EST Frequency (IEC 62353)</label>
+          <select class="form-control">
+            <option>ทุก 12 เดือน</option><option>ทุก 24 เดือน</option><option>หลังซ่อม / After Repair</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">สัญญา MA (Service Contract)</label>
+          <select class="form-control">
+            <option>มีสัญญา MA</option><option>In-house Maintenance</option><option>On-call Vendor</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="bme-risk" class="tab-content">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Equipment Function Score (1–5)</label>
+          <select class="form-control">
+            <option value="5">5 — Life Support / Critical</option>
+            <option value="4">4 — Diagnostic Critical</option>
+            <option value="3">3 — Therapeutic Moderate</option>
+            <option value="2">2 — Non-critical Monitoring</option>
+            <option value="1">1 — Administrative/Low Risk</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Physical Risk (1–5)</label>
+          <select class="form-control">
+            <option value="5">5 — Electrical High Risk</option>
+            <option value="4">4 — Radiation / Laser</option>
+            <option value="3">3 — Mechanical Risk</option>
+            <option value="2">2 — Chemical/Biological</option>
+            <option value="1">1 — No Significant Risk</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">IPSG Relevance</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px;background:var(--bg3);border-radius:var(--radius)">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox"> IPSG.2 — Drug Safety</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox"> IPSG.4 — Surgery Safety</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox"> IPSG.6 — Fall Prevention</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox"> FMS.8 — Utility Critical</label>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-8 mt-20" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('addBMEModal')">ยกเลิก</button>
+      <button class="btn btn-pink" onclick="saveBME()">✅ บันทึกอุปกรณ์</button>
+    </div>
+  </div>
+</div>
+
+<!-- Incident Modal -->
+<div class="modal-overlay" id="incidentModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🚨 รายงาน Incident (AE / Near-miss)</div>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('incidentModal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">ประเภท</label>
+        <select class="form-control" id="inc-type">
+          <option>Adverse Event (AE)</option><option>Near-miss</option><option>Sentinel Event</option><option>No-harm Event</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">ความรุนแรง</label>
+        <select class="form-control" id="inc-severity">
+          <option>Critical — Harm to Patient</option><option>Major — Near Harm</option><option>Moderate — Process Failure</option><option>Minor — No Impact</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">BME ที่เกี่ยวข้อง</label>
+        <select class="form-control" id="inc-bme">
+          <option value="">-- เลือกอุปกรณ์ (ถ้ามี) --</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Ward / แผนก</label>
+        <select class="form-control" id="inc-ward">
+          <option>ICU</option><option>CCU</option><option>ER</option><option>OR</option><option>Wards</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">วันที่/เวลาเกิดเหตุ</label><input class="form-control" type="datetime-local" id="inc-date"></div>
+      <div class="form-group"><label class="form-label">ผู้รายงาน</label><input class="form-control" id="inc-reporter" placeholder="ชื่อ - ตำแหน่ง"></div>
+    </div>
+    <div class="form-group"><label class="form-label">คำอธิบายเหตุการณ์ *</label>
+      <textarea class="form-control" id="inc-desc" rows="4" placeholder="บรรยายเหตุการณ์ที่เกิดขึ้น ผลกระทบต่อผู้ป่วย การดำเนินการเบื้องต้น..."></textarea>
+    </div>
+    <div class="form-group"><label class="form-label">การดำเนินการทันที (Immediate Action)</label>
+      <textarea class="form-control" id="inc-action" rows="2" placeholder="การแก้ไขเบื้องต้น เช่น นำอุปกรณ์ออกจากการใช้งาน แจ้งแพทย์เจ้าของไข้..."></textarea>
+    </div>
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('incidentModal')">ยกเลิก</button>
+      <button class="btn btn-danger" onclick="saveIncident()">🚨 รายงาน Incident</button>
+    </div>
+  </div>
+</div>
+
+<!-- CAPA Modal -->
+<div class="modal-overlay" id="addCAPAModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📋 เพิ่ม CAPA</div>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('addCAPAModal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">CAPA Type</label>
+        <select class="form-control"><option>Corrective Action (CA)</option><option>Preventive Action (PA)</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Incident / NCR Reference</label>
+        <input class="form-control" placeholder="AE-2026-XXX"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Root Cause</label><input class="form-control" placeholder="สาเหตุหลักของปัญหา"></div>
+    <div class="form-group"><label class="form-label">Corrective / Preventive Action</label>
+      <textarea class="form-control" rows="3" placeholder="การดำเนินการแก้ไข / ป้องกัน..."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">ผู้รับผิดชอบ (Owner)</label><input class="form-control" placeholder="ชื่อ - แผนก"></div>
+      <div class="form-group"><label class="form-label">Due Date</label><input class="form-control" type="date"></div>
+    </div>
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('addCAPAModal')">ยกเลิก</button>
+      <button class="btn btn-success" onclick="closeModal('addCAPAModal');showToast('✅ บันทึก CAPA เรียบร้อย')">✅ บันทึก CAPA</button>
+    </div>
+  </div>
+</div>
+
+<!-- Evidence Upload Modal -->
+<div class="modal-overlay" id="addEvidenceModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📎 Upload Evidence — JCI/HA</div>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('addEvidenceModal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Standard</label>
+        <select class="form-control"><option>JCI — FMS.4</option><option>JCI — FMS.8</option><option>JCI — FMS.9</option><option>JCI — IPSG.4</option><option>HA — ENV.2</option><option>HA — PCT.5</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Measurable Element (ME)</label><input class="form-control" placeholder="ME 1, ME 2..."></div>
+    </div>
+    <div class="form-group"><label class="form-label">ประเภท Evidence</label>
+      <select class="form-control"><option>Policy / Procedure</option><option>Maintenance Record</option><option>Training Record</option><option>Inspection Report</option><option>Calibration Certificate</option><option>Incident Report</option><option>Photo/Video</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">Upload File</label>
+      <div style="border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:30px;text-align:center;background:var(--bg3);cursor:pointer" onclick="showToast('📎 เปิด File Browser...')">
+        <div style="font-size:28px;margin-bottom:8px">📎</div>
+        <div style="font-size:13px;color:var(--text2)">คลิกเพื่ออัพโหลด หรือลากไฟล์มาวาง</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">PDF, Word, Excel, Image (สูงสุด 20 MB)</div>
+      </div>
+    </div>
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('addEvidenceModal')">ยกเลิก</button>
+      <button class="btn btn-blue" onclick="closeModal('addEvidenceModal');showToast('📎 อัพโหลด Evidence เรียบร้อย')">📎 Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- EST Modal -->
+<div class="modal-overlay" id="addESTModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">⚡ บันทึก Electrical Safety Test</div>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('addESTModal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">BME ID</label><select class="form-control"><option>BME-021 — Infusion Pump</option></select></div>
+      <div class="form-group"><label class="form-label">IEC Standard</label><select class="form-control"><option>IEC 62353</option><option>IEC 60601-1</option><option>IEC 60601-2-X</option></select></div>
+    </div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-label">Earth Leakage (mA)</label><input class="form-control" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="form-group"><label class="form-label">Patient Leakage (μA)</label><input class="form-control" type="number" step="0.1" placeholder="0.0"></div>
+      <div class="form-group"><label class="form-label">Earth Bond (Ω)</label><input class="form-control" type="number" step="0.001" placeholder="0.000"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">ผลการทดสอบ</label>
+        <select class="form-control"><option>PASS ✅</option><option>FAIL ❌</option><option>Conditional Pass ⚠</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Tester Name</label><input class="form-control" placeholder="วิศวกรชีวการแพทย์"></div>
+    </div>
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('addESTModal')">ยกเลิก</button>
+      <button class="btn btn-success" onclick="closeModal('addESTModal');showToast('⚡ บันทึก EST Result เรียบร้อย')">✅ บันทึก EST</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 20px;font-size:13px;z-index:999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  DB (localStorage)
+// ═══════════════════════════════════════════════════════════
+const DB = {
+  get:(k,d=[])=>{try{const v=localStorage.getItem('hc_'+k);return v?JSON.parse(v):d}catch{return d}},
+  set:(k,v)=>{try{localStorage.setItem('hc_'+k,JSON.stringify(v))}catch{}}
+};
+
+// ═══════════════════════════════════════════════════════════
+//  SEED DATA
+// ═══════════════════════════════════════════════════════════
+const WARDS = ['ICU','CCU','ER','OR','Wards','Lab','Radiology','OPD'];
+const BME_TYPES = ['Life Support','Diagnostic','Monitoring','Therapeutic','Laboratory','Imaging','Surgical'];
+const BME_CLASSES = ['Class I','Class II','Class III'];
+const BME_STATUSES = ['Active','Active','Active','Active','Out of Service','Under Repair'];
+const MANUFACTURERS = ['Philips','GE Healthcare','Mindray','Spacelabs','Drager','Siemens Healthineers','Nihon Kohden','Stryker','Medtronic','B.Braun'];
+
+const SEED_BMES = [
+  {id:'BME-001',name:'Mechanical Ventilator',type:'Life Support',cls:'Class III',ward:'ICU',serial:'DRG-VNT-4821',mfr:'Drager',nextPM:'2026-05-20',nextCalib:'2026-07-15',status:'Active',cost:2850000,estStatus:'Pass',estDue:'2026-11-01'},
+  {id:'BME-002',name:'Patient Monitor (Multi-para)',type:'Monitoring',cls:'Class II',ward:'ICU',serial:'PHI-MON-9912',mfr:'Philips',nextPM:'2026-06-01',nextCalib:'2026-09-01',status:'Active',cost:480000,estStatus:'Pass',estDue:'2026-08-15'},
+  {id:'BME-003',name:'Infusion Pump (Volumetric)',type:'Therapeutic',cls:'Class II',ward:'ICU',serial:'BBR-INF-3321',mfr:'B.Braun',nextPM:'2026-04-15',nextCalib:'2026-05-01',status:'Out of Service',cost:145000,estStatus:'Overdue',estDue:'2026-03-01'},
+  {id:'BME-004',name:'Defibrillator (AED/Manual)',type:'Life Support',cls:'Class III',ward:'ER',serial:'PHI-DEF-7744',mfr:'Philips',nextPM:'2026-05-25',nextCalib:'2026-04-30',status:'Active',cost:320000,estStatus:'Pass',estDue:'2026-12-01'},
+  {id:'BME-005',name:'ECG Machine (12-lead)',type:'Diagnostic',cls:'Class II',ward:'ER',serial:'NKH-ECG-1147',mfr:'Nihon Kohden',nextPM:'2026-07-01',nextCalib:'2026-10-01',status:'Active',cost:95000,estStatus:'Pass',estDue:'2027-01-15'},
+  {id:'BME-006',name:'Syringe Pump',type:'Therapeutic',cls:'Class II',ward:'CCU',serial:'BBR-SYR-8821',mfr:'B.Braun',nextPM:'2026-06-15',nextCalib:'2026-06-15',status:'Active',cost:85000,estStatus:'Due Soon',estDue:'2026-06-15'},
+  {id:'BME-007',name:'Pulse Oximeter (Bedside)',type:'Monitoring',cls:'Class II',ward:'CCU',serial:'MND-OXI-4412',mfr:'Mindray',nextPM:'2026-05-18',nextCalib:'2026-08-01',status:'Active',cost:45000,estStatus:'Pass',estDue:'2026-10-01'},
+  {id:'BME-008',name:'Anesthesia Machine',type:'Surgical',cls:'Class III',ward:'OR',serial:'DRG-ANE-2250',mfr:'Drager',nextPM:'2026-05-30',nextCalib:'2026-05-30',status:'Active',cost:3200000,estStatus:'Pass',estDue:'2026-11-15'},
+  {id:'BME-009',name:'Electrosurgical Unit (ESU)',type:'Surgical',cls:'Class III',ward:'OR',serial:'STR-ESU-6631',mfr:'Stryker',nextPM:'2026-06-20',nextCalib:'2026-06-20',status:'Active',cost:560000,estStatus:'Pass',estDue:'2026-12-20'},
+  {id:'BME-010',name:'Hematology Analyzer',type:'Laboratory',cls:'Class II',ward:'Lab',serial:'SYS-HEM-0089',mfr:'Sysmex',nextPM:'2026-08-01',nextCalib:'2026-11-01',status:'Active',cost:1250000,estStatus:'Pass',estDue:'2027-02-01'},
+  {id:'BME-011',name:'Blood Gas Analyzer',type:'Laboratory',cls:'Class II',ward:'Lab',serial:'ABB-BGA-3312',mfr:'Abbott',nextPM:'2026-06-30',nextCalib:'2026-06-30',status:'Active',cost:780000,estStatus:'Pass',estDue:'2027-01-01'},
+  {id:'BME-012',name:'X-Ray Machine (Digital)',type:'Imaging',cls:'Class II',ward:'Radiology',serial:'SIE-XRY-7821',mfr:'Siemens Healthineers',nextPM:'2026-09-01',nextCalib:'2026-09-01',status:'Active',cost:4800000,estStatus:'Pass',estDue:'2027-03-01'},
+  {id:'BME-013',name:'Ultrasound (Portable)',type:'Imaging',cls:'Class II',ward:'Wards',serial:'GEH-US-4491',mfr:'GE Healthcare',nextPM:'2026-07-15',nextCalib:'2026-07-15',status:'Active',cost:950000,estStatus:'Pass',estDue:'2027-01-15'},
+  {id:'BME-014',name:'CPAP/BiPAP Machine',type:'Life Support',cls:'Class III',ward:'Wards',serial:'PHI-CPAP-1123',mfr:'Philips',nextPM:'2026-05-28',nextCalib:'2026-07-01',status:'Active',cost:185000,estStatus:'Due Soon',estDue:'2026-06-01'},
+  {id:'BME-015',name:'Fetal Monitor',type:'Monitoring',cls:'Class II',ward:'OPD',serial:'PHI-FET-9981',mfr:'Philips',nextPM:'2026-08-15',nextCalib:'2026-08-15',status:'Active',cost:220000,estStatus:'Pass',estDue:'2027-02-15'},
+  {id:'BME-016',name:'Infusion Pump (PCA)',type:'Therapeutic',cls:'Class III',ward:'Wards',serial:'SMI-PCA-5511',mfr:'Smiths Medical',nextPM:'2026-06-10',nextCalib:'2026-06-10',status:'Under Repair',cost:165000,estStatus:'Overdue',estDue:'2026-02-01'},
+  {id:'BME-017',name:'Glucometer (Bedside)',type:'Diagnostic',cls:'Class II',ward:'Wards',serial:'ROC-GLU-2277',mfr:'Roche',nextPM:'2026-07-20',nextCalib:'2026-07-20',status:'Active',cost:8500,estStatus:'Pass',estDue:'2026-09-01'},
+  {id:'BME-018',name:'Suction Machine',type:'Therapeutic',cls:'Class II',ward:'OR',serial:'OMR-SUC-8844',mfr:'Olympus',nextPM:'2026-06-25',nextCalib:'2026-10-01',status:'Active',cost:35000,estStatus:'Pass',estDue:'2026-11-01'},
+  {id:'BME-019',name:'Cardiac Output Monitor',type:'Monitoring',cls:'Class III',ward:'ICU',serial:'EDW-CO-3312',mfr:'Edwards Lifesciences',nextPM:'2026-07-05',nextCalib:'2026-07-05',status:'Active',cost:890000,estStatus:'Pass',estDue:'2027-01-05'},
+  {id:'BME-020',name:'Portable Ventilator',type:'Life Support',cls:'Class III',ward:'ER',serial:'DRG-PVNT-5521',mfr:'Drager',nextPM:'2026-05-22',nextCalib:'2026-08-22',status:'Active',cost:1650000,estStatus:'Pass',estDue:'2026-11-22'},
+];
+
+const SEED_INCIDENTS = [
+  {id:'AE-2026-041',type:'Adverse Event',date:'2026-05-12',bme:'BME-003 — Infusion Pump',ward:'ICU',severity:'Critical',status:'Open',rcaStatus:'In-progress',desc:'Infusion Pump หยุดทำงานกะทันหัน ขณะให้ยา Dopamine ผู้ป่วย Hypotension'},
+  {id:'NM-2026-038',type:'Near-miss',date:'2026-05-08',bme:'BME-001 — Ventilator',ward:'CCU',severity:'Major',status:'Open',rcaStatus:'CAPA Assigned',desc:'Alarm ไม่ดัง เนื่องจาก Volume Alarm ถูก Mute โดยไม่มีการบันทึก'},
+  {id:'AE-2026-035',type:'Adverse Event',date:'2026-05-03',bme:'BME-005 — ECG Machine',ward:'ER',severity:'Moderate',status:'Closed',rcaStatus:'Completed',desc:'สาย ECG Lead ขาด ทำให้ ECG Recording ไม่สมบูรณ์ ล่าช้าการวินิจฉัย'},
+  {id:'NM-2026-029',type:'Near-miss',date:'2026-04-28',bme:'BME-009 — ESU',ward:'OR',severity:'Major',status:'Open',rcaStatus:'Pending RCA',desc:'ESU ให้กระแสสูงผิดปกติ ตรวจพบก่อนทำหัตถการ — รอ Root Cause Analysis'},
+  {id:'NM-2026-024',type:'Near-miss',date:'2026-04-20',bme:'BME-008 — Anesthesia Machine',ward:'OR',severity:'Critical',status:'Open',rcaStatus:'In-progress',desc:'O2 Flowmeter เบี่ยงเบน 15% จากค่าตั้ง ตรวจพบก่อนการใช้งาน Calibration ฉุกเฉิน'},
+];
+
+const SEED_CAPAS = [
+  {id:'CAPA-2026-012',ref:'AE-2026-041',rc:'Poor PM adherence — Infusion Pump battery degradation',action:'ทบทวน PM schedule ทุก Infusion Pump, แทนที่ battery Class III ทุก 2 ปี',owner:'ทีม Biomedical Engineering',due:'2026-06-15',status:'In Progress',effect:'Pending'},
+  {id:'CAPA-2026-011',ref:'NM-2026-038',rc:'No policy for Alarm Management — Alarm fatigue',action:'จัดทำ Alarm Management Policy, อบรมบุคลากร ICU/CCU',owner:'ฝ่ายการพยาบาล + Biomedical',due:'2026-06-30',status:'In Progress',effect:'Pending'},
+  {id:'CAPA-2026-010',ref:'AE-2026-035',rc:'ECG Lead aging — ไม่มีการตรวจสอบตามกำหนด',action:'เพิ่ม Lead inspection ใน Daily PM Checklist, stock อะไหล่ Lead สำรอง',owner:'ทีม Biomedical Engineering',due:'2026-05-31',status:'Completed',effect:'Effective'},
+  {id:'CAPA-2026-009',ref:'NM-2026-029',rc:'ESU Output verification ไม่ได้ทำก่อน Procedure',action:'เพิ่มขั้นตอน ESU Pre-use Test ใน OR Checklist (WHO Surgical Safety)',owner:'ฝ่ายห้องผ่าตัด',due:'2026-06-01',status:'In Progress',effect:'Pending'},
+  {id:'CAPA-2026-008',ref:'NM-2026-024',rc:'Anesthesia O2 Flowmeter drift — Calibration overdue',action:'เร่ง Calibration ฉุกเฉิน, ปรับ Calibration frequency จาก 12 เป็น 6 เดือน',owner:'Biomedical Engineering',due:'2026-05-25',status:'Completed',effect:'Effective'},
+  {id:'CAPA-2026-007',ref:'AE-2026-035',rc:'ขาดการ stock อะไหล่ ECG Lead',action:'จัดซื้อ ECG Lead สำรอง 20 ชุด, กำหนด Reorder Point',owner:'ฝ่ายจัดซื้อ',due:'2026-05-20',status:'Completed',effect:'Effective'},
+];
+
+const JCI_CHAPTERS = [
+  {code:'FMS.4',title:'Medical Equipment Program',score:82,total:6,met:5,partial:0,notmet:1,area:'Equipment Management'},
+  {code:'FMS.4.1',title:'Medical Equipment Inventory',score:78,total:4,met:3,partial:1,notmet:0,area:'Equipment Management'},
+  {code:'FMS.4.2',title:'Equipment Inspection & Maintenance',score:85,total:5,met:4,partial:1,notmet:0,area:'Equipment Management'},
+  {code:'FMS.4.3',title:'Medical Equipment Testing',score:80,total:4,met:3,partial:1,notmet:0,area:'Equipment Management'},
+  {code:'FMS.8',title:'Utility Systems Safety',score:90,total:6,met:5,partial:1,notmet:0,area:'Facility Safety'},
+  {code:'FMS.9',title:'Emergency Medical Equipment',score:88,total:4,met:4,partial:0,notmet:0,area:'Facility Safety'},
+  {code:'FMS.11',title:'Fire Safety Program',score:95,total:5,met:5,partial:0,notmet:0,area:'Facility Safety'},
+  {code:'IPSG.1',title:'Patient Identification',score:98,total:3,met:3,partial:0,notmet:0,area:'Patient Safety'},
+  {code:'IPSG.2',title:'Effective Communication',score:91,total:4,met:4,partial:0,notmet:0,area:'Patient Safety'},
+  {code:'IPSG.3',title:'High-Alert Medications',score:87,total:5,met:4,partial:1,notmet:0,area:'Patient Safety'},
+  {code:'IPSG.4',title:'Surgical Safety Checklist',score:93,total:4,met:4,partial:0,notmet:0,area:'Patient Safety'},
+  {code:'IPSG.5',title:'HAI Prevention',score:85,total:6,met:5,partial:1,notmet:0,area:'Patient Safety'},
+  {code:'IPSG.6',title:'Fall Prevention Program',score:90,total:4,met:4,partial:0,notmet:0,area:'Patient Safety'},
+];
+
+const IPSG_DATA = [
+  {num:1,title:'Patient Identification',icon:'🆔',score:98,status:'done',desc:'ระบุตัวตนผู้ป่วยด้วย 2 identifiers ก่อนทุกหัตถการ',evidence:'SOP การระบุผู้ป่วย, Wristband Policy'},
+  {num:2,title:'Effective Communication',icon:'💬',score:91,status:'done',desc:'การสื่อสารผล Lab/อาการที่สำคัญอย่างมีประสิทธิภาพ',evidence:'SBAR Tool, Critical Value Policy'},
+  {num:3,title:'High-Alert Medications',icon:'💊',score:87,status:'partial',desc:'การบริหารยาที่มีความเสี่ยงสูง',evidence:'HAM List, Double-check Procedure — ต้องเพิ่ม Infusion Pump safety check'},
+  {num:4,title:'Surgical Safety',icon:'🔪',score:93,status:'done',desc:'Surgical Safety Checklist (WHO) ก่อนผ่าตัด',evidence:'WHO Checklist, Time-out Procedure'},
+  {num:5,title:'HAI Prevention',icon:'🦠',score:85,status:'partial',desc:'การป้องกันการติดเชื้อในโรงพยาบาล',evidence:'Hand Hygiene Policy — VAP Bundle ต้องอัพเดต evidence'},
+  {num:6,title:'Fall Prevention',icon:'🚶',score:90,status:'done',desc:'โปรแกรมป้องกันผู้ป่วยหกล้ม',evidence:'Morse Fall Scale, Bed Alert System'},
+];
+
+const HA_CHAPTERS = [
+  {code:'ENV.2',title:'Medical Equipment Management',score:88,area:'สิ่งแวดล้อม'},
+  {code:'ENV.3',title:'Physical Safety',score:92,area:'สิ่งแวดล้อม'},
+  {code:'PCT.5',title:'Patient Care Procedures',score:90,area:'กระบวนการดูแลผู้ป่วย'},
+  {code:'PCT.6',title:'Medication Safety',score:85,area:'กระบวนการดูแลผู้ป่วย'},
+  {code:'IC.1',title:'Infection Control Program',score:94,area:'การควบคุมการติดเชื้อ'},
+  {code:'QPS.2',title:'Patient Safety Events',score:87,area:'คุณภาพและความปลอดภัย'},
+  {code:'MOM.1',title:'Biomedical Maintenance',score:91,area:'การบริหารสินทรัพย์'},
+];
+
+const PM_DATA = [
+  {id:'PM-2026-041',bme:'BME-001',name:'Mechanical Ventilator',ward:'ICU',type:'PM-Quarterly',due:'2026-05-20',tech:'นาย สมชาย วิศวกร',status:'Due Soon'},
+  {id:'PM-2026-042',bme:'BME-004',name:'Defibrillator',ward:'ER',type:'PM-Monthly',due:'2026-05-25',tech:'นาย สมชาย วิศวกร',status:'Due Soon'},
+  {id:'PM-2026-043',bme:'BME-007',name:'Pulse Oximeter',ward:'CCU',type:'PM-Quarterly',due:'2026-05-18',tech:'น.ส. ปิยวดี เทคนิเชียน',status:'Overdue'},
+  {id:'PM-2026-044',bme:'BME-003',name:'Infusion Pump',ward:'ICU',type:'PM-Semi-Annual',due:'2026-04-15',tech:'น.ส. ปิยวดี เทคนิเชียน',status:'Overdue'},
+  {id:'PM-2026-045',bme:'BME-008',name:'Anesthesia Machine',ward:'OR',type:'PM-Quarterly',due:'2026-05-30',tech:'นาย วิชัย วิศวกร',status:'Scheduled'},
+  {id:'PM-2026-046',bme:'BME-014',name:'CPAP/BiPAP',ward:'Wards',type:'PM-Quarterly',due:'2026-05-28',tech:'นาย วิชัย วิศวกร',status:'Due Soon'},
+  {id:'PM-2026-047',bme:'BME-002',name:'Patient Monitor',ward:'ICU',type:'PM-Annual',due:'2026-06-01',tech:'นาย สมชาย วิศวกร',status:'Scheduled'},
+  {id:'PM-2026-048',bme:'BME-020',name:'Portable Ventilator',ward:'ER',type:'PM-Quarterly',due:'2026-05-22',tech:'น.ส. ปิยวดี เทคนิเชียน',status:'Due Soon'},
+];
+
+const CALIB_DATA = [
+  {bme:'BME-003',name:'Infusion Pump',ward:'ICU',calibType:'Flow Rate Accuracy',last:'2025-11-01',next:'2026-05-01',ref:'ISO 8536-8',status:'Overdue'},
+  {bme:'BME-004',name:'Defibrillator',ward:'ER',calibType:'Energy Output',last:'2025-10-30',next:'2026-04-30',ref:'IEC 60601-2-4',status:'Overdue'},
+  {bme:'BME-006',name:'Syringe Pump',ward:'CCU',calibType:'Flow Rate',last:'2025-12-15',next:'2026-06-15',ref:'ISO 8536-8',status:'Due Soon'},
+  {bme:'BME-014',name:'CPAP Machine',ward:'Wards',calibType:'Pressure Accuracy',last:'2026-01-01',next:'2026-07-01',ref:'ISO 80601-2-70',status:'Due Soon'},
+  {bme:'BME-001',name:'Ventilator',ward:'ICU',calibType:'Tidal Volume & Pressure',last:'2026-01-15',next:'2026-07-15',ref:'ISO 80601-2-12',status:'Scheduled'},
+  {bme:'BME-008',name:'Anesthesia Machine',ward:'OR',calibType:'Gas Flow & Pressure',last:'2025-11-30',next:'2026-05-30',ref:'ISO 80601-2-13',status:'Due Soon'},
+  {bme:'BME-005',name:'ECG Machine',ward:'ER',calibType:'Amplitude & Frequency',last:'2026-04-01',next:'2026-10-01',ref:'IEC 60601-2-51',status:'Scheduled'},
+];
+
+const EST_DATA = [
+  {bme:'BME-003',name:'Infusion Pump (Volumetric)',ward:'ICU',cls:'Class II',std:'IEC 62353',testDate:'2025-03-01',result:'FAIL',next:'2026-03-01',status:'Overdue'},
+  {bme:'BME-016',name:'Infusion Pump (PCA)',ward:'Wards',cls:'Class III',std:'IEC 62353',testDate:'2025-02-01',result:'Pass',next:'2026-02-01',status:'Overdue'},
+  {bme:'BME-006',name:'Syringe Pump',ward:'CCU',cls:'Class II',std:'IEC 62353',testDate:'2025-06-15',result:'Pass',next:'2026-06-15',status:'Due Soon'},
+  {bme:'BME-014',name:'CPAP/BiPAP',ward:'Wards',cls:'Class III',std:'IEC 62353',testDate:'2025-06-01',result:'Pass',next:'2026-06-01',status:'Due Soon'},
+  {bme:'BME-001',name:'Mechanical Ventilator',ward:'ICU',cls:'Class III',std:'IEC 62353',testDate:'2025-11-01',result:'Pass',next:'2026-11-01',status:'Pass'},
+  {bme:'BME-004',name:'Defibrillator',ward:'ER',cls:'Class III',std:'IEC 62353',testDate:'2025-12-01',result:'Pass',next:'2026-12-01',status:'Pass'},
+  {bme:'BME-008',name:'Anesthesia Machine',ward:'OR',cls:'Class III',std:'IEC 62353',testDate:'2025-11-15',result:'Pass',next:'2026-11-15',status:'Pass'},
+  {bme:'BME-002',name:'Patient Monitor',ward:'ICU',cls:'Class II',std:'IEC 62353',testDate:'2025-08-15',result:'Pass',next:'2026-08-15',status:'Pass'},
+];
+
+const RCA_DATA = [
+  {id:'RCA-2026-041',ref:'AE-2026-041',title:'Infusion Pump Failure — Dopamine Infusion Stop',method:'Fishbone + 5 Why',status:'In-progress',assignee:'นาย สมชาย วิศวกร',dueDate:'2026-05-31',
+    why1:'Infusion pump หยุดกะทันหัน',why2:'Battery หมดอายุ — ไม่มีแหล่งจ่ายไฟสำรอง',why3:'PM ครั้งล่าสุดไม่ได้ทดสอบ Battery capacity',why4:'PM Checklist ไม่มีรายการ Battery load test',why5:'ไม่มีการทบทวน PM Checklist หลัง Manufacturer update'},
+  {id:'RCA-2026-038',ref:'NM-2026-038',title:'Alarm Fatigue — Ventilator Volume Alarm Muted',method:'5 Why Analysis',status:'Completed',assignee:'น.ส. ปิยวดี เทคนิเชียน',dueDate:'2026-05-15',
+    why1:'Alarm ไม่ดังเมื่อ Tidal Volume ต่ำ',why2:'Alarm ถูก Mute โดยพยาบาล',why3:'ไม่มีนโยบาย Alarm Management ชัดเจน',why4:'บุคลากรไม่ได้รับการอบรม Alarm setting',why5:'ขาด Alarm Management Committee ในโรงพยาบาล'},
+];
+
+// ═══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════
+const VIEW_TITLES = {
+  'hc-dashboard':'🏥 Healthcare Dashboard',
+  'bme-register':'🔬 Biomedical Asset Register',
+  'bme-pm':'📅 PM & Calibration Schedule',
+  'bme-lifecycle':'🔄 Biomedical Device Lifecycle',
+  'bme-electrical':'⚡ Electrical Safety Test',
+  'jci-compliance':'🏅 JCI / HA Compliance',
+  'ipsg':'🛡 IPSG — Patient Safety Goals',
+  'fms':'🏗 FMS — Facility Management',
+  'incident':'🚨 Incident Report',
+  'risk-matrix':'⬡ Risk Matrix & CAPA',
+  'rca':'🔍 Root Cause Analysis'
+};
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const el = document.getElementById('view-'+id);
+  if(el) el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active');
+  });
+  document.getElementById('topbar-title').textContent = VIEW_TITLES[id]||id;
+  document.getElementById('topbar-breadcrumb').textContent = 'TKO iMATOMs Tech › Healthcare Module › '+(VIEW_TITLES[id]||id);
+  renderView(id);
+}
+
+function renderView(id) {
+  if(id==='bme-register') renderBMETable();
+  if(id==='bme-pm') renderPMTable();
+  if(id==='jci-compliance') { renderJCIChapters(); renderHAChapters(); renderGapAnalysis(); }
+  if(id==='ipsg') renderIPSG();
+  if(id==='fms') renderFMSChapters();
+  if(id==='incident') renderIncidentTable();
+  if(id==='risk-matrix') { renderRiskMatrix(); renderCAPATable(); renderCAPAChart(); }
+  if(id==='bme-electrical') renderESTTable();
+  if(id==='rca') renderRCAList();
+  if(id==='bme-lifecycle') populateBMESelect();
+  if(id==='hc-dashboard') { renderDashboardCharts(); renderJCIScoreBars(); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DASHBOARD CHARTS
+// ═══════════════════════════════════════════════════════════
+let charts = {};
+function renderDashboardCharts() {
+  const destroyChart = (id) => { if(charts[id]){charts[id].destroy();delete charts[id];} };
+
+  destroyChart('bmeStatus');
+  const ctxStatus = document.getElementById('chartBMEStatus');
+  if(ctxStatus) charts['bmeStatus'] = new Chart(ctxStatus, {
+    type:'doughnut',
+    data:{
+      labels:['Active','Out of Service','Under Repair','Standby'],
+      datasets:[{data:[132,5,8,3],backgroundColor:['#22C55E','#EF4444','#F97316','#3B82F6'],borderWidth:0}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8B949E',font:{size:12}}}}}
+  });
+
+  destroyChart('riskClass');
+  const ctxClass = document.getElementById('chartRiskClass');
+  if(ctxClass) charts['riskClass'] = new Chart(ctxClass, {
+    type:'bar',
+    data:{
+      labels:['Class I\n(Low Risk)','Class II\n(Moderate)','Class III\n(High Risk)'],
+      datasets:[{label:'จำนวนอุปกรณ์',data:[28,82,38],backgroundColor:['#22C55E','#EAB308','#EF4444'],borderRadius:6,borderWidth:0}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E',font:{size:11}}},y:{ticks:{color:'#8B949E',font:{size:11}},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+
+  destroyChart('pmTimeline');
+  const ctxPM = document.getElementById('chartPMTimeline');
+  if(ctxPM) charts['pmTimeline'] = new Chart(ctxPM, {
+    type:'bar',
+    data:{
+      labels:['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.'],
+      datasets:[
+        {label:'PM Done',data:[22,18,25,20,24,0,0,0],backgroundColor:'#22C55E',borderRadius:4,borderWidth:0},
+        {label:'Calibration Done',data:[8,6,9,7,5,0,0,0],backgroundColor:'#3B82F6',borderRadius:4,borderWidth:0},
+        {label:'PM Due',data:[0,0,0,0,11,14,12,9],backgroundColor:'rgba(234,179,8,0.5)',borderRadius:4,borderWidth:0},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:11}}}},scales:{x:{stacked:false,ticks:{color:'#8B949E',font:{size:11}}},y:{ticks:{color:'#8B949E',font:{size:11}},grid:{color:'rgba(255,255,255,0.05)'}}}}
+  });
+}
+
+function renderJCIScoreBars() {
+  const el = document.getElementById('jci-score-bars');
+  if(!el) return;
+  const top5 = JCI_CHAPTERS.slice(0,6);
+  el.innerHTML = top5.map(c=>{
+    const color = c.score>=90?'#22C55E':c.score>=80?'#EAB308':'#EF4444';
+    return `<div class="metric-row">
+      <div style="flex:1"><div style="font-size:13px;font-weight:600">${c.code}</div><div style="font-size:11px;color:var(--text3)">${c.title}</div></div>
+      <div style="width:120px;margin:0 12px">
+        <div class="compliance-bar"><div class="compliance-fill" style="width:${c.score}%;background:${color}"></div></div>
+      </div>
+      <div style="font-family:var(--font-display);font-weight:700;font-size:15px;color:${color};min-width:40px;text-align:right">${c.score}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BME TABLE
+// ═══════════════════════════════════════════════════════════
+let bmeData = [...SEED_BMES];
+function renderBMETable(filter='') {
+  const body = document.getElementById('bme-table-body');
+  if(!body) return;
+  const data = filter ? bmeData.filter(b=>b.id.toLowerCase().includes(filter)||b.name.toLowerCase().includes(filter)||b.ward.toLowerCase().includes(filter)) : bmeData;
+  body.innerHTML = data.map(b=>{
+    const classEl = b.cls==='Class III'?`<span class="risk-class-III">${b.cls}</span>`:b.cls==='Class II'?`<span class="risk-class-II">${b.cls}</span>`:`<span class="risk-class-I">${b.cls}</span>`;
+    const statusBadge = b.status==='Active'?'badge-green':b.status==='Out of Service'?'badge-red':b.status==='Under Repair'?'badge-yellow':'badge-gray';
+    const pmDays = daysDiff(b.nextPM);
+    const pmEl = pmDays<0?`<span style="color:var(--red);font-weight:700">${Math.abs(pmDays)}d OVERDUE</span>`:pmDays<=14?`<span style="color:var(--yellow)">${pmDays}d</span>`:`<span style="color:var(--text2)">${fmtDate(b.nextPM)}</span>`;
+    const calibDays = daysDiff(b.nextCalib);
+    const calibEl = calibDays<0?`<span style="color:var(--red);font-weight:700">${Math.abs(calibDays)}d OVERDUE</span>`:calibDays<=30?`<span style="color:var(--yellow)">${fmtDate(b.nextCalib)} ⚠</span>`:`<span style="color:var(--text2)">${fmtDate(b.nextCalib)}</span>`;
+    return `<tr>
+      <td><span class="tag">${b.id}</span></td>
+      <td><span style="font-weight:600;color:var(--text)">${b.name}</span><div style="font-size:11px;color:var(--text3)">${b.mfr}</div></td>
+      <td><span class="badge badge-gray">${b.type}</span></td>
+      <td><span class="badge badge-blue">${b.ward}</span></td>
+      <td>${classEl}</td>
+      <td><span class="ff-mono" style="font-size:12px">${b.serial}</span></td>
+      <td>${pmEl}</td>
+      <td>${calibEl}</td>
+      <td><span class="badge ${statusBadge}">${b.status}</span></td>
+      <td><div class="flex gap-6">
+        <button class="btn btn-secondary btn-sm btn-icon" onclick="showToast('📋 BME Detail: ${b.id}')" title="Detail">📋</button>
+        <button class="btn btn-secondary btn-sm btn-icon" onclick="showToast('⚙ PM Log: ${b.id}')" title="PM Log">⚙</button>
+        <button class="btn btn-secondary btn-sm btn-icon" onclick="showToast('📎 Docs: ${b.id}')" title="Documents">📎</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterBME(v){renderBMETable(v.toLowerCase())}
+function filterBMEClass(v){if(!v)return renderBMETable();const d=bmeData.filter(b=>b.cls===v);renderBMETableDirect(d)}
+function filterBMEDept(v){if(!v)return renderBMETable();const d=bmeData.filter(b=>b.ward===v);renderBMETableDirect(d)}
+function filterBMEStatus(v){if(!v)return renderBMETable();const d=bmeData.filter(b=>b.status===v);renderBMETableDirect(d)}
+function renderBMETableDirect(data){
+  const body=document.getElementById('bme-table-body');if(!body)return;
+  body.innerHTML=data.map(b=>{
+    const classEl=b.cls==='Class III'?`<span class="risk-class-III">${b.cls}</span>`:b.cls==='Class II'?`<span class="risk-class-II">${b.cls}</span>`:`<span class="risk-class-I">${b.cls}</span>`;
+    const statusBadge=b.status==='Active'?'badge-green':b.status==='Out of Service'?'badge-red':'badge-yellow';
+    return `<tr><td><span class="tag">${b.id}</span></td><td><span style="font-weight:600">${b.name}</span></td><td><span class="badge badge-gray">${b.type}</span></td><td><span class="badge badge-blue">${b.ward}</span></td><td>${classEl}</td><td><span class="ff-mono" style="font-size:12px">${b.serial}</span></td><td>${fmtDate(b.nextPM)}</td><td>${fmtDate(b.nextCalib)}</td><td><span class="badge ${statusBadge}">${b.status}</span></td><td><button class="btn btn-secondary btn-sm btn-icon" onclick="showToast('📋 ${b.id}')">📋</button></td></tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PM TABLE
+// ═══════════════════════════════════════════════════════════
+function renderPMTable(){
+  const body=document.getElementById('pm-table-body');if(!body)return;
+  body.innerHTML=PM_DATA.map(p=>{
+    const sb=p.status==='Overdue'?'badge-red':p.status==='Due Soon'?'badge-yellow':p.status==='Done'?'badge-green':'badge-gray';
+    return `<tr><td><span class="tag">${p.id}</span></td><td><div style="font-weight:600">${p.bme}</div><div style="font-size:11px;color:var(--text3)">${p.name}</div></td><td><span class="badge badge-blue">${p.ward}</span></td><td><span class="badge badge-gray">${p.type}</span></td><td style="color:${p.status==='Overdue'?'var(--red)':p.status==='Due Soon'?'var(--yellow)':'var(--text2)'}">${fmtDate(p.due)}</td><td style="font-size:12px">${p.tech}</td><td><span class="badge ${sb}">${p.status}</span></td><td><div class="flex gap-6"><button class="btn btn-success btn-sm" onclick="showToast('✅ PM Complete: ${p.id}')">✅ Done</button><button class="btn btn-secondary btn-sm btn-icon" onclick="showToast('📋 PM Detail: ${p.id}')">📋</button></div></td></tr>`;
+  }).join('');
+
+  const cb=document.getElementById('calib-table-body');if(!cb)return;
+  cb.innerHTML=CALIB_DATA.map(c=>{
+    const sb=c.status==='Overdue'?'badge-red':c.status==='Due Soon'?'badge-yellow':'badge-green';
+    return `<tr><td><span class="tag">${c.bme}</span></td><td style="font-weight:600">${c.name}</td><td><span class="badge badge-blue">${c.ward}</span></td><td style="font-size:12px">${c.calibType}</td><td style="font-size:12px">${c.last}</td><td style="color:${c.status==='Overdue'?'var(--red)':c.status==='Due Soon'?'var(--yellow)':'var(--text2)'}">${c.next}</td><td><span class="tag">${c.ref}</span></td><td><span class="badge ${sb}">${c.status}</span></td><td><button class="btn btn-secondary btn-sm" onclick="openModal('addESTModal')">📎 Record</button></td></tr>`;
+  }).join('');
+}
+
+function switchPMTab(id){
+  document.querySelectorAll('#view-bme-pm .tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#view-bme-pm .tab').forEach(t=>t.classList.remove('active'));
+  const el=document.getElementById(id);if(el)el.classList.add('active');
+  event.target.classList.add('active');
+  if(id==='pm-calendar')renderPMCalendar();
+}
+
+function renderPMCalendar(){
+  const el=document.getElementById('pm-calendar-render');if(!el)return;
+  const months=['พ.ค. 2026','มิ.ย. 2026'];
+  const allPM=[...PM_DATA,...CALIB_DATA.map(c=>({id:'CAL-'+c.bme,bme:c.bme,name:c.name+' (Calibration)',ward:c.ward,due:c.next,status:c.status}))];
+  el.innerHTML=`<div class="card"><div style="font-family:var(--font-display);font-weight:600;margin-bottom:16px">📅 PM & Calibration Due — พ.ค./มิ.ย. 2026</div>${allPM.map(p=>{
+    const sc=p.status==='Overdue'?'var(--red)':p.status==='Due Soon'?'var(--yellow)':'var(--green)';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)"><div style="width:90px;font-size:12px;color:${sc};font-weight:600">${p.due||p.next}</div><div style="flex:1"><span style="font-weight:600;font-size:13px">${p.name||p.id}</span><span class="badge badge-blue" style="margin-left:8px;font-size:10px">${p.ward}</span></div><span class="badge" style="background:transparent;border:1px solid ${sc};color:${sc};font-size:11px">${p.status}</span></div>`;
+  }).join('')}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EST TABLE
+// ═══════════════════════════════════════════════════════════
+function renderESTTable(){
+  const body=document.getElementById('est-table-body');if(!body)return;
+  body.innerHTML=EST_DATA.map(e=>{
+    const sb=e.status==='Overdue'?'badge-red':e.status==='Due Soon'?'badge-yellow':e.status==='Pass'?'badge-green':'badge-gray';
+    const rb=e.result==='Pass'?'badge-green':e.result==='FAIL'?'badge-red':'badge-yellow';
+    const clsEl=e.cls==='Class III'?`<span class="risk-class-III">${e.cls}</span>`:e.cls==='Class II'?`<span class="risk-class-II">${e.cls}</span>`:`<span class="risk-class-I">${e.cls}</span>`;
+    return `<tr style="${e.status==='Overdue'?'background:rgba(239,68,68,0.05)':''}">
+      <td><span class="tag">${e.bme}</span></td>
+      <td style="font-weight:600;color:var(--text)">${e.name}</td>
+      <td><span class="badge badge-blue">${e.ward}</span></td>
+      <td>${clsEl}</td>
+      <td><span class="tag">${e.std}</span></td>
+      <td style="font-size:12px">${e.testDate}</td>
+      <td><span class="badge ${rb}">${e.result}</span></td>
+      <td style="color:${e.status==='Overdue'?'var(--red)':e.status==='Due Soon'?'var(--yellow)':'var(--text2)'}">${e.next}</td>
+      <td><span class="badge ${sb}">${e.status}</span></td>
+      <td><button class="btn btn-pink btn-sm" onclick="openModal('addESTModal')">⚡ Test</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  JCI COMPLIANCE
+// ═══════════════════════════════════════════════════════════
+function switchCompTab(id){
+  document.querySelectorAll('#view-jci-compliance .tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#view-jci-compliance .tab').forEach(t=>t.classList.remove('active'));
+  const el=document.getElementById(id);if(el)el.classList.add('active');
+  event.target.classList.add('active');
+  if(id==='gap-analysis')renderGapChart();
+}
+
+function renderJCIChapters(){
+  const el=document.getElementById('jci-chapters-list');if(!el)return;
+  el.innerHTML=JCI_CHAPTERS.map(c=>{
+    const color=c.score>=90?'var(--green)':c.score>=80?'var(--yellow)':'var(--red)';
+    const sb=c.score>=90?'badge-green':c.score>=80?'badge-yellow':'badge-red';
+    return `<div class="jci-chapter" onclick="showToast('📋 ${c.code}: ${c.title} — รายละเอียด Measurable Elements')">
+      <div class="flex flex-center justify-between">
+        <div>
+          <span class="tag" style="margin-right:8px">${c.code}</span>
+          <span style="font-weight:600;font-size:13px">${c.title}</span>
+          <span class="badge badge-gray" style="margin-left:8px;font-size:10px">${c.area}</span>
+        </div>
+        <div class="flex flex-center gap-12">
+          <div style="font-size:11px;color:var(--text3)">ME: <span style="color:var(--green)">${c.met} ✓</span> <span style="color:var(--yellow)">${c.partial} ~</span> <span style="color:var(--red)">${c.notmet} ✗</span></div>
+          <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:${color};min-width:50px;text-align:right">${c.score}%</div>
+        </div>
+      </div>
+      <div class="compliance-bar mt-8" style="height:4px"><div class="compliance-fill" style="width:${c.score}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderHAChapters(){
+  const el=document.getElementById('ha-chapters-list');if(!el)return;
+  el.innerHTML=HA_CHAPTERS.map(c=>{
+    const color=c.score>=90?'var(--green)':c.score>=80?'var(--yellow)':'var(--red)';
+    return `<div class="jci-chapter" onclick="showToast('📋 HA ${c.code}: ${c.title}')">
+      <div class="flex flex-center justify-between">
+        <div><span class="tag" style="margin-right:8px">${c.code}</span><span style="font-weight:600">${c.title}</span><span class="badge badge-teal" style="margin-left:8px;font-size:10px">${c.area}</span></div>
+        <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:${color}">${c.score}%</div>
+      </div>
+      <div class="compliance-bar mt-8" style="height:4px"><div class="compliance-fill" style="width:${c.score}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderGapAnalysis(){
+  const el=document.getElementById('gap-table-body');if(!el)return;
+  const gaps=JCI_CHAPTERS.filter(c=>c.score<90).sort((a,b)=>a.score-b.score);
+  el.innerHTML=gaps.map(c=>{
+    const gap=90-c.score;
+    const priority=gap>=20?'<span class="badge badge-red">Critical</span>':gap>=10?'<span class="badge badge-orange">High</span>':'<span class="badge badge-yellow">Medium</span>';
+    return `<tr><td><span class="tag">JCI</span></td><td>${c.code} — ${c.title}</td><td style="font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--yellow)">${c.score}%</td><td style="color:var(--red);font-weight:700">-${gap}%</td><td>${priority}</td><td style="font-size:12px;color:var(--text2)">Upload Evidence, Update PM Record, ประชุมทีม</td><td style="font-size:12px;color:var(--text3)">30 มิ.ย. 2026</td></tr>`;
+  }).join('');
+  renderGapChart();
+}
+
+function renderGapChart(){
+  const ctx=document.getElementById('chartGapRadar');if(!ctx)return;
+  if(charts['gap']){charts['gap'].destroy();}
+  charts['gap']=new Chart(ctx,{
+    type:'radar',
+    data:{
+      labels:['FMS.4\nEquipment','FMS.8\nUtility','FMS.9\nEmergency','IPSG.3\nMedication','IPSG.5\nHAI','FMS.4.1\nInventory'],
+      datasets:[
+        {label:'Current Score',data:[82,90,88,87,85,78],backgroundColor:'rgba(59,130,246,0.15)',borderColor:'#3B82F6',borderWidth:2,pointBackgroundColor:'#3B82F6'},
+        {label:'Target (90%)',data:[90,90,90,90,90,90],backgroundColor:'rgba(34,197,94,0.05)',borderColor:'rgba(34,197,94,0.4)',borderWidth:1,borderDash:[5,5],pointRadius:0}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:12}}}},scales:{r:{ticks:{color:'#8B949E',font:{size:10},backdropColor:'transparent'},grid:{color:'rgba(255,255,255,0.1)'},pointLabels:{color:'#8B949E',font:{size:11}},min:60,max:100}}}
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  IPSG
+// ═══════════════════════════════════════════════════════════
+function renderIPSG(){
+  const el=document.getElementById('ipsg-cards');if(!el)return;
+  el.innerHTML=IPSG_DATA.map(g=>{
+    const color=g.score>=90?'var(--green)':g.score>=80?'var(--yellow)':'var(--red)';
+    return `<div class="ipsg-card ${g.status}">
+      <div style="font-size:28px;margin-bottom:8px">${g.icon}</div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:4px">IPSG ${g.num}</div>
+      <div style="font-family:var(--font-display);font-size:15px;font-weight:600;margin-bottom:6px">${g.title}</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">${g.desc}</div>
+      <div class="compliance-bar" style="margin-bottom:6px"><div class="compliance-fill" style="width:${g.score}%;background:${color}"></div></div>
+      <div class="flex flex-center justify-between">
+        <div style="font-family:var(--font-display);font-size:22px;font-weight:700;color:${color}">${g.score}%</div>
+        <span class="badge ${g.status==='done'?'badge-green':g.status==='partial'?'badge-yellow':'badge-red'}">${g.status==='done'?'✅ Compliant':g.status==='partial'?'⚠ Partial':'❌ Gap'}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">📎 ${g.evidence}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FMS
+// ═══════════════════════════════════════════════════════════
+function renderFMSChapters(){
+  const el=document.getElementById('fms-chapters-list');if(!el)return;
+  const fmsCh=[
+    {code:'FMS.4',title:'Medical Equipment Program',score:82,desc:'นโยบาย, ทะเบียน, PM Program, Training'},
+    {code:'FMS.4.1',title:'Medical Equipment Inventory & Classification',score:78,desc:'ทะเบียนอุปกรณ์ครบถ้วน, Risk Classification, Device ID'},
+    {code:'FMS.4.2',title:'Inspection, Testing & Maintenance',score:85,desc:'PM Schedule, Calibration, Maintenance Records'},
+    {code:'FMS.4.3',title:'Medical Equipment Safety Testing',score:80,desc:'Electrical Safety Test (IEC 62353), Pre-use Test'},
+    {code:'FMS.8',title:'Utility Systems Management',score:90,desc:'ระบบสาธารณูปโภคสำหรับสภาพแวดล้อมการดูแลผู้ป่วย'},
+    {code:'FMS.9',title:'Emergency Utilities & Equipment',score:88,desc:'Generator, UPS, Emergency Equipment readiness'},
+    {code:'FMS.11',title:'Fire Safety & Prevention',score:95,desc:'Fire detection, suppression, evacuation plans'},
+  ];
+  el.innerHTML=fmsCh.map(c=>{
+    const color=c.score>=90?'var(--green)':c.score>=80?'var(--yellow)':'var(--red)';
+    return `<div class="jci-chapter" onclick="showToast('📋 ${c.code}: กำลังเปิด Detail...')">
+      <div class="flex flex-center justify-between">
+        <div>
+          <span class="tag" style="margin-right:8px">${c.code}</span>
+          <span style="font-weight:600">${c.title}</span>
+        </div>
+        <div class="flex flex-center gap-12">
+          <div style="width:160px"><div class="compliance-bar"><div class="compliance-fill" style="width:${c.score}%;background:${color}"></div></div></div>
+          <div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:${color};min-width:48px;text-align:right">${c.score}%</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-top:6px">${c.desc}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INCIDENT
+// ═══════════════════════════════════════════════════════════
+let incidents = [...SEED_INCIDENTS];
+function renderIncidentTable(){
+  const body=document.getElementById('incident-table-body');if(!body)return;
+  body.innerHTML=incidents.map(i=>{
+    const sb=i.severity==='Critical'?'badge-red':i.severity==='Major'?'badge-orange':i.severity==='Moderate'?'badge-yellow':'badge-green';
+    const statb=i.status==='Open'?'badge-red':i.status==='Closed'?'badge-green':'badge-yellow';
+    const typeEl=i.type==='Adverse Event'?'<span style="background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.3);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">AE</span>':i.type==='Sentinel Event'?'<span style="background:var(--purple-dim);color:var(--purple);border:1px solid rgba(168,85,247,.3);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">SE</span>':'<span style="background:var(--blue-dim);color:var(--blue);border:1px solid rgba(59,130,246,.3);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">NM</span>';
+    return `<tr>
+      <td><span class="tag">${i.id}</span></td>
+      <td>${typeEl}</td>
+      <td style="font-size:12px">${i.date}</td>
+      <td style="font-size:12px;color:var(--text)">${i.bme}</td>
+      <td><span class="badge badge-blue">${i.ward}</span></td>
+      <td><span class="badge ${sb}">${i.severity}</span></td>
+      <td><span class="badge ${statb}">${i.status}</span></td>
+      <td style="font-size:12px;color:var(--text3)">${i.rcaStatus}</td>
+      <td><div class="flex gap-6"><button class="btn btn-secondary btn-sm btn-icon" onclick="showToast('📋 Incident Detail: ${i.id}')">📋</button><button class="btn btn-secondary btn-sm btn-icon" onclick="openModal('addRCAModal')">🔍</button></div></td>
+    </tr>`;
+  }).join('');
+}
+
+function saveIncident(){
+  const inc={
+    id:`NM-2026-${String(incidents.length+1).padStart(3,'0')}`,
+    type:document.getElementById('inc-type').value,
+    date:new Date().toISOString().slice(0,10),
+    bme:'N/A',ward:document.getElementById('inc-ward').value,
+    severity:document.getElementById('inc-severity').value.split(' — ')[0],
+    status:'Open',rcaStatus:'Pending'
+  };
+  incidents.unshift(inc);
+  closeModal('incidentModal');
+  showToast('🚨 บันทึก Incident Report เรียบร้อย — ID: '+inc.id);
+  if(document.getElementById('view-incident').classList.contains('active'))renderIncidentTable();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RISK MATRIX
+// ═══════════════════════════════════════════════════════════
+function renderRiskMatrix(){
+  const el=document.getElementById('risk-matrix-grid');if(!el)return;
+  const likLabels=['Rare','Unlikely','Possible','Likely','Almost Certain'];
+  const sevLabels=['Negligible','Minor','Moderate','Major','Catastrophic'];
+  const getColor=(l,s)=>{const v=l*s;return v>=15?'#EF4444':v>=9?'#F97316':v>=4?'#EAB308':'#22C55E'};
+  const getBg=(l,s)=>{const v=l*s;return v>=15?'rgba(239,68,68,0.2)':v>=9?'rgba(249,115,22,0.2)':v>=4?'rgba(234,179,8,0.2)':'rgba(34,197,94,0.2)'};
+  let html=`<div style="display:grid;grid-template-columns:60px repeat(5,48px);gap:4px;align-items:center">`;
+  html+=`<div></div>`;
+  sevLabels.forEach(s=>html+=`<div style="font-size:9px;text-align:center;color:var(--text3);font-weight:600">${s}</div>`);
+  for(let l=5;l>=1;l--){
+    html+=`<div style="font-size:9px;color:var(--text3);font-weight:600;text-align:right;padding-right:6px">${likLabels[l-1]}</div>`;
+    for(let s=1;s<=5;s++){
+      const v=l*s;
+      html+=`<div class="risk-matrix-cell" style="background:${getBg(l,s)};color:${getColor(l,s)};border-color:${getColor(l,s)}30" onclick="showToast('Risk Score: ${v} (L${l}×S${s}) — ${v>=15?'Extreme':v>=9?'High':v>=4?'Medium':'Low'} Risk')">${v}</div>`;
+    }
+  }
+  html+=`</div>`;
+  el.innerHTML=html;
+}
+
+function renderCAPATable(){
+  const body=document.getElementById('capa-table-body');if(!body)return;
+  body.innerHTML=SEED_CAPAS.map(c=>{
+    const sb=c.status==='Completed'?'badge-green':c.status==='In Progress'?'badge-yellow':'badge-red';
+    const eb=c.effect==='Effective'?'badge-green':c.effect==='Pending'?'badge-gray':'badge-red';
+    return `<tr><td><span class="tag">${c.id}</span></td><td><span style="font-size:11px;color:var(--text3)">${c.ref}</span></td><td style="font-size:12px;max-width:200px">${c.rc}</td><td style="font-size:12px;max-width:220px">${c.action}</td><td style="font-size:12px">${c.owner}</td><td style="font-size:12px">${c.due}</td><td><span class="badge ${sb}">${c.status}</span></td><td><span class="badge ${eb}">${c.effect}</span></td></tr>`;
+  }).join('');
+}
+
+function renderCAPAChart(){
+  const ctx=document.getElementById('chartCAPA');if(!ctx)return;
+  if(charts['capa']){charts['capa'].destroy();}
+  charts['capa']=new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:['Completed — Effective','In Progress','Pending','Completed — Ineffective'],
+      datasets:[{data:[3,2,1,0],backgroundColor:['#22C55E','#EAB308','#EF4444','#F97316'],borderWidth:0}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8B949E',font:{size:12}}}}}
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LIFECYCLE
+// ═══════════════════════════════════════════════════════════
+function populateBMESelect(){
+  const sel=document.getElementById('bme-lc-select');if(!sel)return;
+  sel.innerHTML='<option value="">-- เลือกอุปกรณ์การแพทย์ --</option>'+
+    bmeData.map(b=>`<option value="${b.id}">${b.id} — ${b.name} (${b.ward})</option>`).join('');
+}
+
+function loadBMELifecycle(id){
+  if(!id){
+    document.getElementById('bme-lc-bar').innerHTML='';
+    document.getElementById('health-val').textContent='—';
+    document.getElementById('health-bar').style.width='0%';
+    document.getElementById('bme-lc-detail').innerHTML='<div class="card" style="text-align:center;padding:40px;color:var(--text3)"><div style="font-size:32px;margin-bottom:12px">🔬</div><div>เลือกอุปกรณ์การแพทย์เพื่อดู Lifecycle Detail</div></div>';
+    return;
+  }
+  const bme=bmeData.find(b=>b.id===id);if(!bme)return;
+  const stages=['Planning','Incoming Insp.','Operation','PM & Calib.','Repair/Upgrade','Disposal'];
+  const stageColors=['green','green','green','yellow','gray','gray'];
+  const stageIdx=bme.status==='Active'?3:bme.status==='Under Repair'?4:bme.status==='Out of Service'?4:2;
+  document.getElementById('bme-lc-bar').innerHTML=stages.map((s,i)=>{
+    const c=i<=stageIdx?i===stageIdx?'yellow':'green':'gray';
+    return `<div class="lc-step ${c}" style="flex:1;padding:10px 6px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;border:1px solid rgba(255,255,255,0.05)" onclick="showToast('${s}: Stage Detail')">${s}</div>`;
+  }).join('');
+
+  // Health Score
+  const pm=Math.max(0,Math.min(100,100-Math.max(0,daysDiff(bme.nextPM)/-1)));
+  const health = bme.status==='Active'?Math.floor(75+Math.random()*20):bme.status==='Under Repair'?Math.floor(30+Math.random()*20):50;
+  const hc=health>=75?'var(--green)':health>=50?'var(--yellow)':'var(--red)';
+  document.getElementById('health-val').textContent=health+'%';
+  document.getElementById('health-val').style.color=hc;
+  document.getElementById('health-bar').style.width=health+'%';
+  document.getElementById('health-bar').style.background=hc;
+
+  // Detail
+  document.getElementById('bme-lc-detail').innerHTML=`
+  <div class="grid-2">
+    <div class="card-sm">
+      <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">📋 Device Information</div>
+      <div class="metric-row"><span class="text-muted">BME ID</span><span class="tag">${bme.id}</span></div>
+      <div class="metric-row"><span class="text-muted">ชื่ออุปกรณ์</span><span style="font-weight:600">${bme.name}</span></div>
+      <div class="metric-row"><span class="text-muted">Manufacturer</span><span>${bme.mfr}</span></div>
+      <div class="metric-row"><span class="text-muted">Serial No.</span><span class="ff-mono" style="font-size:12px">${bme.serial}</span></div>
+      <div class="metric-row"><span class="text-muted">Ward</span><span class="badge badge-blue">${bme.ward}</span></div>
+      <div class="metric-row"><span class="text-muted">Risk Class</span><span class="${bme.cls==='Class III'?'risk-class-III':bme.cls==='Class II'?'risk-class-II':'risk-class-I'}">${bme.cls}</span></div>
+      <div class="metric-row"><span class="text-muted">สถานะ</span><span class="badge ${bme.status==='Active'?'badge-green':bme.status==='Out of Service'?'badge-red':'badge-yellow'}">${bme.status}</span></div>
+    </div>
+    <div class="card-sm">
+      <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">⚙ Maintenance History</div>
+      <div class="biotrack-step">
+        <div class="biotrack-dot" style="background:var(--green-dim);color:var(--green);border:2px solid var(--green)">✓</div>
+        <div><div style="font-weight:600;font-size:13px">Incoming Inspection</div><div style="font-size:11px;color:var(--text3)">ผ่าน Acceptance Test — รับมอบอุปกรณ์</div></div>
+      </div>
+      <div class="biotrack-step">
+        <div class="biotrack-dot" style="background:var(--green-dim);color:var(--green);border:2px solid var(--green)">✓</div>
+        <div><div style="font-weight:600;font-size:13px">Performance Verification</div><div style="font-size:11px;color:var(--text3)">ตรวจสอบประสิทธิภาพก่อนใช้งาน</div></div>
+      </div>
+      <div class="biotrack-step">
+        <div class="biotrack-dot" style="background:${daysDiff(bme.nextPM)<0?'var(--red-dim)':'var(--yellow-dim)'};color:${daysDiff(bme.nextPM)<0?'var(--red)':'var(--yellow)'};border:2px solid ${daysDiff(bme.nextPM)<0?'var(--red)':'var(--yellow)'}">PM</div>
+        <div><div style="font-weight:600;font-size:13px">Preventive Maintenance</div><div style="font-size:11px;color:var(--text3)">Next PM: <span style="color:${daysDiff(bme.nextPM)<0?'var(--red)':'var(--yellow)'}">${bme.nextPM}</span></div></div>
+      </div>
+      <div class="biotrack-step">
+        <div class="biotrack-dot" style="background:${daysDiff(bme.nextCalib)<0?'var(--red-dim)':'var(--blue-dim)'};color:${daysDiff(bme.nextCalib)<0?'var(--red)':'var(--blue)'};border:2px solid ${daysDiff(bme.nextCalib)<0?'var(--red)':'var(--blue)'}">⊕</div>
+        <div><div style="font-weight:600;font-size:13px">Calibration</div><div style="font-size:11px;color:var(--text3)">Next: <span style="color:${daysDiff(bme.nextCalib)<0?'var(--red)':'var(--blue)'}">${bme.nextCalib}</span></div></div>
+      </div>
+      <div class="biotrack-step" style="border-bottom:none">
+        <div class="biotrack-dot" style="background:${bme.estStatus==='Overdue'?'var(--red-dim)':'var(--purple-dim)'};color:${bme.estStatus==='Overdue'?'var(--red)':'var(--purple)'};border:2px solid ${bme.estStatus==='Overdue'?'var(--red)':'var(--purple)'}">⚡</div>
+        <div><div style="font-weight:600;font-size:13px">Electrical Safety Test</div><div style="font-size:11px;color:var(--text3)">EST Due: ${bme.estDue} — <span style="color:${bme.estStatus==='Overdue'?'var(--red)':'var(--green)'}">${bme.estStatus}</span></div></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RCA
+// ═══════════════════════════════════════════════════════════
+function renderRCAList(){
+  const el=document.getElementById('rca-list');if(!el)return;
+  el.innerHTML=RCA_DATA.map(r=>{
+    const sb=r.status==='Completed'?'badge-green':r.status==='In-progress'?'badge-yellow':'badge-red';
+    return `<div class="card mb-16">
+      <div class="flex flex-center justify-between mb-12">
+        <div>
+          <span class="tag" style="margin-right:8px">${r.id}</span>
+          <span style="font-weight:600;font-size:15px">${r.title}</span>
+        </div>
+        <div class="flex flex-center gap-8">
+          <span class="badge badge-gray">${r.method}</span>
+          <span class="badge ${sb}">${r.status}</span>
+        </div>
+      </div>
+      <div class="flex flex-center justify-between mb-12 text-muted" style="font-size:12px">
+        <span>📋 Ref: ${r.ref}</span><span>👤 ${r.assignee}</span><span>📅 Due: ${r.dueDate}</span>
+      </div>
+      <div style="background:var(--bg3);border-radius:var(--radius);padding:14px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:10px">5 WHY ANALYSIS</div>
+        ${[r.why1,r.why2,r.why3,r.why4,r.why5].map((w,i)=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)"><div style="min-width:28px;height:24px;background:var(--orange-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--orange)">W${i+1}</div><div style="font-size:13px;color:var(--text)">${w}</div></div>`).join('')}
+      </div>
+      <div class="flex gap-8 mt-12">
+        <button class="btn btn-secondary btn-sm" onclick="showToast('📋 Fishbone Diagram: ${r.id}')">🔍 Fishbone</button>
+        <button class="btn btn-blue btn-sm" onclick="openModal('addCAPAModal')">📋 CAPA</button>
+        <button class="btn btn-success btn-sm btn-sm" onclick="showToast('✅ Close RCA: ${r.id}')">✅ Close</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BME SAVE
+// ═══════════════════════════════════════════════════════════
+function saveBME(){
+  const id=document.getElementById('bme-id').value||'BME-???';
+  const name=document.getElementById('bme-name').value||'Unknown Device';
+  bmeData.unshift({id,name,type:document.getElementById('bme-type').value,cls:document.getElementById('bme-class').value.split(' — ')[0],ward:document.getElementById('bme-ward').value,serial:'NEW-'+Date.now(),mfr:document.getElementById('bme-mfr').value||'N/A',nextPM:'2026-08-01',nextCalib:'2026-11-01',status:document.getElementById('bme-status').value,cost:parseInt(document.getElementById('bme-cost').value)||0,estStatus:'Due',estDue:'2027-01-01'});
+  closeModal('addBMEModal');
+  showToast('✅ บันทึกอุปกรณ์ '+id+' — '+name+' เรียบร้อย');
+}
+function exportBME(){showToast('⬇ กำลัง Export ทะเบียน BME → Excel...')}
+function exportCompliance(){showToast('⬇ กำลัง Export Compliance Report → PDF...')}
+function exportIncidents(){showToast('⬇ กำลัง Export Incident Report → Excel...')}
+
+// ═══════════════════════════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════════════════════════
+function openModal(id){const m=document.getElementById(id);if(m)m.classList.add('open')}
+function closeModal(id){const m=document.getElementById(id);if(m)m.classList.remove('open')}
+document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')})});
+
+function switchBMETab(id){
+  document.querySelectorAll('#addBMEModal .tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#addBMEModal .tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════════════════
+function daysDiff(dateStr){
+  if(!dateStr)return 999;
+  const d=new Date(dateStr),n=new Date();
+  n.setHours(0,0,0,0);d.setHours(0,0,0,0);
+  return Math.round((d-n)/86400000);
+}
+function fmtDate(s){
+  if(!s)return '—';
+  const d=new Date(s);
+  const m=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return d.getDate()+' '+m[d.getMonth()]+' '+(d.getFullYear()+543);
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.opacity='1';t.style.transform='translateY(0)';
+  setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(10px)'},3000);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  NAVIGATION — BACK TO PLATFORM
+// ═══════════════════════════════════════════════════════════
+function goBackPlatform() {
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;display:flex;align-items:center;justify-content:center';
+    overlay.innerHTML = `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 32px;width:420px;max-width:95vw">
+        <div style="font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:8px">← กลับ iMATOMs Platform</div>
+        <div style="font-size:13px;color:var(--text3);margin-bottom:20px">
+          เปิด Healthcare Module โดยตรง — ไม่มีประวัติการนำทาง<br>กรุณาเลือกวิธีกลับ Platform:
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button onclick="window.location.href='TKO_iMATOMs_Tech_v1_0.html'" class="btn btn-primary" style="justify-content:center">
+            📂 เปิดไฟล์ในโฟลเดอร์เดียวกัน
+          </button>
+          <button onclick="document.getElementById('_pfInput').click()" class="btn btn-secondary" style="justify-content:center">
+            🗂 เลือกไฟล์ Platform (.html)
+          </button>
+          <input id="_pfInput" type="file" accept=".html" style="display:none" onchange="(function(f){if(f.files[0])window.location.href=URL.createObjectURL(f.files[0])})(this)">
+          <button onclick="this.closest('[style*=fixed]').remove()" class="btn btn-secondary" style="justify-content:center;color:var(--text3)">
+            ✕ ยกเลิก
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  }
+}
+
+// Clock
+setInterval(()=>{
+  const now=new Date();
+  document.getElementById('clock').textContent=now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+},1000);
+
+// Init
+renderDashboardCharts();
+renderJCIScoreBars();
+
+// Set default datetime
+document.querySelectorAll('input[type="datetime-local"]').forEach(el=>{
+  const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  el.value=now.toISOString().slice(0,16);
+});
+document.querySelectorAll('input[type="date"]').forEach(el=>{
+  if(!el.value)el.value=new Date().toISOString().slice(0,10);
+});
+</script>
+</body>
+</html>
