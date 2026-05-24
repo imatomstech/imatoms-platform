@@ -598,7 +598,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     </div>
 
     <!-- MODULE FRAME (New Tab approach - works with local file://) -->
-    <div id="view-modframe" class="view" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 60px)">
+    <div id="view-modframe" class="view" style="padding:0;display:flex;flex-direction:column">
       <!-- Topbar -->
       <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0">
         <button class="btn btn-secondary btn-sm" onclick="closeModFrame()">← กลับ Module Hub</button>
@@ -616,7 +616,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
         <div style="font-family:var(--font-display);font-size:13px">กำลังโหลด Module...</div>
       </div>
       <!-- iframe - full height -->
-      <iframe id="mod-iframe" src="" style="flex:1;border:none;width:100%;display:none"></iframe>
+      <iframe id="mod-iframe" src="" style="border:none;width:100%;height:calc(100vh - 110px);display:none" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
       <!-- Hidden compatibility elements -->
       <span id="mf-card-icon" style="display:none"></span>
       <span id="mf-card-name" style="display:none"></span>
@@ -2851,22 +2851,32 @@ function loadModIframe(f){
   const iframe=document.getElementById('mod-iframe');
   const loading=document.getElementById('mf-loading');
   if(!iframe)return;
-  // Show loading
   iframe.style.display='none';
   if(loading) loading.style.display='flex';
-  // Load iframe
   iframe.src='';
   setTimeout(()=>{
     iframe.src=f;
-    iframe.onload=()=>{
-      if(loading) loading.style.display='none';
-      iframe.style.display='block';
-    };
-    iframe.onerror=()=>{
-      if(loading){
-        loading.innerHTML=`<div style="text-align:center"><div style="font-size:36px;margin-bottom:12px">⚠</div><div style="font-family:var(--font-display);font-size:13px;color:var(--red)">ไม่พบไฟล์ ${f}</div><div style="font-size:11px;color:var(--text3);margin-top:8px">ตรวจสอบว่าไฟล์อยู่ใน Repository เดียวกัน</div></div>`;
+    // Use polling to detect load (more reliable than onload for cross-origin)
+    let attempts=0;
+    const check=setInterval(()=>{
+      attempts++;
+      try{
+        // Try to access contentDocument (works for same-origin)
+        if(iframe.contentDocument&&iframe.contentDocument.readyState==='complete'){
+          clearInterval(check);
+          if(loading) loading.style.display='none';
+          iframe.style.display='block';
+        }
+      }catch(e){
+        // Cross-origin - just show after 2s
+        if(attempts>20){
+          clearInterval(check);
+          if(loading) loading.style.display='none';
+          iframe.style.display='block';
+        }
       }
-    };
+      if(attempts>40) clearInterval(check); // timeout 4s
+    },100);
   },100);
 }
 
