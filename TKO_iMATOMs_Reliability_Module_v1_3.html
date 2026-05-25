@@ -219,25 +219,19 @@ select.form-control option{background:var(--bg3)}
 .logout-btn:hover{background:var(--red-dim)}
 
 /* ═══ EMBEDDED MODE ═══ */
-body.embedded #sidebar,
-body.embedded .sidebar,
-body.embedded nav,
-body.embedded #topbar,
-body.embedded .topbar,
-body.embedded .top-bar { display:none !important; }
+body.embedded #sidebar { display:none !important; }
+body.embedded #topbar  { display:none !important; }
 
-body.embedded #main-content,
-body.embedded .main-content,
-body.embedded main,
-body.embedded #content,
-body.embedded .content,
-body.embedded #app,
-body.embedded .app-content { 
+/* Remove sidebar margin from main wrapper */
+body.embedded #main {
   margin-left: 0 !important;
-  margin-top: 0 !important;
-  padding-top: 4px !important;
+  padding-top: 0 !important;
   width: 100% !important;
-  max-width: 100% !important;
+}
+
+/* Tighten content padding */
+body.embedded #content {
+  padding: 12px 16px !important;
 }
 </style>
 </head>
