@@ -626,24 +626,10 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     </div>
 
 
-    <!-- RELIABILITY FRAME - Seamless iframe for full Reliability Module -->
-    <div id="view-rel-frame" class="view" style="padding:0;display:flex;flex-direction:column">
-      <!-- Thin nav bar -->
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--bg2);border-bottom:1px solid rgba(249,115,22,.3);flex-shrink:0">
-        <span style="font-size:12px;color:var(--orange);font-family:var(--font-display);font-weight:700;letter-spacing:.5px">🔧 RELIABILITY MODULE</span>
-        <span id="rel-frame-label" style="font-size:11px;color:var(--text3);font-family:var(--font-display)"></span>
-        <div style="margin-left:auto;display:flex;gap:6px">
-          <button class="btn btn-secondary btn-xs" onclick="reloadRelFrame()">↻</button>
-          <button class="btn btn-xs" style="background:var(--orange);color:#fff" onclick="window.open('TKO_iMATOMs_Reliability_Module_v1_3.html','_blank')">⬡ Full</button>
-        </div>
-      </div>
-      <!-- Loading -->
-      <div id="rel-loading" style="display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:10px;color:var(--text3)">
-        <div style="font-size:36px;animation:fpcritpulse 1s infinite">🔧</div>
-        <div style="font-family:var(--font-display);font-size:12px">กำลังโหลด Reliability Module...</div>
-      </div>
-      <!-- iframe -->
-      <iframe id="rel-iframe" src="" style="border:none;width:100%;height:calc(100vh - 96px);display:none"
+    <!-- RELIABILITY FRAME - Seamless, no padding, flush left -->
+    <div id="view-rel-frame" class="view" style="padding:0;display:flex;flex-direction:column;overflow:hidden">
+      <!-- iframe - full height, flush left -->
+      <iframe id="rel-iframe" src="" style="border:none;width:100%;flex:1;height:calc(100vh - 60px)"
         sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
     </div>
 
@@ -2108,53 +2094,25 @@ function openReliabilityView(viewName){
 
 function loadRelFrame(viewName){
   const iframe=document.getElementById('rel-iframe');
-  const loading=document.getElementById('rel-loading');
   if(!iframe)return;
-  iframe.style.display='none';
-  if(loading)loading.style.display='flex';
   const relFile='TKO_iMATOMs_Reliability_Module_v1_3.html';
-  // Only reload if not already loaded
-  const alreadyLoaded=iframe.src.includes(relFile);
-  if(alreadyLoaded){
-    // Already loaded - just show
-    if(loading)loading.style.display='none';
-    iframe.style.display='block';
-    // Navigate within already-loaded iframe via postMessage
-    try{
-      iframe.contentWindow.postMessage({type:'imatoms-nav',view:viewName||'dashboard'},'*');
-    }catch(e){}
-    if(loading)loading.style.display='none';
-    iframe.style.display='block';
+  if(iframe.src.includes(relFile)){
+    // Already loaded — navigate via postMessage
+    try{ iframe.contentWindow.postMessage({type:'imatoms-nav',view:viewName||'dashboard'},'*'); }catch(e){}
     return;
   }
+  // First load
   iframe.src=relFile+'?embedded=true';
-  let attempts=0;
-  const check=setInterval(()=>{
-    attempts++;
-    try{
-      if(iframe.contentDocument&&iframe.contentDocument.readyState==='complete'){
-        clearInterval(check);
-        if(loading)loading.style.display='none';
-        iframe.style.display='block';
-        // Navigate to specific view via postMessage
-        try{
-          iframe.contentWindow.postMessage({type:'imatoms-nav',view:viewName||'dashboard'},'*');
-        }catch(e){}
-      }
-    }catch(e){
-      if(attempts>25){
-        clearInterval(check);
-        if(loading)loading.style.display='none';
-        iframe.style.display='block';
-      }
-    }
-    if(attempts>50)clearInterval(check);
-  },100);
+  iframe.onload=()=>{
+    setTimeout(()=>{
+      try{ iframe.contentWindow.postMessage({type:'imatoms-nav',view:viewName||'dashboard'},'*'); }catch(e){}
+    },300);
+  };
 }
 
 function reloadRelFrame(){
   const iframe=document.getElementById('rel-iframe');
-  if(iframe){iframe.src='';setTimeout(()=>loadRelFrame('dashboard'),100);}
+  if(iframe){iframe.src='';setTimeout(()=>loadRelFrame('workrequest'),100);}
 }
 
 
