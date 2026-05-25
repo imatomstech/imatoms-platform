@@ -2913,9 +2913,7 @@ function initClock(){setInterval(()=>{const n=new Date();document.getElementById
 
 // ══ MODULE HUB (filtered by Business Group) ══
 const ALL_MODULES = [
-  {bg:'ALL', icon:'🔧', color:'#F97316', dimColor:'rgba(249,115,22,.08)', borderColor:'rgba(249,115,22,.3)',
-   label:'RELIABILITY', name:'Reliability Module', desc:'Asset Life Cycle · WR · PPM · MTTR · MTTF · Availability · Maintainability',
-   file:'TKO_iMATOMs_Reliability_Module_v1_3.html', isReliability:true},
+
   {bg:'Healthcare', icon:'🏥', color:'#EC4899', dimColor:'rgba(236,72,153,.08)', borderColor:'rgba(236,72,153,.3)',
    label:'HEALTHCARE', name:'โรงพยาบาล / Lab', desc:'Medical Equipment · JCI/HA · Biomedical · IPSG · EST',
    file:'TKO_iMATOMs_Healthcare_Module_v1_0.html'},
@@ -3320,15 +3318,22 @@ function showAssetStatusModal(id){
     return`<span style="font-size:9px;font-weight:700;color:${c};font-family:var(--font-display);padding:2px 6px;border:1px solid ${c};border-radius:4px">${w.status.toUpperCase()}</span>`;
   };
   document.getElementById('asd-wr-list').innerHTML=openWRs.length?openWRs.map(w=>`
-    <div style="background:var(--bg3);border:1px solid ${w.priority==='critical'?'rgba(239,68,68,.4)':'var(--border)'};border-radius:var(--radius-lg);padding:12px;display:flex;align-items:flex-start;gap:10px">
-      <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-          <span style="font-family:var(--font-mono);font-size:10px;color:var(--orange)">${w.id}</span>
-          ${statusBadge(w)}
-          ${w.priority==='critical'?'<span style="font-size:9px;background:#EF444422;color:#EF4444;padding:1px 5px;border-radius:4px;font-family:var(--font-display);font-weight:700">CRITICAL</span>':''}
+    <div style="background:var(--bg3);border:1px solid ${w.priority==='critical'?'rgba(239,68,68,.4)':'var(--border)'};border-radius:var(--radius-lg);padding:12px">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--orange)">${w.id}</span>
+            ${statusBadge(w)}
+            ${w.priority==='critical'?'<span style="font-size:9px;background:#EF444422;color:#EF4444;padding:1px 5px;border-radius:4px;font-family:var(--font-display);font-weight:700">CRITICAL</span>':''}
+          </div>
+          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px">${w.desc?.substring(0,60)||'—'}</div>
+          <div style="font-size:10px;color:var(--text3)">ผู้แจ้ง: ${w.reporter||'—'} · ${w.date?new Date(w.date).toLocaleDateString('th-TH'):'—'}</div>
         </div>
-        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px">${w.desc?.substring(0,60)||'—'}</div>
-        <div style="font-size:10px;color:var(--text3)">ผู้แจ้ง: ${w.reporter||'—'} · ${w.date?new Date(w.date).toLocaleDateString('th-TH'):'—'}</div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-success btn-xs" onclick="wrQuickAction('${w.id}','closed')">✅ ปิดงาน</button>
+        <button class="btn btn-blue btn-xs" onclick="wrQuickAction('${w.id}','inprogress')">🔄 กำลังซ่อม</button>
+        <button class="btn btn-secondary btn-xs" onclick="wrOpenDetail('${w.id}')">📋 รายละเอียด</button>
       </div>
     </div>`).join(''):'<div style="text-align:center;padding:24px;color:var(--green);font-size:13px">✅ ไม่มี WR ค้างอยู่</div>';
 
@@ -3398,12 +3403,18 @@ function asdGoTo(view){
   closeModal('m-asset-status');
   const viewMap={workrequest:'workrequest',operation:'operation',ppm:'ppm',contract:'contract',ma:'contract'};
   const target=viewMap[view]||view;
-  // showView handles accordion via accMap automatically
   showView(target);
   setTimeout(()=>{
-    // Filter by asset ID in search box
     const si=document.querySelector('#view-'+target+' .si');
-    if(si&&_asdAssetId){ si.value=_asdAssetId; si.dispatchEvent(new Event('input')); }
+    if(si&&_asdAssetId){
+      si.value=_asdAssetId;
+      si.dispatchEvent(new Event('input'));
+    }
+    // Scroll to first matching row and highlight
+    setTimeout(()=>{
+      const firstRow=document.querySelector('#view-'+target+' tbody tr');
+      if(firstRow) firstRow.scrollIntoView({behavior:'smooth',block:'center'});
+    },300);
   },200);
 }
 
@@ -3414,6 +3425,46 @@ function asdNewWR(){
     const sel=document.getElementById('wri-as');
     if(sel) sel.value=_asdAssetId;
     openModal('m-wr');
+  },200);
+}
+
+
+// ══ WR QUICK ACTIONS from Building Critical Status ══
+function wrQuickAction(wrId, newStatus){
+  const wrList=DB.get('wr',[]);
+  const wr=wrList.find(w=>w.id===wrId);
+  if(!wr)return;
+  const oldStatus=wr.status;
+  wr.status=newStatus;
+  if(newStatus==='closed'){
+    wr.closedDate=new Date().toISOString();
+    if(!wr.mttr&&wr.acceptTime){
+      const hrs=(Date.now()-new Date(wr.acceptTime))/3600000;
+      wr.mttr=Math.round(hrs*10)/10;
+    }
+  }
+  if(newStatus==='inprogress'&&!wr.acceptTime){
+    wr.acceptTime=new Date().toISOString();
+    wr.assign=wr.assign||CU?.name||'—';
+  }
+  DB.set('wr',wrList);
+  WR=wrList;
+  const labels={closed:'✅ ปิดงานแล้ว',inprogress:'🔄 อัปเดตเป็น In Progress'};
+  showToast(labels[newStatus]+': '+wrId);
+  addNotif({type:newStatus==='closed'?'success':'info',
+    title:labels[newStatus],
+    body:wrId+' — '+wr.desc?.substring(0,40),
+    time:new Date().toISOString()});
+  // Refresh modal
+  if(_asdAssetId) showAssetStatusModal(_asdAssetId);
+}
+
+function wrOpenDetail(wrId){
+  closeModal('m-asset-status');
+  showView('workrequest');
+  setTimeout(()=>{
+    const si=document.querySelector('#view-workrequest .si');
+    if(si){si.value=wrId;si.dispatchEvent(new Event('input'));}
   },200);
 }
 
