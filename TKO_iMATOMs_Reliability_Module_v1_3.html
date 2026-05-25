@@ -217,6 +217,19 @@ select.form-control option{background:var(--bg3)}
 .user-role-txt{font-size:10px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .logout-btn{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius);cursor:pointer;font-size:12px;color:var(--red);margin-bottom:6px;transition:all .15s}
 .logout-btn:hover{background:var(--red-dim)}
+
+/* ═══ EMBEDDED MODE (hide sidebar + topbar when loaded in iframe) ═══ */
+body.embedded #sidebar { display:none !important; }
+body.embedded #topbar  { display:none !important; }
+body.embedded #main-content {
+  margin-left: 0 !important;
+  padding-top: 0 !important;
+  width: 100% !important;
+}
+body.embedded .content-area {
+  margin-left: 0 !important;
+  width: 100% !important;
+}
 </style>
 </head>
 <body>
@@ -4793,6 +4806,21 @@ document.querySelectorAll('input[type="datetime-local"]').forEach(el => {
   const now = new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
   el.value = now.toISOString().slice(0,16);
 });
+
+// ═══ EMBEDDED MODE ═══
+(function(){
+  if(window.location.search.includes('embedded=true') || 
+     window.self !== window.top){
+    document.body.classList.add('embedded');
+  }
+  // Listen for navigation commands from parent
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type === 'imatoms-nav' && e.data.view){
+      if(typeof showView === 'function') showView(e.data.view);
+    }
+  });
+})();
+
 </script>
 </body>
 </html>

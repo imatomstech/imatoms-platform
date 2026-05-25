@@ -2113,21 +2113,21 @@ function loadRelFrame(viewName){
   iframe.style.display='none';
   if(loading)loading.style.display='flex';
   const relFile='TKO_iMATOMs_Reliability_Module_v1_3.html';
-  const url=relFile+(viewName?'#'+viewName:'');
-  // Only reload if different view
-  if(iframe.src.endsWith(relFile)||iframe.src.endsWith(viewName||'')){
+  // Only reload if not already loaded
+  const alreadyLoaded=iframe.src.includes(relFile);
+  if(alreadyLoaded){
     // Already loaded - just show
     if(loading)loading.style.display='none';
     iframe.style.display='block';
-    // Try to navigate within iframe
+    // Navigate within already-loaded iframe via postMessage
     try{
-      if(iframe.contentWindow&&iframe.contentWindow.showView){
-        iframe.contentWindow.showView(viewName||'dashboard');
-      }
+      iframe.contentWindow.postMessage({type:'imatoms-nav',view:viewName||'dashboard'},'*');
     }catch(e){}
+    if(loading)loading.style.display='none';
+    iframe.style.display='block';
     return;
   }
-  iframe.src=relFile;
+  iframe.src=relFile+'?embedded=true';
   let attempts=0;
   const check=setInterval(()=>{
     attempts++;
@@ -2136,11 +2136,9 @@ function loadRelFrame(viewName){
         clearInterval(check);
         if(loading)loading.style.display='none';
         iframe.style.display='block';
-        // Navigate to specific view in iframe
+        // Navigate to specific view via postMessage
         try{
-          if(iframe.contentWindow?.showView){
-            setTimeout(()=>iframe.contentWindow.showView(viewName||'dashboard'),100);
-          }
+          iframe.contentWindow.postMessage({type:'imatoms-nav',view:viewName||'dashboard'},'*');
         }catch(e){}
       }
     }catch(e){
