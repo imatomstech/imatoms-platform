@@ -625,6 +625,28 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       <div id="mf-admin-guide" style="display:none"></div>
     </div>
 
+
+    <!-- RELIABILITY FRAME - Seamless iframe for full Reliability Module -->
+    <div id="view-rel-frame" class="view" style="padding:0;display:flex;flex-direction:column">
+      <!-- Thin nav bar -->
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--bg2);border-bottom:1px solid rgba(249,115,22,.3);flex-shrink:0">
+        <span style="font-size:12px;color:var(--orange);font-family:var(--font-display);font-weight:700;letter-spacing:.5px">🔧 RELIABILITY MODULE</span>
+        <span id="rel-frame-label" style="font-size:11px;color:var(--text3);font-family:var(--font-display)"></span>
+        <div style="margin-left:auto;display:flex;gap:6px">
+          <button class="btn btn-secondary btn-xs" onclick="reloadRelFrame()">↻</button>
+          <button class="btn btn-xs" style="background:var(--orange);color:#fff" onclick="window.open('TKO_iMATOMs_Reliability_Module_v1_3.html','_blank')">⬡ Full</button>
+        </div>
+      </div>
+      <!-- Loading -->
+      <div id="rel-loading" style="display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:10px;color:var(--text3)">
+        <div style="font-size:36px;animation:fpcritpulse 1s infinite">🔧</div>
+        <div style="font-family:var(--font-display);font-size:12px">กำลังโหลด Reliability Module...</div>
+      </div>
+      <!-- iframe -->
+      <iframe id="rel-iframe" src="" style="border:none;width:100%;height:calc(100vh - 96px);display:none"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
+    </div>
+
     <!-- MODULE HUB -->
     <div id="view-modules" class="view">
       <div class="sh" id="hub-header">
@@ -2061,50 +2083,80 @@ function getReliabilityFile(){
 }
 
 function openReliabilityView(viewName){
-  // Show modframe view with eNGINNo
-  showView('modframe');
-  const RFILE=getReliabilityFile();
-  _curModFile = RFILE;
-
-  const viewLabels = {
-    assets:'ทะเบียนสินทรัพย์',
-    lifecycle:'Lifecycle Tracker',
-    qrcode:'QR Code Assets',
-    inspection:'ตรวจสอบประจำปี',
-    valuation:'Value Add / มูลค่า',
-    workrequest:'Work Request (WR)',
-    operation:'Operation (OPT)',
-    ppm:'Preventive Maint. (PPM)',
-    contract:'MA Contract',
-    inventory:'Inventory (คลังวัสดุ)',
+  const labels={
+    assets:'ทะเบียนสินทรัพย์',lifecycle:'Lifecycle Tracker',
+    qrcode:'QR Code Assets',inspection:'ตรวจสอบประจำปี',
+    valuation:'Value Add / มูลค่า',workrequest:'Work Request (WR)',
+    operation:'Operation (OPT)',ppm:'Preventive Maint. (PPM)',
+    contract:'MA Contract',inventory:'Inventory (คลังวัสดุ)',
   };
-
-  const label = viewLabels[viewName] || viewName;
-  document.getElementById('mf-icon').textContent = '🔧';
-  document.getElementById('mf-name').textContent = 'Reliability — ' + label;
-  document.getElementById('mf-file').textContent = RFILE;
-  document.getElementById('mf-card-icon').textContent = '🔧';
-  document.getElementById('mf-card-name').textContent = 'Reliability · ' + label;
-  document.getElementById('mf-card-desc').textContent = 
-    'Asset Life Cycle · Work Request · PPM · MTTR · MTTF · Availability · Maintainability · Reliability';
-  document.getElementById('mf-step-file').textContent = RFILE;
-
+  // Show rel-frame view
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-rel-frame')?.classList.add('active');
+  document.querySelectorAll('.ni,.no').forEach(n=>n.classList.remove('active'));
+  const ni=document.getElementById('nav-'+viewName);
+  if(ni) ni.classList.add('active');
   // Update topbar
-  document.getElementById('tb-t').textContent = '🔧 Reliability — ' + label;
-  document.getElementById('tb-b').textContent = 'iMATOMs System › Reliability › ' + label;
+  const lbl=labels[viewName]||viewName;
+  document.getElementById('tb-t').textContent='🔧 Reliability — '+lbl;
+  document.getElementById('tb-b').textContent='iMATOMs System › Reliability › '+lbl;
+  const rl=document.getElementById('rel-frame-label');
+  if(rl) rl.textContent='› '+lbl;
+  // Load iframe with hash
+  loadRelFrame(viewName);
+}
 
-  // Admin guide visibility
-  const mg = document.getElementById('mf-admin-guide');
-  if(mg) mg.style.display = (CU?.role === 'admin') ? 'block' : 'none';
+function loadRelFrame(viewName){
+  const iframe=document.getElementById('rel-iframe');
+  const loading=document.getElementById('rel-loading');
+  if(!iframe)return;
+  iframe.style.display='none';
+  if(loading)loading.style.display='flex';
+  const relFile='TKO_iMATOMs_Reliability_Module_v1_3.html';
+  const url=relFile+(viewName?'#'+viewName:'');
+  // Only reload if different view
+  if(iframe.src.endsWith(relFile)||iframe.src.endsWith(viewName||'')){
+    // Already loaded - just show
+    if(loading)loading.style.display='none';
+    iframe.style.display='block';
+    // Try to navigate within iframe
+    try{
+      if(iframe.contentWindow&&iframe.contentWindow.showView){
+        iframe.contentWindow.showView(viewName||'dashboard');
+      }
+    }catch(e){}
+    return;
+  }
+  iframe.src=relFile;
+  let attempts=0;
+  const check=setInterval(()=>{
+    attempts++;
+    try{
+      if(iframe.contentDocument&&iframe.contentDocument.readyState==='complete'){
+        clearInterval(check);
+        if(loading)loading.style.display='none';
+        iframe.style.display='block';
+        // Navigate to specific view in iframe
+        try{
+          if(iframe.contentWindow?.showView){
+            setTimeout(()=>iframe.contentWindow.showView(viewName||'dashboard'),100);
+          }
+        }catch(e){}
+      }
+    }catch(e){
+      if(attempts>25){
+        clearInterval(check);
+        if(loading)loading.style.display='none';
+        iframe.style.display='block';
+      }
+    }
+    if(attempts>50)clearInterval(check);
+  },100);
+}
 
-  // Override open button to deep-link to specific view
-  const rbtn=document.getElementById('mf-open-btn');
-  if(rbtn) rbtn.onclick=()=>window.open(getReliabilityFile()+'#'+viewName,'_blank');
-
-  // Update nav active state
-  document.querySelectorAll('.ni,.no').forEach(n => n.classList.remove('active'));
-  const navEl = document.getElementById('nav-' + viewName);
-  if(navEl) navEl.classList.add('active');
+function reloadRelFrame(){
+  const iframe=document.getElementById('rel-iframe');
+  if(iframe){iframe.src='';setTimeout(()=>loadRelFrame('dashboard'),100);}
 }
 
 
@@ -2394,6 +2446,7 @@ const META={
   ai:{t:'🤖 AI Analytics',b:'Claude API · 6-Strategy Intelligence'},
   integrations:{t:'🔌 Integrations',b:'IoT · BAS · Line OA · Looker · Google'},
   assets:{t:'🔧 ทะเบียนสินทรัพย์ (ALC)',b:'Reliability › Asset Lifecycle'},
+  'rel-frame':{t:'🔧 Reliability Module',b:'iMATOMs System › Reliability'},
   workrequest:{t:'🔧 Work Request (WR)',b:'Reliability › แจ้งซ่อม'},
   ppm:{t:'📅 Preventive Maintenance',b:'Reliability › PPM'},
   operation:{t:'⚙ Operation Management',b:'Reliability › OM'},
