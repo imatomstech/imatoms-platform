@@ -218,17 +218,26 @@ select.form-control option{background:var(--bg3)}
 .logout-btn{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:var(--radius);cursor:pointer;font-size:12px;color:var(--red);margin-bottom:6px;transition:all .15s}
 .logout-btn:hover{background:var(--red-dim)}
 
-/* ═══ EMBEDDED MODE (hide sidebar + topbar when loaded in iframe) ═══ */
-body.embedded #sidebar { display:none !important; }
-body.embedded #topbar  { display:none !important; }
-body.embedded #main-content {
+/* ═══ EMBEDDED MODE ═══ */
+body.embedded #sidebar,
+body.embedded .sidebar,
+body.embedded nav,
+body.embedded #topbar,
+body.embedded .topbar,
+body.embedded .top-bar { display:none !important; }
+
+body.embedded #main-content,
+body.embedded .main-content,
+body.embedded main,
+body.embedded #content,
+body.embedded .content,
+body.embedded #app,
+body.embedded .app-content { 
   margin-left: 0 !important;
-  padding-top: 0 !important;
+  margin-top: 0 !important;
+  padding-top: 4px !important;
   width: 100% !important;
-}
-body.embedded .content-area {
-  margin-left: 0 !important;
-  width: 100% !important;
+  max-width: 100% !important;
 }
 </style>
 </head>

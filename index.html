@@ -626,11 +626,12 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     </div>
 
 
-    <!-- RELIABILITY FRAME - Seamless, no padding, flush left -->
-    <div id="view-rel-frame" class="view" style="padding:0;display:flex;flex-direction:column;overflow:hidden">
-      <!-- iframe - full height, flush left -->
-      <iframe id="rel-iframe" src="" style="border:none;width:100%;flex:1;height:calc(100vh - 60px)"
-        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
+    <!-- RELIABILITY FRAME - Pure iframe, no bars, full height -->
+    <div id="view-rel-frame" class="view" style="padding:0;overflow:hidden">
+      <iframe id="rel-iframe" src=""
+        style="border:none;width:100%;height:calc(100vh - 60px);display:block"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox">
+      </iframe>
     </div>
 
     <!-- MODULE HUB -->
@@ -2076,9 +2077,18 @@ function openReliabilityView(viewName){
     operation:'Operation (OPT)',ppm:'Preventive Maint. (PPM)',
     contract:'MA Contract',inventory:'Inventory (คลังวัสดุ)',
   };
-  // Show rel-frame view
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.getElementById('view-rel-frame')?.classList.add('active');
+  // ── Hide ALL views including modframe ──
+  document.querySelectorAll('.view').forEach(v=>{
+    v.classList.remove('active');
+    v.style.display='none';
+  });
+  // ── Show rel-frame ONLY ──
+  const rf=document.getElementById('view-rel-frame');
+  if(rf){rf.classList.add('active');rf.style.display='block';}
+  // ── Hide modframe explicitly ──
+  const mf=document.getElementById('view-modframe');
+  if(mf){mf.style.display='none';}
+  // Update sidebar active
   document.querySelectorAll('.ni,.no').forEach(n=>n.classList.remove('active'));
   const ni=document.getElementById('nav-'+viewName);
   if(ni) ni.classList.add('active');
@@ -2086,9 +2096,7 @@ function openReliabilityView(viewName){
   const lbl=labels[viewName]||viewName;
   document.getElementById('tb-t').textContent='🔧 Reliability — '+lbl;
   document.getElementById('tb-b').textContent='iMATOMs System › Reliability › '+lbl;
-  const rl=document.getElementById('rel-frame-label');
-  if(rl) rl.textContent='› '+lbl;
-  // Load iframe with hash
+  // Load iframe
   loadRelFrame(viewName);
 }
 
