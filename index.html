@@ -2077,17 +2077,13 @@ function openReliabilityView(viewName){
     operation:'Operation (OPT)',ppm:'Preventive Maint. (PPM)',
     contract:'MA Contract',inventory:'Inventory (คลังวัสดุ)',
   };
-  // ── Hide ALL views including modframe ──
+  // ── Use standard class approach (no inline styles) ──
   document.querySelectorAll('.view').forEach(v=>{
     v.classList.remove('active');
-    v.style.display='none';
+    v.style.display=''; // clear any inline style
   });
-  // ── Show rel-frame ONLY ──
   const rf=document.getElementById('view-rel-frame');
-  if(rf){rf.classList.add('active');rf.style.display='block';}
-  // ── Hide modframe explicitly ──
-  const mf=document.getElementById('view-modframe');
-  if(mf){mf.style.display='none';}
+  if(rf){rf.classList.add('active');}
   // Update sidebar active
   document.querySelectorAll('.ni,.no').forEach(n=>n.classList.remove('active'));
   const ni=document.getElementById('nav-'+viewName);
@@ -2450,8 +2446,13 @@ const accMap={assets:'s1',lifecycle:'s1',qrcode:'s1',inspection:'s1',valuation:'
 const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,operation:renderOp,modules:renderModules,notifications:renderNotifCenter,floorplan:renderFloorPlan,'db-assets':renderDbAssets,'db-floorplan':renderDbAssets,'db-custom':()=>{},'config':loadConfig,'cloud':()=>{}};
 
 function showView(id){
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  const v=document.getElementById('view-'+id);if(v)v.classList.add('active');
+  // Clear ALL inline display styles set by openReliabilityView
+  document.querySelectorAll('.view').forEach(v=>{
+    v.classList.remove('active');
+    v.style.display=''; // reset inline style so CSS class works
+  });
+  const v=document.getElementById('view-'+id);
+  if(v){v.classList.add('active');v.style.display='';}
   const m=META[id]||{t:id,b:'TKO iMATOMs'};
   document.getElementById('tb-t').textContent=m.t;document.getElementById('tb-b').textContent=m.b;
   document.querySelectorAll('.ni,.no').forEach(n=>n.classList.remove('active'));
