@@ -1699,9 +1699,51 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 
 <script>
 // ══ DB ══
+// ── WR SYNC: tko_v2_wr ↔ alm_wr ──
+function syncWRKeys(){
+  try{
+    const v2wr=JSON.parse(localStorage.getItem('tko_v2_wr')||'[]');
+    const almwr=JSON.parse(localStorage.getItem('alm_wr')||'[]');
+    // Merge both: alm_wr entries not in v2.0
+    const v2ids=new Set(v2wr.map(w=>w.id));
+    const newFromAlm=almwr.filter(w=>!v2ids.has(w.id));
+    if(newFromAlm.length){
+      const merged=[...v2wr,...newFromAlm];
+      localStorage.setItem('tko_v2_wr',JSON.stringify(merged));
+    }
+    // Mirror v2 WR to alm_wr
+    const almids=new Set(almwr.map(w=>w.id));
+    const newFromV2=v2wr.filter(w=>!almids.has(w.id));
+    if(newFromV2.length){
+      const merged=[...almwr,...newFromV2];
+      localStorage.setItem('alm_wr',JSON.stringify(merged));
+    }
+    // Sync status updates both ways
+    const allIds=new Set([...v2wr.map(w=>w.id),...almwr.map(w=>w.id)]);
+    allIds.forEach(id=>{
+      const v2=v2wr.find(w=>w.id===id);
+      const alm=almwr.find(w=>w.id===id);
+      if(v2&&alm&&v2.status!==alm.status){
+        // Use most recently modified
+        const v2time=v2.updatedAt||v2.date||'';
+        const almtime=alm.updatedAt||alm.date||'';
+        if(v2time>=almtime){alm.status=v2.status;}
+        else{v2.status=alm.status;}
+      }
+    });
+    localStorage.setItem('tko_v2_wr',JSON.stringify(v2wr));
+    localStorage.setItem('alm_wr',JSON.stringify(almwr));
+  }catch(e){console.warn('WR sync error:',e);}
+}
+
 const DB={
   get:(k,d=[])=>{try{const v=localStorage.getItem('tko_v2_'+k);return v?JSON.parse(v):d;}catch{return d;}},
-  set:(k,v)=>{try{localStorage.setItem('tko_v2_'+k,JSON.stringify(v));}catch(e){}},
+  set:(k,v)=>{try{
+    localStorage.setItem('tko_v2_'+k,JSON.stringify(v));
+    // Mirror key data to Reliability Module prefix (alm_)
+    const sync=['wr','assets','ppm','ma','inv','contract','operation'];
+    if(sync.includes(k))localStorage.setItem('alm_'+k,JSON.stringify(v));
+  }catch(e){}},
   del:(k)=>{try{localStorage.removeItem('tko_v2_'+k);}catch(e){}}
 };
 
@@ -2261,7 +2303,7 @@ function loginOK(u){
     const adminSec=document.getElementById('sb-admin-sections');
     if(adminSec) adminSec.style.display='block';
   }
-  loadAll(); checkMAAndAutoWR(); refreshDash(); renderModules(); aiCtx(); initClock(); updateAdmBadge(); initSystemNotifs(); startRealTime(); startFpAlertRefresh(); injectExportBars(); applyAllSettings(); updateSettingsPreview();
+  syncWRKeys(); loadAll(); checkMAAndAutoWR(); pollReliabilityWR(); refreshDash(); renderModules(); aiCtx(); initClock(); updateAdmBadge(); initSystemNotifs(); startRealTime(); startFpAlertRefresh(); injectExportBars(); applyAllSettings(); updateSettingsPreview();
   // Init floor alert badge immediately
   const _allA=bFilter(DB.get('assets',[]));
   const _bc=document.getElementById('fp-crit-badge');
@@ -3024,6 +3066,34 @@ function startFpAlertRefresh(){
       if(bw) bw.style.display=(!critA.length&&warnA.length)?'flex':'none';
     }
   },15000);
+}
+
+
+// ── Poll for new WR from Reliability Module ──
+function pollReliabilityWR(){
+  setInterval(()=>{
+    try{
+      const almWR=JSON.parse(localStorage.getItem('alm_wr')||'[]');
+      const v2WR=JSON.parse(localStorage.getItem('tko_v2_wr')||'[]');
+      const v2ids=new Set(v2WR.map(w=>w.id));
+      const newWRs=almWR.filter(w=>!v2ids.has(w.id));
+      if(newWRs.length){
+        // New WR from Reliability → add to v2.0
+        const merged=[...v2WR,...newWRs];
+        localStorage.setItem('tko_v2_wr',JSON.stringify(merged));
+        WR=merged;
+        newWRs.forEach(w=>{
+          addNotif({type:'warning',title:'🔧 WR ใหม่จาก Reliability',
+            body:(w.id||'')+'—'+(w.desc||w.problem||'').substring(0,40),
+            time:new Date().toISOString()});
+        });
+        updateAdmBadge();
+        showToast('🔔 มี WR ใหม่ '+newWRs.length+' รายการจาก Reliability Module');
+      }
+      // Sync status changes back
+      syncWRKeys();
+    }catch(e){}
+  },15000); // every 15s
 }
 
 function startRealTime(){
