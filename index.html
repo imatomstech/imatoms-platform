@@ -968,7 +968,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
             <option value="roof">Roof Level</option>
             <option value="l3">ชั้น 3</option>
             <option value="l2">ชั้น 2</option>
-            <option value="l1" selected>ชั้น 1 (G/F)</option>
+            <option value="l1">ชั้น 1 (G/F)</option>
             <option value="b1">ชั้น B1</option>
             <option value="b2">ชั้น B2</option>
           </select>
@@ -2526,7 +2526,15 @@ const META={
   floorplan:{t:'🏢 Building Critical Status',b:'TKO iMATOMs › แผนผังชั้น'},
 };
 const accMap={assets:'s1',lifecycle:'s1',qrcode:'s1',inspection:'s1',valuation:'s1',workrequest:'s1',ppm:'s1',operation:'s1',contract:'s1',inventory:'s1',inspection:'s2',ncr:'s2',fmea:'s2',audit:'s2',budget:'s3',costanalysis:'s3',valuation:'s3',energy:'s4',carbon:'s4',waste:'s4',esgkpi:'s4',training:'s5',competency:'s5',certification:'s5',knowledgebase:'s5',incident:'s6',hazard:'s6',permit:'s6',safetystat:'s6'};
-const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,operation:renderOp,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{renderFloorPlan();initIoTPanel();const _f=document.getElementById('fp-floor')?.value||'l1';fetchIoTForFloorPlan().then(()=>{if((document.getElementById('fp-floor')?.value||'l1')===_f)renderFloorPlan();});},'db-assets':renderDbAssets,'db-floorplan':renderDbAssets,'db-custom':()=>{},'config':loadConfig,'cloud':()=>{}};
+const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,operation:renderOp,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
+  // คืนค่า floor ก่อน render
+  const sel=document.getElementById('fp-floor');
+  if(sel){const saved=localStorage.getItem('fp_last_floor')||'l1';if(sel.querySelector(`option[value="${saved}"]`))sel.value=saved;}
+  renderFloorPlan();
+  initIoTPanel();
+  const _f=document.getElementById('fp-floor')?.value||'l1';
+  fetchIoTForFloorPlan().then(()=>{if((document.getElementById('fp-floor')?.value||'l1')===_f)renderFloorPlan();});
+},'db-assets':renderDbAssets,'db-floorplan':renderDbAssets,'db-custom':()=>{},'config':loadConfig,'cloud':()=>{}};
 
 function showView(id){
   // Clear ALL inline display styles set by openReliabilityView
@@ -3002,8 +3010,30 @@ function openFrameTab(){
 function reloadFrame(){ openFrameTab(); }
 
 // ══ MODAL ══
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+  // Auto-generate Asset ID เมื่อเปิด modal เพิ่ม Asset ใหม่
+  if(id==='m-asset'){
+    setTimeout(()=>{
+      const idField=document.getElementById('ai-id');
+      if(idField&&!idField.value){
+        const all=DB.get('assets',[]);
+        const nums=all.map(a=>{const m=a.id.match(/AST-\d{4}-(\d+)/);return m?parseInt(m[1]):0;});
+        const next=(nums.length?Math.max(...nums):0)+1;
+        const yr=new Date().getFullYear();
+        idField.value=`AST-${yr}-${String(next).padStart(3,'0')}`;
+      }
+    },50);
+  }
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+  // Clear asset form เมื่อปิด เพื่อให้เปิดครั้งหน้า generate ID ใหม่
+  if(id==='m-asset'){
+    const idField=document.getElementById('ai-id');
+    if(idField) idField.value='';
+  }
+}
 document.addEventListener('click',e=>{if(e.target.classList.contains('modal-overlay'))e.target.classList.remove('open');});
 
 // ══ TOAST ══
@@ -3610,14 +3640,20 @@ function wrOpenDetail(wrId){
 let _iotTimer=null;
 
 function initIoTPanel(){
-  // Show IoT panel only for Commercial users or Admin
-  const isCommercial=CU?.businessGroup==='Commercial'||CU?.businessGroup==='All'||CU?.role==='admin';
+  const floor=document.getElementById('fp-floor')?.value||'l1';
   const panel=document.getElementById('iot-panel');
-  if(panel) panel.style.display=isCommercial?'block':'none';
-  if(!isCommercial)return;
+  // แสดง IoT เฉพาะ: ชั้น B1 + Commercial + BHIRAJBURI หรือ BITEC หรือ admin
+  const allowedCompany=['BHIRAJBURI','BITEC Bangna','BITEC'];
+  const isAdmin=CU?.role==='admin';
+  const isAllowed=isAdmin||(
+    (CU?.businessGroup==='Commercial'||CU?.businessGroup==='All') &&
+    allowedCompany.some(c=>CU?.company?.includes(c))
+  );
+  if(panel) panel.style.display=(floor==='b1'&&isAllowed)?'block':'none';
+  if(floor!=='b1'||!isAllowed) return;
   // Show config only for admin
   const cfg=document.getElementById('iot-config-card');
-  if(cfg) cfg.style.display=(CU?.role==='admin')?'block':'none';
+  if(cfg) cfg.style.display=isAdmin?'block':'none';
   // Load saved config
   const savedUrl=DB.get('iot_gas_url','');
   const urlInp=document.getElementById('iot-gas-url');
@@ -3804,7 +3840,7 @@ function renderIoTPinsOnFloor(svgStr, floor){
   }
   sensors.forEach(s=>{
     // Position: AF_Store Receiving room center ~(655, 385)
-    const px=655, py=385;
+    let px=655, py=385;
     const isNormal=s.status==='normal'||(!s.status);
     const tempOk=+s.temp>=20&&+s.temp<=35;
     const humiOk=+s.humi>=30&&+s.humi<=80;
@@ -4139,13 +4175,19 @@ function fpHideTooltip(){
 }
 
 function onFloorChange(){
-  // Cancel any pending IoT re-render
   window._iotPendingFloor=null;
-  // บันทึก floor ที่เลือกไว้
   const fl=document.getElementById('fp-floor')?.value||'l1';
   localStorage.setItem('fp_last_floor', fl);
+  // แสดง/ซ่อน IoT panel ตามชั้น + สิทธิ์บริษัท
+  const allowedCompany=['BHIRAJBURI','BITEC Bangna','BITEC'];
+  const isAdmin=CU?.role==='admin';
+  const isAllowed=isAdmin||(
+    (CU?.businessGroup==='Commercial'||CU?.businessGroup==='All') &&
+    allowedCompany.some(c=>CU?.company?.includes(c))
+  );
+  const panel=document.getElementById('iot-panel');
+  if(panel) panel.style.display=(fl==='b1'&&isAllowed)?'block':'none';
   renderFloorPlan();
-  // Fetch IoT for new floor
   window._iotPendingFloor=fl;
   fetchIoTForFloorPlan().then(()=>{
     if(window._iotPendingFloor===fl) renderFloorPlan();
@@ -4153,14 +4195,14 @@ function onFloorChange(){
 }
 
 function renderFloorPlan(){
-  // คืนค่า floor ที่เคยเลือกไว้
+  // ══ คืนค่า floor ที่เคยเลือกไว้เสมอ ══
   const sel=document.getElementById('fp-floor');
-  if(sel&&!sel._restored){
-    const saved=localStorage.getItem('fp_last_floor');
-    if(saved&&sel.querySelector(`option[value="${saved}"]`)){
+  if(sel){
+    const saved=localStorage.getItem('fp_last_floor')||'l1';
+    // อัปเดตเฉพาะถ้า value ปัจจุบันไม่ตรงกับ saved (ป้องกัน loop)
+    if(sel.value!==saved && sel.querySelector(`option[value="${saved}"]`)){
       sel.value=saved;
     }
-    sel._restored=true;
   }
   const floor=sel?.value||'l1';
   const layout=FLOOR_LAYOUT[floor]||FLOOR_LAYOUT.l1;
