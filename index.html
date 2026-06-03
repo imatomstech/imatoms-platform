@@ -964,7 +964,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       <div class="sh">
         <div><div class="st">🏢 Building Critical Status</div><div class="ss">Real-time Status · 4-Ring System · WR · OPT · PPM · MA · กวาดสายตาดูได้ทันที</div></div>
         <div class="flex g8 fw">
-          <select class="form-control" style="width:140px" id="fp-floor" onchange="renderFloorPlan()">
+          <select class="form-control" style="width:140px" id="fp-floor" onchange="onFloorChange()">
             <option value="roof">Roof Level</option>
             <option value="l3">ชั้น 3</option>
             <option value="l2">ชั้น 2</option>
@@ -1087,6 +1087,30 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
           <table><thead><tr><th>Asset ID</th><th>ชื่อ</th><th>ระบบ</th><th>Location</th><th>สถานะ</th><th>WR Open</th><th>พิกัด X,Y</th><th>Action</th></tr></thead>
           <tbody id="fp-tbody"></tbody>
         </table></div>
+      </div>
+
+      <!-- IoT SENSOR PANEL — iframe embed -->
+      <div id="iot-panel" style="display:none;margin-top:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div>
+            <div class="st" style="font-size:15px">📡 IoT Sensor Monitor — Real-time</div>
+            <div class="ss">Temp & Humidity · BHIRAJBURI Commercial Building · Live Data</div>
+          </div>
+          <div class="flex g8">
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('iot-iframe').src=document.getElementById('iot-iframe').src">↻ Refresh</button>
+            <button class="btn btn-primary btn-sm" onclick="window.open('https://ienginnotech-tech.github.io/ienginnotech-tech.Temp-Humi-Monitor/','_blank')">⬡ Full Screen</button>
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+          <iframe id="iot-iframe"
+            src="https://ienginnotech-tech.github.io/ienginnotech-tech.Temp-Humi-Monitor/"
+            style="width:100%;height:700px;border:none;display:block"
+            allowfullscreen>
+          </iframe>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:6px;text-align:right;font-family:var(--font-display)">
+          📡 iENGINNo Tech IoT Monitor · Temp & Humidity · BHIRAJBURI
+        </div>
       </div>
 
       <!-- CSV Format Guide -->
@@ -2032,10 +2056,12 @@ function saveConfig(){
     gas:{url:document.getElementById('cfg-gas-url')?.value||'',sheetId:document.getElementById('cfg-gas-sheet')?.value||'',googleKey:document.getElementById('cfg-google-key')?.value||''},
     iot:{mqtt:document.getElementById('cfg-mqtt')?.value||'',bas:document.getElementById('cfg-bas')?.value||'',token:document.getElementById('cfg-bas-token')?.value||''},
     bi:{looker:document.getElementById('cfg-looker')?.value||'',powerbi:document.getElementById('cfg-powerbi')?.value||''},
+    iot_gas:document.getElementById('cfg-iot-gas')?.value||'',
     custom:{webhook:document.getElementById('cfg-webhook')?.value||'',erp:document.getElementById('cfg-erp')?.value||'',erpToken:document.getElementById('cfg-erp-token')?.value||'',smtp:document.getElementById('cfg-smtp')?.value||''},
     savedAt:new Date().toISOString()
   };
   DB.set('sysconfig',cfg);
+  if(cfg.iot_gas) DB.set('iot_gas_url',cfg.iot_gas);
   // Sync to integration page
   const lt=document.getElementById('line-tok');if(lt&&cfg.line.token)lt.value=cfg.line.token;
   const lu=document.getElementById('looker-url');if(lu&&cfg.bi.looker)lu.value=cfg.bi.looker;
@@ -2249,7 +2275,22 @@ function seed(){
     {id:'INV-004',code:'LAMP-LED-001',name:'LED Tube 18W 60cm',type:'วัสดุสิ้นเปลือง',unit:'หลอด',price:95,qty:120,min:30,max:200,usedMTD:18,businessGroup:'Commercial',company:'BITEC Bangna'},
     {id:'INV-005',code:'GASK-PUMP-001',name:'Pump Mechanical Seal Grundfos',type:'อะไหล่',unit:'ชุด',price:1800,qty:2,min:3,max:10,usedMTD:1,businessGroup:'Commercial',company:'Township'},
   ]);
-  DB.set('users',[{name:'Mr.Kittanan Onsee',position:'iMATOMs System Engineering Developer',username:'admin',password:'admin123',email:'imatomsapps1976@gmail.com',stakeholder:'iMATOMs Platform',businessGroup:'All',company:'Head Office',building:'iMATOMs HQ',location:'Head Office',role:'admin',status:'approved',regDate:new Date().toISOString(),modules:['reliability','quality','cost','esg','academy','safety']}]);
+  DB.set('users',[
+  {name:'Mr.Kittanan Onsee',position:'iMATOMs System Engineering Developer',
+   username:'admin',password:'admin123',email:'imatomsapps1976@gmail.com',
+   stakeholder:'iMATOMs Platform',businessGroup:'All',company:'Head Office',
+   building:'iMATOMs HQ',location:'Head Office',role:'admin',status:'approved',
+   regDate:new Date().toISOString(),
+   modules:['reliability','quality','cost','esg','academy','safety']},
+  {name:'Mr.Kittanan BBH',position:'Building Manager — BHIRAJBURI',
+   username:'kittanan_bbh',password:'bbh1234',email:'imatomsapps1976@gmail.com',
+   stakeholder:'BHIRAJBURI Commercial',businessGroup:'Commercial',
+   company:'BHIRAJBURI',building:'BHIRAJBURI Main',location:'Bangkok',
+   role:'viewer',status:'approved',
+   regDate:new Date().toISOString(),
+   modules:['reliability','quality','cost','esg','academy','safety'],
+   iotEnabled:true}
+]);
   DB.set('seeded',true);
 }
 
@@ -2303,7 +2344,7 @@ function loginOK(u){
     const adminSec=document.getElementById('sb-admin-sections');
     if(adminSec) adminSec.style.display='block';
   }
-  syncWRKeys(); loadAll(); checkMAAndAutoWR(); pollReliabilityWR(); refreshDash(); renderModules(); aiCtx(); initClock(); updateAdmBadge(); initSystemNotifs(); startRealTime(); startFpAlertRefresh(); injectExportBars(); applyAllSettings(); updateSettingsPreview();
+  syncWRKeys(); loadAll(); checkMAAndAutoWR(); pollReliabilityWR(); startIoTRefresh(); refreshDash(); renderModules(); aiCtx(); initClock(); updateAdmBadge(); initSystemNotifs(); startRealTime(); startFpAlertRefresh(); injectExportBars(); applyAllSettings(); updateSettingsPreview();
   // Init floor alert badge immediately
   const _allA=bFilter(DB.get('assets',[]));
   const _bc=document.getElementById('fp-crit-badge');
@@ -2485,7 +2526,7 @@ const META={
   floorplan:{t:'🏢 Building Critical Status',b:'TKO iMATOMs › แผนผังชั้น'},
 };
 const accMap={assets:'s1',lifecycle:'s1',qrcode:'s1',inspection:'s1',valuation:'s1',workrequest:'s1',ppm:'s1',operation:'s1',contract:'s1',inventory:'s1',inspection:'s2',ncr:'s2',fmea:'s2',audit:'s2',budget:'s3',costanalysis:'s3',valuation:'s3',energy:'s4',carbon:'s4',waste:'s4',esgkpi:'s4',training:'s5',competency:'s5',certification:'s5',knowledgebase:'s5',incident:'s6',hazard:'s6',permit:'s6',safetystat:'s6'};
-const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,operation:renderOp,modules:renderModules,notifications:renderNotifCenter,floorplan:renderFloorPlan,'db-assets':renderDbAssets,'db-floorplan':renderDbAssets,'db-custom':()=>{},'config':loadConfig,'cloud':()=>{}};
+const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,operation:renderOp,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{renderFloorPlan();initIoTPanel();const _f=document.getElementById('fp-floor')?.value||'l1';fetchIoTForFloorPlan().then(()=>{if((document.getElementById('fp-floor')?.value||'l1')===_f)renderFloorPlan();});},'db-assets':renderDbAssets,'db-floorplan':renderDbAssets,'db-custom':()=>{},'config':loadConfig,'cloud':()=>{}};
 
 function showView(id){
   // Clear ALL inline display styles set by openReliabilityView
@@ -3096,6 +3137,14 @@ function pollReliabilityWR(){
   },15000); // every 15s
 }
 
+function startIoTRefresh(){
+  setInterval(async()=>{
+    if(document.getElementById('view-floorplan')?.classList.contains('active')){
+      await fetchIoTForFloorPlan();
+      renderFloorPlan();
+    }
+  },300000); // 5 minutes
+}
 function startRealTime(){
   stopRealTime();
   _rtTimer=setInterval(()=>{
@@ -3252,7 +3301,7 @@ function injectExportBar(viewId,type){
 const FLOOR_LAYOUT={
   roof:{label:'Roof Level',rooms:[{x:50,y:40,w:800,h:450,label:'',fill:'#1C2333'},{x:80,y:70,w:220,h:140,label:'Cooling Tower Area',fill:'#21262D'},{x:340,y:70,w:200,h:140,label:'AHU Plant Room',fill:'#21262D'},{x:580,y:70,w:220,h:140,label:'Solar / Utility',fill:'#21262D'},{x:80,y:250,w:720,h:200,label:'Roof Walkway & Pipe Route',fill:'#161B22'}]},
   l1:{label:'ชั้น 1 (Ground Floor)',rooms:[{x:50,y:40,w:800,h:450,label:'',fill:'#1C2333'},{x:80,y:70,w:200,h:180,label:'Lobby/Reception',fill:'#21262D'},{x:320,y:70,w:250,h:180,label:'Main Office',fill:'#21262D'},{x:610,y:70,w:190,h:180,label:'Server Room',fill:'#161B22'},{x:80,y:290,w:280,h:160,label:'11kV Substation',fill:'#161B22'},{x:400,y:290,w:200,h:160,label:'Elec. Room',fill:'#21262D'},{x:640,y:290,w:160,h:160,label:'Security Cmd',fill:'#21262D'}]},
-  b1:{label:'ชั้น B1',rooms:[{x:50,y:40,w:800,h:450,label:'',fill:'#1C2333'},{x:80,y:70,w:260,h:200,label:'Pump Room',fill:'#21262D'},{x:380,y:70,w:200,h:200,label:'Fire Pump Room',fill:'#161B22'},{x:620,y:70,w:180,h:200,label:'Chiller Plant',fill:'#161B22'},{x:80,y:310,w:720,h:150,label:'Parking / Underground',fill:'#21262D'}]},
+  b1:{label:'ชั้น B1',rooms:[{x:50,y:40,w:800,h:450,label:'',fill:'#1C2333'},{x:80,y:70,w:260,h:200,label:'Pump Room',fill:'#21262D'},{x:380,y:70,w:200,h:200,label:'Fire Pump Room',fill:'#161B22'},{x:620,y:70,w:180,h:200,label:'Chiller Plant',fill:'#161B22'},{x:80,y:310,w:400,h:150,label:'Parking / Underground',fill:'#21262D'},{x:510,y:310,w:290,h:150,label:'AF_Store Receiving',fill:'#1A2535'}]},
   b2:{label:'ชั้น B2',rooms:[{x:50,y:40,w:800,h:450,label:'',fill:'#1C2333'},{x:80,y:70,w:720,h:170,label:'Parking B2',fill:'#21262D'},{x:80,y:280,w:360,h:170,label:'Water Tank',fill:'#161B22'},{x:480,y:280,w:320,h:170,label:'Waste / Utility',fill:'#21262D'}]},
   l2:{label:'ชั้น 2',rooms:[{x:50,y:40,w:800,h:450,label:'',fill:'#1C2333'},{x:80,y:70,w:350,h:190,label:'Meeting Rooms',fill:'#21262D'},{x:470,y:70,w:330,h:190,label:'Office L2',fill:'#21262D'},{x:80,y:300,w:720,h:150,label:'AHU L2 + Corridor',fill:'#161B22'}]},
   l3:{label:'ชั้น 3',rooms:[{x:50,y:40,w:800,h:450,label:'',fill:'#1C2333'},{x:80,y:70,w:720,h:210,label:'Office L3',fill:'#21262D'},{x:80,y:320,w:720,h:140,label:'Technical Area',fill:'#161B22'}]},
@@ -3556,6 +3605,357 @@ function wrOpenDetail(wrId){
   },200);
 }
 
+
+// ══ IoT SENSOR SYSTEM ══
+let _iotTimer=null;
+
+function initIoTPanel(){
+  // Show IoT panel only for Commercial users or Admin
+  const isCommercial=CU?.businessGroup==='Commercial'||CU?.businessGroup==='All'||CU?.role==='admin';
+  const panel=document.getElementById('iot-panel');
+  if(panel) panel.style.display=isCommercial?'block':'none';
+  if(!isCommercial)return;
+  // Show config only for admin
+  const cfg=document.getElementById('iot-config-card');
+  if(cfg) cfg.style.display=(CU?.role==='admin')?'block':'none';
+  // Load saved config
+  const savedUrl=DB.get('iot_gas_url','');
+  const urlInp=document.getElementById('iot-gas-url');
+  if(urlInp&&savedUrl) urlInp.value=savedUrl;
+  // Start auto-load
+  loadIoTData();
+  if(_iotTimer) clearInterval(_iotTimer);
+  const interval=(parseInt(DB.get('iot_poll','60'))||60)*1000;
+  _iotTimer=setInterval(loadIoTData, interval);
+}
+
+function saveIoTConfig(){
+  const url=document.getElementById('iot-gas-url')?.value?.trim();
+  const poll=document.getElementById('iot-poll')?.value||'60';
+  if(!url){showToast('⚠ กรุณากรอก Google Apps Script URL');return;}
+  DB.set('iot_gas_url',url);
+  DB.set('iot_poll',poll);
+  showToast('✅ บันทึก IoT Config แล้ว');
+  if(_iotTimer) clearInterval(_iotTimer);
+  _iotTimer=setInterval(loadIoTData, parseInt(poll)*1000);
+  loadIoTData();
+}
+
+async function loadIoTData(){
+  const url=DB.get('iot_gas_url','');
+  const dot=document.getElementById('iot-dot');
+  const statusTxt=document.getElementById('iot-status-txt');
+
+  if(!url){
+    if(dot) dot.style.background='#6B7280';
+    if(statusTxt) statusTxt.textContent='ยังไม่ตั้งค่า API URL';
+    renderIoTMockData(); // show demo data
+    return;
+  }
+
+  try{
+    if(dot) dot.style.background='#EAB308';
+    if(statusTxt) statusTxt.textContent='กำลังโหลด...';
+    const res=await fetch(url+'?action=getSensorData&sheet=Sensor&limit=20');
+    const data=await res.json();
+    renderIoTData(data);
+    if(dot){dot.style.background='#22C55E';dot.style.animation='pg 2s infinite';}
+    if(statusTxt) statusTxt.textContent='Live · อัปเดต '+new Date().toLocaleTimeString('th-TH');
+  }catch(e){
+    if(dot) dot.style.background='#EF4444';
+    if(statusTxt) statusTxt.textContent='เชื่อมต่อไม่ได้ — แสดง Demo Data';
+    renderIoTMockData();
+  }
+}
+
+function renderIoTData(data){
+  // data format: {devices:[{id,name,temp,humi,status,location,updatedAt}], summary:{avgTemp,avgHumi,alerts}}
+  const devices=data?.devices||data?.data||[];
+  const summary=data?.summary||{};
+  updateIoTKPI(devices, summary);
+  renderIoTCards(devices);
+  checkIoTAlerts(devices);
+}
+
+function renderIoTMockData(){
+  // Demo data for BHIRAJBURI Commercial Building
+  const devices=[
+    {id:'SENS-001',name:'Server Room',location:'ชั้น 1 — Server Room',temp:24.5,humi:55,status:'normal',updatedAt:new Date().toISOString()},
+    {id:'SENS-002',name:'Lobby Reception',location:'ชั้น 1 — Lobby',temp:26.8,humi:62,status:'normal',updatedAt:new Date().toISOString()},
+    {id:'SENS-003',name:'Chiller Plant',location:'ชั้น B1 — Plant Room',temp:38.2,humi:70,status:'warning',updatedAt:new Date().toISOString()},
+    {id:'SENS-004',name:'Main Office',location:'ชั้น 2 — Office',temp:25.1,humi:58,status:'normal',updatedAt:new Date().toISOString()},
+  ];
+  updateIoTKPI(devices, {});
+  renderIoTCards(devices);
+  checkIoTAlerts(devices);
+  const statusTxt=document.getElementById('iot-status-txt');
+  if(statusTxt) statusTxt.textContent='Demo Data — กรอก API URL เพื่อดูข้อมูล Live';
+}
+
+function updateIoTKPI(devices, summary){
+  const el=id=>document.getElementById(id);
+  const avgTemp=devices.length?(devices.reduce((s,d)=>s+(+d.temp||0),0)/devices.length).toFixed(1):0;
+  const avgHumi=devices.length?(devices.reduce((s,d)=>s+(+d.humi||0),0)/devices.length).toFixed(1):0;
+  const alerts=devices.filter(d=>d.status==='warning'||d.status==='critical').length;
+  if(el('iot-devices')) el('iot-devices').textContent=devices.length;
+  if(el('iot-temp'))    el('iot-temp').textContent=avgTemp;
+  if(el('iot-humi'))    el('iot-humi').textContent=avgHumi;
+  if(el('iot-alerts'))  el('iot-alerts').textContent=alerts;
+  // Color KPI by threshold
+  const cfg=DB.get('sysconfig',{});
+  const tMax=cfg.iot?.tempMax||35, tMin=cfg.iot?.tempMin||20;
+  const kpiTemp=document.getElementById('iot-temp-kpi');
+  if(kpiTemp) kpiTemp.style.borderColor=avgTemp>tMax||avgTemp<tMin?'rgba(239,68,68,.5)':'rgba(34,197,94,.3)';
+}
+
+function renderIoTCards(devices){
+  const container=document.getElementById('iot-sensor-cards');
+  if(!container)return;
+  const statusColor={normal:'#22C55E',warning:'#EAB308',critical:'#EF4444',offline:'#6B7280'};
+  const statusLabel={normal:'✅ ปกติ',warning:'⚠ ผิดปกติ',critical:'🔴 วิกฤต',offline:'⚫ ออฟไลน์'};
+  container.innerHTML=devices.length?devices.map(d=>{
+    const sc=statusColor[d.status]||'#8B949E';
+    const sl=statusLabel[d.status]||d.status;
+    const blink=d.status==='critical'?'animation:fpcritpulse .6s infinite':
+                 d.status==='warning'?'animation:fpcritpulse 1s infinite':'';
+    return`<div class="card" style="border-color:${sc}33;${d.status!=='normal'?'box-shadow:0 0 12px '+sc+'22':''}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--orange)">${d.id}</div>
+        <span style="font-size:11px;font-weight:700;color:${sc};font-family:var(--font-display);${blink}">${sl}</span>
+      </div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">${d.name||'—'}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">📍 ${d.location||'—'}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:var(--bg3);border-radius:var(--radius);padding:10px;text-align:center">
+          <div style="font-size:9px;color:#EF4444;font-family:var(--font-display);margin-bottom:4px">🌡 TEMP</div>
+          <div style="font-size:22px;font-weight:700;font-family:var(--font-display);color:${+d.temp>35||+d.temp<20?'#EF4444':'var(--text)'}">${d.temp||'—'}°C</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:var(--radius);padding:10px;text-align:center">
+          <div style="font-size:9px;color:#06B6D4;font-family:var(--font-display);margin-bottom:4px">💧 HUMI</div>
+          <div style="font-size:22px;font-weight:700;font-family:var(--font-display);color:${+d.humi>80||+d.humi<30?'#06B6D4':'var(--text)'}">${d.humi||'—'}%</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:8px;text-align:right">
+        🕐 ${d.updatedAt?new Date(d.updatedAt).toLocaleTimeString('th-TH'):'—'}
+      </div>
+    </div>`;
+  }).join(''):'<div style="text-align:center;padding:20px;color:var(--text3)">ไม่พบข้อมูล Sensor</div>';
+}
+
+function checkIoTAlerts(devices){
+  const criticals=devices.filter(d=>d.status==='critical');
+  const warnings=devices.filter(d=>d.status==='warning');
+  criticals.forEach(d=>{
+    addNotif({type:'critical',title:'🌡 IoT Critical: '+d.name,
+      body:`Temp: ${d.temp}°C Humi: ${d.humi}% — ${d.location}`,
+      time:new Date().toISOString()});
+  });
+  // Update bell badge
+  if(criticals.length||warnings.length) updateAdmBadge();
+}
+
+
+// ══ IoT SENSOR DATA for Floor Plan ══
+let _iotSensorCache={
+  'AF_Store':{name:'AF_Store Receiving',location:'B1',temp:24.8,humi:52.9,
+              status:'normal',updatedAt:new Date().toISOString()}
+};
+
+async function fetchIoTForFloorPlan(){
+  // Try to fetch from bas.imatomstech.com
+  const gasUrl=DB.get('iot_gas_url','');
+  if(!gasUrl){
+    // Use demo data
+    _iotSensorCache={
+      'AF_Store':{name:'AF_Store Receiving',location:'B1',temp:24.8,humi:52.9,
+                  status:'normal',updatedAt:new Date().toISOString()}
+    };
+    return;
+  }
+  try{
+    const res=await fetch(gasUrl+'?action=getSensorData');
+    const data=await res.json();
+    const sensors=data?.devices||data?.data||[];
+    _iotSensorCache={};
+    sensors.forEach(s=>{ _iotSensorCache[s.id||s.name]=s; });
+  }catch(e){
+    // Keep existing cache or use demo
+    if(Object.keys(_iotSensorCache).length===0){
+      _iotSensorCache={
+        'AF_Store':{name:'AF_Store Receiving',location:'B1',temp:24.8,humi:52.9,
+                    status:'normal',updatedAt:new Date().toISOString()}
+      };
+    }
+  }
+}
+
+function renderIoTPinsOnFloor(svgStr, floor){
+  if(floor!=='b1') return svgStr;
+  // Get IoT data for this floor
+  const sensors=Object.values(_iotSensorCache).filter(s=>
+    s.location?.toLowerCase().includes('b1')||
+    s.name?.toLowerCase().includes('store')||
+    s.name?.toLowerCase().includes('receiving')
+  );
+  if(!sensors.length){
+    // Add demo pin for AF_Store Receiving
+    sensors.push({name:'AF_Store Receiving',location:'B1',temp:24.8,humi:52.9,
+                  status:'normal',updatedAt:new Date().toISOString()});
+  }
+  sensors.forEach(s=>{
+    // Position: AF_Store Receiving room center ~(655, 385)
+    const px=655, py=385;
+    const isNormal=s.status==='normal'||(!s.status);
+    const tempOk=+s.temp>=20&&+s.temp<=35;
+    const humiOk=+s.humi>=30&&+s.humi<=80;
+    const allOk=isNormal&&tempOk&&humiOk;
+    const c=allOk?'#22C55E':'#F97316';
+    const blink=!allOk?'<animate attributeName="opacity" values="1;0.3;1" dur="0.8s" repeatCount="indefinite"/>':'';
+    const tempC=tempOk?'#22C55E':'#EF4444';
+    const humiC=humiOk?'#22C55E':'#06B6D4';
+    const time=s.updatedAt?new Date(s.updatedAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}):'—';
+    // Load saved position from localStorage
+    const savedIoTPos=JSON.parse(localStorage.getItem('iot_pin_pos_'+floor)||'null');
+    if(savedIoTPos){px=savedIoTPos.x;py=savedIoTPos.y;}
+    svgStr+=`
+    <g id="iot-pin-${px}-${py}" class="iot-sensor-pin"
+       style="cursor:grab"
+       onmousedown="iotPinDragStart(event,'${floor}',${px},${py})"
+       onclick="showToast('📡 AF_Store Receiving Room — 🌡 ${s.temp}°C | 💧 ${s.humi}% | ${allOk?'✅ ปกติ':'⚠ ผิดปกติ'}')">
+      <!-- Blue dot core -->
+      <circle cx="${px}" cy="${py}" r="9" fill="#06B6D4" fill-opacity="0.2"
+              stroke="#06B6D4" stroke-width="2">${blink}</circle>
+      <circle cx="${px}" cy="${py}" r="5" fill="#06B6D4">${blink}</circle>
+      <!-- Pulse ring if abnormal -->
+      ${!allOk?`<circle cx="${px}" cy="${py}" r="9" fill="none" stroke="${c}" stroke-width="1.5">
+        <animate attributeName="r" values="9;18;9" dur="1.2s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.8;0;0.8" dur="1.2s" repeatCount="indefinite"/>
+      </circle>`:''}
+      <!-- Room name -->
+      <text x="${px+14}" y="${py-10}" fill="#E6EDF3"
+            font-size="8" font-family="Orbitron,sans-serif" font-weight="700">AF_Store Receiving</text>
+      <!-- Temp value -->
+      <rect x="${px+14}" y="${py-4}" width="60" height="13" rx="3"
+            fill="#EF444422" stroke="${tempC}" stroke-width="0.5"/>
+      <text x="${px+19}" y="${py+6}" fill="${tempC}"
+            font-size="9" font-family="Orbitron,sans-serif" font-weight="700">🌡 ${s.temp}°C</text>
+      <!-- Humi value -->
+      <rect x="${px+78}" y="${py-4}" width="58" height="13" rx="3"
+            fill="#06B6D422" stroke="${humiC}" stroke-width="0.5"/>
+      <text x="${px+83}" y="${py+6}" fill="${humiC}"
+            font-size="9" font-family="Orbitron,sans-serif" font-weight="700">💧 ${s.humi}%</text>
+      <!-- Time -->
+      <text x="${px+14}" y="${py+20}" fill="#6B7280"
+            font-size="7" font-family="Orbitron,sans-serif">${time}</text>
+    </g>`;
+  });
+  return svgStr;
+}
+
+
+// ══ IoT PIN DRAG & DROP ══
+let _iotDrag={active:false,floor:'',startX:0,startY:0,pinX:0,pinY:0};
+
+function iotPinDragStart(evt,floor,px,py){
+  evt.preventDefault();
+  evt.stopPropagation();
+  _iotDrag={active:true,floor,startX:evt.clientX,startY:evt.clientY,pinX:px,pinY:py};
+  const svg=document.getElementById('fp-svg');
+  if(svg){
+    svg.style.cursor='grabbing';
+    svg.onmousemove=iotPinDragMove;
+    svg.onmouseup=iotPinDragEnd;
+    svg.onmouseleave=iotPinDragEnd;
+  }
+}
+
+function iotPinDragMove(evt){
+  if(!_iotDrag.active)return;
+  evt.preventDefault();
+  const svg=document.getElementById('fp-svg');
+  if(!svg)return;
+  const rect=svg.getBoundingClientRect();
+  const scaleX=900/rect.width;
+  const scaleY=(svg.viewBox.baseVal.height||540)/rect.height;
+  const newX=Math.round(_iotDrag.pinX+(evt.clientX-_iotDrag.startX)*scaleX);
+  const newY=Math.round(_iotDrag.pinY+(evt.clientY-_iotDrag.startY)*scaleY);
+  // Move pin visually in real-time
+  const pin=svg.querySelector('.iot-sensor-pin');
+  if(pin){
+    const dx=(evt.clientX-_iotDrag.startX)*scaleX;
+    const dy=(evt.clientY-_iotDrag.startY)*scaleY;
+    pin.setAttribute('transform',`translate(${dx},${dy})`);
+  }
+}
+
+function iotPinDragEnd(evt){
+  if(!_iotDrag.active)return;
+  const svg=document.getElementById('fp-svg');
+  if(svg){svg.style.cursor='crosshair';svg.onmousemove=null;svg.onmouseup=null;svg.onmouseleave=null;}
+  // Calculate final position
+  const rect=svg?.getBoundingClientRect();
+  if(rect){
+    const scaleX=900/rect.width;
+    const scaleY=(svg.viewBox?.baseVal?.height||540)/rect.height;
+    const finalX=Math.max(20,Math.min(880,Math.round(_iotDrag.pinX+(evt.clientX-_iotDrag.startX)*scaleX)));
+    const finalY=Math.max(20,Math.min(520,Math.round(_iotDrag.pinY+(evt.clientY-_iotDrag.startY)*scaleY)));
+    // Save new position
+    localStorage.setItem('iot_pin_pos_'+_iotDrag.floor,JSON.stringify({x:finalX,y:finalY}));
+    showToast('📌 ย้าย IoT Sensor แล้ว ('+finalX+','+finalY+')');
+  }
+  _iotDrag={active:false,floor:'',startX:0,startY:0,pinX:0,pinY:0};
+  // Re-render floor plan
+  renderFloorPlan();
+}
+
+
+// ══ ASSET PIN DRAG & DROP ══
+let _assetDrag={active:false,id:'',floor:'',startX:0,startY:0,pinX:0,pinY:0,moved:false};
+
+function assetPinDragStart(evt,assetId,floor,px,py){
+  evt.preventDefault(); evt.stopPropagation();
+  _assetDrag={active:true,id:assetId,floor,startX:evt.clientX,startY:evt.clientY,pinX:px,pinY:py,moved:false};
+  const svg=document.getElementById('fp-svg');
+  if(svg){svg.style.cursor='grabbing';svg.onmousemove=assetPinDragMove;svg.onmouseup=assetPinDragEnd;svg.onmouseleave=assetPinDragEnd;}
+}
+
+function assetPinDragMove(evt){
+  if(!_assetDrag.active)return;
+  evt.preventDefault();
+  if(Math.abs(evt.clientX-_assetDrag.startX)>3||Math.abs(evt.clientY-_assetDrag.startY)>3) _assetDrag.moved=true;
+  if(!_assetDrag.moved)return;
+  const svg=document.getElementById('fp-svg');
+  const pin=document.getElementById('fp-pin-'+_assetDrag.id);
+  if(pin&&svg){
+    const rect=svg.getBoundingClientRect();
+    const scaleX=900/rect.width;
+    const scaleY=(svg.viewBox?.baseVal?.height||540)/rect.height;
+    pin.setAttribute('transform',`translate(${(evt.clientX-_assetDrag.startX)*scaleX},${(evt.clientY-_assetDrag.startY)*scaleY})`);
+  }
+}
+
+function assetPinDragEnd(evt){
+  if(!_assetDrag.active)return;
+  evt?.stopPropagation?.();
+  const svg=document.getElementById('fp-svg');
+  if(svg){svg.style.cursor='crosshair';svg.onmousemove=null;svg.onmouseup=null;svg.onmouseleave=null;}
+  if(_assetDrag.moved){
+    const rect=svg?.getBoundingClientRect();
+    if(rect){
+      const scaleX=900/rect.width;
+      const scaleY=(svg.viewBox?.baseVal?.height||540)/rect.height;
+      const finalX=Math.max(50,Math.min(850,Math.round(_assetDrag.pinX+(evt.clientX-_assetDrag.startX)*scaleX)));
+      const finalY=Math.max(50,Math.min(500,Math.round(_assetDrag.pinY+(evt.clientY-_assetDrag.startY)*scaleY)));
+      const pos=fpGetPositions();
+      pos[_assetDrag.id]={floor:_assetDrag.floor,x:finalX,y:finalY};
+      fpSavePositions(pos);
+      showToast('📌 ย้าย '+_assetDrag.id+' → ('+finalX+','+finalY+')');
+    }
+    renderFloorPlan();
+  }
+  _assetDrag={active:false,id:'',floor:'',startX:0,startY:0,pinX:0,pinY:0,moved:false};
+}
+
 // ══ FLOOR PLAN CUSTOM POSITIONS ══
 function fpGetPositions(){ return DB.get('fp_positions',{}); }
 function fpSavePositions(pos){ DB.set('fp_positions',pos); }
@@ -3738,6 +4138,18 @@ function fpHideTooltip(){
   if(tt)tt.style.display='none';
 }
 
+function onFloorChange(){
+  // Cancel any pending IoT re-render
+  window._iotPendingFloor=null;
+  renderFloorPlan();
+  // Fetch IoT for new floor
+  const fl=document.getElementById('fp-floor')?.value||'l1';
+  window._iotPendingFloor=fl;
+  fetchIoTForFloorPlan().then(()=>{
+    if(window._iotPendingFloor===fl) renderFloorPlan();
+  });
+}
+
 function renderFloorPlan(){
   const floor=document.getElementById('fp-floor')?.value||'l1';
   const layout=FLOOR_LAYOUT[floor]||FLOOR_LAYOUT.l1;
@@ -3757,7 +4169,7 @@ function renderFloorPlan(){
   let s=_fpPdfData?'':`<rect width="900" height="${svgH}" fill="#0D1117"/>`;
   if(!_fpPdfData) layout.rooms.forEach(r=>{
     s+=`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="8" fill="${r.fill}" stroke="#30363D" stroke-width="1.5"/>`;
-    if(r.label)s+=`<text x="${r.x+r.w/2}" y="${r.y+r.h/2}" text-anchor="middle" dominant-baseline="middle" fill="#6E7681" font-size="11" font-family="Orbitron,sans-serif">${r.label}</text>`;
+    if(r.label)s+=`<text x="${r.x+10}" y="${r.y+16}" text-anchor="start" fill="#6E7681" font-size="10" font-family="Orbitron,sans-serif" font-weight="600">${r.label}</text>`;
   });
   // Place mode grid hint
   if(!_fpPdfData) {/* rooms already drawn */}
@@ -3856,7 +4268,8 @@ function renderFloorPlan(){
       // Radar pulse for critical
       const radar=a.status==='critical'?`<circle cx="${px}" cy="${py}" r="46" fill="none" stroke="#EF4444" stroke-width="1.5"><animate attributeName="r" values="46;70;46" dur="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values=".8;0;.8" dur="1.4s" repeatCount="indefinite"/></circle>`:'';
       const wrN=rs.r1.blink?allWR4.filter(w=>w.assetId===a.id&&w.status!=='closed').length:0;
-      s+=`<g id="fp-pin-${a.id}" style="cursor:pointer"
+      s+=`<g id="fp-pin-${a.id}" style="cursor:grab"
+         onmousedown="assetPinDragStart(event,'${a.id}','${floor}',${px},${py})"
          onclick="fpHighlightPin('${a.id}')"
          onmouseenter="fpPinHover('${a.id}',${px},${py})"
          onmouseleave="fpStartHideTimer()">
@@ -3872,6 +4285,7 @@ function renderFloorPlan(){
   } else {
     s+=`<text x="450" y="270" text-anchor="middle" fill="#6E7681" font-size="14" font-family="Orbitron,sans-serif">ไม่มี Asset — กด 📌 วางตำแหน่ง</text>`;
   }
+  s=renderIoTPinsOnFloor(s,floor);
   document.getElementById('fp-svg').innerHTML=s;
   renderFpAlerts(floor);
   // Table
