@@ -3306,7 +3306,7 @@ const FLOOR_LAYOUT={
   l2:{label:'ชั้น 2',rooms:[{x:50,y:40,w:800,h:450,label:'',fill:'#1C2333'},{x:80,y:70,w:350,h:190,label:'Meeting Rooms',fill:'#21262D'},{x:470,y:70,w:330,h:190,label:'Office L2',fill:'#21262D'},{x:80,y:300,w:720,h:150,label:'AHU L2 + Corridor',fill:'#161B22'}]},
   l3:{label:'ชั้น 3',rooms:[{x:50,y:40,w:800,h:450,label:'',fill:'#1C2333'},{x:80,y:70,w:720,h:210,label:'Office L3',fill:'#21262D'},{x:80,y:320,w:720,h:140,label:'Technical Area',fill:'#161B22'}]},
 };
-const ASSET_FLOOR_MAP={'roof':'roof','rooftop':'roof','cooling tower':'roof','l1':'l1','g/f':'l1','ground':'l1','lobby':'l1','substation':'l1','security':'l1','b1':'b1','pump room':'b1','fire pump':'b1','chiller':'b1','b2':'b2','water tank':'b2','l2':'l2','l3':'l3','ahu room':'l1','ahu-l1':'l1'};
+const ASSET_FLOOR_MAP={'roof':'roof','rooftop':'roof','cooling tower':'roof','l1':'l1','g/f':'l1','ground':'l1','lobby':'l1','substation':'l1','security':'l1','b1':'b1','pump room':'b1','fire pump':'b1','chiller':'b1','af store':'b1','af_store':'b1','receiving':'b1','store receiving':'b1','b2':'b2','water tank':'b2','l2':'l2','l3':'l3','ahu room':'l1','ahu-l1':'l1'};
 function getAssetFloor(a){const loc=(a.loc||'').toLowerCase();for(const[k,v]of Object.entries(ASSET_FLOOR_MAP)){if(loc.includes(k))return v;}return'l1';}
 
 
@@ -4141,9 +4141,11 @@ function fpHideTooltip(){
 function onFloorChange(){
   // Cancel any pending IoT re-render
   window._iotPendingFloor=null;
+  // บันทึก floor ที่เลือกไว้
+  const fl=document.getElementById('fp-floor')?.value||'l1';
+  localStorage.setItem('fp_last_floor', fl);
   renderFloorPlan();
   // Fetch IoT for new floor
-  const fl=document.getElementById('fp-floor')?.value||'l1';
   window._iotPendingFloor=fl;
   fetchIoTForFloorPlan().then(()=>{
     if(window._iotPendingFloor===fl) renderFloorPlan();
@@ -4151,7 +4153,16 @@ function onFloorChange(){
 }
 
 function renderFloorPlan(){
-  const floor=document.getElementById('fp-floor')?.value||'l1';
+  // คืนค่า floor ที่เคยเลือกไว้
+  const sel=document.getElementById('fp-floor');
+  if(sel&&!sel._restored){
+    const saved=localStorage.getItem('fp_last_floor');
+    if(saved&&sel.querySelector(`option[value="${saved}"]`)){
+      sel.value=saved;
+    }
+    sel._restored=true;
+  }
+  const floor=sel?.value||'l1';
   const layout=FLOOR_LAYOUT[floor]||FLOOR_LAYOUT.l1;
   const lbl=document.getElementById('fp-label');
   if(lbl)lbl.textContent=layout.label;
