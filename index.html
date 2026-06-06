@@ -2329,46 +2329,30 @@ async function doLogin(){
   if(!u||!p){err.textContent='❌ กรอก Username และ Password';err.classList.add('show');return;}
   if(btn){btn.textContent='⏳ กำลังเข้าสู่ระบบ...';btn.disabled=true;}
   try{
-    // ลอง API ก่อน
-    const res=await API.post('/auth/login',{email:u.includes('@')?u:u+'@imatoms.local',password:p});
-    if(res.success&&res.token){
-      localStorage.setItem('imatoms_jwt',res.token);
-      // แปลง API user format → CU format เดิม
-      const apiUser=res.user;
-      const cu={
-        id:apiUser.id,
-        name:apiUser.full_name||apiUser.username,
-        username:apiUser.username,
-        email:apiUser.email,
-        role:apiUser.role,
-        businessGroup:apiUser.business_group||'Commercial',
-        company:apiUser.company||'BHIRAJBURI',
-        schema_name:apiUser.schema_name||'bld_bhirajburi',
-        position:apiUser.role==='admin'?'System Admin':'User',
-        status:'approved',
-        _fromAPI:true
-      };
-      loginOK(cu);
-      return;
+    // ลอง login ด้วย email หลายรูปแบบ
+    const emails=[u, u+'@imatoms.local', u+'@imatomstech.com'];
+    let res=null;
+    for(const em of emails){
+      try{
+        res=await API.post('/auth/login',{email:em,password:p});
+        if(res.success) break;
+      }catch(e2){}
     }
-    // API fail → fallback localStorage
-    const users=DB.get('users',[]);
-    const f=users.find(x=>x.username===u&&x.password===p);
-    if(!f){err.textContent='❌ Username หรือ Password ไม่ถูกต้อง';err.classList.add('show');return;}
-    if(f.status==='pending'){err.textContent='⏳ บัญชีรออนุมัติ Admin';err.classList.add('show');return;}
-    if(f.status==='rejected'){err.textContent='❌ บัญชีถูกปฏิเสธ ติดต่อ Admin';err.classList.add('show');return;}
-    loginOK(f);
-  }catch(e){
-    // Offline fallback
-    const users=DB.get('users',[]);
-    const f=users.find(x=>x.username===u&&x.password===p);
-    if(!f){err.textContent='❌ Username หรือ Password ไม่ถูกต้อง';err.classList.add('show');}
-    else if(f.status==='pending'){err.textContent='⏳ บัญชีรออนุมัติ Admin';err.classList.add('show');}
-    else if(f.status==='rejected'){err.textContent='❌ บัญชีถูกปฏิเสธ';err.classList.add('show');}
-    else loginOK(f);
-  }finally{
-    if(btn){btn.textContent='🚀 เข้าสู่ระบบ';btn.disabled=false;}
-  }
+    if(res&&res.success&&res.token){
+      localStorage.setItem('imatoms_jwt',res.token);
+      const apiUser=res.user;
+      const cu={id:apiUser.id,name:apiUser.full_name||apiUser.username,username:apiUser.username,email:apiUser.email,role:apiUser.role,businessGroup:apiUser.business_group||'Commercial',company:apiUser.company||'BHIRAJBURI',schema_name:apiUser.schema_name||'bld_bhirajburi',position:apiUser.role==='admin'?'System Admin':'User',status:'approved',_fromAPI:true};
+      loginOK(cu); return;
+    }
+  }catch(e){ console.warn('API login error:', e.message); }
+  // Fallback localStorage
+  const users=DB.get('users',[]);
+  const f=users.find(x=>x.username===u&&x.password===p);
+  if(!f){err.textContent='❌ Username หรือ Password ไม่ถูกต้อง';err.classList.add('show');}
+  else if(f.status==='pending'){err.textContent='⏳ บัญชีรออนุมัติ Admin';err.classList.add('show');}
+  else if(f.status==='rejected'){err.textContent='❌ บัญชีถูกปฏิเสธ ติดต่อ Admin';err.classList.add('show');}
+  else loginOK(f);
+  if(btn){btn.textContent='🚀 เข้าสู่ระบบ';btn.disabled=false;}
 }
 function loginOK(u){
   // Merge with latest seed data for admin to ensure fresh profile
