@@ -3229,12 +3229,11 @@ function pollReliabilityWR(){
 }
 
 function startIoTRefresh(){
-  setInterval(async()=>{
+  setInterval(function(){
     if(document.getElementById('view-floorplan')?.classList.contains('active')){
-      await fetchIoTForFloorPlan();
-      renderFloorPlan();
+      fetchIoTForFloorPlan().then(function(){renderFloorPlan();});
     }
-  },300000); // 5 minutes
+  },300000);
 }
 function startRealTime(){
   stopRealTime();
@@ -4009,14 +4008,12 @@ function iotPinDragEnd(evt){
     const finalY=Math.max(20,Math.min(520,Math.round(_iotDrag.pinY+(evt.clientY-_iotDrag.startY)*scaleY)));
     // Save new position
     // บันทึกตำแหน่งลง PostgreSQL
-    if(CU?._fromAPI && API.token()){
-      try{
-        await API.post('/floor-positions',{
-          asset_id:_iotDrag.assetId||'IoT-AF_Store',
-          floor:_iotDrag.floor, pos_x:finalX, pos_y:finalY,
-          building_id:CU.company||'BHIRAJBURI'
-        });
-      }catch(e){}
+    if(CU&&CU._fromAPI&&API.token()){
+      API.post('/floor-positions',{
+        asset_id:(_iotDrag.assetId||'IoT-AF_Store'),
+        floor:_iotDrag.floor,pos_x:finalX,pos_y:finalY,
+        building_id:CU.company||'BHIRAJBURI'
+      }).catch(function(e){console.warn('floor-pos:',e.message);});
     }
     localStorage.setItem('iot_pin_pos_'+_iotDrag.floor,JSON.stringify({x:finalX,y:finalY}));
     showToast('📌 ย้าย IoT Sensor แล้ว ('+finalX+','+finalY+')');
