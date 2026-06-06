@@ -3682,6 +3682,12 @@ async function loadIoTData(){
   const dot=document.getElementById('iot-dot');
   const statusTxt=document.getElementById('iot-status-txt');
 
+  // ══ ดึงจาก bas.imatomstech.com เพื่อ sync SVG pin เสมอ ══
+  fetchIoTForFloorPlan().then(()=>{
+    const fl=document.getElementById('fp-floor')?.value||'';
+    if(fl==='b1') renderFloorPlan();
+  });
+
   if(!url){
     if(dot) dot.style.background='#6B7280';
     if(statusTxt) statusTxt.textContent='ยังไม่ตั้งค่า API URL';
@@ -3798,29 +3804,35 @@ let _iotSensorCache={
 };
 
 async function fetchIoTForFloorPlan(){
-  // Try to fetch from bas.imatomstech.com
-  const gasUrl=DB.get('iot_gas_url','');
-  if(!gasUrl){
-    // Use demo data
-    _iotSensorCache={
-      'AF_Store':{name:'AF_Store Receiving',location:'B1',temp:24.8,humi:52.9,
-                  status:'normal',updatedAt:new Date().toISOString()}
-    };
-    return;
-  }
   try{
-    const res=await fetch(gasUrl+'?action=getSensorData');
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),8000);
+    const res=await fetch('https://bas.imatomstech.com/api/sensor',{mode:'cors',signal:ctrl.signal});
+    clearTimeout(timer);
+    if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json();
-    const sensors=data?.devices||data?.data||[];
-    _iotSensorCache={};
-    sensors.forEach(s=>{ _iotSensorCache[s.id||s.name]=s; });
+    if(!Array.isArray(data)||data.length===0) throw new Error('empty');
+    // ใช้ record ล่าสุด (index 0)
+    const latest=data[0];
+    const temp=parseFloat(latest.temperature)||0;
+    const humi=parseFloat(latest.humidity)||0;
+    const ts=latest.timestamp||new Date().toISOString();
+    _iotSensorCache={
+      'AF_Store':{
+        name:'AF_Store Receiving',
+        location:'B1',
+        temp:temp,
+        humi:humi,
+        status:'normal',
+        updatedAt:ts
+      }
+    };
   }catch(e){
-    // Keep existing cache or use demo
-    if(Object.keys(_iotSensorCache).length===0){
-      _iotSensorCache={
-        'AF_Store':{name:'AF_Store Receiving',location:'B1',temp:24.8,humi:52.9,
-                    status:'normal',updatedAt:new Date().toISOString()}
-      };
+    // Keep existing cache ถ้ามีอยู่แล้ว ไม่ reset เป็น hardcode
+    if(Object.keys(_iotSensorCache).length===0||
+       (_iotSensorCache['AF_Store']&&_iotSensorCache['AF_Store'].temp===24.8)){
+      // ไม่มี cache จริง — ดึงจาก loadIoTData แทน
+      console.warn('fetchIoTForFloorPlan fallback:', e.message);
     }
   }
 }
@@ -3834,9 +3846,8 @@ function renderIoTPinsOnFloor(svgStr, floor){
     s.name?.toLowerCase().includes('receiving')
   );
   if(!sensors.length){
-    // Add demo pin for AF_Store Receiving
-    sensors.push({name:'AF_Store Receiving',location:'B1',temp:24.8,humi:52.9,
-                  status:'normal',updatedAt:new Date().toISOString()});
+    // ไม่มีข้อมูล — ไม่ render pin เพื่อไม่ให้แสดงค่าเก่า
+    return svgStr;
   }
   sensors.forEach(s=>{
     // Position: AF_Store Receiving room center ~(655, 385)
