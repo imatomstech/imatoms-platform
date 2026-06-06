@@ -2320,7 +2320,7 @@ function switchAuthTab(t){
   document.getElementById('atab-login').classList.toggle('active',t==='login');
   document.getElementById('atab-register').classList.toggle('active',t==='register');
 }
-async function doLogin(){
+function doLogin(){
   const u=document.getElementById('l-user').value.trim();
   const p=document.getElementById('l-pass').value;
   const err=document.getElementById('l-err');
@@ -2328,31 +2328,29 @@ async function doLogin(){
   err.classList.remove('show');
   if(!u||!p){err.textContent='❌ กรอก Username และ Password';err.classList.add('show');return;}
   if(btn){btn.textContent='⏳ กำลังเข้าสู่ระบบ...';btn.disabled=true;}
-  try{
-    // ลอง login ด้วย email หลายรูปแบบ
-    const emails=[u, u+'@imatoms.local', u+'@imatomstech.com'];
-    let res=null;
-    for(const em of emails){
-      try{
-        res=await API.post('/auth/login',{email:em,password:p});
-        if(res.success) break;
-      }catch(e2){}
-    }
-    if(res&&res.success&&res.token){
-      localStorage.setItem('imatoms_jwt',res.token);
-      const apiUser=res.user;
-      const cu={id:apiUser.id,name:apiUser.full_name||apiUser.username,username:apiUser.username,email:apiUser.email,role:apiUser.role,businessGroup:apiUser.business_group||'Commercial',company:apiUser.company||'BHIRAJBURI',schema_name:apiUser.schema_name||'bld_bhirajburi',position:apiUser.role==='admin'?'System Admin':'User',status:'approved',_fromAPI:true};
-      loginOK(cu); return;
-    }
-  }catch(e){ console.warn('API login error:', e.message); }
-  // Fallback localStorage
-  const users=DB.get('users',[]);
-  const f=users.find(x=>x.username===u&&x.password===p);
-  if(!f){err.textContent='❌ Username หรือ Password ไม่ถูกต้อง';err.classList.add('show');}
-  else if(f.status==='pending'){err.textContent='⏳ บัญชีรออนุมัติ Admin';err.classList.add('show');}
-  else if(f.status==='rejected'){err.textContent='❌ บัญชีถูกปฏิเสธ ติดต่อ Admin';err.classList.add('show');}
-  else loginOK(f);
-  if(btn){btn.textContent='🚀 เข้าสู่ระบบ';btn.disabled=false;}
+
+  function fallback(){
+    const users=DB.get('users',[]);
+    const f=users.find(x=>x.username===u&&x.password===p);
+    if(!f) err.textContent='❌ Username หรือ Password ไม่ถูกต้อง';
+    else if(f.status==='pending') err.textContent='⏳ บัญชีรออนุมัติ Admin';
+    else if(f.status==='rejected') err.textContent='❌ บัญชีถูกปฏิเสธ';
+    else { loginOK(f); return; }
+    err.classList.add('show');
+    if(btn){btn.textContent='🚀 เข้าสู่ระบบ';btn.disabled=false;}
+  }
+
+  API.post('/auth/login',{email:u,password:p})
+    .then(function(res){
+      if(res&&res.success&&res.token){
+        localStorage.setItem('imatoms_jwt',res.token);
+        const apiUser=res.user;
+        const cu={id:apiUser.id,name:apiUser.full_name||apiUser.username,username:apiUser.username,email:apiUser.email,role:apiUser.role,businessGroup:apiUser.business_group||'Commercial',company:apiUser.company||'BHIRAJBURI',schema_name:apiUser.schema_name||'bld_bhirajburi',position:apiUser.role==='admin'?'System Admin':'User',status:'approved',_fromAPI:true};
+        loginOK(cu);
+      } else fallback();
+      if(btn){btn.textContent='🚀 เข้าสู่ระบบ';btn.disabled=false;}
+    })
+    .catch(function(){ fallback(); if(btn){btn.textContent='🚀 เข้าสู่ระบบ';btn.disabled=false;} });
 }
 function loginOK(u){
   // Merge with latest seed data for admin to ensure fresh profile
@@ -2448,53 +2446,38 @@ function bFilter(arr){
 }
 function myBG(){ return CU?.businessGroup||''; }
 
-async function doRegister(){
-  const nm = document.getElementById('r-name').value.trim();
-  const pos= document.getElementById('r-position').value.trim();
-  const em = document.getElementById('r-email').value.trim();
-  const dp = document.getElementById('r-dept').value;
-  const bg = document.getElementById('r-bgroup').value;
-  const co = document.getElementById('r-company').value;
-  const bl = document.getElementById('r-building').value.trim();
-  const lc = document.getElementById('r-location').value.trim();
-  const un = document.getElementById('r-user').value.trim();
-  const pw = document.getElementById('r-pass').value;
-  const re = document.getElementById('r-err');
-  const ro = document.getElementById('r-ok');
-  re.classList.remove('show'); ro.classList.remove('show');
-
-  if(!nm||!em||!dp||!bg||!co||!un||pw.length<6){
-    re.textContent='❌ กรอกข้อมูลให้ครบ — Business Group, Company, Username และ Password (≥ 6) จำเป็น';
-    re.classList.add('show'); return;
-  }
-
-  // Map company → schema_name
+function doRegister(){
+  const nm=document.getElementById('r-name').value.trim();
+  const pos=document.getElementById('r-position').value.trim();
+  const em=document.getElementById('r-email').value.trim();
+  const dp=document.getElementById('r-dept').value;
+  const bg=document.getElementById('r-bgroup').value;
+  const co=document.getElementById('r-company').value;
+  const bl=document.getElementById('r-building').value.trim();
+  const lc=document.getElementById('r-location').value.trim();
+  const un=document.getElementById('r-user').value.trim();
+  const pw=document.getElementById('r-pass').value;
+  const re=document.getElementById('r-err');
+  const ro=document.getElementById('r-ok');
+  re.classList.remove('show');ro.classList.remove('show');
+  if(!nm||!em||!dp||!bg||!co||!un||pw.length<6){re.textContent='❌ กรอกข้อมูลให้ครบ — Business Group, Company, Username และ Password (≥ 6) จำเป็น';re.classList.add('show');return;}
   const schemaMap={'BHIRAJBURI':'bld_bhirajburi','BITEC Bangna':'bld_bitec','BITEC':'bld_bitec','TKO':'bld_tko'};
   const schema=schemaMap[co]||'bld_bhirajburi';
-
-  try{
-    const res=await API.post('/auth/register',{
-      username:un, email:em, password:pw,
-      full_name:nm, role:'viewer',
-      business_group:bg, company:co, schema_name:schema
-    });
-    if(res.success){
-      ro.textContent=`✅ ส่งคำขอแล้ว (${bg} · ${co}) — รอ Admin อนุมัติ`;
-      ro.classList.add('show');
-    } else {
-      // Fallback localStorage
-      _registerLocalStorage(nm,pos,em,dp,bg,co,bl,lc,un,pw,ro);
-    }
-  }catch(e){
-    _registerLocalStorage(nm,pos,em,dp,bg,co,bl,lc,un,pw,ro);
+  function clearForm(){
+    ['r-name','r-position','r-email','r-user','r-pass','r-building','r-location'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    document.getElementById('r-dept').value='';document.getElementById('r-bgroup').value='';
+    document.getElementById('r-company').innerHTML='<option value="">-- เลือก Business Group ก่อน --</option>';
+    document.querySelectorAll('#r-mods input').forEach(cb=>cb.checked=false);
+    updateAdmBadge();
   }
-  ['r-name','r-position','r-email','r-user','r-pass','r-building','r-location']
-    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('r-dept').value='';
-  document.getElementById('r-bgroup').value='';
-  document.getElementById('r-company').innerHTML='<option value="">-- เลือก Business Group ก่อน --</option>';
-  document.querySelectorAll('#r-mods input').forEach(cb=>cb.checked=false);
-  updateAdmBadge();
+  API.post('/auth/register',{username:un,email:em,password:pw,full_name:nm,role:'viewer',business_group:bg,company:co,schema_name:schema})
+    .then(function(res){
+      ro.textContent=res.success?`✅ ส่งคำขอแล้ว (${bg} · ${co}) — รอ Admin อนุมัติ`:'⚠ บันทึกใน local แทน';
+      ro.classList.add('show');
+      if(!res.success) _registerLocalStorage(nm,pos,em,dp,bg,co,bl,lc,un,pw,ro);
+      clearForm();
+    })
+    .catch(function(){_registerLocalStorage(nm,pos,em,dp,bg,co,bl,lc,un,pw,ro);clearForm();});
 }
 
 function _registerLocalStorage(nm,pos,em,dp,bg,co,bl,lc,un,pw,ro){
@@ -2610,31 +2593,18 @@ function showView(id){
 }
 
 // ══ LOAD ══
-async function loadAll(){
-  // โหลด localStorage ก่อน (เร็ว)
+function loadAll(){
   assets=DB.get('assets',[]);WR=DB.get('wr',[]);PPM=DB.get('ppm',[]);
   MA=DB.get('ma',[]);INV=DB.get('inv',[]);INSP=DB.get('inspections',[]);
   INC=DB.get('incidents',[]);NCR=DB.get('ncr',[]);PTW=DB.get('ptw',[]);
   popSelects();
-  // ถ้า login ผ่าน API → sync assets จาก PostgreSQL
-  if(CU?._fromAPI && API.token()){
-    try{
-      const apiAssets=await API.get('/assets');
+  if(CU&&CU._fromAPI&&API.token()){
+    API.get('/assets').then(function(apiAssets){
       if(Array.isArray(apiAssets)&&apiAssets.length>0){
-        // แปลง API format → local format
-        const converted=apiAssets.map(a=>({
-          id:a.id, name:a.name, sys:a.system, loc:a.location,
-          status:a.status||'active', lifecycle:a.lifecycle||'operating',
-          serial:a.serial_no, brand:a.brand_model, cost:parseFloat(a.cost)||0,
-          installDate:a.install_date, lifeYears:a.life_years||15,
-          module:a.business_module, businessGroup:CU.businessGroup,
-          building_id:a.building_id, unit_id:a.unit_id
-        }));
-        assets=converted;
-        DB.set('assets',converted);
-        popSelects();
+        const converted=apiAssets.map(function(a){return{id:a.id,name:a.name,sys:a.system,loc:a.location,status:a.status||'active',lifecycle:a.lifecycle||'operating',serial:a.serial_no,brand:a.brand_model,cost:parseFloat(a.cost)||0,installDate:a.install_date,lifeYears:a.life_years||15,module:a.business_module,businessGroup:CU.businessGroup,building_id:a.building_id};});
+        assets=converted;DB.set('assets',converted);popSelects();
       }
-    }catch(e){ console.warn('API loadAll fallback:', e.message); }
+    }).catch(function(e){console.warn('loadAll API error:',e.message);});
   }
 }
 function popSelects(){
@@ -2694,7 +2664,7 @@ function renderAssets(){
   const list=bFilter(assets).filter(a=>{if(s&&!JSON.stringify(a).toLowerCase().includes(s))return false;if(sf&&a.status!==sf)return false;if(sy&&a.sys!==sy)return false;return true;});
   document.getElementById('a-tbody').innerHTML=list.length?list.map(a=>`<tr><td><span class="tag ffm">${a.id}</span></td><td><div class="fw6" style="font-size:12px">${a.name}</div><div style="font-size:10px;color:var(--text3)">${a.brand||'—'}</div></td><td><span class="badge badge-orange">${a.sys}</span></td><td style="font-size:12px">${a.loc||'—'}</td><td style="font-size:12px">${a.module||'—'}</td><td>${sbdg[a.status]||'—'}</td><td>${lbdg[a.lifecycle]||'—'}</td><td class="ffm tg" style="font-size:12px">${a.nbv?'฿'+a.nbv.toLocaleString():'—'}</td><td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="editAsset('${a.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="delAsset('${a.id}')">🗑</button></div></td></tr>`).join(''):'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล</td></tr>';
 }
-async function saveAsset(){
+function saveAsset(){
   const id=document.getElementById('ai-id').value.trim();const nm=document.getElementById('ai-nm').value.trim();
   if(!id||!nm){alert('กรุณากรอก Asset ID และชื่อ');return;}
   assets=DB.get('assets',[]);
@@ -2704,22 +2674,12 @@ async function saveAsset(){
   const yu=ins?Math.max(0,(new Date()-new Date(ins))/(365.25*24*3600*1000)):0;
   const nbv=Math.max(0,cost-(cost/ly)*yu);
   const obj={id,name:nm,sys:document.getElementById('ai-sy').value,loc:document.getElementById('ai-lc').value,status:document.getElementById('ai-st').value,lifecycle:document.getElementById('ai-lf').value,serial:document.getElementById('ai-sr').value,brand:document.getElementById('ai-br').value,cost,installDate:ins,lifeYears:ly,module:document.getElementById('ai-md').value,nbv:Math.round(nbv),businessGroup:myBG()};
-  const ex=assets.findIndex(a=>a.id===id);
-  if(ex>=0)assets[ex]={...assets[ex],...obj};else assets.push(obj);
+  const ex=assets.findIndex(function(a){return a.id===id;});
+  if(ex>=0)assets[ex]=Object.assign({},assets[ex],obj);else assets.push(obj);
   DB.set('assets',assets);
-  // บันทึกลง PostgreSQL ด้วย
-  if(CU?._fromAPI && API.token()){
-    try{
-      await API.post('/assets',{
-        id, name:nm, system:obj.sys, location:obj.loc,
-        floor:obj.loc?.match(/b1|b2|l1|l2|l3|roof/i)?.[0]?.toLowerCase()||'l1',
-        status:obj.status, lifecycle:obj.lifecycle,
-        serial_no:obj.serial, brand_model:obj.brand,
-        cost, install_date:ins||null, life_years:ly,
-        business_module:obj.module,
-        building_id:CU.company||'BHIRAJBURI'
-      });
-    }catch(e){ console.warn('API saveAsset fallback:', e.message); }
+  if(CU&&CU._fromAPI&&API.token()){
+    API.post('/assets',{id,name:nm,system:obj.sys,location:obj.loc,floor:'l1',status:obj.status,lifecycle:obj.lifecycle,serial_no:obj.serial,brand_model:obj.brand,cost,install_date:ins||null,life_years:ly,business_module:obj.module,building_id:CU.company||'BHIRAJBURI'})
+      .catch(function(e){console.warn('saveAsset API error:',e.message);});
   }
   closeModal('m-asset');renderAssets();popSelects();showToast('💾 บันทึก Asset แล้ว');
 }
@@ -2728,12 +2688,12 @@ function editAsset(id){
   openModal('m-asset');
   setTimeout(()=>{document.getElementById('ai-id').value=a.id;document.getElementById('ai-nm').value=a.name;document.getElementById('ai-sy').value=a.sys;document.getElementById('ai-lc').value=a.loc||'';document.getElementById('ai-st').value=a.status;document.getElementById('ai-lf').value=a.lifecycle||'operating';document.getElementById('ai-sr').value=a.serial||'';document.getElementById('ai-br').value=a.brand||'';document.getElementById('ai-ct').value=a.cost||0;document.getElementById('ai-id2').value=a.installDate||'';document.getElementById('ai-ly').value=a.lifeYears||15;document.getElementById('ai-md').value=a.module||'Commercial';},50);
 }
-async function delAsset(id){
+function delAsset(id){
   if(!confirm('ลบ?'))return;
-  assets=assets.filter(a=>a.id!==id);
+  assets=assets.filter(function(a){return a.id!==id;});
   DB.set('assets',assets);
-  if(CU?._fromAPI && API.token()){
-    try{ await API.del('/assets/'+id); }catch(e){}
+  if(CU&&CU._fromAPI&&API.token()){
+    API.del('/assets/'+id).catch(function(e){console.warn('delAsset API:',e.message);});
   }
   renderAssets();
 }
@@ -4670,19 +4630,20 @@ function injectExportBars(){
 applyAllSettings();
 seed();loadAll();
 const su=DB.get('currentUser',null);
-(async()=>{
+window.addEventListener('load', function(){
   const jwt=localStorage.getItem('imatoms_jwt');
   if(jwt){
-    try{
-      const me=await API.get('/auth/me');
+    API.get('/auth/me').then(function(me){
       if(me&&me.id){
         const cu={id:me.id,name:me.full_name||me.username,username:me.username,email:me.email,role:me.role,businessGroup:me.business_group||'Commercial',company:me.company||'BHIRAJBURI',schema_name:me.schema_name||'bld_bhirajburi',position:me.role==='admin'?'System Admin':'User',status:'approved',_fromAPI:true};
-        loginOK(cu); return;
-      }
-    }catch(e){ console.warn('JWT restore failed:', e.message); }
-  }
-  if(su&&su.username) loginOK(su);
-})();
+        loginOK(cu);
+      } else if(su&&su.username) loginOK(su);
+    }).catch(function(e){
+      console.warn('JWT restore failed:', e.message);
+      if(su&&su.username) loginOK(su);
+    });
+  } else if(su&&su.username) loginOK(su);
+});
 document.querySelectorAll('input[type="datetime-local"]').forEach(el=>{const n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());el.value=n.toISOString().slice(0,16);});
 const today=new Date().toISOString().split('T')[0];
 document.querySelectorAll('input[type="date"]').forEach(el=>{if(!el.value)el.value=today;});
