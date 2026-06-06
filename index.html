@@ -2340,7 +2340,7 @@ function doLogin(){
     if(btn){btn.textContent='🚀 เข้าสู่ระบบ';btn.disabled=false;}
   }
 
-  API.post('/auth/login',{email:u,password:p})
+  API.post('/auth/login',{email:u,username:u,password:p})
     .then(function(res){
       if(res&&res.success&&res.token){
         localStorage.setItem('imatoms_jwt',res.token);
