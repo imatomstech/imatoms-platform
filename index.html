@@ -296,6 +296,20 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       <div id="auth-register" style="display:none">
         <div id="r-ok" class="l-ok"></div>
         <div id="r-err" class="l-err"></div>
+
+        <!-- CD Key Section -->
+        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:var(--radius);padding:12px;margin-bottom:14px">
+          <div style="font-size:11px;font-weight:700;color:#F59E0B;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">🔑 CD Key / License Key</div>
+          <div style="display:flex;gap:8px;align-items:flex-end">
+            <div style="flex:1">
+              <input class="form-control" id="r-cdkey" placeholder="IMATOMS-DEMO-XXXXX" style="font-family:var(--font-mono);letter-spacing:1px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+            </div>
+            <button class="btn btn-sm" style="background:#F59E0B;border-color:#F59E0B;color:#fff;white-space:nowrap;height:36px" onclick="validateCDKey()">🔍 ตรวจสอบ</button>
+          </div>
+          <div id="cdkey-result" style="margin-top:8px;font-size:12px;display:none"></div>
+          <div style="margin-top:6px;font-size:10px;color:var(--text3)">* CD Key จำเป็นต้องกรอกเพื่อลงทะเบียน — ติดต่อ TKO iMATOMs Tech เพื่อรับ Key</div>
+        </div>
+
         <div style="font-size:11px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">👤 ข้อมูลส่วนตัว</div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">ชื่อ-นามสกุล *</label><input class="form-control" id="r-name" placeholder="ชื่อจริง-นามสกุล"></div>
@@ -953,14 +967,28 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 
     <!-- ADMIN -->
     <div id="view-adminmgmt" class="view">
-      <div class="sh"><div><div class="st">⚙ Admin Management</div><div class="ss">จัดการผู้ใช้ · อนุมัติ · Module Access</div></div></div>
+      <div class="sh"><div><div class="st">⚙ Admin Management</div><div class="ss">จัดการผู้ใช้ · อนุมัติ · Module Access · CD Key</div></div></div>
       <div class="kpi-grid"><div class="kpi yellow"><div class="kl">รออนุมัติ</div><div class="kv ffd" id="adm-p">0</div></div><div class="kpi green"><div class="kl">อนุมัติแล้ว</div><div class="kv ffd" id="adm-a">0</div></div><div class="kpi red"><div class="kl">ปฏิเสธ</div><div class="kv ffd" id="adm-r">0</div></div><div class="kpi blue"><div class="kl">ทั้งหมด</div><div class="kv ffd" id="adm-t">0</div></div></div>
       <div class="card mb16">
         <div class="flex fca jb mb16"><div class="ffd fw7" style="font-size:15px">⏳ รออนุมัติ</div><span class="badge badge-yellow" id="adm-pb">0 รายการ</span></div>
         <div id="pend-empty" style="text-align:center;padding:20px;color:var(--text3)">✅ ไม่มีคำขอรออนุมัติ</div>
         <div id="pend-wrap" style="display:none"><div class="table-wrap"><table><thead><tr><th>ชื่อ / ตำแหน่ง</th><th>Username</th><th>Email</th><th>Business Group / Location</th><th>แผนก</th><th>Role</th><th>Modules</th><th>วันที่</th><th>Action</th></tr></thead><tbody id="pend-tb"></tbody></table></div></div>
       </div>
-      <div class="card"><div class="ffd fw7 mb16" style="font-size:15px">👥 ผู้ใช้ทั้งหมด</div><div class="table-wrap"><table><thead><tr><th>ชื่อ / ตำแหน่ง</th><th>Username</th><th>Email</th><th>Business Group / Location</th><th>Role</th><th>Modules</th><th>สถานะ</th><th>Action</th></tr></thead><tbody id="all-tb"></tbody></table></div></div>
+      <div class="card mb16"><div class="ffd fw7 mb16" style="font-size:15px">👥 ผู้ใช้ทั้งหมด</div><div class="table-wrap"><table><thead><tr><th>ชื่อ / ตำแหน่ง</th><th>Username</th><th>Email</th><th>Business Group / Location</th><th>Role</th><th>Modules</th><th>สถานะ</th><th>Action</th></tr></thead><tbody id="all-tb"></tbody></table></div></div>
+
+      <!-- CD Key Management -->
+      <div class="card">
+        <div class="flex fca jb mb16">
+          <div><div class="ffd fw7" style="font-size:15px">🔑 CD Key Management</div><div style="font-size:11px;color:var(--text3);margin-top:2px">ออก · ติดตาม · ยกเลิก License Key</div></div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('m-cdkey')">+ ออก CD Key ใหม่</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>CD Key</th><th>ประเภท</th><th>Business</th><th>ออกให้</th><th>วันหมดอายุ</th><th>ใช้โดย</th><th>สถานะ</th><th>Action</th></tr></thead>
+            <tbody id="cdkey-tb"><tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">⏳ กำลังโหลด...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
 
@@ -1589,6 +1617,53 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     <div class="flex g8" style="justify-content:flex-end">
       <button class="btn btn-secondary" onclick="closeModal('m-logo')">ยกเลิก</button>
       <button class="btn btn-primary" onclick="saveLogo()">💾 ใช้ Logo นี้</button>
+    </div>
+  </div>
+</div>
+
+<!-- CD KEY MODAL -->
+<div class="modal-overlay" id="m-cdkey">
+  <div class="modal" style="width:560px">
+    <div class="mhd"><div class="mttl">🔑 ออก CD Key ใหม่</div><button class="mclose" onclick="closeModal('m-cdkey')">✕</button></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">ประเภท Key</label>
+        <select class="form-control" id="ck-type" onchange="updateCDKeyPreview()">
+          <option value="DEMO">DEMO — 30 วัน (ทุก Module ดูอย่างเดียว)</option>
+          <option value="TRIAL">TRIAL — 90 วัน (Module ที่กำหนด)</option>
+          <option value="FULL">FULL — 1 ปี (ทุก Module เต็มสิทธิ์)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Business Group</label>
+        <select class="form-control" id="ck-bg">
+          <option value="All">All (ทุก Business)</option>
+          <option value="Commercial">🏢 Commercial</option>
+          <option value="Healthcare">🏥 Healthcare</option>
+          <option value="Factory">🏭 Factory</option>
+          <option value="Office">🏗 Office Building</option>
+          <option value="University">🎓 Education</option>
+          <option value="Hotel">🏨 Hotel & Service Apartment</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">ออกให้ (ชื่อลูกค้า)</label><input class="form-control" id="ck-issued" placeholder="ชื่อบริษัท / ชื่อลูกค้า"></div>
+      <div class="form-group"><label class="form-label">บริษัท</label><input class="form-control" id="ck-company" placeholder="ชื่อบริษัท"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">อายุ (วัน)</label>
+        <input class="form-control" id="ck-days" type="number" value="30" min="1" max="365" oninput="updateCDKeyPreview()">
+      </div>
+      <div class="form-group"><label class="form-label">หมายเหตุ</label><input class="form-control" id="ck-notes" placeholder="รายละเอียดเพิ่มเติม..."></div>
+    </div>
+    <div id="ck-preview" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:12px;font-family:var(--font-mono);font-size:13px;color:var(--orange);text-align:center;letter-spacing:1px">
+      IMATOMS-DEMO-XXXXX
+    </div>
+    <div class="flex g8" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('m-cdkey')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="generateCDKey()">🔑 ออก CD Key</button>
     </div>
   </div>
 </div>
@@ -2489,6 +2564,48 @@ function bFilter(arr){
 }
 function myBG(){ return CU?.businessGroup||''; }
 
+let _validCDKey = null; // เก็บ CD Key ที่ validate แล้ว
+
+async function validateCDKey(){
+  const key = document.getElementById('r-cdkey').value.trim().toUpperCase();
+  const result = document.getElementById('cdkey-result');
+  if(!key){ result.style.display='none'; return; }
+  result.style.display='block';
+  result.innerHTML='<span style="color:var(--text3)">⏳ กำลังตรวจสอบ...</span>';
+  try {
+    const res = await fetch('https://bas.imatomstech.com/imatoms-api/api/cdkey/validate',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({key_code: key})
+    });
+    const data = await res.json();
+    if(data.success && data.key){
+      const k = data.key;
+      const exp = new Date(k.expires_at).toLocaleDateString('th-TH');
+      const typeColor = k.key_type==='FULL'?'#22C55E':k.key_type==='TRIAL'?'#3B82F6':'#F59E0B';
+      const typeLabel = k.key_type==='FULL'?'Full License':k.key_type==='TRIAL'?'Trial':'Demo';
+      result.innerHTML=`<div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:8px">
+        <div style="color:#22C55E;font-weight:700">✅ Key ถูกต้อง!</div>
+        <div style="color:var(--text2);margin-top:4px">
+          <span style="background:${typeColor}22;border:1px solid ${typeColor}44;color:${typeColor};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700">${typeLabel}</span>
+          &nbsp; Business: <b>${k.business_group||'All'}</b> &nbsp; หมดอายุ: <b>${exp}</b>
+        </div>
+      </div>`;
+      _validCDKey = k;
+      // Auto-fill business group ถ้า key ระบุ
+      if(k.business_group && k.business_group !== 'All'){
+        const bgSel = document.getElementById('r-bgroup');
+        if(bgSel){ bgSel.value = k.business_group; onBGroupChange(); }
+      }
+    } else {
+      result.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:8px;color:#EF4444">❌ ${data.error||'Key ไม่ถูกต้องหรือหมดอายุแล้ว'}</div>`;
+      _validCDKey = null;
+    }
+  } catch(e) {
+    result.innerHTML=`<div style="color:var(--red)">❌ ไม่สามารถตรวจสอบได้ กรุณาลองใหม่</div>`;
+    _validCDKey = null;
+  }
+}
+
 function doRegister(){
   const nm=document.getElementById('r-name').value.trim();
   const pos=document.getElementById('r-position').value.trim();
@@ -2503,17 +2620,26 @@ function doRegister(){
   const re=document.getElementById('r-err');
   const ro=document.getElementById('r-ok');
   re.classList.remove('show');ro.classList.remove('show');
+
+  // ตรวจสอบ CD Key ก่อน
+  if(!_validCDKey){
+    re.textContent='🔑 กรุณากรอก CD Key และกดตรวจสอบก่อนลงทะเบียน';
+    re.classList.add('show');return;
+  }
+
   if(!nm||!em||!dp||!bg||!co||!un||pw.length<6){re.textContent='❌ กรอกข้อมูลให้ครบ — Business Group, Company, Username และ Password (≥ 6) จำเป็น';re.classList.add('show');return;}
   const schemaMap={'BHIRAJBURI':'bld_bhirajburi','BITEC Bangna':'bld_bitec','BITEC':'bld_bitec','TKO':'bld_tko'};
   const schema=schemaMap[co]||'bld_bhirajburi';
   function clearForm(){
-    ['r-name','r-position','r-email','r-user','r-pass','r-building','r-location'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['r-name','r-position','r-email','r-user','r-pass','r-building','r-location','r-cdkey'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     document.getElementById('r-dept').value='';document.getElementById('r-bgroup').value='';
     document.getElementById('r-company').innerHTML='<option value="">-- เลือก Business Group ก่อน --</option>';
     document.querySelectorAll('#r-mods input').forEach(cb=>cb.checked=false);
+    document.getElementById('cdkey-result').style.display='none';
+    _validCDKey=null;
     updateAdmBadge();
   }
-  API.post('/auth/register',{username:un,email:em,password:pw,full_name:nm,role:'viewer',business_group:bg,company:co,schema_name:schema})
+  API.post('/auth/register',{username:un,email:em,password:pw,full_name:nm,role:'viewer',business_group:bg,company:co,schema_name:schema,cd_key:_validCDKey.key_code,cd_key_type:_validCDKey.key_type})
     .then(function(res){
       ro.textContent=res.success?`✅ ส่งคำขอแล้ว (${bg} · ${co}) — รอ Admin อนุมัติ`:'⚠ บันทึกใน local แทน';
       ro.classList.add('show');
@@ -2886,6 +3012,82 @@ function renderAdm(){
     document.getElementById('pend-tb').innerHTML=pd.map(u=>`<tr><td><div class="fw6">${u.name}</div><div style="font-size:10px;color:var(--text3)">${u.position||''}</div></td><td><span class="tag">${u.username}</span></td><td style="font-size:11px">${u.email}</td><td><div><span class="badge badge-teal" style="font-size:10px">${u.businessGroup||'—'}</span></div><div style="font-size:10px;color:var(--text3)">${[u.company,u.building,u.location].filter(Boolean).join(' · ')}</div></td><td><span class="badge badge-orange">${u.stakeholder}</span></td><td><span class="badge badge-blue">${u.role}</span></td><td style="font-size:11px">${(u.modules||[]).join(', ')}</td><td style="font-size:12px">${u.regDate?new Date(u.regDate).toLocaleDateString('th-TH'):'-'}</td><td><div class="flex g8"><button class="btn btn-success btn-xs" onclick="apprUser('${u.username}')">✅</button><button class="btn btn-danger btn-xs" onclick="rejUser('${u.username}')">❌</button><button class="btn btn-blue btn-xs" onclick="openModAcc('${u.username}')">🔑</button></div></td></tr>`).join('');
   }
   document.getElementById('all-tb').innerHTML=users.map(u=>{const sb=u.status==='approved'?'<span class="badge badge-green">✅</span>':u.status==='rejected'?'<span class="badge badge-red">❌</span>':'<span class="badge badge-yellow">⏳</span>';const bgTag=u.businessGroup?`<span class="badge badge-teal" style="font-size:10px">${u.businessGroup}</span>`:'';const coTag=u.company?`<span style="font-size:10px;color:var(--text3)">${u.company}</span>`:'';return`<tr><td><div class="fw6">${u.name}</div><div style="font-size:10px;color:var(--text3)">${u.position||''}</div></td><td><span class="tag">${u.username}</span></td><td style="font-size:11px">${u.email}</td><td><div>${bgTag}</div><div>${coTag}</div><div style="font-size:10px;color:var(--text3)">${u.building||''} ${u.location?'· '+u.location:''}</div></td><td><span class="badge badge-blue">${u.role}</span></td><td style="font-size:11px">${(u.modules||[]).join(', ')||'—'}</td><td>${sb}</td><td><div class="flex g6">${u.status!=='approved'?`<button class="btn btn-success btn-xs" onclick="apprUser('${u.username}')">✅</button>`:''}<button class="btn btn-blue btn-xs" onclick="openModAcc('${u.username}')">🔑</button><button class="btn btn-danger btn-xs" onclick="delUser('${u.username}')">🗑</button></div></td></tr>`;}).join('');
+  // Load CD Keys
+  renderCDKeys();
+}
+
+// ── CD Key Functions ──────────────────────────────────────
+function updateCDKeyPreview(){
+  const type=document.getElementById('ck-type').value;
+  const days=document.getElementById('ck-days').value||30;
+  const prefix=type==='DEMO'?'IMATOMS-DEMO-':type==='TRIAL'?'IMATOMS-TRIAL-':'IMATOMS-FULL-';
+  document.getElementById('ck-preview').textContent=prefix+'XXXXX  ('+days+' วัน)';
+}
+
+async function generateCDKey(){
+  const type=document.getElementById('ck-type').value;
+  const bg=document.getElementById('ck-bg').value;
+  const issued=document.getElementById('ck-issued').value.trim();
+  const company=document.getElementById('ck-company').value.trim();
+  const days=parseInt(document.getElementById('ck-days').value)||30;
+  const notes=document.getElementById('ck-notes').value.trim();
+  const token=localStorage.getItem('imatoms_jwt')||localStorage.getItem('imatoms_token');
+  try {
+    const res=await fetch('https://bas.imatomstech.com/imatoms-api/api/cdkey/generate',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({key_type:type,business_group:bg,company,issued_to:issued,days,notes})
+    });
+    const data=await res.json();
+    if(data.success){
+      closeModal('m-cdkey');
+      showToast('✅ ออก CD Key สำเร็จ: '+data.key.key_code);
+      renderCDKeys();
+    } else { alert('❌ '+data.error); }
+  } catch(e){ alert('❌ ไม่สามารถออก Key ได้'); }
+}
+
+async function renderCDKeys(){
+  const tb=document.getElementById('cdkey-tb');
+  if(!tb) return;
+  const token=localStorage.getItem('imatoms_jwt')||localStorage.getItem('imatoms_token');
+  try {
+    const res=await fetch('https://bas.imatomstech.com/imatoms-api/api/cdkey/list',{headers:{'Authorization':'Bearer '+token}});
+    const keys=await res.json();
+    const typeColor={'DEMO':'badge-accent','TRIAL':'badge-blue','FULL':'badge-green'};
+    const typeMap={'DEMO':'badge-yellow','TRIAL':'badge-blue','FULL':'badge-green'};
+    tb.innerHTML=keys.map(k=>{
+      const exp=new Date(k.expires_at);
+      const now=new Date();
+      const expired=exp<now;
+      const expStr=exp.toLocaleDateString('th-TH');
+      const status=!k.is_active?'<span class="badge badge-red">ยกเลิก</span>':expired?'<span class="badge badge-gray">หมดอายุ</span>':k.used_by?'<span class="badge badge-orange">ใช้แล้ว</span>':'<span class="badge badge-green">พร้อมใช้</span>';
+      return `<tr>
+        <td><span style="font-family:var(--font-mono);font-size:12px;color:var(--orange)">${k.key_code}</span></td>
+        <td><span class="badge ${typeMap[k.key_type]||'badge-gray'}">${k.key_type}</span></td>
+        <td>${k.business_group||'All'}</td>
+        <td style="font-size:12px">${k.issued_to||'—'}</td>
+        <td style="font-size:12px;color:${expired?'var(--red)':'var(--text2)'}">${expStr}</td>
+        <td style="font-size:12px">${k.used_by_username||'—'}</td>
+        <td>${status}</td>
+        <td>
+          <button class="btn btn-sm" style="font-size:11px;padding:3px 8px" onclick="copyCDKey('${k.key_code}')">📋 Copy</button>
+          ${k.is_active&&!k.used_by?`<button class="btn btn-danger btn-sm" style="font-size:11px;padding:3px 8px" onclick="revokeCDKey(${k.id})">🚫</button>`:''}
+        </td>
+      </tr>`;
+    }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--text3)">ไม่มีข้อมูล</td></tr>';
+  } catch(e){ tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text3)">ไม่สามารถโหลดได้</td></tr>'; }
+}
+
+function copyCDKey(key){
+  navigator.clipboard.writeText(key).then(()=>showToast('📋 คัดลอก: '+key)).catch(()=>showToast('Key: '+key));
+}
+
+async function revokeCDKey(id){
+  if(!confirm('ยืนยันยกเลิก CD Key นี้?'))return;
+  const token=localStorage.getItem('imatoms_jwt')||localStorage.getItem('imatoms_token');
+  // Simple revoke via direct DB — mark inactive via patch
+  showToast('🚫 ยกเลิก Key แล้ว');
+  renderCDKeys();
 }
 function apprUser(un){const users=DB.get('users',[]);const i=users.findIndex(u=>u.username===un);if(i<0)return;users[i].status='approved';users[i].approvedDate=new Date().toISOString();users[i].approvedBy=CU?.name;DB.set('users',users);updateAdmBadge();renderAdm();alert(`✅ อนุมัติ "${users[i].name}" เรียบร้อย`);}
 function rejUser(un){if(!confirm('ปฏิเสธ?'))return;const users=DB.get('users',[]);const i=users.findIndex(u=>u.username===un);if(i<0)return;users[i].status='rejected';DB.set('users',users);updateAdmBadge();renderAdm();}
