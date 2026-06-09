@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TKO iMATOMs Tech v2.0 — 6-Strategy Platform</title>
+<title>TKO iMATOMs Tech v2.0 — Towards Sustainable Organization Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -280,7 +280,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     </div>
     <div class="l-brand">TKO ● iMATOMs Tech</div>
     <div class="l-title">Platform <span>v2.0</span></div>
-    <div class="l-sub">6-Strategy · Towards Sustainable Organization · 2026</div>
+    <div class="l-sub">Towards Sustainable Organization · 2026</div>
     <div class="l-card">
       <div class="atabs">
         <div class="atab active" id="atab-login" onclick="switchAuthTab('login')">🔐 เข้าสู่ระบบ</div>
@@ -323,6 +323,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
               <option value="Factory">🏭 Factory</option>
               <option value="Office">🏗 Office Building</option>
               <option value="University">🎓 University / Institution</option>
+              <option value="Hotel">🏨 Hotel & Service Apartment</option>
             </select>
           </div>
           <div class="form-group">
@@ -380,7 +381,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     <div id="sb-logo-svg" style="flex-shrink:0;width:40px;height:40px;display:flex;align-items:center;justify-content:center"></div>
     <div style="flex:1;min-width:0">
       <div class="sb-logo">TKO ● iMATOMs Tech</div>
-      <div class="sb-title">6-Strategy Platform</div>
+      <div class="sb-title">Towards Sustainable Organization</div>
       <span class="sb-v2">v2.0 · 2026</span>
     </div>
     <button onclick="openModal('m-settings')" title="Settings"
@@ -637,7 +638,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     <!-- MODULE HUB -->
     <div id="view-modules" class="view">
       <div class="sh" id="hub-header">
-        <div><div class="st">🏢 Industry Module Hub</div><div class="ss" id="hub-sub"></div></div>
+        <div><div class="st">🏢 Business Module Hub</div><div class="ss" id="hub-sub"></div></div>
       </div>
       <div class="alr alr-i mb16">💡 วางไฟล์ Module ทั้งหมดในโฟลเดอร์เดียวกับ v2.0 · <strong>Reliability = TKO_iMATOMs_Reliability_Module_v1_3.html</strong></div>
       <div id="hub-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px"></div>
@@ -1395,7 +1396,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 <div class="form-row-3"><div class="form-group"><label class="form-label">ระบบ</label><select class="form-control" id="ai-sy"><option>AC</option><option>BAS</option><option>EE</option><option>EL</option><option>FA</option><option>FP</option><option>SN</option><option>TR</option><option>WWT</option></select></div><div class="form-group"><label class="form-label">Location</label><input class="form-control" id="ai-lc" placeholder="B1 Pump Room"></div><div class="form-group"><label class="form-label">สถานะ</label><select class="form-control" id="ai-st"><option value="active">🟢 Active</option><option value="warning">🟡 Warning</option><option value="critical">🔴 Critical</option><option value="inactive">⚫ Inactive</option></select></div></div>
 <div class="form-row"><div class="form-group"><label class="form-label">Serial No.</label><input class="form-control" id="ai-sr" placeholder="SN-XXXX"></div><div class="form-group"><label class="form-label">Brand/Model</label><input class="form-control" id="ai-br" placeholder="Carrier/30XAB"></div></div>
 <div class="form-row-3"><div class="form-group"><label class="form-label">ราคาซื้อ (฿)</label><input class="form-control" type="number" id="ai-ct" placeholder="0"></div><div class="form-group"><label class="form-label">วันติดตั้ง</label><input class="form-control" type="date" id="ai-id2"></div><div class="form-group"><label class="form-label">อายุ (ปี)</label><input class="form-control" type="number" id="ai-ly" placeholder="15"></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Lifecycle</label><select class="form-control" id="ai-lf"><option value="new">🆕 New</option><option value="operating">✅ Operating</option><option value="aging">⚠ Aging</option><option value="critical">🔴 Critical</option><option value="eol">🔚 EOL</option></select></div><div class="form-group"><label class="form-label">Business Module</label><select class="form-control" id="ai-md"><option>Commercial</option><option>BHIRAJBURI</option><option>Township</option><option>BITEC Bangna</option><option>Healthcare</option><option>Factory</option><option>Office</option><option>University</option></select></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">Lifecycle</label><select class="form-control" id="ai-lf"><option value="new">🆕 New</option><option value="operating">✅ Operating</option><option value="aging">⚠ Aging</option><option value="critical">🔴 Critical</option><option value="eol">🔚 EOL</option></select></div><div class="form-group"><label class="form-label">Business Module</label><select class="form-control" id="ai-md"><option>Commercial</option><option>BHIRAJBURI</option><option>Township</option><option>BITEC Bangna</option><option>Healthcare</option><option>Factory</option><option>Office</option><option>University</option><option>Hotel</option></select></div></div>
 <div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-asset')">ยกเลิก</button><button class="btn btn-primary" onclick="saveAsset()">💾 บันทึก</button></div>
 </div></div>
 
@@ -1504,7 +1505,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
   <div class="modal">
     <div class="mhd"><div class="mttl">🎨 เลือก Logo</div><button class="mclose" onclick="closeModal('m-logo')">✕</button></div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:16px">เลือก Logo สำหรับ TKO iMATOMs Tech Platform</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px">
       <!-- Logo 1: Hexagon Tech -->
       <div id="logo-opt-1" onclick="selectLogo(1)" style="cursor:pointer;border:2px solid var(--border);border-radius:var(--radius-lg);padding:20px;text-align:center;transition:all .2s">
         <svg viewBox="0 0 80 80" width="72" height="72" style="display:block;margin:0 auto 10px">
@@ -1541,6 +1542,19 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
         </svg>
         <div style="font-size:11px;font-weight:700;color:var(--text3)">Logo 3</div>
         <div style="font-size:10px;color:var(--text3);margin-top:2px">Modern Shield</div>
+      </div>
+      <!-- Logo 4: Atom Orbit ★ NEW DEFAULT -->
+      <div id="logo-opt-4" onclick="selectLogo(4)" style="cursor:pointer;border:2px solid #F97316;border-radius:var(--radius-lg);padding:20px;text-align:center;transition:all .2s;background:rgba(249,115,22,.08)">
+        <svg viewBox="0 0 80 80" width="72" height="72" style="display:block;margin:0 auto 10px">
+          <ellipse cx="40" cy="40" rx="36" ry="13" fill="none" stroke="#3B82F6" stroke-width="2"/>
+          <ellipse cx="40" cy="40" rx="36" ry="13" fill="none" stroke="#F97316" stroke-width="2" transform="rotate(60,40,40)"/>
+          <ellipse cx="40" cy="40" rx="36" ry="13" fill="none" stroke="#22C55E" stroke-width="2" transform="rotate(120,40,40)"/>
+          <circle cx="76" cy="40" r="4" fill="#A855F7"/>
+          <circle cx="40" cy="40" r="13" fill="#F97316" opacity="0.15"/>
+          <circle cx="40" cy="40" r="8" fill="#F97316"/>
+        </svg>
+        <div style="font-size:11px;font-weight:700;color:#F97316">Logo 4 ★</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">Atom Orbit</div>
       </div>
     </div>
     <div style="background:var(--bg3);border-radius:var(--radius);padding:12px;text-align:center;margin-bottom:16px">
@@ -1816,20 +1830,25 @@ const LOGOS = {
     sm:(c)=>`<svg viewBox="0 0 80 80" width="100%" height="100%"><path d="M40,8 L68,20 L68,44 Q68,62 40,72 Q12,62 12,44 L12,20 Z" fill="${c}20" stroke="${c}" stroke-width="2.5"/><path d="M40,18 L58,27 L58,44 Q58,56 40,63 Q22,56 22,44 L22,27 Z" fill="${c}10" stroke="${c}60" stroke-width="1"/><text x="40" y="38" text-anchor="middle" fill="${c}" font-size="10" font-weight="700" font-family="Rajdhani,sans-serif">iMAT</text><text x="40" y="51" text-anchor="middle" fill="${c}" font-size="8" font-weight="600" font-family="Rajdhani,sans-serif" opacity=".8">OMs</text></svg>`,
     lg:(c)=>`<svg viewBox="0 0 80 80" width="64" height="64"><path d="M40,8 L68,20 L68,44 Q68,62 40,72 Q12,62 12,44 L12,20 Z" fill="${c}20" stroke="${c}" stroke-width="2.5"/><path d="M40,18 L58,27 L58,44 Q58,56 40,63 Q22,56 22,44 L22,27 Z" fill="${c}10" stroke="${c}60" stroke-width="1"/><text x="40" y="40" text-anchor="middle" fill="${c}" font-size="11" font-weight="700" font-family="Rajdhani,sans-serif">iMAT</text><text x="40" y="54" text-anchor="middle" fill="${c}" font-size="9" font-weight="600" font-family="Rajdhani,sans-serif" opacity=".8">OMs</text></svg>`,
   },
+  4: {
+    name:'Atom Orbit',
+    sm:(c)=>`<svg viewBox="0 0 80 80" width="100%" height="100%"><ellipse cx="40" cy="40" rx="36" ry="13" fill="none" stroke="#3B82F6" stroke-width="2"/><ellipse cx="40" cy="40" rx="36" ry="13" fill="none" stroke="${c}" stroke-width="2" transform="rotate(60,40,40)"/><ellipse cx="40" cy="40" rx="36" ry="13" fill="none" stroke="#22C55E" stroke-width="2" transform="rotate(120,40,40)"/><circle cx="76" cy="40" r="4" fill="#A855F7"/><circle cx="40" cy="40" r="13" fill="${c}" opacity="0.15"/><circle cx="40" cy="40" r="8" fill="${c}"/></svg>`,
+    lg:(c)=>`<svg viewBox="0 0 80 80" width="64" height="64"><ellipse cx="40" cy="40" rx="36" ry="13" fill="none" stroke="#3B82F6" stroke-width="2"/><ellipse cx="40" cy="40" rx="36" ry="13" fill="none" stroke="${c}" stroke-width="2" transform="rotate(60,40,40)"/><ellipse cx="40" cy="40" rx="36" ry="13" fill="none" stroke="#22C55E" stroke-width="2" transform="rotate(120,40,40)"/><circle cx="76" cy="40" r="4" fill="#A855F7"/><circle cx="40" cy="40" r="13" fill="${c}" opacity="0.15"/><circle cx="40" cy="40" r="8" fill="${c}"/></svg>`,
+  },
 };
 let _selectedLogo=0;
 
 function selectLogo(n){
   _selectedLogo=n;
   // Highlight selected
-  [1,2,3].forEach(i=>{
+  [1,2,3,4].forEach(i=>{
     const el=document.getElementById('logo-opt-'+i);
     if(el) el.style.borderColor=i===n?'var(--orange)':'var(--border)';
     if(el) el.style.background=i===n?'var(--orange-dim)':'transparent';
   });
   // Preview
   const prev=document.getElementById('logo-preview');
-  if(prev) prev.innerHTML=`${LOGOS[n].lg('#F97316')}<div style="text-align:left"><div style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--orange)">TKO ● iMATOMs</div><div style="font-size:11px;color:var(--text3)">6-Strategy Platform</div><div style="font-size:10px;color:var(--text3);margin-top:2px">${LOGOS[n].name}</div></div>`;
+  if(prev) prev.innerHTML=`${LOGOS[n].lg('#F97316')}<div style="text-align:left"><div style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--orange)">TKO ● iMATOMs</div><div style="font-size:11px;color:var(--text3)">Towards Sustainable Organization</div><div style="font-size:10px;color:var(--text3);margin-top:2px">${LOGOS[n].name}</div></div>`;
 }
 
 function saveLogo(){
@@ -1994,7 +2013,7 @@ const T = {
   // Section labels
   'section_overview':   {th:'Overview',             en:'Overview'},
   'section_system':     {th:'System',               en:'System'},
-  'platform_sub':       {th:'6-Strategy · Towards Sustainable Organization · 2026', en:'6-Strategy · Towards Sustainable Organization · 2026'},
+  'platform_sub':       {th:'Towards Sustainable Organization · 2026', en:'Towards Sustainable Organization · 2026'},
   'edition':            {th:'Edition · 2026',        en:'Edition · 2026'},
 };
 
@@ -2246,7 +2265,7 @@ Vendor: ${m.vendor}
 function applyAllSettings(){
   applyTheme();
   applyFont();
-  const savedLogo=DB.get('logo',1);
+  const savedLogo=DB.get('logo',4);
   applyLogo(savedLogo);
   applyLang();
   updateLangBtn();
@@ -2359,13 +2378,6 @@ function loginOK(u){
     if(freshAdmin)u={...freshAdmin};
   }
   CU=u; DB.set('currentUser',u);
-  // ── iMATOMs SSO — บันทึก token และ user สำหรับ Module อื่นๆ ──
-  localStorage.setItem('imatoms_token', localStorage.getItem('imatoms_jwt')||'');
-  localStorage.setItem('imatoms_user', JSON.stringify({
-    username: u.username, full_name: u.name, email: u.email,
-    role: u.role, company: u.company, business_group: u.businessGroup,
-    schema_name: u.schema_name || 'bld_bhirajburi'
-  }));
   const ls=document.getElementById('login-screen');
   ls.removeAttribute('style'); ls.classList.add('hidden');
   document.getElementById('sb-up').style.display='flex';
@@ -2408,6 +2420,7 @@ const BG_COMPANIES = {
   'Factory':     ['Amata City','Eastern Seaboard','Rojana','Map Ta Phut','Other Factory'],
   'Office':      ['One Bangkok','CentralWorld Complex','Empire Tower','Sino-Thai Tower','Other Office'],
   'University':  ['Chulalongkorn','Mahidol','KMUTT','KMITL','Other University'],
+  'Hotel':       ['Hotel Property','Service Apartment','Resort','Boutique Hotel','Other Hotel'],
 };
 
 function onBGroupChange(){
@@ -2498,8 +2511,6 @@ function _registerLocalStorage(nm,pos,em,dp,bg,co,bl,lc,un,pw,ro){
 function doLogout(){
   DB.del('currentUser');CU=null;
   localStorage.removeItem('imatoms_jwt');
-  localStorage.removeItem('imatoms_token');
-  localStorage.removeItem('imatoms_user');
   // Close all modals
   document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));
   _curModFile='';
@@ -2534,7 +2545,7 @@ function toggleAcc(id){
 // ══ VIEWS ══
 const META={
   dashboard:{t:'📊 Dashboard',b:'TKO iMATOMs v2.0 › Overview'},
-  modules:{t:'🏢 Industry Module Hub',b:'Business Modules'},
+  modules:{t:'🏢 Business Module Hub',b:'Business Modules'},
   ai:{t:'🤖 AI Analytics',b:'Claude API · 6-Strategy Intelligence'},
   integrations:{t:'🔌 Integrations',b:'IoT · BAS · Line OA · Looker · Google'},
   assets:{t:'🔧 ทะเบียนสินทรัพย์ (ALC)',b:'Reliability › Asset Lifecycle'},
@@ -2976,7 +2987,7 @@ async function sendAI(){
     const langInstr=_lang==='en'
       ? 'Please respond in English only.'
       : 'กรุณาตอบเป็นภาษาไทยเท่านั้น';
-    const systemPrompt=`คุณคือ iMATOMs AI — ผู้ช่วยวิเคราะห์ระบบบริหารอาคาร TKO iMATOMs Tech v2.0 (6-Strategy Platform)
+    const systemPrompt=`คุณคือ iMATOMs AI — ผู้ช่วยวิเคราะห์ระบบบริหารอาคาร TKO iMATOMs Tech v2.0 (Towards Sustainable Organization)
 
 ${bgCtxStr}
 
@@ -3128,8 +3139,11 @@ const ALL_MODULES = [
    label:'OFFICE', name:'Office Building', desc:'Facility · HVAC · Elevator · Space · Green Building',
    file:'TKO_iMATOMs_Office_Module_v1_0.html'},
   {bg:'University', icon:'🎓', color:'#A855F7', dimColor:'rgba(168,85,247,.08)', borderColor:'rgba(168,85,247,.3)',
-   label:'UNIVERSITY', name:'มหาวิทยาลัย / สถาบัน', desc:'Lab · Campus · Research Facility · Academic',
+   label:'EDUCATION', name:'Education / Institution', desc:'Lab · Campus · Research Facility · Academic',
    file:'TKO_iMATOMs_University_Module_v1_0.html'},
+  {bg:'Hotel', icon:'🏨', color:'#F59E0B', dimColor:'rgba(245,158,11,.08)', borderColor:'rgba(245,158,11,.3)',
+   label:'HOTEL', name:'Hotel & Service Apartment', desc:'Room · Facility · PMS · Guest Experience · Housekeeping',
+   file:'TKO_iMATOMs_Hotel_Module_v1_0.html'},
 ];
 
 
@@ -3151,7 +3165,7 @@ function renderModules(){
   const visible = isAdmin ? ALL_MODULES : ALL_MODULES.filter(m=>m.bg===userBG||m.bg==='ALL');
 
   document.getElementById('hub-sub').textContent = isAdmin
-    ? 'Admin — มองเห็นทุก Business Group · 5 Modules v1.0 Ready'
+    ? 'Admin — มองเห็นทุก Business Group · 6 Modules v1.0 Ready'
     : `Business Group: ${userBG} · ${CU?.company||''} · ${CU?.building||''} — แสดงเฉพาะ Module ของคุณ`;
 
   // Badge on sidebar nav
@@ -3343,7 +3357,7 @@ async function exportPDF(type){
   // Header bar
   doc.setFillColor(13,17,23);doc.rect(0,0,297,32,'F');
   doc.setTextColor(249,115,22);doc.setFontSize(9);doc.setFont('helvetica','bold');
-  doc.text('TKO iMATOMs Tech v2.0  |  6-Strategy Platform',10,10);
+  doc.text('TKO iMATOMs Tech v2.0  |  Towards Sustainable Organization',10,10);
   doc.setTextColor(230,237,243);doc.setFontSize(15);
   const titles={assets:'Asset Register (ALC)',wr:'Work Request Report',ppm:'PPM Schedule Report',ma:'MA Contract Summary',inv:'Inventory Report',summary:'Executive Summary'};
   doc.text(titles[type]||type,10,22);
