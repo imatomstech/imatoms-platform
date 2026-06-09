@@ -377,17 +377,40 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 
 <!-- SIDEBAR -->
 <nav id="sidebar">
-  <div class="sb-hd" style="display:flex;align-items:center;gap:10px;padding:12px 14px 10px">
-    <div id="sb-logo-svg" style="flex-shrink:0;width:40px;height:40px;display:flex;align-items:center;justify-content:center"></div>
-    <div style="flex:1;min-width:0">
-      <div class="sb-logo">TKO ● iMATOMs Tech</div>
-      <div class="sb-title">Towards Sustainable Organization</div>
-      <span class="sb-v2">v2.0 · 2026</span>
+  <div class="sb-hd" style="padding:14px 14px 12px;border-bottom:1px solid var(--border)">
+    <!-- Logo Row -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <!-- Atom Logo SVG -->
+      <div style="flex-shrink:0;width:48px;height:48px">
+        <svg viewBox="0 0 80 80" width="48" height="48" id="sb-logo-svg">
+          <ellipse cx="40" cy="40" rx="36" ry="13" fill="none" stroke="#3B82F6" stroke-width="2"/>
+          <ellipse cx="40" cy="40" rx="36" ry="13" fill="none" stroke="#F97316" stroke-width="2" transform="rotate(60,40,40)"/>
+          <ellipse cx="40" cy="40" rx="36" ry="13" fill="none" stroke="#22C55E" stroke-width="2" transform="rotate(120,40,40)"/>
+          <circle cx="76" cy="40" r="4" fill="#A855F7"/>
+          <circle cx="40" cy="40" r="13" fill="#F97316" opacity="0.15"/>
+          <circle cx="40" cy="40" r="8" fill="#F97316"/>
+        </svg>
+      </div>
+      <!-- Brand Text -->
+      <div style="flex:1;min-width:0">
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--orange);letter-spacing:.5px;line-height:1">iMATOMs</div>
+        <div style="font-size:10px;color:var(--text3);letter-spacing:1.5px;margin-top:2px">TKO · TECHNOLOGY</div>
+        <div style="font-size:10px;color:var(--orange);font-weight:600;margin-top:2px;letter-spacing:.3px">Towards Sustainable Organization</div>
+      </div>
+      <!-- Settings Button -->
+      <button onclick="openModal('m-settings')" title="Settings"
+        style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.4);cursor:pointer;color:var(--orange);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1;padding:0"
+        onmouseover="this.style.background='var(--orange)';this.style.color='#fff'"
+        onmouseout="this.style.background='rgba(249,115,22,.15)';this.style.color='var(--orange)'">⚙</button>
     </div>
-    <button onclick="openModal('m-settings')" title="Settings"
-      style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.4);cursor:pointer;color:var(--orange);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1;padding:0"
-      onmouseover="this.style.background='var(--orange)';this.style.color='#fff'"
-      onmouseout="this.style.background='rgba(249,115,22,.15)';this.style.color='var(--orange)'">⚙</button>
+    <!-- Legend Row -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#F97316"><span style="width:8px;height:8px;border-radius:50%;background:#F97316;flex-shrink:0"></span>People</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#3B82F6"><span style="width:8px;height:8px;border-radius:50%;background:#3B82F6;flex-shrink:0"></span>Asset</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#22C55E"><span style="width:8px;height:8px;border-radius:50%;background:#22C55E;flex-shrink:0"></span>Sustainability</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#A855F7"><span style="width:8px;height:8px;border-radius:50%;background:#A855F7;flex-shrink:0"></span>Innovation</div>
+    </div>
+    <span class="sb-v2" style="display:block;margin-top:6px">v2.0 · 2026</span>
   </div>
   <div class="sb-user" id="sb-up" style="display:none">
     <div class="u-av" id="sb-av">A</div>
