@@ -144,7 +144,7 @@ span,div,p,label,button,a,select,option,li,td,th,input,small{
 .tb-right{margin-left:auto;display:flex;gap:8px;align-items:center}
 .tb-pill{display:flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--text3)}
 #content{padding:22px}
-.view{display:none}.view.active{display:block}
+.view{display:none}.view.active{display:block}#view-modframe.active{display:flex}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px}
 /* Global Orbitron for headings in content */
 .fw7,.fw6,.ffd{font-family:var(--font-display)}
@@ -646,7 +646,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     </div>
 
     <!-- MODULE FRAME (New Tab approach - works with local file://) -->
-    <div id="view-modframe" class="view" style="padding:0;display:flex;flex-direction:column">
+    <div id="view-modframe" class="view" style="padding:0;flex-direction:column">
       <!-- Topbar -->
       <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0">
         <button class="btn btn-secondary btn-sm" onclick="closeModFrame()">← กลับ Module Hub</button>
@@ -2295,13 +2295,15 @@ function openReliabilityView(viewName){
     operation:'Operation (OPT)',ppm:'Preventive Maint. (PPM)',
     contract:'MA Contract',inventory:'Inventory (คลังวัสดุ)',
   };
-  // ── Use standard class approach (no inline styles) ──
+  // ── Hide ALL views + force-hide modframe (has flex inline override) ──
   document.querySelectorAll('.view').forEach(v=>{
     v.classList.remove('active');
-    v.style.display=''; // clear any inline style
+    v.style.display='none';
   });
+  const mf=document.getElementById('view-modframe');
+  if(mf){mf.style.display='none';}
   const rf=document.getElementById('view-rel-frame');
-  if(rf){rf.classList.add('active');}
+  if(rf){rf.classList.add('active');rf.style.display='block';}
   // Update sidebar active
   document.querySelectorAll('.ni,.no').forEach(n=>n.classList.remove('active'));
   const ni=document.getElementById('nav-'+viewName);
@@ -2761,13 +2763,14 @@ const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,
 },'db-assets':renderDbAssets,'db-floorplan':renderDbAssets,'db-custom':()=>{},'config':loadConfig,'cloud':()=>{}};
 
 function showView(id){
-  // Clear ALL inline display styles set by openReliabilityView
+  // Clear ALL inline display styles (including those set by openReliabilityView)
   document.querySelectorAll('.view').forEach(v=>{
     v.classList.remove('active');
-    v.style.display=''; // reset inline style so CSS class works
+    v.style.display='none'; // force hide all first
   });
   const v=document.getElementById('view-'+id);
-  if(v){v.classList.add('active');v.style.display='';}
+  // modframe needs flex, others need block
+  if(v){v.classList.add('active');v.style.display=(id==='modframe'?'flex':'block');}
   const m=META[id]||{t:id,b:'TKO iMATOMs'};
   document.getElementById('tb-t').textContent=m.t;document.getElementById('tb-b').textContent=m.b;
   document.querySelectorAll('.ni,.no').forEach(n=>n.classList.remove('active'));
