@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iENGINNo Tech</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f5f5f5;color:#222;min-height:100vh}
+.topbar{background:#fff;border-bottom:1px solid #e5e5e5;padding:0.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.topbar-title{font-size:17px;font-weight:600;color:#111}
+.topbar-sub{font-size:12px;color:#888;margin-top:2px}
+.live-badge{font-size:11px;padding:3px 10px;border-radius:6px;background:#e1f5ee;color:#0f6e56;font-weight:500}
+.clock{font-size:12px;color:#888}
+.container{max-width:1100px;margin:0 auto;padding:1.25rem 1rem}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+@media(max-width:700px){.grid4{grid-template-columns:repeat(2,1fr)}}
+.mc{background:#fff;border-radius:8px;padding:0.85rem 1rem;border:1px solid #eee}
+.mc-l{font-size:12px;color:#888;margin-bottom:4px}
+.mc-v{font-size:22px;font-weight:600}
+.mc-s{font-size:11px;margin-top:2px}
+.ok{color:#0f6e56}.warn{color:#854f0b}.danger{color:#a32d2d}
+.tabs{display:flex;gap:4px;margin-bottom:1.25rem;border-bottom:1px solid #eee;padding-bottom:0;overflow-x:auto}
+.tab{font-size:13px;padding:7px 16px;border:none;border-bottom:2px solid transparent;cursor:pointer;background:transparent;color:#888;margin-bottom:-1px;white-space:nowrap}
+.tab.active{color:#111;border-bottom-color:#111;font-weight:500}
+.tab:hover{color:#111}
+.card{background:#fff;border:1px solid #eee;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1rem}
+.device-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:1rem}
+.dev-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem}
+.dev-name{font-size:14px;font-weight:600;color:#111}
+.dev-loc{font-size:11px;color:#888;margin-top:2px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot-on{background:#1D9E75}.dot-off{background:#E24B4A}
+.readings{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rb{background:#f8f8f8;border-radius:8px;padding:0.65rem 0.85rem}
+.rb-icon{font-size:13px;color:#888;margin-bottom:3px}
+.rv{font-size:20px;font-weight:600}
+.rl{font-size:11px;color:#888}
+.bar-w{height:4px;background:#eee;border-radius:2px;margin-top:6px}
+.bar{height:4px;border-radius:2px;transition:width 0.5s}
+.add-card{border:1.5px dashed #ddd;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;min-height:150px;border-radius:10px;background:#fafafa;color:#aaa;font-size:13px;transition:background 0.15s}
+.add-card:hover{background:#f0f0f0;color:#888}
+.chart-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px}
+.legend{display:flex;gap:12px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:5px;font-size:12px;color:#666}
+.ld{width:12px;height:3px;border-radius:2px}
+.thr-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.thr-label{font-size:12px;color:#666;min-width:120px}
+.thr-val{font-size:12px;font-weight:600;min-width:48px;color:#333}
+.thr-range{flex:1;min-width:120px}
+.floor-placeholder{width:100%;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#bbb;font-size:13px;border:2px dashed #ddd;border-radius:8px;cursor:pointer;background:#fafafa}
+.floor-zone{position:relative}
+.sensor-pin{position:absolute;transform:translate(-50%,-50%);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;z-index:5}
+.pin-circle{width:34px;height:34px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.15)}
+.pin-label-tag{font-size:10px;background:#fff;color:#333;padding:2px 6px;border-radius:4px;border:1px solid #ddd;white-space:nowrap}
+.pin-tooltip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#fff;border:1px solid #ddd;border-radius:6px;padding:8px 12px;font-size:12px;white-space:nowrap;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,0.1);color:#333;line-height:1.6}
+.sensor-pin:hover .pin-tooltip{display:block}
+.alert-row{display:flex;align-items:flex-start;gap:10px;padding:0.6rem 0;border-bottom:1px solid #f0f0f0}
+.alert-row:last-child{border-bottom:none}
+.alert-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.settings-row:last-child{border-bottom:none}
+.settings-label{font-size:13px;color:#666}
+input[type=text],input[type=number],select{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-size:13px;color:#333;background:#fff;outline:none}
+input[type=range]{width:100%;accent-color:#378ADD}
+.btn{padding:7px 16px;border:1px solid #ddd;border-radius:6px;background:#fff;font-size:13px;cursor:pointer;color:#333;transition:background 0.15s}
+.btn:hover{background:#f5f5f5}
+.btn-primary{background:#111;color:#fff;border-color:#111}
+.btn-primary:hover{background:#333}
+.upd{font-size:11px;color:#bbb;text-align:right;padding:0.5rem 0}
+.section-title{font-size:13px;font-weight:600;color:#333;margin-bottom:0.75rem}
+.no-data{text-align:center;color:#bbb;font-size:13px;padding:1.5rem 0}
+.conn-status{font-size:12px;padding:4px 10px;border-radius:6px;margin-left:8px}
+.conn-ok{background:#e1f5ee;color:#0f6e56}
+.conn-err{background:#fcebeb;color:#a32d2d}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">&#9889; iENGINNo SMART IoT Monitor</div>
+    <div class="topbar-sub">Operation : ระบบควบคุมอุณหภูมิและความชื้นอัตโนมัติ (Temp &amp; Humi Notify)</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span class="live-badge">&#9679; Live</span>
+    <span id="conn-badge" class="conn-status conn-err">เชื่อมต่อ...</span>
+    <span class="clock" id="clock">--:--:--</span>
+  </div>
+</div>
+
+<div class="container">
+  <div class="grid4">
+    <div class="mc"><div class="mc-l">&#128268; อุปกรณ์ทั้งหมด</div><div class="mc-v" id="m-dev">—</div><div class="mc-s ok" id="m-devs">รอข้อมูล...</div></div>
+    <div class="mc"><div class="mc-l">&#127777; อุณหภูมิเฉลี่ย</div><div class="mc-v" id="m-temp">—</div><div class="mc-s" id="m-ts">รอข้อมูล...</div></div>
+    <div class="mc"><div class="mc-l">&#128167; ความชื้นเฉลี่ย</div><div class="mc-v" id="m-humi">—</div><div class="mc-s" id="m-hs">รอข้อมูล...</div></div>
+    <div class="mc"><div class="mc-l">&#128276; การแจ้งเตือน</div><div class="mc-v" id="m-alert">0</div><div class="mc-s ok">วันนี้</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('overview')">&#128202; ภาพรวม</button>
+    <button class="tab" onclick="showTab('chart')">&#128200; กราฟ</button>
+    <button class="tab" onclick="showTab('floor')">&#128205; แผนผัง</button>
+    <button class="tab" onclick="showTab('alerts')">&#128276; การแจ้งเตือน</button>
+    <button class="tab" onclick="showTab('settings')">&#9881; ตั้งค่า</button>
+  </div>
+
+  <div id="tab-overview">
+    <div class="device-grid" id="device-grid">
+      <div class="card"><div class="no-data">&#8987; กำลังโหลดข้อมูล...</div></div>
+    </div>
+    <div class="add-card" onclick="alert('เพิ่ม Sensor ใหม่: ตั้งค่า Device ID ใน modela_poller.py แล้ว restart modela-poller บน server')">
+      <div style="font-size:28px">+</div>
+      <div>เพิ่มอุปกรณ์ใหม่</div>
+    </div>
+  </div>
+
+  <div id="tab-chart" style="display:none">
+    <div class="card">
+      <div class="chart-hdr">
+        <div class="section-title">ข้อมูลย้อนหลัง 20 รายการล่าสุด</div>
+        <div class="legend">
+          <div class="li"><div class="ld" style="background:#D85A30"></div> Temp (°C)</div>
+          <div class="li"><div class="ld" style="background:#378ADD"></div> Humidity (%)</div>
+          <div class="li"><div class="ld" style="border-top:2px dashed #E24B4A;background:transparent"></div> T-Max</div>
+          <div class="li"><div class="ld" style="border-top:2px dashed #EF9F27;background:transparent"></div> T-Min</div>
+          <div class="li"><div class="ld" style="border-top:2px dashed #185FA5;background:transparent"></div> H-Max</div>
+          <div class="li"><div class="ld" style="border-top:2px dashed #639922;background:transparent"></div> H-Min</div>
+        </div>
+      </div>
+      <div style="position:relative;width:100%;height:280px">
+        <canvas id="myChart" role="img" aria-label="กราฟอุณหภูมิและความชื้น">กราฟอุณหภูมิและความชื้น</canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">&#9881; ปรับเส้นควบคุม Max / Min</div>
+      <div class="thr-row"><span class="thr-label">&#127777; Temp Max (°C)</span><input type="range" class="thr-range" min="25" max="50" step="0.5" id="sl-tmax" value="35" oninput="onSlider()"><span class="thr-val" id="v-tmax">35.0°C</span></div>
+      <div class="thr-row"><span class="thr-label">&#127777; Temp Min (°C)</span><input type="range" class="thr-range" min="0" max="30" step="0.5" id="sl-tmin" value="20" oninput="onSlider()"><span class="thr-val" id="v-tmin">20.0°C</span></div>
+      <div class="thr-row"><span class="thr-label">&#128167; Humidity Max (%)</span><input type="range" class="thr-range" min="50" max="100" step="1" id="sl-hmax" value="80" oninput="onSlider()"><span class="thr-val" id="v-hmax">80%</span></div>
+      <div class="thr-row"><span class="thr-label">&#128167; Humidity Min (%)</span><input type="range" class="thr-range" min="0" max="50" step="1" id="sl-hmin" value="30" oninput="onSlider()"><span class="thr-val" id="v-hmin">30%</span></div>
+      <div style="margin-top:0.75rem;display:flex;gap:8px;align-items:center">
+        <button class="btn btn-primary" onclick="saveThreshold()">&#10003; บันทึกค่า Threshold</button>
+        <span id="save-msg" style="font-size:12px;color:#0f6e56"></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-floor" style="display:none">
+    <div class="card">
+      <div class="section-title">&#128205; แผนผังพื้นที่ — วาง Sensor Pin</div>
+      <p style="font-size:12px;color:#888;margin-bottom:0.75rem">อัปโหลดรูปแผนผัง แล้วกด "วาง Pin" แล้วคลิกตำแหน่งบนรูปครับ</p>
+      <div class="floor-zone" id="floor-zone">
+        <div class="floor-placeholder" id="floor-ph" onclick="document.getElementById('file-inp').click()">
+          <div style="font-size:36px">&#128247;</div>
+          <div>กดเพื่ออัปโหลดรูปแผนผังพื้นที่</div>
+          <div style="font-size:11px;color:#ccc">รองรับ JPG, PNG</div>
+        </div>
+        <img id="floor-img" style="display:none;width:100%;border-radius:8px" alt="แผนผังพื้นที่">
+        <input type="file" id="file-inp" accept="image/*" style="display:none" onchange="loadFloor(event)">
+      </div>
+      <div style="margin-top:0.85rem;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="startPin('AF_Store Receiving','B1 ห้องรับสินค้า','#1D9E75')">&#128205; วาง Pin: AF_Store</button>
+        <button class="btn" onclick="startPin('Sensor ใหม่','—','#378ADD')">&#128205; วาง Pin: Sensor ใหม่</button>
+      </div>
+      <div style="font-size:11px;color:#bbb;margin-top:8px">&#9432; คลิกตำแหน่งบนแผนผังหลังกด "วาง Pin"</div>
+    </div>
+  </div>
+
+  <div id="tab-alerts" style="display:none">
+    <div class="card">
+      <div class="section-title">&#128276; ประวัติการแจ้งเตือน</div>
+      <div id="alert-list"><div class="no-data">กำลังโหลด...</div></div>
+    </div>
+  </div>
+
+  <div id="tab-settings" style="display:none">
+    <div class="card">
+      <div class="section-title">&#9881; ตั้งค่าระบบ</div>
+      <div class="settings-row"><span class="settings-label">API Server</span><span style="font-size:12px;color:#aaa" id="api-url-display">bas.imatomstech.com</span></div>
+      <div class="settings-row"><span class="settings-label">สถานะการเชื่อมต่อ</span><span id="conn-detail" style="font-size:12px;color:#0f6e56">กำลังตรวจสอบ...</span></div>
+      <div class="settings-row"><span class="settings-label">Poll interval</span><span style="font-size:12px;color:#aaa">10 นาที</span></div>
+      <div class="settings-row"><span class="settings-label">LINE Alert</span><span class="ok" style="font-size:12px">&#10003; เปิดใช้งาน</span></div>
+      <div class="settings-row"><span class="settings-label">Google Sheet</span><span class="ok" style="font-size:12px">&#10003; เชื่อมต่อแล้ว</span></div>
+      <div class="settings-row"><span class="settings-label">Threshold ปัจจุบัน</span><span style="font-size:12px;color:#aaa" id="thr-display">T: 20–35°C | H: 30–80%</span></div>
+    </div>
+  </div>
+
+  <div class="upd" id="upd-time">อัปเดตล่าสุด: กำลังโหลด...</div>
+</div>
+
+<script>
+const API_BASE = 'https://bas.imatomstech.com';
+let tMax=35,tMin=20,hMax=80,hMin=30;
+let myChart=null, latestReadings=[], pendingPin=null;
+
+async function fetchReadings(){
+  try{
+    const r=await fetch(API_BASE+'/api/sensor',{mode:'cors'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    latestReadings=data;
+    setConnected(true);
+    renderOverview(data);
+    updateMetrics(data);
+    if(document.getElementById('tab-chart').style.display!=='none') renderChart(data);
+    // ── Send data to iMATOMs Platform (parent window) ──
+    sendToParent(data);
+  }catch(e){
+    setConnected(false);
+    console.error('fetch error:',e);
+  }
+}
+
+function sendToParent(data){
+  if(!data||!data.length)return;
+  const latest=data[0];
+  const temp=latest.temperature!=null?parseFloat(latest.temperature):null;
+  const humi=latest.humidity!=null?parseFloat(latest.humidity):null;
+  if(temp===null)return;
+  // Determine status based on iMATOMs thresholds
+  const status=temp>26?'critical':temp>25.5||temp<22?'warning':'normal';
+  const payload={
+    type:'iot-sensor-data',
+    sensors:[{
+      id:'AF_Store',
+      name:'AF_Store Receiving',
+      location:'B1',
+      temp:temp,
+      humi:humi,
+      status:status,
+      updatedAt:new Date().toISOString()
+    }],
+    summary:{avgTemp:temp,avgHumi:humi,alerts:status!=='normal'?1:0}
+  };
+  // Send to parent iMATOMs Platform
+  try{ window.parent.postMessage(payload,'*'); }catch(e){}
+  try{ window.top.postMessage(payload,'*'); }catch(e){}
+}
+
+function setConnected(ok){
+  const b=document.getElementById('conn-badge');
+  const d=document.getElementById('conn-detail');
+  if(ok){
+    b.textContent='เชื่อมต่อแล้ว';b.className='conn-status conn-ok';
+    if(d) d.textContent='เชื่อมต่อ bas.imatomstech.com สำเร็จ';
+  }else{
+    b.textContent='เชื่อมต่อไม่ได้';b.className='conn-status conn-err';
+    if(d) d.textContent='ไม่สามารถเชื่อมต่อ API ได้';
+  }
+}
+
+function updateMetrics(data){
+  if(!data||data.length===0)return;
+  const latest=data[0];
+  const t=latest.temperature!=null?parseFloat(latest.temperature).toFixed(1):null;
+  const h=latest.humidity!=null?parseFloat(latest.humidity).toFixed(1):null;
+  document.getElementById('m-dev').textContent='1';
+  document.getElementById('m-devs').textContent='Online ทั้งหมด';
+  if(t!=null){
+    document.getElementById('m-temp').textContent=t+'°C';
+    const ts=document.getElementById('m-ts');
+    if(parseFloat(t)>tMax){ts.textContent='สูงเกิน!';ts.className='mc-s danger';}
+    else if(parseFloat(t)<tMin){ts.textContent='ต่ำเกิน!';ts.className='mc-s warn';}
+    else{ts.textContent='ปกติ';ts.className='mc-s ok';}
+  }
+  if(h!=null){
+    document.getElementById('m-humi').textContent=h+'%';
+    const hs=document.getElementById('m-hs');
+    if(parseFloat(h)>hMax){hs.textContent='สูงเกิน!';hs.className='mc-s danger';}
+    else if(parseFloat(h)<hMin){hs.textContent='ต่ำเกิน!';hs.className='mc-s warn';}
+    else{hs.textContent='ปกติ';hs.className='mc-s ok';}
+  }
+  const now=new Date();
+  document.getElementById('upd-time').textContent='อัปเดตล่าสุด: '+now.toLocaleTimeString('th-TH');
+}
+
+function renderOverview(data){
+  const grid=document.getElementById('device-grid');
+  const latest=data&&data.length>0?data[0]:{};
+  const t=latest.temperature!=null?parseFloat(latest.temperature).toFixed(1):null;
+  const h=latest.humidity!=null?parseFloat(latest.humidity).toFixed(1):null;
+  const ts=latest.timestamp||'—';
+  const tPct=t!=null?Math.min(100,Math.max(0,((parseFloat(t)-20)/(35-20)*100))).toFixed(0):0;
+  const hPct=h!=null?Math.min(100,parseFloat(h)).toFixed(0):0;
+  const tColor=t==null?'#888':parseFloat(t)>tMax?'#E24B4A':parseFloat(t)<tMin?'#EF9F27':'#D85A30';
+  const hColor=h==null?'#888':parseFloat(h)>hMax?'#E24B4A':parseFloat(h)<hMin?'#EF9F27':'#378ADD';
+  const statusT=t==null?'—':parseFloat(t)>tMax?'&#9888; สูงเกิน!':parseFloat(t)<tMin?'&#9888; ต่ำเกิน!':'&#10004; ปกติ';
+  const statusH=h==null?'—':parseFloat(h)>hMax?'&#9888; สูงเกิน!':parseFloat(h)<hMin?'&#9888; ต่ำเกิน!':'&#10004; ปกติ';
+  grid.innerHTML=`
+  <div class="card">
+    <div class="dev-hdr">
+      <div><div class="dev-name">AF_Store Receiving</div><div class="dev-loc">&#128205; B1 — ห้องรับสินค้า</div></div>
+      <div style="display:flex;align-items:center;gap:6px"><span class="dot dot-on"></span><span style="font-size:11px;color:#0f6e56">Online</span></div>
+    </div>
+    <div class="readings">
+      <div class="rb">
+        <div class="rb-icon">&#127777; อุณหภูมิ</div>
+        <div class="rv" style="color:${tColor}">${t!=null?t+'°C':'—'}</div>
+        <div class="rl">${statusT}</div>
+        <div class="bar-w"><div class="bar" style="width:${tPct}%;background:${tColor}"></div></div>
+      </div>
+      <div class="rb">
+        <div class="rb-icon">&#128167; ความชื้น</div>
+        <div class="rv" style="color:${hColor}">${h!=null?h+'%':'—'}</div>
+        <div class="rl">${statusH}</div>
+        <div class="bar-w"><div class="bar" style="width:${hPct}%;background:${hColor}"></div></div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#aaa;margin-top:8px">&#9200; ล่าสุด: ${ts} · ทุก 10 นาที</div>
+  </div>`;
+}
+
+function renderChart(data){
+  const rev=[...data].reverse().slice(-20);
+  const labels=rev.map(r=>{
+    const d=new Date(r.timestamp);
+    return isNaN(d.getTime())?r.timestamp:(d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0'));
+  });
+  const tData=rev.map(r=>r.temperature!=null?parseFloat(parseFloat(r.temperature).toFixed(1)):null);
+  const hData=rev.map(r=>r.humidity!=null?parseFloat(parseFloat(r.humidity).toFixed(1)):null);
+  const n=labels.length||1;
+  if(myChart){myChart.destroy();myChart=null;}
+  const ctx=document.getElementById('myChart').getContext('2d');
+  myChart=new Chart(ctx,{
+    data:{labels,datasets:[
+      {type:'line',label:'Temp (°C)',data:tData,borderColor:'#D85A30',backgroundColor:'transparent',tension:0.3,pointRadius:3,pointBackgroundColor:'#D85A30',yAxisID:'y',spanGaps:true},
+      {type:'line',label:'Humidity (%)',data:hData,borderColor:'#378ADD',backgroundColor:'transparent',tension:0.3,pointRadius:3,pointBackgroundColor:'#378ADD',borderDash:[4,2],yAxisID:'y',spanGaps:true},
+      {type:'line',label:'T-Max',data:Array(n).fill(tMax),borderColor:'#E24B4A',borderDash:[6,3],borderWidth:1.5,pointRadius:0,yAxisID:'y'},
+      {type:'line',label:'T-Min',data:Array(n).fill(tMin),borderColor:'#EF9F27',borderDash:[6,3],borderWidth:1.5,pointRadius:0,yAxisID:'y'},
+      {type:'line',label:'H-Max',data:Array(n).fill(hMax),borderColor:'#185FA5',borderDash:[6,3],borderWidth:1.5,pointRadius:0,yAxisID:'y'},
+      {type:'line',label:'H-Min',data:Array(n).fill(hMin),borderColor:'#639922',borderDash:[6,3],borderWidth:1.5,pointRadius:0,yAxisID:'y'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:45,autoSkip:true}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11}},min:0,max:100}}}
+  });
+}
+
+function onSlider(){
+  tMax=parseFloat(document.getElementById('sl-tmax').value);
+  tMin=parseFloat(document.getElementById('sl-tmin').value);
+  hMax=parseFloat(document.getElementById('sl-hmax').value);
+  hMin=parseFloat(document.getElementById('sl-hmin').value);
+  document.getElementById('v-tmax').textContent=tMax.toFixed(1)+'°C';
+  document.getElementById('v-tmin').textContent=tMin.toFixed(1)+'°C';
+  document.getElementById('v-hmax').textContent=hMax+'%';
+  document.getElementById('v-hmin').textContent=hMin+'%';
+  document.getElementById('thr-display').textContent='T: '+tMin+'–'+tMax+'°C | H: '+hMin+'–'+hMax+'%';
+  if(myChart&&latestReadings.length>0) renderChart(latestReadings);
+}
+
+async function saveThreshold(){
+  const msg=document.getElementById('save-msg');
+  try{
+    const r=await fetch(API_BASE+'/api/threshold',{method:'POST',mode:'cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({temp_min:tMin,temp_max:tMax,humid_min:hMin,humid_max:hMax})});
+    msg.textContent=r.ok?'&#10003; บันทึกสำเร็จ':'&#10007; บันทึกไม่สำเร็จ';
+    msg.style.color=r.ok?'#0f6e56':'#a32d2d';
+  }catch(e){msg.textContent='&#10007; เชื่อมต่อไม่ได้';msg.style.color='#a32d2d';}
+  setTimeout(()=>msg.textContent='',4000);
+}
+
+function renderAlerts(alerts){
+  const box=document.getElementById('alert-list');
+  if(!alerts||alerts.length===0){box.innerHTML='<div class="no-data">&#10004; ไม่มีการแจ้งเตือน — ค่าอยู่ในเกณฑ์ปกติ</div>';return;}
+  box.innerHTML=alerts.map(a=>`<div class="alert-row"><div class="alert-dot" style="background:${a.level==='danger'?'#E24B4A':a.level==='warning'?'#EF9F27':'#1D9E75'}"></div><div><div style="font-size:13px;color:#333">${a.message||a.sensor}</div><div style="font-size:11px;color:#aaa">${a.timestamp}</div></div></div>`).join('');
+}
+
+function startPin(name,loc,color){
+  const img=document.getElementById('floor-img');
+  if(!img.src||img.style.display==='none'){alert('กรุณาอัปโหลดรูปแผนผังก่อนครับ');return;}
+  pendingPin={name,loc,color};
+  document.getElementById('floor-zone').style.cursor='crosshair';
+  document.getElementById('floor-zone').addEventListener('click',placePinAt,{once:true});
+}
+
+function placePinAt(e){
+  if(!pendingPin)return;
+  const zone=document.getElementById('floor-zone');
+  const rect=zone.getBoundingClientRect();
+  const xPct=((e.clientX-rect.left)/rect.width*100).toFixed(1);
+  const yPct=((e.clientY-rect.top)/rect.height*100).toFixed(1);
+  const pin=document.createElement('div');
+  pin.className='sensor-pin';
+  pin.style.left=xPct+'%';pin.style.top=yPct+'%';
+  pin.innerHTML=`<div class="pin-tooltip">${pendingPin.name}<br>${pendingPin.loc}</div><div class="pin-circle" style="background:${pendingPin.color}">&#128268;</div><div class="pin-label-tag">${pendingPin.name}</div>`;
+  pin.onmouseenter=()=>pin.querySelector('.pin-tooltip').style.display='block';
+  pin.onmouseleave=()=>pin.querySelector('.pin-tooltip').style.display='none';
+  zone.appendChild(pin);
+  zone.style.cursor='default';
+  pendingPin=null;
+}
+
+function loadFloor(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    const img=document.getElementById('floor-img');
+    img.src=ev.target.result;img.style.display='block';
+    document.getElementById('floor-ph').style.display='none';
+  };
+  r.readAsDataURL(f);
+}
+
+function showTab(t){
+  ['overview','chart','floor','alerts','settings'].forEach(id=>{
+    document.getElementById('tab-'+id).style.display=id===t?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach((b,i)=>{
+    b.classList.toggle('active',['overview','chart','floor','alerts','settings'][i]===t);
+  });
+  if(t==='chart'){if(latestReadings.length>0) renderChart(latestReadings);}
+  if(t==='alerts') renderAlerts([]);
+}
+
+function updateClock(){
+  document.getElementById('clock').textContent=new Date().toLocaleTimeString('th-TH');
+}
+
+fetchReadings();
+setInterval(fetchReadings,600000);
+setInterval(updateClock,1000);
+updateClock();
+</script>
+</body>
+</html>
