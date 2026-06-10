@@ -85,8 +85,14 @@ body{font-family:var(--font-display),var(--font);background:var(--bg);color:var(
 span,div,p,label,button,a,select,option,li,td,th,input,small{
   font-family:inherit;
 }
-#sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;overflow-y:auto}
-.sb-hd{padding:13px 14px 10px;border-bottom:1px solid var(--border)}
+#sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;overflow-y:auto;transition:transform .3s cubic-bezier(.4,0,.2,1);transform:translateX(0)}
+#sidebar.sb-hidden{transform:translateX(calc(-1 * var(--sidebar-w)))}
+#sb-trigger{position:fixed;top:0;left:0;width:16px;height:100vh;z-index:99;cursor:pointer}
+#sb-trigger:hover ~ #sidebar, #sidebar:hover{transform:translateX(0) !important}
+#sb-peek{position:fixed;top:50%;left:0;transform:translateY(-50%);width:16px;height:64px;background:var(--orange);border-radius:0 8px 8px 0;z-index:98;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;opacity:0}
+#sidebar.sb-hidden ~ #sb-peek, body:has(#sidebar.sb-hidden) #sb-peek{opacity:1}
+#main{margin-left:var(--sidebar-w);min-height:100vh;transition:margin-left .3s cubic-bezier(.4,0,.2,1)}
+#main.sb-hidden-main{margin-left:0}
 .sb-logo{font-family:var(--font-display);font-size:10px;font-weight:700;letter-spacing:2px;color:var(--orange);text-transform:uppercase}
 .sb-title{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text);line-height:1.2;margin-top:1px;letter-spacing:.3px}
 .sb-v2{display:inline-block;background:var(--orange);color:#fff;font-size:8px;font-weight:700;padding:1px 7px;border-radius:8px;margin-top:4px;font-family:var(--font-display);letter-spacing:1px}
@@ -389,8 +395,12 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
   </div>
 </div>
 
+<!-- SIDEBAR HOVER TRIGGER -->
+<div id="sb-trigger" onmouseenter="showSidebar()"></div>
+<div id="sb-peek" onclick="showSidebar()" title="เปิด Sidebar">›</div>
+
 <!-- SIDEBAR -->
-<nav id="sidebar">
+<nav id="sidebar" onmouseleave="scheduleSbHide()" onmouseenter="cancelSbHide()">
   <div class="sb-hd" style="padding:14px 14px 12px;border-bottom:1px solid var(--border)">
     <!-- Logo Row -->
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
@@ -4961,6 +4971,44 @@ function initSystemNotifs(){
 function injectExportBars(){
   const map={assets:'assets',workrequest:'wr',ppm:'ppm',contract:'ma',inventory:'inv'};
   Object.entries(map).forEach(([viewId,type])=>injectExportBar('view-'+viewId,type));
+}
+
+// ══ SIDEBAR AUTO-HIDE ══
+let _sbHideTimer = null;
+let _sbPinned = false; // ถ้า pin ไว้จะไม่ซ่อน
+
+function showSidebar(){
+  clearTimeout(_sbHideTimer);
+  document.getElementById('sidebar').classList.remove('sb-hidden');
+  document.getElementById('main').classList.remove('sb-hidden-main');
+}
+function hideSidebar(){
+  if(_sbPinned) return;
+  document.getElementById('sidebar').classList.add('sb-hidden');
+  document.getElementById('main').classList.add('sb-hidden-main');
+}
+function scheduleSbHide(){
+  clearTimeout(_sbHideTimer);
+  _sbHideTimer = setTimeout(hideSidebar, 600);
+}
+function cancelSbHide(){
+  clearTimeout(_sbHideTimer);
+}
+
+// ซ่อน sidebar เมื่อเมาส์อยู่ฝั่งขวา (content area)
+document.addEventListener('mousemove', function(e){
+  const sb = document.getElementById('sidebar');
+  const sbW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-w'));
+  // ถ้าเมาส์อยู่ห่างจาก sidebar เกิน 80px ให้ซ่อน
+  if(e.clientX > sbW + 80 && !sb.matches(':hover')){
+    scheduleSbHide();
+  }
+});
+
+// peek button style
+const peekEl = document.getElementById('sb-peek');
+if(peekEl){
+  peekEl.style.cssText += ';font-size:20px;color:#fff;font-weight:700;line-height:1;user-select:none;';
 }
 
 // ══ INIT ══
