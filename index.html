@@ -1897,6 +1897,10 @@ const API={
     const r=await fetch(API_BASE+path,{headers:API.headers()});
     return r.json();
   },
+  async put(path,body){
+    const r=await fetch(API_BASE+path,{method:'PUT',headers:API.headers(),body:JSON.stringify(body)});
+    return r.json();
+  },
   async del(path){
     const r=await fetch(API_BASE+path,{method:'DELETE',headers:API.headers()});
     return r.json();
@@ -3004,15 +3008,71 @@ function saveInsp(){
 }
 
 // ══ ADMIN ══
-function renderAdm(){
-  const users=DB.get('users',[]);const pd=users.filter(u=>u.status==='pending');const ap=users.filter(u=>u.status==='approved');const rj=users.filter(u=>u.status==='rejected');
-  document.getElementById('adm-p').textContent=pd.length;document.getElementById('adm-a').textContent=ap.length;document.getElementById('adm-r').textContent=rj.length;document.getElementById('adm-t').textContent=users.length;document.getElementById('adm-pb').textContent=pd.length+' รายการ';
-  if(!pd.length){document.getElementById('pend-empty').style.display='block';document.getElementById('pend-wrap').style.display='none';}
-  else{document.getElementById('pend-empty').style.display='none';document.getElementById('pend-wrap').style.display='block';
-    document.getElementById('pend-tb').innerHTML=pd.map(u=>`<tr><td><div class="fw6">${u.name}</div><div style="font-size:10px;color:var(--text3)">${u.position||''}</div></td><td><span class="tag">${u.username}</span></td><td style="font-size:11px">${u.email}</td><td><div><span class="badge badge-teal" style="font-size:10px">${u.businessGroup||'—'}</span></div><div style="font-size:10px;color:var(--text3)">${[u.company,u.building,u.location].filter(Boolean).join(' · ')}</div></td><td><span class="badge badge-orange">${u.stakeholder}</span></td><td><span class="badge badge-blue">${u.role}</span></td><td style="font-size:11px">${(u.modules||[]).join(', ')}</td><td style="font-size:12px">${u.regDate?new Date(u.regDate).toLocaleDateString('th-TH'):'-'}</td><td><div class="flex g8"><button class="btn btn-success btn-xs" onclick="apprUser('${u.username}')">✅</button><button class="btn btn-danger btn-xs" onclick="rejUser('${u.username}')">❌</button><button class="btn btn-blue btn-xs" onclick="openModAcc('${u.username}')">🔑</button></div></td></tr>`).join('');
+async function renderAdm(){
+  // โหลด users จาก Server DB
+  let serverUsers=[];
+  try{ serverUsers=await API.get('/users'); }catch(e){ console.warn('renderAdm API error',e); }
+
+  const users=serverUsers.map(u=>({
+    id:u.id, name:u.full_name||u.username, username:u.username, email:u.email,
+    role:u.role||'viewer', businessGroup:u.business_group||'', company:u.company||'',
+    status:u.is_active?'approved':'pending', regDate:u.created_at,
+    position:'', building:'', location:'', stakeholder:u.business_group||'',
+  }));
+
+  const pd=users.filter(u=>u.status==='pending'&&u.username!=='admin');
+  const ap=users.filter(u=>u.status==='approved');
+
+  document.getElementById('adm-p').textContent=pd.length;
+  document.getElementById('adm-a').textContent=ap.length;
+  document.getElementById('adm-r').textContent=0;
+  document.getElementById('adm-t').textContent=users.length;
+  document.getElementById('adm-pb').textContent=pd.length+' รายการ';
+
+  const b=document.getElementById('nb-admin');
+  if(b){b.textContent=pd.length;b.style.display=pd.length>0?'inline':'none';}
+
+  if(!pd.length){
+    document.getElementById('pend-empty').style.display='block';
+    document.getElementById('pend-wrap').style.display='none';
+  } else {
+    document.getElementById('pend-empty').style.display='none';
+    document.getElementById('pend-wrap').style.display='block';
+    document.getElementById('pend-tb').innerHTML=pd.map(u=>`<tr>
+      <td><div class="fw6">${u.name}</div></td>
+      <td><span class="tag">${u.username}</span></td>
+      <td style="font-size:11px">${u.email}</td>
+      <td><span class="badge badge-teal" style="font-size:10px">${u.businessGroup||'—'}</span>
+          <div style="font-size:10px;color:var(--text3)">${u.company||''}</div></td>
+      <td><span class="badge badge-orange">${u.stakeholder||'—'}</span></td>
+      <td><span class="badge badge-blue">${u.role}</span></td>
+      <td style="font-size:11px">all modules</td>
+      <td style="font-size:12px">${u.regDate?new Date(u.regDate).toLocaleDateString('th-TH'):'-'}</td>
+      <td><div class="flex g8">
+        <button class="btn btn-success btn-xs" onclick="apprUser(${u.id},'${u.name}')">✅</button>
+        <button class="btn btn-danger btn-xs" onclick="rejUser(${u.id})">❌</button>
+      </div></td>
+    </tr>`).join('');
   }
-  document.getElementById('all-tb').innerHTML=users.map(u=>{const sb=u.status==='approved'?'<span class="badge badge-green">✅</span>':u.status==='rejected'?'<span class="badge badge-red">❌</span>':'<span class="badge badge-yellow">⏳</span>';const bgTag=u.businessGroup?`<span class="badge badge-teal" style="font-size:10px">${u.businessGroup}</span>`:'';const coTag=u.company?`<span style="font-size:10px;color:var(--text3)">${u.company}</span>`:'';return`<tr><td><div class="fw6">${u.name}</div><div style="font-size:10px;color:var(--text3)">${u.position||''}</div></td><td><span class="tag">${u.username}</span></td><td style="font-size:11px">${u.email}</td><td><div>${bgTag}</div><div>${coTag}</div><div style="font-size:10px;color:var(--text3)">${u.building||''} ${u.location?'· '+u.location:''}</div></td><td><span class="badge badge-blue">${u.role}</span></td><td style="font-size:11px">${(u.modules||[]).join(', ')||'—'}</td><td>${sb}</td><td><div class="flex g6">${u.status!=='approved'?`<button class="btn btn-success btn-xs" onclick="apprUser('${u.username}')">✅</button>`:''}<button class="btn btn-blue btn-xs" onclick="openModAcc('${u.username}')">🔑</button><button class="btn btn-danger btn-xs" onclick="delUser('${u.username}')">🗑</button></div></td></tr>`;}).join('');
-  // Load CD Keys
+
+  document.getElementById('all-tb').innerHTML=users.map(u=>{
+    const sb=u.status==='approved'?'<span class="badge badge-green">✅ Active</span>':'<span class="badge badge-yellow">⏳ รออนุมัติ</span>';
+    return`<tr>
+      <td><div class="fw6">${u.name}</div></td>
+      <td><span class="tag">${u.username}</span></td>
+      <td style="font-size:11px">${u.email}</td>
+      <td><span class="badge badge-teal" style="font-size:10px">${u.businessGroup||'—'}</span>
+          <div style="font-size:10px;color:var(--text3)">${u.company||''}</div></td>
+      <td><span class="badge badge-blue">${u.role}</span></td>
+      <td style="font-size:11px">all modules</td>
+      <td>${sb}</td>
+      <td><div class="flex g6">
+        ${u.status!=='approved'?`<button class="btn btn-success btn-xs" onclick="apprUser(${u.id},'${u.name}')">✅</button>`:''}
+        <button class="btn btn-danger btn-xs" onclick="delUser(${u.id},'${u.username}')">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
   renderCDKeys();
 }
 
@@ -3089,10 +3149,42 @@ async function revokeCDKey(id){
   showToast('🚫 ยกเลิก Key แล้ว');
   renderCDKeys();
 }
-function apprUser(un){const users=DB.get('users',[]);const i=users.findIndex(u=>u.username===un);if(i<0)return;users[i].status='approved';users[i].approvedDate=new Date().toISOString();users[i].approvedBy=CU?.name;DB.set('users',users);updateAdmBadge();renderAdm();alert(`✅ อนุมัติ "${users[i].name}" เรียบร้อย`);}
-function rejUser(un){if(!confirm('ปฏิเสธ?'))return;const users=DB.get('users',[]);const i=users.findIndex(u=>u.username===un);if(i<0)return;users[i].status='rejected';DB.set('users',users);updateAdmBadge();renderAdm();}
-function delUser(un){if(!confirm('ลบ?'))return;let users=DB.get('users',[]);users=users.filter(u=>u.username!==un);DB.set('users',users);updateAdmBadge();renderAdm();}
-function updateAdmBadge(){const pd=DB.get('users',[]).filter(u=>u.status==='pending').length;const b=document.getElementById('nb-admin');if(b){b.textContent=pd;b.style.display=pd>0?'inline':'none';}}
+async function apprUser(id,name){
+  try{
+    await API.put('/users/'+id+'/approve',{});
+    showToast('✅ อนุมัติ "'+name+'" เรียบร้อย');
+    renderAdm();
+  }catch(e){ alert('❌ ไม่สามารถอนุมัติได้: '+e.message); }
+}
+async function rejUser(id){
+  if(!confirm('ปฏิเสธ user นี้?'))return;
+  try{
+    await API.put('/users/'+id+'/reject',{});
+    showToast('❌ ปฏิเสธแล้ว');
+    renderAdm();
+  }catch(e){ alert('❌ ไม่สามารถปฏิเสธได้: '+e.message); }
+}
+async function delUser(id,username){
+  if(!confirm('ลบ user "'+username+'" ออกจากระบบ?'))return;
+  try{
+    await API.del('/users/'+id);
+    showToast('🗑 ลบ user แล้ว');
+    renderAdm();
+  }catch(e){ alert('❌ ไม่สามารถลบได้: '+e.message); }
+}
+async function updateAdmBadge(){
+  try {
+    const users = await API.get('/users');
+    const pd = users.filter(u => !u.is_active && u.username !== 'admin').length;
+    const b = document.getElementById('nb-admin');
+    if(b){ b.textContent=pd; b.style.display=pd>0?'inline':'none'; }
+  } catch(e) {
+    // fallback localStorage
+    const pd=DB.get('users',[]).filter(u=>u.status==='pending').length;
+    const b=document.getElementById('nb-admin');
+    if(b){b.textContent=pd;b.style.display=pd>0?'inline':'none';}
+  }
+}
 function openModAcc(un){
   modAccUser=un;const users=DB.get('users',[]);const u=users.find(x=>x.username===un);if(!u)return;
   const bgLine=[u.businessGroup,u.company,u.building,u.location].filter(Boolean).join(' · ');
