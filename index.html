@@ -2323,8 +2323,9 @@ function loadRelFrame(viewName){
     try{ iframe.contentWindow.postMessage({type:'imatoms-nav',view:viewName||'dashboard'},'*'); }catch(e){}
     return;
   }
-  // First load
-  iframe.src=relFile+'?embedded=true';
+  // First load — cache bust เพื่อบังคับโหลดใหม่
+  const cacheBust = '?embedded=true&v='+Date.now();
+  iframe.src = relFile + cacheBust;
   iframe.onload=()=>{
     setTimeout(()=>{
       try{ iframe.contentWindow.postMessage({type:'imatoms-nav',view:viewName||'dashboard'},'*'); }catch(e){}
