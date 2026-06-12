@@ -2766,10 +2766,13 @@ const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,
 },'db-assets':renderDbAssets,'db-floorplan':renderDbAssets,'db-custom':()=>{},'config':loadConfig,'cloud':()=>{}};
 
 function showView(id){
-  // Clear ALL inline display styles (including those set by openReliabilityView)
+  // ถ้า rel-frame active อยู่ และ id เป็น modframe → ไม่ให้แสดง
+  const relFrame=document.getElementById('view-rel-frame');
+  if(id==='modframe'&&relFrame&&relFrame.classList.contains('active'))return;
+  // Clear ALL inline display styles
   document.querySelectorAll('.view').forEach(v=>{
     v.classList.remove('active');
-    v.style.display='none'; // force hide all first
+    v.style.display='none';
   });
   const v=document.getElementById('view-'+id);
   // modframe needs flex, others need block
@@ -2781,7 +2784,6 @@ function showView(id){
   if(accMap[id]){const bd=document.getElementById('ab-'+accMap[id]);const hd=document.getElementById('ah-'+accMap[id]);if(bd&&!bd.classList.contains('open')){bd.classList.add('open');hd.classList.add('open');}}
   if(renderMap[id])setTimeout(renderMap[id],60);
 }
-
 // ══ LOAD ══
 function loadAll(){
   assets=DB.get('assets',[]);WR=DB.get('wr',[]);PPM=DB.get('ppm',[]);
