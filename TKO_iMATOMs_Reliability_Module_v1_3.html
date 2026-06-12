@@ -4581,13 +4581,27 @@ function deleteInventory(id) {
 let currentUser = null;
 
 function getImatomsToken() {
-  // อ่าน JWT token จาก iMATOMs Platform (localStorage key: imatoms_token)
+  // ถ้าอยู่ใน iframe → อ่าน token จาก parent (same-origin) ก่อน
+  try {
+    if (window.self !== window.top) {
+      const pt = window.parent.localStorage.getItem('imatoms_token') ||
+                 window.parent.sessionStorage.getItem('imatoms_token');
+      if (pt) return pt;
+    }
+  } catch(e) {}
   return localStorage.getItem('imatoms_token') || 
          sessionStorage.getItem('imatoms_token') || null;
 }
 
 function getImatomsUser() {
-  // อ่าน user info จาก iMATOMs Platform
+  try {
+    // ถ้าอยู่ใน iframe → อ่าน user จาก parent ก่อน
+    if (window.self !== window.top) {
+      const pr = window.parent.localStorage.getItem('imatoms_user') ||
+                 window.parent.sessionStorage.getItem('imatoms_user');
+      if (pr) return JSON.parse(pr);
+    }
+  } catch(e) {}
   try {
     const raw = localStorage.getItem('imatoms_user') || sessionStorage.getItem('imatoms_user');
     return raw ? JSON.parse(raw) : null;
@@ -4595,7 +4609,11 @@ function getImatomsUser() {
 }
 
 function redirectToMainLogin() {
-  // Redirect กลับหน้า Login iMATOMs หลัก
+  // ถ้าอยู่ใน iframe → อย่า redirect ทั้งหน้า ให้แจ้ง parent แทน
+  if (window.self !== window.top) {
+    try { window.parent.postMessage({type:'imatoms-auth-required', module:'reliability'}, '*'); } catch(e) {}
+    return;
+  }
   const mainUrl = window.location.hostname.includes('github.io') 
     ? 'https://imatomstech.com' 
     : '/';
@@ -4817,7 +4835,6 @@ upgradeSeedWR();
 // ── iMATOMs SSO Auth Check ──────────────────────────────
 // ตรวจสอบ JWT Token จาก iMATOMs Platform หลัก
 // ถ้าไม่มี = redirect กลับหน้า Login
-checkImatomsAuth();
 
 // Set default datetime for forms
 document.querySelectorAll('input[type="datetime-local"]').forEach(el => {
@@ -4837,6 +4854,8 @@ document.querySelectorAll('input[type="datetime-local"]').forEach(el => {
       if(typeof showView === 'function') showView(e.data.view);
     }
   });
+  // Auth check รันหลัง embedded mode set เพื่อให้ parent.localStorage accessible
+  checkImatomsAuth();
 })();
 
 </script>
