@@ -5026,6 +5026,17 @@ if(peekEl){
 applyAllSettings();
 seed();loadAll();
 const su=DB.get('currentUser',null);
+// ── รับ message จาก iframe modules ──
+window.addEventListener('message', function(e){
+  if(!e.data||typeof e.data!=='object') return;
+  if(e.data.type==='imatoms-auth-required'){
+    // Module แจ้งว่าไม่มี token → logout แล้ว redirect login
+    console.warn('[iMATOMs] Module auth required:', e.data.module);
+    showToast('⚠ Session หมดอายุ กรุณา Login ใหม่');
+    setTimeout(()=>{ localStorage.removeItem('imatoms_token'); location.reload(); }, 1500);
+  }
+});
+
 window.addEventListener('load', function(){
   const jwt=localStorage.getItem('imatoms_jwt');
   if(jwt){
