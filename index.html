@@ -667,7 +667,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
         <div style="font-family:var(--font-display);font-size:13px">กำลังโหลด Module...</div>
       </div>
       <!-- iframe - full height -->
-      <iframe id="mod-iframe" src="" style="border:none;width:100%;height:calc(100vh - 110px);display:none" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
+      <iframe id="mod-iframe" src="" style="border:none;width:100%;height:calc(100vh - 110px);display:none"></iframe>
       <!-- Hidden compatibility elements -->
       <span id="mf-card-icon" style="display:none"></span>
       <span id="mf-card-name" style="display:none"></span>
@@ -680,8 +680,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     <!-- RELIABILITY FRAME - Pure iframe, no bars, full height -->
     <div id="view-rel-frame" class="view" style="padding:0;overflow:hidden">
       <iframe id="rel-iframe" src=""
-        style="border:none;width:100%;height:calc(100vh - 60px);display:block"
-        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox">
+        style="border:none;width:100%;height:calc(100vh - 60px);display:block">
       </iframe>
     </div>
 
@@ -3367,6 +3366,9 @@ function openModFile(f,icon,name,desc){
   document.getElementById('mf-file').textContent=f;
   const btn=document.getElementById('mf-open-btn');
   if(btn) btn.onclick=()=>window.open(f,'_blank');
+  // ── Force-hide rel-frame ก่อน เพื่อป้องกัน showView return early ──
+  const rf=document.getElementById('view-rel-frame');
+  if(rf){rf.classList.remove('active');rf.style.display='none';}
   showView('modframe');
   document.getElementById('tb-t').textContent=(icon||'')+' '+name;
   document.getElementById('tb-b').textContent='Module Hub › '+name;
