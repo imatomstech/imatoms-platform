@@ -816,30 +816,6 @@ select.form-control option{background:var(--bg3)}
 
 <script>
 // ═══════════════════════════════════════════════════
-// AUTH CHECK — iMATOMs SSO
-// ═══════════════════════════════════════════════════
-function getImatomsToken(){
-  // ถ้าอยู่ใน iframe → อ่าน token จาก parent (same-origin) ก่อน
-  try{if(window.self!==window.top){const pt=window.parent.localStorage.getItem('imatoms_token')||window.parent.sessionStorage.getItem('imatoms_token');if(pt)return pt;}}catch(e){}
-  return localStorage.getItem('imatoms_token')||sessionStorage.getItem('imatoms_token')||null;
-}
-function getImatomsUser(){
-  try{
-    // ถ้าอยู่ใน iframe → อ่าน user จาก parent ก่อน
-    if(window.self!==window.top){const pr=window.parent.localStorage.getItem('imatoms_user')||window.parent.sessionStorage.getItem('imatoms_user');if(pr)return JSON.parse(pr);}
-  }catch(e){}
-  try{const r=localStorage.getItem('imatoms_user')||sessionStorage.getItem('imatoms_user');return r?JSON.parse(r):null}catch{return null}
-}
-function redirectToMainLogin(){
-  // ถ้าอยู่ใน iframe → อย่า redirect ทั้งหน้า ให้แจ้ง parent แทน
-  if(window.self!==window.top){
-    try{window.parent.postMessage({type:'imatoms-auth-required',module:'hotel'},'*');}catch(e){}
-    return;
-  }
-  const u=window.location.hostname.includes('github.io')?'https://imatomstech.com':'/';
-  window.location.href=u+'?redirect=hotel';
-}
-(function checkAuth(){const t=getImatomsToken(),u=getImatomsUser();if(!t||!u){redirectToMainLogin();}})();
 function goBack(){window.location.href='https://imatomstech.com';}
 
 // ═══════════════════════════════════════════════════
