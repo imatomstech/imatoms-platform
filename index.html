@@ -5098,10 +5098,17 @@ const su=DB.get('currentUser',null);
 window.addEventListener('message', function(e){
   if(!e.data||typeof e.data!=='object') return;
   if(e.data.type==='imatoms-auth-required'){
-    // Module แจ้งว่าไม่มี token → logout แล้ว redirect login
     console.warn('[iMATOMs] Module auth required:', e.data.module);
     showToast('⚠ Session หมดอายุ กรุณา Login ใหม่');
     setTimeout(()=>{ localStorage.removeItem('imatoms_token'); location.reload(); }, 1500);
+  }
+  // Edge Tracking Prevention fix — ส่ง user data กลับให้ iframe ที่ขอ
+  if(e.data.type==='imatoms-request-user'){
+    const raw = localStorage.getItem('imatoms_user') || sessionStorage.getItem('imatoms_user');
+    const user = raw ? JSON.parse(raw) : (CU || null);
+    if(user && e.source){
+      try { e.source.postMessage({type:'imatoms-user-data', user: user}, '*'); } catch(err) {}
+    }
   }
 });
 

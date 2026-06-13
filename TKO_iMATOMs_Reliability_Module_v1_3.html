@@ -4618,8 +4618,15 @@ function initAuth() {
       email:       u.email || '',
       schema_name: u.schema_name || 'bld_bhirajburi',
     });
+  } else if (window.self !== window.top) {
+    // Edge Tracking Prevention บล็อก localStorage → ขอข้อมูลจาก parent ผ่าน postMessage
+    try { window.parent.postMessage({type:'imatoms-request-user', module:'reliability'}, '*'); } catch(e) {}
+    // รอ parent ตอบกลับ (ดู message listener ด้านล่าง)
+    // fallback: ถ้า 2 วินาทีแล้วยังไม่ได้รับ → แสดง login-screen
+    setTimeout(function(){
+      if(!currentUser) document.getElementById('login-screen').classList.remove('hidden');
+    }, 2000);
   } else {
-    // เปิดตรงๆ โดยไม่ผ่าน index → แสดง login-screen
     document.getElementById('login-screen').classList.remove('hidden');
   }
 }
@@ -4808,8 +4815,21 @@ document.querySelectorAll('input[type="datetime-local"]').forEach(el => {
   }
   // Listen for navigation commands from parent
   window.addEventListener('message', function(e){
-    if(e.data && e.data.type === 'imatoms-nav' && e.data.view){
+    if(!e.data || typeof e.data !== 'object') return;
+    if(e.data.type === 'imatoms-nav' && e.data.view){
       if(typeof showView === 'function') showView(e.data.view);
+    }
+    // รับ user data จาก parent (กรณี Edge Tracking Prevention บล็อก localStorage)
+    if(e.data.type === 'imatoms-user-data' && e.data.user && !currentUser){
+      const u = e.data.user;
+      loginSuccess({
+        username:    u.username || u.email,
+        name:        u.full_name || u.name || u.username,
+        role:        u.role || 'viewer',
+        stakeholder: u.company || u.business_group || u.businessGroup || 'iMATOMs Platform',
+        email:       u.email || '',
+        schema_name: u.schema_name || 'bld_bhirajburi',
+      });
     }
   });
   // Auto-init auth จาก parent localStorage (ไม่ redirect)
