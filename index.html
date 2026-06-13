@@ -88,13 +88,13 @@ body{font-family:var(--font-display),var(--font);background:var(--bg);color:var(
 span,div,p,label,button,a,select,option,li,td,th,input,small{
   font-family:inherit;
 }
-#sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;overflow-y:auto;transition:transform .3s cubic-bezier(.4,0,.2,1);transform:translateX(0)}
+#sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;overflow-y:auto;transition:transform var(--sb-speed,.3s) cubic-bezier(.4,0,.2,1);transform:translateX(0)}
 #sidebar.sb-hidden{transform:translateX(calc(-1 * var(--sidebar-w)))}
 #sb-trigger{position:fixed;top:0;left:0;width:16px;height:100vh;z-index:99;cursor:pointer}
 #sb-trigger:hover ~ #sidebar, #sidebar:hover{transform:translateX(0) !important}
 #sb-peek{position:fixed;top:50%;left:0;transform:translateY(-50%);width:16px;height:64px;background:var(--orange);border-radius:0 8px 8px 0;z-index:98;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;opacity:0}
 #sidebar.sb-hidden ~ #sb-peek, body:has(#sidebar.sb-hidden) #sb-peek{opacity:1}
-#main{margin-left:var(--sidebar-w);min-height:100vh;transition:margin-left .3s cubic-bezier(.4,0,.2,1)}
+#main{margin-left:var(--sidebar-w);min-height:100vh;transition:margin-left var(--sb-speed,.3s) cubic-bezier(.4,0,.2,1)}
 #main.sb-hidden-main{margin-left:0}
 .sb-logo{font-family:var(--font-display);font-size:10px;font-weight:700;letter-spacing:2px;color:var(--orange);text-transform:uppercase}
 .sb-title{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--text);line-height:1.2;margin-top:1px;letter-spacing:.3px}
@@ -1755,6 +1755,27 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       <div style="font-size:10px;color:var(--text3);margin-top:8px;text-align:center">💡 Sarabun รองรับภาษาไทยดีที่สุด · Orbitron = Digital Style · Courier New = Classic Mono</div>
     </div>
     <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+    <!-- Sidebar Speed Section -->
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">🎚 Sidebar — ความเร็ว &amp; หน่วงเวลา</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Animation Speed</div>
+          <input type="range" min="1" max="8" step="1" id="sb-speed-range"
+            style="width:100%;accent-color:var(--orange)"
+            oninput="document.getElementById('sb-speed-val').textContent=(['เร็วมาก','เร็ว','ค่อนข้างเร็ว','ปานกลาง','ค่อนข้างช้า','ช้า','ช้ามาก','ช้าที่สุด'][this.value-1]);setSbSpeed(this.value)">
+          <div style="font-size:11px;color:var(--orange);margin-top:4px;text-align:center" id="sb-speed-val">ปานกลาง</div>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:6px">หน่วงเวลาซ่อน (ms)</div>
+          <input type="range" min="1" max="8" step="1" id="sb-delay-range"
+            style="width:100%;accent-color:var(--orange)"
+            oninput="document.getElementById('sb-delay-val').textContent=([200,400,600,800,1000,1500,2000,3000][this.value-1])+'ms';setSbDelay(this.value)">
+          <div style="font-size:11px;color:var(--orange);margin-top:4px;text-align:center" id="sb-delay-val">600ms</div>
+        </div>
+      </div>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
     <div class="flex g8" style="justify-content:flex-end">
       <button class="btn btn-primary wf" style="justify-content:center" onclick="closeModal('m-settings')">✅ บันทึกการตั้งค่า</button>
     </div>
@@ -2010,6 +2031,45 @@ function updateSettingsPreview(){
     el.style.borderColor=l===curLang?'var(--orange)':'var(--border)';
     el.style.background=l===curLang?'var(--orange-dim)':'transparent';
   });
+  // Sync sidebar sliders
+  const speedSteps=[0.1,0.15,0.2,0.3,0.4,0.6,0.8,1.0];
+  const delaySteps=[200,400,600,800,1000,1500,2000,3000];
+  const speedLabels=['เร็วมาก','เร็ว','ค่อนข้างเร็ว','ปานกลาง','ค่อนข้างช้า','ช้า','ช้ามาก','ช้าที่สุด'];
+  const curSpd=parseFloat(localStorage.getItem('tko_v2_sb_speed')||'0.3');
+  const curDly=parseInt(localStorage.getItem('tko_v2_sb_delay')||'600');
+  const spdIdx=speedSteps.findIndex(s=>Math.abs(s-curSpd)<0.01);
+  const dlyIdx=delaySteps.findIndex(d=>d===curDly);
+  const sr=document.getElementById('sb-speed-range');
+  const dr=document.getElementById('sb-delay-range');
+  const sv=document.getElementById('sb-speed-val');
+  const dv=document.getElementById('sb-delay-val');
+  if(sr)sr.value=spdIdx>=0?spdIdx+1:4;
+  if(sv)sv.textContent=speedLabels[spdIdx>=0?spdIdx:3];
+  if(dr)dr.value=dlyIdx>=0?dlyIdx+1:3;
+  if(dv)dv.textContent=(curDly)+'ms';
+}
+
+// ══════════════════════════════════════════════
+// SIDEBAR SPEED / DELAY
+// ══════════════════════════════════════════════
+const _sbSpeedSteps=[0.1,0.15,0.2,0.3,0.4,0.6,0.8,1.0];
+const _sbDelaySteps=[200,400,600,800,1000,1500,2000,3000];
+const _sbSpeedLabels=['เร็วมาก','เร็ว','ค่อนข้างเร็ว','ปานกลาง','ค่อนข้างช้า','ช้า','ช้ามาก','ช้าที่สุด'];
+function setSbSpeed(v){
+  const spd=_sbSpeedSteps[v-1]||0.3;
+  localStorage.setItem('tko_v2_sb_speed',spd);
+  document.documentElement.style.setProperty('--sb-speed',spd+'s');
+  const lbl=_sbSpeedLabels[v-1]||'ปานกลาง';
+  const el=document.getElementById('sb-speed-val');
+  if(el)el.textContent=lbl;
+  showToast('🎚 Animation: '+lbl);
+}
+function setSbDelay(v){
+  const dly=_sbDelaySteps[v-1]||600;
+  localStorage.setItem('tko_v2_sb_delay',dly);
+  const el=document.getElementById('sb-delay-val');
+  if(el)el.textContent=dly+'ms';
+  showToast('⏱ หน่วงเวลาซ่อน: '+dly+'ms');
 }
 
 // ══════════════════════════════════════════════
@@ -4988,6 +5048,13 @@ function injectExportBars(){
 let _sbHideTimer = null;
 let _sbPinned = false; // ถ้า pin ไว้จะไม่ซ่อน
 
+function getSbDelay(){
+  return parseInt(localStorage.getItem('tko_v2_sb_delay')||'600');
+}
+function applySbSpeed(){
+  const spd = localStorage.getItem('tko_v2_sb_speed')||'0.3';
+  document.documentElement.style.setProperty('--sb-speed', spd+'s');
+}
 function showSidebar(){
   clearTimeout(_sbHideTimer);
   document.getElementById('sidebar').classList.remove('sb-hidden');
@@ -5000,7 +5067,7 @@ function hideSidebar(){
 }
 function scheduleSbHide(){
   clearTimeout(_sbHideTimer);
-  _sbHideTimer = setTimeout(hideSidebar, 600);
+  _sbHideTimer = setTimeout(hideSidebar, getSbDelay());
 }
 function cancelSbHide(){
   clearTimeout(_sbHideTimer);
@@ -5024,6 +5091,7 @@ if(peekEl){
 
 // ══ INIT ══
 applyAllSettings();
+applySbSpeed();
 seed();loadAll();
 const su=DB.get('currentUser',null);
 // ── รับ message จาก iframe modules ──
