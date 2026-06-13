@@ -1,1 +1,210 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>iMARTyBot — TKO iMATOMs</title>
+<style>
+  :root{--bg:#0D1117;--bg2:#161B22;--border:#30363D;--orange:#F97316;--orange-dim:rgba(249,115,22,.12);--green:#22C55E;--red:#EF4444;--text:#E6EDF3;--text2:#8B949E;--radius:12px;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Orbitron',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
+  .robot-face{width:220px;height:220px;background:var(--bg2);border:3px solid var(--orange);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 24px;position:relative;box-shadow:0 0 40px rgba(249,115,22,.3);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 40px rgba(249,115,22,.3);}50%{box-shadow:0 0 60px rgba(249,115,22,.5);}}
+  .robot-eyes{display:flex;gap:24px;margin-bottom:16px;}
+  .eye{width:32px;height:32px;background:var(--orange);border-radius:50%;animation:blink 4s infinite;}
+  @keyframes blink{0%,90%,100%{transform:scaleY(1);}95%{transform:scaleY(0.1);}}
+  .robot-mouth{width:80px;height:12px;border:3px solid var(--orange);border-radius:0 0 40px 40px;border-top:none;}
+  .robot-name{font-size:22px;font-weight:700;color:var(--orange);letter-spacing:3px;text-align:center;margin-bottom:4px;}
+  .robot-sub{font-size:11px;color:var(--text2);text-align:center;margin-bottom:24px;letter-spacing:1px;}
+  .status-bar{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 20px;margin-bottom:20px;width:100%;max-width:420px;}
+  .status-dot{width:12px;height:12px;border-radius:50%;background:var(--red);flex-shrink:0;transition:background .5s;}
+  .status-dot.active{background:var(--green);animation:blink-dot 1s infinite;}
+  @keyframes blink-dot{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .status-text{font-size:13px;color:var(--text);}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:420px;margin-bottom:20px;}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;}
+  .card-label{font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;}
+  .card-value{font-size:28px;font-weight:700;color:var(--orange);}
+  .card-unit{font-size:11px;color:var(--text2);}
+  .fan-control{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;width:100%;max-width:420px;margin-bottom:20px;}
+  .fan-label{font-size:11px;color:var(--text2);letter-spacing:1px;margin-bottom:12px;}
+  .fan-btns{display:flex;gap:8px;}
+  .fan-btn{flex:1;padding:10px 4px;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--text);font-family:'Orbitron',monospace;font-size:11px;cursor:pointer;transition:all .2s;}
+  .fan-btn.active{background:var(--orange-dim);border-color:var(--orange);color:var(--orange);}
+  .speech-box{background:var(--orange-dim);border:1px solid var(--orange);border-radius:var(--radius);padding:16px;width:100%;max-width:420px;display:none;margin-bottom:16px;}
+  .speech-box.show{display:block;}
+  .speech-text{font-size:13px;color:var(--orange);line-height:1.6;}
+  .conn-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);width:100%;max-width:420px;}
+  .ip-input{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;font-family:monospace;}
+  .conn-btn{padding:8px 16px;background:var(--orange);border:none;border-radius:8px;color:#fff;font-family:'Orbitron',monospace;font-size:11px;cursor:pointer;}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
 
+<div class="robot-face" id="robotFace">
+  <div class="robot-eyes">
+    <div class="eye" id="eyeL"></div>
+    <div class="eye" id="eyeR"></div>
+  </div>
+  <div class="robot-mouth" id="mouth"></div>
+</div>
+
+<div class="robot-name">iMARTyBot</div>
+<div class="robot-sub">TKO · iMATOMs Tech · v1.0</div>
+
+<div class="status-bar">
+  <div class="status-dot" id="statusDot"></div>
+  <div class="status-text" id="statusText">รอการแตะบัตร RFID...</div>
+</div>
+
+<div class="speech-box" id="speechBox">
+  <div class="speech-text" id="speechText"></div>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-label">TEMPERATURE</div>
+    <div class="card-value" id="tempVal">--</div>
+    <div class="card-unit">°C</div>
+  </div>
+  <div class="card">
+    <div class="card-label">HUMIDITY</div>
+    <div class="card-value" id="humiVal">--</div>
+    <div class="card-unit">%RH</div>
+  </div>
+</div>
+
+<div class="fan-control">
+  <div class="fan-label">🌀 FAN SPEED CONTROL</div>
+  <div class="fan-btns">
+    <button class="fan-btn active" id="spd0" onclick="setFan(0)">OFF</button>
+    <button class="fan-btn" id="spd1" onclick="setFan(1)">LOW</button>
+    <button class="fan-btn" id="spd2" onclick="setFan(2)">MED</button>
+    <button class="fan-btn" id="spd3" onclick="setFan(3)">HIGH</button>
+    <button class="fan-btn" id="spd4" onclick="setFan(4)">MAX</button>
+  </div>
+</div>
+
+<div class="conn-row">
+  <span>ESP32 IP:</span>
+  <input class="ip-input" id="espIP" placeholder="192.168.1.xxx" value="">
+  <button class="conn-btn" onclick="connect()">เชื่อมต่อ</button>
+</div>
+
+<script>
+// ── Config ──
+let ESP32_IP = localStorage.getItem('martybot_ip') || '';
+let pollTimer = null;
+let currentActive = false;
+let currentFan = 0;
+
+// ── Speech ──
+const GREET_TEXT = "สวัสดีครับ คุณกฤตนัน ขอให้ทำงานวันนี้อย่างมีความสุขนะครับ";
+const BYE_TEXT   = "ลาก่อนครับ คุณกฤตนัน ขอให้มีวันที่ดีครับ";
+
+function speak(text) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'th-TH';
+  utter.rate = 0.9;
+  utter.pitch = 1.0;
+  utter.volume = 0.7;
+  window.speechSynthesis.speak(utter);
+}
+
+function showSpeech(text) {
+  const box = document.getElementById('speechBox');
+  const el  = document.getElementById('speechText');
+  el.textContent = '🤖 "' + text + '"';
+  box.classList.add('show');
+  setTimeout(()=> box.classList.remove('show'), 6000);
+}
+
+// ── Connect ──
+function connect() {
+  const ip = document.getElementById('espIP').value.trim();
+  if (!ip) return;
+  ESP32_IP = ip;
+  localStorage.setItem('martybot_ip', ip);
+  startPolling();
+}
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollSensor();
+  pollTimer = setInterval(pollSensor, 3000);
+}
+
+// ── Poll sensor data from ESP32 ──
+async function pollSensor() {
+  if (!ESP32_IP) return;
+  try {
+    const res = await fetch(`http://${ESP32_IP}/sensor`, {signal: AbortSignal.timeout(2000)});
+    const d = await res.json();
+
+    document.getElementById('tempVal').textContent = d.temperature ? d.temperature.toFixed(1) : '--';
+    document.getElementById('humiVal').textContent = d.humidity    ? d.humidity.toFixed(1)    : '--';
+
+    updateFanUI(d.fan_speed || 0);
+
+    // ตรวจ state change
+    if (d.active !== currentActive) {
+      currentActive = d.active;
+      if (d.active) {
+        onActivate();
+      } else {
+        onDeactivate();
+      }
+    }
+  } catch(e) {
+    // ไม่ต้อง log ทุกครั้ง
+  }
+}
+
+function onActivate() {
+  document.getElementById('statusDot').classList.add('active');
+  document.getElementById('statusText').textContent = 'ระบบทำงาน — Mr.Kittanan';
+  document.getElementById('robotFace').style.borderColor = '#22C55E';
+  speak(GREET_TEXT);
+  showSpeech(GREET_TEXT);
+}
+
+function onDeactivate() {
+  document.getElementById('statusDot').classList.remove('active');
+  document.getElementById('statusText').textContent = 'รอการแตะบัตร RFID...';
+  document.getElementById('robotFace').style.borderColor = 'var(--orange)';
+  document.getElementById('tempVal').textContent = '--';
+  document.getElementById('humiVal').textContent = '--';
+  speak(BYE_TEXT);
+  showSpeech(BYE_TEXT);
+  updateFanUI(0);
+}
+
+// ── Fan Control ──
+async function setFan(level) {
+  if (!ESP32_IP) { alert('กรุณาใส่ IP ESP32 ก่อนครับ'); return; }
+  try {
+    await fetch(`http://${ESP32_IP}/control`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({fan_speed: level})
+    });
+    updateFanUI(level);
+  } catch(e) { console.warn('Fan control failed:', e); }
+}
+
+function updateFanUI(level) {
+  currentFan = level;
+  [0,1,2,3,4].forEach(i => {
+    document.getElementById('spd'+i)?.classList.toggle('active', i === level);
+  });
+}
+
+// ── Init ──
+document.getElementById('espIP').value = ESP32_IP;
+if (ESP32_IP) startPolling();
+</script>
+</body>
+</html>
