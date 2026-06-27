@@ -4576,60 +4576,23 @@ function deleteInventory(id) {
 // ═══════════════════════════════════════════════════════════
 //  AUTH — iMATOMs JWT Single Sign-On
 // ═══════════════════════════════════════════════════════════
-// ไม่มี Login แยก — ใช้ JWT Token จาก iMATOMs Platform หลัก
-// ถ้าไม่มี Token = redirect กลับหน้า Login หลัก
+// ── iMATOMs SSO — อ่าน user จาก index.html parent ──
 let currentUser = null;
 
-function getImatomsToken() {
-  // อ่าน JWT token จาก iMATOMs Platform (localStorage key: imatoms_token)
-  return localStorage.getItem('imatoms_token') || 
-         sessionStorage.getItem('imatoms_token') || null;
-}
-
 function getImatomsUser() {
-  // อ่าน user info จาก iMATOMs Platform
+  try {
+    // ถ้าอยู่ใน iframe → อ่านจาก parent ก่อน
+    if (window.self !== window.top) {
+      const pr = window.parent.localStorage.getItem('imatoms_user') ||
+                 window.parent.sessionStorage.getItem('imatoms_user');
+      if (pr) return JSON.parse(pr);
+    }
+  } catch(e) {}
   try {
     const raw = localStorage.getItem('imatoms_user') || sessionStorage.getItem('imatoms_user');
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
-
-function redirectToMainLogin() {
-  // Redirect กลับหน้า Login iMATOMs หลัก
-  const mainUrl = window.location.hostname.includes('github.io') 
-    ? 'https://imatomstech.com' 
-    : '/';
-  window.location.href = mainUrl + '?redirect=reliability';
-}
-
-function checkImatomsAuth() {
-  const token = getImatomsToken();
-  const user  = getImatomsUser();
-
-  if (!token || !user) {
-    // ไม่มี session — redirect กลับ Login หลัก
-    redirectToMainLogin();
-    return false;
-  }
-
-  // มี session — เข้าระบบได้เลย
-  const mappedUser = {
-    username:    user.username || user.email,
-    name:        user.full_name || user.username,
-    role:        user.role || 'viewer',
-    stakeholder: user.company || user.business_group || 'iMATOMs Platform',
-    email:       user.email || '',
-    schema_name: user.schema_name || 'bld_bhirajburi',
-    token:       token
-  };
-  loginSuccess(mappedUser);
-  return true;
-}
-
-// Legacy functions — ไม่ใช้แล้ว แต่เก็บไว้เพื่อ compatibility
-function switchAuthTab(tab) {}
-function doLogin() { checkImatomsAuth(); }
-function doRegister() {}
 
 function loginSuccess(user) {
   currentUser = user;
@@ -4639,23 +4602,43 @@ function loginSuccess(user) {
   document.getElementById('user-avatar-txt').textContent = user.name.charAt(0).toUpperCase();
   document.getElementById('user-display-name').textContent = user.name;
   document.getElementById('user-display-role').textContent = `${user.stakeholder} · ${user.role}`;
-  // Show Admin nav only for admin
   document.getElementById('nav-admin').style.display = user.role === 'admin' ? 'flex' : 'none';
   updateAdminBadge();
   renderDashboard();
 }
 
+function initAuth() {
+  const u = getImatomsUser();
+  if (u) {
+    loginSuccess({
+      username:    u.username || u.email,
+      name:        u.full_name || u.name || u.username,
+      role:        u.role || 'viewer',
+      stakeholder: u.company || u.business_group || u.businessGroup || 'iMATOMs Platform',
+      email:       u.email || '',
+      schema_name: u.schema_name || 'bld_bhirajburi',
+    });
+  } else if (window.self !== window.top) {
+    // Edge Tracking Prevention บล็อก localStorage → ขอข้อมูลจาก parent ผ่าน postMessage
+    try { window.parent.postMessage({type:'imatoms-request-user', module:'reliability'}, '*'); } catch(e) {}
+    // รอ parent ตอบกลับ (ดู message listener ด้านล่าง)
+    // fallback: ถ้า 2 วินาทีแล้วยังไม่ได้รับ → แสดง login-screen
+    setTimeout(function(){
+      if(!currentUser) document.getElementById('login-screen').classList.remove('hidden');
+    }, 2000);
+  } else {
+    document.getElementById('login-screen').classList.remove('hidden');
+  }
+}
+
+function doLogin() { initAuth(); }
 function doLogout() {
   if (!confirm('ออกจากระบบ?')) return;
   currentUser = null;
-  // ล้าง iMATOMs session
-  localStorage.removeItem('imatoms_token');
-  localStorage.removeItem('imatoms_user');
-  sessionStorage.removeItem('imatoms_token');
-  sessionStorage.removeItem('imatoms_user');
-  // Redirect กลับหน้า Login หลัก
-  redirectToMainLogin();
+  window.location.href = 'https://imatomstech.com';
 }
+function switchAuthTab(tab) {}
+function doRegister() {}
 
 function doRegister() {
   const name  = document.getElementById('reg-name').value.trim();
@@ -4817,7 +4800,6 @@ upgradeSeedWR();
 // ── iMATOMs SSO Auth Check ──────────────────────────────
 // ตรวจสอบ JWT Token จาก iMATOMs Platform หลัก
 // ถ้าไม่มี = redirect กลับหน้า Login
-checkImatomsAuth();
 
 // Set default datetime for forms
 document.querySelectorAll('input[type="datetime-local"]').forEach(el => {
@@ -4833,10 +4815,25 @@ document.querySelectorAll('input[type="datetime-local"]').forEach(el => {
   }
   // Listen for navigation commands from parent
   window.addEventListener('message', function(e){
-    if(e.data && e.data.type === 'imatoms-nav' && e.data.view){
+    if(!e.data || typeof e.data !== 'object') return;
+    if(e.data.type === 'imatoms-nav' && e.data.view){
       if(typeof showView === 'function') showView(e.data.view);
     }
+    // รับ user data จาก parent (กรณี Edge Tracking Prevention บล็อก localStorage)
+    if(e.data.type === 'imatoms-user-data' && e.data.user && !currentUser){
+      const u = e.data.user;
+      loginSuccess({
+        username:    u.username || u.email,
+        name:        u.full_name || u.name || u.username,
+        role:        u.role || 'viewer',
+        stakeholder: u.company || u.business_group || u.businessGroup || 'iMATOMs Platform',
+        email:       u.email || '',
+        schema_name: u.schema_name || 'bld_bhirajburi',
+      });
+    }
   });
+  // Auto-init auth จาก parent localStorage (ไม่ redirect)
+  initAuth();
 })();
 
 </script>

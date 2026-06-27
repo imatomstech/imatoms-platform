@@ -816,12 +816,6 @@ select.form-control option{background:var(--bg3)}
 
 <script>
 // ═══════════════════════════════════════════════════
-// AUTH CHECK — iMATOMs SSO
-// ═══════════════════════════════════════════════════
-function getImatomsToken(){return localStorage.getItem('imatoms_token')||sessionStorage.getItem('imatoms_token')||null}
-function getImatomsUser(){try{const r=localStorage.getItem('imatoms_user')||sessionStorage.getItem('imatoms_user');return r?JSON.parse(r):null}catch{return null}}
-function redirectToMainLogin(){const u=window.location.hostname.includes('github.io')?'https://imatomstech.com':'/';window.location.href=u+'?redirect=hotel';}
-(function checkAuth(){const t=getImatomsToken(),u=getImatomsUser();if(!t||!u){redirectToMainLogin();}})();
 function goBack(){window.location.href='https://imatomstech.com';}
 
 // ═══════════════════════════════════════════════════
