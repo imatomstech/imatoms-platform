@@ -2498,6 +2498,8 @@ function loginOK(u){
     if(freshAdmin)u={...freshAdmin};
   }
   CU=u; DB.set('currentUser',u);
+  // V3.0: ให้ Module อื่น (Reliability ฯลฯ) อ่าน user ได้ผ่าน imatoms_user
+  try { localStorage.setItem('imatoms_user', JSON.stringify(u)); } catch(e) {}
   const ls=document.getElementById('login-screen');
   ls.removeAttribute('style'); ls.classList.add('hidden');
   document.getElementById('sb-up').style.display='flex';
