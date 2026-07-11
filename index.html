@@ -1633,6 +1633,36 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
   </div>
 </div>
 
+<!-- CD KEY EXTEND MODAL -->
+<div class="modal-overlay" id="m-cdkey-extend">
+  <div class="modal" style="width:480px">
+    <div class="mhd"><div class="mttl">✏️ แก้ไข / ขยายเวลา CD Key</div><button class="mclose" onclick="closeModal('m-cdkey-extend')">✕</button></div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px">CD Key</div>
+      <div id="ext-code" style="font-family:var(--font-mono);font-size:14px;color:var(--orange);background:var(--bg3);padding:10px 14px;border-radius:var(--radius);border:1px solid var(--border)"></div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.6px">วันหมดอายุปัจจุบัน</div>
+      <div id="ext-current" style="font-size:13px;color:var(--text);background:var(--bg3);padding:10px 14px;border-radius:var(--radius);border:1px solid var(--border)"></div>
+    </div>
+    <div class="form-row" style="margin-bottom:4px">
+      <div class="form-group">
+        <label class="form-label">ขยายเวลาเพิ่ม (วัน)</label>
+        <input class="form-control" id="ext-days" type="number" value="30" min="1" max="730" placeholder="30" oninput="updateExtendPreview()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">หรือกำหนดวันใหม่</label>
+        <input class="form-control" id="ext-date" type="date" onchange="updateExtendPreview()">
+      </div>
+    </div>
+    <div id="ext-preview" style="font-size:12px;color:var(--green);background:var(--bg3);padding:10px 14px;border-radius:var(--radius);border:1px solid var(--green);margin-bottom:14px;text-align:center"></div>
+    <div class="flex g8" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('m-cdkey-extend')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveExtendCDKey()">✅ บันทึก</button>
+    </div>
+  </div>
+</div>
+
 <!-- CD KEY MODAL -->
 <div class="modal-overlay" id="m-cdkey">
   <div class="modal" style="width:560px">
@@ -3318,8 +3348,11 @@ async function renderCDKeys(){
         <td style="font-size:12px">${k.used_by_username||'—'}</td>
         <td>${status}</td>
         <td>
-          <button class="btn btn-sm" style="font-size:11px;padding:3px 8px" onclick="copyCDKey('${k.key_code}')">📋 Copy</button>
-          ${k.is_active&&!k.used_by?`<button class="btn btn-danger btn-sm" style="font-size:11px;padding:3px 8px" onclick="revokeCDKey(${k.id})">🚫</button>`:''}
+          <div class="flex g4">
+            <button class="btn btn-sm" style="font-size:11px;padding:3px 8px" onclick="copyCDKey('${k.key_code}')">📋 Copy</button>
+            ${k.is_active?`<button class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:var(--orange);border-color:var(--orange);color:#fff" onclick="openExtendCDKey(${k.id},'${k.key_code}','${k.expires_at}')">✏️</button>`:''}
+            ${k.is_active&&!k.used_by?`<button class="btn btn-danger btn-sm" style="font-size:11px;padding:3px 8px" onclick="revokeCDKey(${k.id})">🚫</button>`:''}
+          </div>
         </td>
       </tr>`;
     }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--text3)">ไม่มีข้อมูล</td></tr>';
@@ -3328,6 +3361,65 @@ async function renderCDKeys(){
 
 function copyCDKey(key){
   navigator.clipboard.writeText(key).then(()=>showToast('📋 คัดลอก: '+key)).catch(()=>showToast('Key: '+key));
+}
+
+let _extendKeyId=null;
+let _extendKeyExpires=null;
+
+function openExtendCDKey(id,code,expiresAt){
+  _extendKeyId=id;
+  _extendKeyExpires=new Date(expiresAt);
+  document.getElementById('ext-code').textContent=code;
+  document.getElementById('ext-current').textContent=_extendKeyExpires.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('ext-days').value=30;
+  // Set default date picker to current expiry + 30 days
+  const def=new Date(_extendKeyExpires);
+  def.setDate(def.getDate()+30);
+  document.getElementById('ext-date').value=def.toISOString().split('T')[0];
+  updateExtendPreview();
+  openModal('m-cdkey-extend');
+}
+
+function updateExtendPreview(){
+  const days=parseInt(document.getElementById('ext-days').value)||0;
+  const dateVal=document.getElementById('ext-date').value;
+  let newDate;
+  // ถ้าผู้ใช้เปลี่ยน date picker ให้ใช้ date นั้น มิฉะนั้นใช้ days จาก current expiry
+  if(dateVal){
+    newDate=new Date(dateVal);
+  } else {
+    newDate=new Date(_extendKeyExpires);
+    newDate.setDate(newDate.getDate()+days);
+  }
+  document.getElementById('ext-preview').textContent=
+    '📅 วันหมดอายุใหม่: '+newDate.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+}
+
+async function saveExtendCDKey(){
+  const days=parseInt(document.getElementById('ext-days').value)||0;
+  const dateVal=document.getElementById('ext-date').value;
+  const token=localStorage.getItem('imatoms_jwt')||localStorage.getItem('imatoms_token');
+  let newExpiry;
+  if(dateVal){
+    newExpiry=dateVal; // YYYY-MM-DD
+  } else {
+    const d=new Date(_extendKeyExpires);
+    d.setDate(d.getDate()+days);
+    newExpiry=d.toISOString().split('T')[0];
+  }
+  try{
+    const res=await fetch(`https://bas.imatomstech.com/imatoms-api/api/cdkey/${_extendKeyId}/extend`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({expires_at:newExpiry})
+    });
+    const data=await res.json();
+    if(data.success||res.ok){
+      closeModal('m-cdkey-extend');
+      showToast('✅ ขยายเวลา CD Key สำเร็จ');
+      renderCDKeys();
+    } else { alert('❌ '+(data.error||'ไม่สำเร็จ')); }
+  } catch(e){ alert('❌ ไม่สามารถเชื่อมต่อ API ได้'); }
 }
 
 async function revokeCDKey(id){

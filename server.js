@@ -676,6 +676,91 @@ app.post('/api/training/records', authMiddleware, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Server error' }); }
 });
 
+// ══════════════════════════════════════════════════════════════
+// CD KEY MANAGEMENT
+// ══════════════════════════════════════════════════════════════
+
+// GET /api/cdkey/list — admin เห็นทุก key
+app.get('/api/cdkey/list', authMiddleware, requireRole('superadmin','admin'), async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT k.*, u.username as used_by_username
+       FROM cd_keys k
+       LEFT JOIN users u ON u.id = k.used_by
+       ORDER BY k.created_at DESC`
+    );
+    res.json(rows);
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+// POST /api/cdkey/validate — ตรวจสอบ key ก่อน register
+app.post('/api/cdkey/validate', async (req, res) => {
+  const { key_code } = req.body;
+  if (!key_code) return res.status(400).json({ error: 'key_code required' });
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM cd_keys WHERE key_code=$1 AND is_active=TRUE AND expires_at >= CURRENT_DATE`,
+      [key_code.toUpperCase()]
+    );
+    if (!rows.length) return res.status(404).json({ valid: false, error: 'Key ไม่ถูกต้องหรือหมดอายุ' });
+    const k = rows[0];
+    if (k.used_by) return res.json({ valid: false, error: 'Key นี้ถูกใช้แล้ว' });
+    res.json({ valid: true, key: k });
+  } catch (e) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// POST /api/cdkey/generate — ออก CD Key ใหม่
+app.post('/api/cdkey/generate', authMiddleware, requireRole('superadmin','admin'), async (req, res) => {
+  const { key_type, business_group, issued_to, company, days, notes } = req.body;
+  if (!key_type || !days) return res.status(400).json({ error: 'key_type and days required' });
+  const prefix = key_type === 'DEMO' ? 'IMATOMS-DEMO' : key_type === 'TRIAL' ? 'IMATOMS-TRIAL' : 'IMATOMS-FULL';
+  const bg = (business_group || 'ALL').toUpperCase().replace(/\s/g,'-').substring(0,4);
+  const yr = new Date().getFullYear();
+  const { rows: cnt } = await pool.query(`SELECT COUNT(*) FROM cd_keys WHERE key_type=$1`, [key_type]);
+  const seq = String(parseInt(cnt[0].count) + 1).padStart(3, '0');
+  const key_code = `${prefix}-${bg}-${yr}-${seq}`;
+  const expires_at = new Date();
+  expires_at.setDate(expires_at.getDate() + parseInt(days));
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO cd_keys (key_code, key_type, business_group, issued_to, company, expires_at, days_valid, notes, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [key_code, key_type, business_group||'All', issued_to||null, company||null,
+       expires_at.toISOString().split('T')[0], parseInt(days), notes||null, req.user.id]
+    );
+    await audit(req.user.id, 'GENERATE_CDKEY', 'cd_keys', rows[0].id, null, rows[0], req.ip);
+    res.status(201).json({ success: true, key: rows[0] });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+// PUT /api/cdkey/:id/extend — ขยายวันหมดอายุ
+app.put('/api/cdkey/:id/extend', authMiddleware, requireRole('superadmin','admin'), async (req, res) => {
+  const { expires_at } = req.body;
+  if (!expires_at) return res.status(400).json({ error: 'expires_at required (YYYY-MM-DD)' });
+  try {
+    const { rows } = await pool.query(
+      `UPDATE cd_keys SET expires_at=$1, updated_at=NOW() WHERE id=$2 RETURNING *`,
+      [expires_at, req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'CD Key not found' });
+    await audit(req.user.id, 'EXTEND_CDKEY', 'cd_keys', req.params.id, null, rows[0], req.ip);
+    res.json({ success: true, key: rows[0] });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+// PATCH /api/cdkey/:id/revoke — ยกเลิก key
+app.patch('/api/cdkey/:id/revoke', authMiddleware, requireRole('superadmin','admin'), async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `UPDATE cd_keys SET is_active=FALSE, updated_at=NOW() WHERE id=$1 RETURNING *`,
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'CD Key not found' });
+    await audit(req.user.id, 'REVOKE_CDKEY', 'cd_keys', req.params.id, null, rows[0], req.ip);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: 'Server error' }); }
+});
+
 // ── 404 ───────────────────────────────────────────────────────
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 
