@@ -1755,6 +1755,35 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       <div style="font-size:10px;color:var(--text3);margin-top:8px;text-align:center">💡 Sarabun รองรับภาษาไทยดีที่สุด · Orbitron = Digital Style · Courier New = Classic Mono</div>
     </div>
     <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+
+    <!-- Sidebar Animation Speed Section -->
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">⚡ Sidebar Animation Speed / ความเร็ว Sidebar</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+        <div onclick="setSidebarSpeed('0')" id="spd-off" style="cursor:pointer;border:2px solid var(--border);border-radius:var(--radius-lg);padding:12px;text-align:center;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:4px">⚡</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text)">Off</div>
+          <div style="font-size:9px;color:var(--text3)">ไม่มี Animation</div>
+        </div>
+        <div onclick="setSidebarSpeed('0.15')" id="spd-fast" style="cursor:pointer;border:2px solid var(--border);border-radius:var(--radius-lg);padding:12px;text-align:center;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:4px">🚀</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text)">Fast</div>
+          <div style="font-size:9px;color:var(--text3)">0.15s · เร็ว</div>
+        </div>
+        <div onclick="setSidebarSpeed('0.3')" id="spd-normal" style="cursor:pointer;border:2px solid var(--border);border-radius:var(--radius-lg);padding:12px;text-align:center;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:4px">🎯</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text)">Normal</div>
+          <div style="font-size:9px;color:var(--text3)">0.3s · ค่าเริ่มต้น</div>
+        </div>
+        <div onclick="setSidebarSpeed('0.5')" id="spd-slow" style="cursor:pointer;border:2px solid var(--border);border-radius:var(--radius-lg);padding:12px;text-align:center;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:4px">🐢</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text)">Slow</div>
+          <div style="font-size:9px;color:var(--text3)">0.5s · ช้า</div>
+        </div>
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
     <div class="flex g8" style="justify-content:flex-end">
       <button class="btn btn-primary wf" style="justify-content:center" onclick="closeModal('m-settings')">✅ บันทึกการตั้งค่า</button>
     </div>
@@ -2012,6 +2041,16 @@ function updateSettingsPreview(){
     el.style.borderColor=l===curLang?'var(--orange)':'var(--border)';
     el.style.background=l===curLang?'var(--orange-dim)':'transparent';
   });
+  // Highlight active sidebar speed
+  const spdMap={'0':'off','0.15':'fast','0.3':'normal','0.5':'slow'};
+  const curSpd=DB.get('sidebarSpeed','0.3');
+  ['off','fast','normal','slow'].forEach(k=>{
+    const el=document.getElementById('spd-'+k);
+    if(!el)return;
+    const isActive=spdMap[curSpd]===k;
+    el.style.borderColor=isActive?'var(--orange)':'var(--border)';
+    el.style.background=isActive?'var(--orange-dim)':'transparent';
+  });
 }
 
 // ══════════════════════════════════════════════
@@ -2046,6 +2085,36 @@ function applyTheme(){
   const t=DB.get('theme','dark');
   document.body.className=document.body.className.replace(/theme-\w+/g,'').trim();
   if(t!=='dark') document.body.classList.add('theme-'+t);
+}
+
+function setSidebarSpeed(s){
+  DB.set('sidebarSpeed',s);
+  applySidebarSpeed();
+  const labels={'0':'Off','0.15':'Fast','0.3':'Normal','0.5':'Slow'};
+  showToast('⚡ Sidebar: '+(labels[s]||s+'s'));
+  updateSettingsPreview();
+}
+
+function applySidebarSpeed(){
+  const s=DB.get('sidebarSpeed','0.3');
+  const dur=s==='0'?'0s':(s+'s');
+  const ease=s==='0'?'':'cubic-bezier(.4,0,.2,1)';
+  const tr=`transform ${dur} ${ease}`.trim();
+  const trM=`margin-left ${dur} ${ease}`.trim();
+  const sb=document.getElementById('sidebar');
+  const main=document.getElementById('main');
+  const peek=document.getElementById('sb-peek');
+  if(sb) sb.style.transition=tr;
+  if(main) main.style.transition=trM;
+  if(peek) peek.style.transition=`all ${dur}`;
+  // Update UI highlight
+  ['off','fast','normal','slow'].forEach(k=>{
+    const el=document.getElementById('spd-'+k);
+    if(el){el.style.borderColor='var(--border)';el.style.background='';}
+  });
+  const map={'0':'off','0.15':'fast','0.3':'normal','0.5':'slow'};
+  const active=document.getElementById('spd-'+(map[s]||'normal'));
+  if(active){active.style.borderColor='var(--orange)';active.style.background='var(--orange-dim)';}
 }
 
 // ══════════════════════════════════════════════
@@ -2384,6 +2453,7 @@ Vendor: ${m.vendor}
 function applyAllSettings(){
   applyTheme();
   applyFont();
+  applySidebarSpeed();
   const savedLogo=DB.get('logo',4);
   applyLogo(savedLogo);
   applyLang();
