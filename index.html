@@ -448,11 +448,11 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
   </div>
 
   <!-- BUSINESS UNITS -->
-  <div class="sb-sec" style="margin-top:4px">Business Units</div>
+  <div class="sb-sec" id="sb-sec-biz" style="margin-top:4px">Business Units</div>
   <div class="no" id="nav-modules" onclick="showView('modules')"><span style="font-size:14px">🏢</span> Module Hub <span class="ni-badge" id="hub-nb" style="background:var(--purple)">5</span></div>
 
   <!-- OVERVIEW REPORT MONITORING -->
-  <div class="sb-sec" style="margin-top:4px">Overview Report Monitoring</div>
+  <div class="sb-sec" id="sb-sec-monitor" style="margin-top:4px">Overview Report Monitoring</div>
   <div class="no active" id="nav-dashboard" onclick="showView('dashboard')"><span style="font-size:14px">📊</span> Dashboards</div>
   <div class="no" id="nav-floorplan" onclick="showView('floorplan')" style="position:relative">
     <span style="font-size:14px">🗺</span> Building Critical Status
@@ -466,10 +466,10 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
   </div>
 
   <!-- iMATOMs SYSTEM -->
-  <div class="sb-sec" style="margin-top:4px">iMATOMs System</div>
+  <div class="sb-sec" id="sb-sec-system" style="margin-top:4px">iMATOMs System</div>
 
   <!-- S1 Reliability -->
-  <div style="--ac:var(--orange)">
+  <div id="sb-wrap-s1" style="--ac:var(--orange)">
     <div class="acc-hd" id="ah-s1" onclick="toggleAcc('s1')"><span class="ai">🔧</span><span class="al">Reliability</span><span class="arr">▶</span></div>
     <div class="acc-bd" id="ab-s1">
       <!-- Asset Core -->
@@ -490,7 +490,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
   </div>
 
   <!-- S2 Quality -->
-  <div style="--ac:var(--blue)">
+  <div id="sb-wrap-s2" style="--ac:var(--blue)">
     <div class="acc-hd" id="ah-s2" onclick="toggleAcc('s2')"><span class="ai">🔬</span><span class="al">Quality & Risk</span><span class="arr">▶</span></div>
     <div class="acc-bd" id="ab-s2">
       <div class="ni" style="--nc:var(--blue)" id="nav-inspection" onclick="showView('inspection')"><span class="ni-dot"></span>Annual Inspection</div>
@@ -501,7 +501,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
   </div>
 
   <!-- S3 Cost -->
-  <div style="--ac:var(--green)">
+  <div id="sb-wrap-s3" style="--ac:var(--green)">
     <div class="acc-hd" id="ah-s3" onclick="toggleAcc('s3')"><span class="ai">💰</span><span class="al">Cost Efficiency</span><span class="arr">▶</span></div>
     <div class="acc-bd" id="ab-s3">
       <div class="ni" style="--nc:var(--green)" id="nav-budget" onclick="showView('budget')"><span class="ni-dot"></span>Budget Planning</div>
@@ -511,7 +511,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
   </div>
 
   <!-- S4 ESG -->
-  <div style="--ac:var(--teal)">
+  <div id="sb-wrap-s4" style="--ac:var(--teal)">
     <div class="acc-hd" id="ah-s4" onclick="toggleAcc('s4')"><span class="ai">🌱</span><span class="al">ESG</span><span class="arr">▶</span></div>
     <div class="acc-bd" id="ab-s4">
       <div class="ni" style="--nc:var(--teal)" id="nav-energy" onclick="showView('energy')"><span class="ni-dot"></span>Energy Monitor</div>
@@ -522,7 +522,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
   </div>
 
   <!-- S5 Academy -->
-  <div style="--ac:var(--purple)">
+  <div id="sb-wrap-s5" style="--ac:var(--purple)">
     <div class="acc-hd" id="ah-s5" onclick="toggleAcc('s5')"><span class="ai">🎓</span><span class="al">Staff Academy</span><span class="arr">▶</span></div>
     <div class="acc-bd" id="ab-s5">
       <div class="ni" style="--nc:var(--purple)" id="nav-training" onclick="showView('training')"><span class="ni-dot"></span>Training Calendar</div>
@@ -533,7 +533,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
   </div>
 
   <!-- S6 Safety -->
-  <div style="--ac:var(--red)">
+  <div id="sb-wrap-s6" style="--ac:var(--red)">
     <div class="acc-hd" id="ah-s6" onclick="toggleAcc('s6')"><span class="ai">🛡</span><span class="al">Safety & Well-being</span><span class="arr">▶</span></div>
     <div class="acc-bd" id="ab-s6">
       <div class="ni" style="--nc:var(--red)" id="nav-incident" onclick="showView('incident')"><span class="ni-dot"></span>Incident Report</div>
@@ -1784,6 +1784,52 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     </div>
 
     <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+
+    <!-- Sidebar Menu Visibility Section -->
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">👁 Sidebar Menu Visibility / จัดการเมนูที่แสดง</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--text)">🏢 Module Hub</span>
+          <input type="checkbox" id="navtog-modules" onchange="toggleNavVis('modules',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--text)">📊 Dashboards</span>
+          <input type="checkbox" id="navtog-dashboard" onchange="toggleNavVis('dashboard',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--text)">🗺 Building Critical Status</span>
+          <input type="checkbox" id="navtog-floorplan" onchange="toggleNavVis('floorplan',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--orange)">🔧 Reliability</span>
+          <input type="checkbox" id="navtog-s1" onchange="toggleNavVis('s1',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--blue)">🔬 Quality & Risk</span>
+          <input type="checkbox" id="navtog-s2" onchange="toggleNavVis('s2',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--green)">💰 Cost Efficiency</span>
+          <input type="checkbox" id="navtog-s3" onchange="toggleNavVis('s3',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--teal)">🌱 ESG</span>
+          <input type="checkbox" id="navtog-s4" onchange="toggleNavVis('s4',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--purple)">🎓 Staff Academy</span>
+          <input type="checkbox" id="navtog-s5" onchange="toggleNavVis('s5',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--red)">🛡 Safety & Well-being</span>
+          <input type="checkbox" id="navtog-s6" onchange="toggleNavVis('s6',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:8px">💡 ซ่อนเมนูที่ยังอยู่ระหว่างพัฒนา — ผู้ใช้งานจะไม่เห็นเมนูนั้น</div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
     <div class="flex g8" style="justify-content:flex-end">
       <button class="btn btn-primary wf" style="justify-content:center" onclick="closeModal('m-settings')">✅ บันทึกการตั้งค่า</button>
     </div>
@@ -2051,6 +2097,8 @@ function updateSettingsPreview(){
     el.style.borderColor=isActive?'var(--orange)':'var(--border)';
     el.style.background=isActive?'var(--orange-dim)':'transparent';
   });
+  // Sync nav visibility checkboxes
+  updateNavVisUI();
 }
 
 // ══════════════════════════════════════════════
@@ -2085,6 +2133,52 @@ function applyTheme(){
   const t=DB.get('theme','dark');
   document.body.className=document.body.className.replace(/theme-\w+/g,'').trim();
   if(t!=='dark') document.body.classList.add('theme-'+t);
+}
+
+// ══════════════════════════════════════════════
+// SIDEBAR MENU VISIBILITY
+// ══════════════════════════════════════════════
+const NAV_VIS_ITEMS=[
+  {key:'modules',  targets:['sb-sec-biz','nav-modules']},
+  {key:'dashboard',targets:['nav-dashboard']},
+  {key:'floorplan',targets:['nav-floorplan']},
+  {key:'s1',       targets:['sb-wrap-s1']},
+  {key:'s2',       targets:['sb-wrap-s2']},
+  {key:'s3',       targets:['sb-wrap-s3']},
+  {key:'s4',       targets:['sb-wrap-s4']},
+  {key:'s5',       targets:['sb-wrap-s5']},
+  {key:'s6',       targets:['sb-wrap-s6']},
+];
+function toggleNavVis(key,show){
+  const vis=DB.get('navVis',{});
+  vis[key]=show;
+  DB.set('navVis',vis);
+  applyNavVis();
+  showToast((show?'👁 แสดง':'🙈 ซ่อน')+' เมนู');
+}
+function applyNavVis(){
+  const vis=DB.get('navVis',{});
+  NAV_VIS_ITEMS.forEach(item=>{
+    const show=vis[item.key]!==false;
+    item.targets.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.style.display=show?'':'none';
+    });
+  });
+  // Auto-hide "Overview Report Monitoring" header when both items hidden
+  const mon=document.getElementById('sb-sec-monitor');
+  if(mon) mon.style.display=(vis['dashboard']===false&&vis['floorplan']===false)?'none':'';
+  // Auto-hide "iMATOMs System" header when all modules hidden
+  const allOff=['s1','s2','s3','s4','s5','s6'].every(k=>vis[k]===false);
+  const sys=document.getElementById('sb-sec-system');
+  if(sys) sys.style.display=allOff?'none':'';
+}
+function updateNavVisUI(){
+  const vis=DB.get('navVis',{});
+  NAV_VIS_ITEMS.forEach(item=>{
+    const el=document.getElementById('navtog-'+item.key);
+    if(el) el.checked=vis[item.key]!==false;
+  });
 }
 
 function setSidebarSpeed(s){
@@ -2454,6 +2548,7 @@ function applyAllSettings(){
   applyTheme();
   applyFont();
   applySidebarSpeed();
+  applyNavVis();
   const savedLogo=DB.get('logo',4);
   applyLogo(savedLogo);
   applyLang();
