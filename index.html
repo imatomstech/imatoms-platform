@@ -1191,7 +1191,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     <!-- ═══ DATABASE: Asset List & Spec ═══ -->
     <div id="view-db-assets" class="view">
       <div class="sh"><div><div class="st">🗃 Asset List & Specification</div><div class="ss">Database · ข้อมูลสินทรัพย์ครบถ้วน · Spec Sheet · Nameplate Data</div></div>
-        <div class="flex g8"><button class="btn btn-primary btn-sm" onclick="openModal('m-asset')">+ เพิ่ม Asset</button><button class="btn btn-success btn-sm" onclick="exportExcel('assets')">📊 Export Excel</button></div>
+        <div class="flex g8"><button class="btn btn-primary btn-sm" onclick="openModal('m-asset')">+ เพิ่ม Asset</button><button class="btn btn-success btn-sm" onclick="exportExcel('assets')">📊 Export Excel</button><button class="btn btn-blue btn-sm" onclick="importAssetExcel()">📂 Import Excel</button></div>
       </div>
       <div class="alr alr-i mb16">🗃 Database นี้เป็น Master Data ของทุก Asset — ข้อมูลจาก Module นี้ถูกใช้โดยทุก Strategy (Reliability, Quality, Cost, ESG, Safety)</div>
       <div class="kpi-grid">
@@ -1455,6 +1455,11 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 </main>
 
 <!-- MODALS -->
+<div class="modal-overlay" id="m-import-preview"><div class="modal modal-lg"><div class="mhd"><div class="mttl">📂 Import Asset จาก Excel</div><button class="mclose" onclick="closeModal('m-import-preview')">✕</button></div>
+<div id="import-preview-body"></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:16px"><button class="btn btn-secondary" onclick="closeModal('m-import-preview')">ยกเลิก</button><button class="btn btn-primary" id="import-confirm-btn" onclick="confirmImportAssets()">✅ Import</button></div>
+</div></div>
+
 <div class="modal-overlay" id="m-asset"><div class="modal modal-lg"><div class="mhd"><div class="mttl">🏭 เพิ่ม/แก้ไข Asset</div><button class="mclose" onclick="closeModal('m-asset')">✕</button></div>
 <div class="form-sec">🔑 Identity</div>
 <div class="form-row"><div class="form-group"><label class="form-label">Asset ID *</label><input class="form-control" id="ai-id" placeholder="AST-2026-001"></div><div class="form-group"><label class="form-label">ชื่อ Asset *</label><input class="form-control" id="ai-nm" placeholder="Centrifugal Chiller #1"></div></div>
@@ -3076,6 +3081,117 @@ function renderAssets(){
   const sy=document.getElementById('a-fsy')?.value||'';
   const list=bFilter(assets).filter(a=>{if(s&&!JSON.stringify(a).toLowerCase().includes(s))return false;if(sf&&a.status!==sf)return false;if(sy&&a.sys!==sy)return false;return true;});
   document.getElementById('a-tbody').innerHTML=list.length?list.map(a=>`<tr><td><span class="tag ffm">${a.id}</span></td><td><div class="fw6" style="font-size:12px">${a.name}</div><div style="font-size:10px;color:var(--text3)">${[a.brand,a.model].filter(Boolean).join(' / ')||a.brand||'—'}</div></td><td><div><span class="badge badge-orange">${a.sys}</span></div><div style="font-size:10px;color:var(--text3);margin-top:2px">${a.subSys||''}</div></td><td style="font-size:12px"><div>${a.building||''}</div><div style="font-size:10px;color:var(--text3)">${[a.floor,a.zone].filter(Boolean).join(' · ')||a.loc||'—'}</div></td><td>${critbdg[a.criticality]||'<span style="font-size:10px;color:var(--text3)">—</span>'}</td><td>${sbdg[a.status]||'—'}</td><td>${lbdg[a.lifecycle]||'—'}</td><td class="ffm tg" style="font-size:12px">${a.nbv?'฿'+a.nbv.toLocaleString():'—'}</td><td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="editAsset('${a.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="delAsset('${a.id}')">🗑</button></div></td></tr>`).join(''):'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล</td></tr>';
+}
+// ══ IMPORT EXCEL ══
+let _importPending=[];
+function importAssetExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX...');return;}
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+        // ลอง sheet ตามลำดับ: Import Template → Asset Register → sheet แรก
+        const ws=wb.Sheets['Import Template (CSV)']||wb.Sheets['Asset Register']||wb.Sheets[wb.SheetNames[0]];
+        if(!ws){showToast('❌ ไม่พบ sheet ในไฟล์');return;}
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+        const mapped=rows.map(r=>mapImportRow(r)).filter(a=>a&&a.id&&a.name);
+        if(!mapped.length){showToast('⚠ ไม่พบข้อมูล — ตรวจสอบ header ของ sheet');return;}
+        showImportPreview(mapped);
+      }catch(err){showToast('❌ อ่านไฟล์ไม่ได้: '+err.message);}
+    };
+    reader.readAsArrayBuffer(f);
+  };
+  inp.click();
+}
+function mapImportRow(r){
+  const g=(...keys)=>{for(const k of keys){if(r[k]!==undefined&&r[k]!=='')return String(r[k]).trim();}return '';};
+  const gn=(...keys)=>{const v=g(...keys);return v?(parseFloat(v)||null):null;};
+  const id=g('asset_no','Asset ID *','Asset ID','No.','id');
+  const name=g('asset_name','Asset Name *','ชื่อ Asset *','ชื่อ','name');
+  if(!id||!name)return null;
+  const cost=gn('purchase_price','ราคาซื้อ (฿)')||0;
+  const ly=gn('useful_life_years','อายุการใช้งาน (ปี)')||15;
+  const ins=g('install_date','วันติดตั้ง');
+  const yu=ins?Math.max(0,(new Date()-new Date(ins))/(365.25*24*3600*1000)):0;
+  const nbv=Math.max(0,cost-(cost/ly)*yu);
+  return{
+    id,name,
+    sys:g('system_code','System Code *','ระบบ (System) *','System Code','sys')||'AC',
+    subSys:g('sub_system','Sub-System'),
+    assetType:g('asset_type','ประเภท')||'Equipment',
+    building:g('building','อาคาร'),
+    floor:g('floor','ชั้น'),
+    zone:g('zone','Zone'),
+    room:g('room','ห้อง / Area'),
+    loc:g('location_detail','Location Detail'),
+    brand:g('brand','Brand'),
+    model:g('model','Model'),
+    serial:g('serial_no','Serial No.'),
+    capacity:gn('capacity','Capacity'),
+    capacityUnit:g('capacity_unit','Unit')||'kW',
+    mfgYear:gn('manufacture_year','ปีผลิต'),
+    cost,installDate:ins,lifeYears:ly,
+    replaceCost:gn('replace_cost','ราคาทดแทน (฿)')||0,
+    pmInterval:gn('pm_interval_days','PM ทุก (วัน)'),
+    lastPM:g('last_pm_date','Last PM Date')||null,
+    warrantyExpire:g('warranty_expire','ประกันหมด')||null,
+    vendor:g('vendor','Vendor / ผู้รับเหมา MA'),
+    status:g('status','สถานะ *')||'active',
+    criticality:g('criticality','Criticality *')||'P3',
+    lifecycle:g('lifecycle_stage','Lifecycle')||'operating',
+    redundancy:g('redundancy','Redundancy')||'No',
+    notes:g('notes','หมายเหตุ'),
+    module:g('business_module','Business Module')||'BHIRAJBURI',
+    nbv:Math.round(nbv),businessGroup:myBG()
+  };
+}
+function showImportPreview(data){
+  _importPending=data;
+  const existing=DB.get('assets',[]).map(a=>a.id);
+  const newC=data.filter(a=>!existing.includes(a.id)).length;
+  const updC=data.length-newC;
+  const body=document.getElementById('import-preview-body');
+  body.innerHTML=`<div class="alr alr-i mb12">พบ <strong>${data.length} Asset</strong> — ใหม่ <span style="color:var(--green)">${newC}</span> · อัปเดต <span style="color:var(--orange)">${updC}</span></div>
+  <div style="overflow-x:auto;max-height:280px"><table class="tbl"><thead><tr><th>Asset ID</th><th>ชื่อ</th><th>System</th><th>Building / Floor</th><th>Criticality</th><th>Status</th></tr></thead><tbody>
+  ${data.slice(0,50).map(a=>`<tr><td><span class="tag ffm" style="font-size:10px">${a.id}</span></td><td style="font-size:12px">${a.name}</td><td><span class="badge badge-orange" style="font-size:9px">${a.sys}</span></td><td style="font-size:11px">${[a.building,a.floor].filter(Boolean).join(' / ')||'—'}</td><td>${critbdg[a.criticality]||a.criticality||'—'}</td><td>${sbdg[a.status]||a.status||'—'}</td></tr>`).join('')}
+  </tbody></table></div>
+  ${data.length>50?`<div style="font-size:11px;color:var(--text3);margin-top:6px">แสดง 50 จาก ${data.length} รายการ</div>`:''}`;
+  const btn=document.getElementById('import-confirm-btn');
+  if(btn)btn.textContent=`✅ Import ${data.length} Asset`;
+  openModal('m-import-preview');
+}
+function confirmImportAssets(){
+  if(!_importPending.length)return;
+  assets=DB.get('assets',[]);
+  let added=0,updated=0;
+  _importPending.forEach(a=>{
+    const idx=assets.findIndex(x=>x.id===a.id);
+    if(idx>=0){assets[idx]=Object.assign({},assets[idx],a);updated++;}
+    else{assets.push(a);added++;}
+  });
+  DB.set('assets',assets);
+  if(CU&&CU._fromAPI&&API.token()){
+    _importPending.forEach(a=>{
+      API.post('/assets',{
+        id:a.id,name:a.name,system:a.sys,sub_system:a.subSys,asset_type:a.assetType,
+        building:a.building,floor:a.floor,zone:a.zone,room:a.room,location:a.loc,
+        brand:a.brand,model:a.model,serial_no:a.serial,capacity:a.capacity,
+        capacity_unit:a.capacityUnit,manufacture_year:a.mfgYear,status:a.status,
+        criticality:a.criticality,lifecycle:a.lifecycle,cost:a.cost,
+        install_date:a.installDate||null,life_years:a.lifeYears,replace_cost:a.replaceCost,
+        pm_interval_days:a.pmInterval,last_pm_date:a.lastPM||null,
+        warranty_expire:a.warrantyExpire||null,vendor:a.vendor,
+        redundancy:a.redundancy,notes:a.notes,
+        business_module:a.module,building_id:CU.company||'BHIRAJBURI'
+      }).catch(err=>console.warn('import sync:',err.message));
+    });
+  }
+  closeModal('m-import-preview');_importPending=[];
+  renderAssets();popSelects();
+  showToast(`📂 Import สำเร็จ — เพิ่ม ${added} · อัปเดต ${updated} Asset`);
 }
 function saveAsset(){
   const id=document.getElementById('ai-id').value.trim();const nm=document.getElementById('ai-nm').value.trim();
