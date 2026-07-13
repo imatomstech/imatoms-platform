@@ -190,6 +190,7 @@ select.form-control option{background:var(--bg3)}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
 textarea.form-control{resize:vertical;min-height:70px;font-family:var(--font-display)}
+.form-sec{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--orange);margin:14px 0 8px;padding:5px 0 6px;border-bottom:1px solid var(--border);font-family:var(--font-display)}
 .table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{background:var(--bg3);padding:9px 13px;text-align:left;font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap;font-family:var(--font-display)}
@@ -1454,13 +1455,26 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 </main>
 
 <!-- MODALS -->
-<div class="modal-overlay" id="m-asset"><div class="modal"><div class="mhd"><div class="mttl">🏭 เพิ่ม/แก้ไข Asset</div><button class="mclose" onclick="closeModal('m-asset')">✕</button></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Asset ID *</label><input class="form-control" id="ai-id" placeholder="AST-2026-001"></div><div class="form-group"><label class="form-label">ชื่อ *</label><input class="form-control" id="ai-nm" placeholder="Chiller Unit 1"></div></div>
-<div class="form-row-3"><div class="form-group"><label class="form-label">ระบบ</label><select class="form-control" id="ai-sy"><option>AC</option><option>BAS</option><option>EE</option><option>EL</option><option>FA</option><option>FP</option><option>SN</option><option>TR</option><option>WWT</option></select></div><div class="form-group"><label class="form-label">Location</label><input class="form-control" id="ai-lc" placeholder="B1 Pump Room"></div><div class="form-group"><label class="form-label">สถานะ</label><select class="form-control" id="ai-st"><option value="active">🟢 Active</option><option value="warning">🟡 Warning</option><option value="critical">🔴 Critical</option><option value="inactive">⚫ Inactive</option></select></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Serial No.</label><input class="form-control" id="ai-sr" placeholder="SN-XXXX"></div><div class="form-group"><label class="form-label">Brand/Model</label><input class="form-control" id="ai-br" placeholder="Carrier/30XAB"></div></div>
-<div class="form-row-3"><div class="form-group"><label class="form-label">ราคาซื้อ (฿)</label><input class="form-control" type="number" id="ai-ct" placeholder="0"></div><div class="form-group"><label class="form-label">วันติดตั้ง</label><input class="form-control" type="date" id="ai-id2"></div><div class="form-group"><label class="form-label">อายุ (ปี)</label><input class="form-control" type="number" id="ai-ly" placeholder="15"></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Lifecycle</label><select class="form-control" id="ai-lf"><option value="new">🆕 New</option><option value="operating">✅ Operating</option><option value="aging">⚠ Aging</option><option value="critical">🔴 Critical</option><option value="eol">🔚 EOL</option></select></div><div class="form-group"><label class="form-label">Business Module</label><select class="form-control" id="ai-md"><option>Commercial</option><option>BHIRAJBURI</option><option>Township</option><option>BITEC Bangna</option><option>Healthcare</option><option>Factory</option><option>Office</option><option>University</option><option>Hotel</option></select></div></div>
-<div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-asset')">ยกเลิก</button><button class="btn btn-primary" onclick="saveAsset()">💾 บันทึก</button></div>
+<div class="modal-overlay" id="m-asset"><div class="modal modal-lg"><div class="mhd"><div class="mttl">🏭 เพิ่ม/แก้ไข Asset</div><button class="mclose" onclick="closeModal('m-asset')">✕</button></div>
+<div class="form-sec">🔑 Identity</div>
+<div class="form-row"><div class="form-group"><label class="form-label">Asset ID *</label><input class="form-control" id="ai-id" placeholder="AST-2026-001"></div><div class="form-group"><label class="form-label">ชื่อ Asset *</label><input class="form-control" id="ai-nm" placeholder="Centrifugal Chiller #1"></div></div>
+<div class="form-row-3"><div class="form-group"><label class="form-label">ระบบ (System) *</label><select class="form-control" id="ai-sy" onchange="updateSubSys()"><option value="AC">AC — Air Conditioning</option><option value="EE">EE — Electrical</option><option value="EL">EL — Elevator</option><option value="FA">FA — Fire Alarm</option><option value="FP">FP — Fire Protection</option><option value="BAS">BAS — Building Auto</option><option value="SN">SN — Sanitary</option><option value="TR">TR — Transportation</option><option value="WWT">WWT — Waste Water</option><option value="GE">GE — Generator/UPS</option><option value="CV">CV — Civil</option><option value="IT">IT — IT/Network</option><option value="SG">SG — Security</option><option value="PL">PL — Pool/Landscape</option><option value="LT">LT — Lighting</option></select></div><div class="form-group"><label class="form-label">Sub-System</label><select class="form-control" id="ai-sub"></select></div><div class="form-group"><label class="form-label">ประเภท</label><select class="form-control" id="ai-tp"><option value="Equipment">Equipment</option><option value="Instrument">Instrument</option><option value="Infrastructure">Infrastructure</option><option value="IT System">IT System</option><option value="Vehicle">Vehicle</option><option value="Other">Other</option></select></div></div>
+<div class="form-sec">📍 Location</div>
+<div class="form-row-3"><div class="form-group"><label class="form-label">อาคาร</label><input class="form-control" id="ai-bld" placeholder="BHIRAJBURI"></div><div class="form-group"><label class="form-label">ชั้น</label><input class="form-control" id="ai-fl" placeholder="B2 / G / 1 / 2 / R"></div><div class="form-group"><label class="form-label">Zone</label><input class="form-control" id="ai-zn" placeholder="Zone-Mech / North"></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">ห้อง / Area</label><input class="form-control" id="ai-rm" placeholder="Chiller Room / AHU Room"></div><div class="form-group"><label class="form-label">Location Detail</label><input class="form-control" id="ai-lc" placeholder="รายละเอียดตำแหน่ง"></div></div>
+<div class="form-sec">⚙️ Technical Specification</div>
+<div class="form-row-3"><div class="form-group"><label class="form-label">Brand</label><input class="form-control" id="ai-brd" placeholder="Carrier / Trane / Daikin"></div><div class="form-group"><label class="form-label">Model</label><input class="form-control" id="ai-mdl" placeholder="30XAB-350"></div><div class="form-group"><label class="form-label">Serial No.</label><input class="form-control" id="ai-sr" placeholder="SN-XXXXXXXX"></div></div>
+<div class="form-row-3"><div class="form-group"><label class="form-label">Capacity</label><input class="form-control" type="number" id="ai-cap" placeholder="350"></div><div class="form-group"><label class="form-label">Unit</label><select class="form-control" id="ai-cu"><option value="kW">kW</option><option value="TR">TR (Ton)</option><option value="kVA">kVA</option><option value="BTU">BTU/hr</option><option value="LPS">LPS</option><option value="m³/hr">m³/hr</option><option value="kVAR">kVAR</option><option value="kg">kg</option><option value="-">—</option></select></div><div class="form-group"><label class="form-label">ปีผลิต</label><input class="form-control" type="number" id="ai-my" placeholder="2019" min="1980" max="2099"></div></div>
+<div class="form-sec">💰 Financial</div>
+<div class="form-row-3"><div class="form-group"><label class="form-label">ราคาซื้อ (฿)</label><input class="form-control" type="number" id="ai-ct" placeholder="0"></div><div class="form-group"><label class="form-label">วันติดตั้ง</label><input class="form-control" type="date" id="ai-id2"></div><div class="form-group"><label class="form-label">อายุการใช้งาน (ปี)</label><input class="form-control" type="number" id="ai-ly" placeholder="15" min="1"></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">ราคาทดแทน (฿)</label><input class="form-control" type="number" id="ai-rc" placeholder="0"></div><div class="form-group"><label class="form-label">Business Module</label><select class="form-control" id="ai-md"><option>BHIRAJBURI</option><option>Commercial</option><option>Township</option><option>BITEC Bangna</option><option>Healthcare</option><option>Factory</option><option>Office</option><option>University</option><option>Hotel</option></select></div></div>
+<div class="form-sec">🔧 Maintenance Plan</div>
+<div class="form-row-3"><div class="form-group"><label class="form-label">PM ทุก (วัน)</label><input class="form-control" type="number" id="ai-pm" placeholder="90"></div><div class="form-group"><label class="form-label">Last PM Date</label><input class="form-control" type="date" id="ai-lpd"></div><div class="form-group"><label class="form-label">ประกันหมด</label><input class="form-control" type="date" id="ai-wx"></div></div>
+<div class="form-group"><label class="form-label">Vendor / ผู้รับเหมา MA</label><input class="form-control" id="ai-ven" placeholder="Carrier Thailand / บริษัทผู้รับเหมา"></div>
+<div class="form-sec">📊 Status & Criticality</div>
+<div class="form-row-3"><div class="form-group"><label class="form-label">สถานะ *</label><select class="form-control" id="ai-st"><option value="active">🟢 Active</option><option value="warning">🟡 Warning</option><option value="critical">🔴 Critical</option><option value="inactive">⚫ Inactive</option><option value="standby">🔵 Standby</option><option value="decommissioned">🔚 Decommissioned</option></select></div><div class="form-group"><label class="form-label">Criticality *</label><select class="form-control" id="ai-cr"><option value="P1">P1 — Critical (หยุด=ธุรกิจหยุด)</option><option value="P2">P2 — High (กระทบมาก)</option><option value="P3" selected>P3 — Medium (กระทบบางส่วน)</option><option value="P4">P4 — Low (กระทบน้อย)</option></select></div><div class="form-group"><label class="form-label">Lifecycle</label><select class="form-control" id="ai-lf"><option value="new">🆕 New</option><option value="operating" selected>✅ Operating</option><option value="aging">⚠ Aging</option><option value="critical">🔴 Critical</option><option value="eol">🔚 EOL</option></select></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">Redundancy</label><select class="form-control" id="ai-rd"><option value="No">No — ไม่มีตัวสำรอง</option><option value="Yes">Yes — มีตัวสำรอง</option></select></div><div class="form-group"><label class="form-label">หมายเหตุ</label><input class="form-control" id="ai-nt" placeholder="หมายเหตุเพิ่มเติม"></div></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:16px"><button class="btn btn-secondary" onclick="closeModal('m-asset')">ยกเลิก</button><button class="btn btn-primary" onclick="saveAsset()">💾 บันทึก Asset</button></div>
 </div></div>
 
 <div class="modal-overlay" id="m-wr"><div class="modal"><div class="mhd"><div class="mttl">🔧 แจ้งซ่อม / Work Request</div><button class="mclose" onclick="closeModal('m-wr')">✕</button></div>
@@ -3045,15 +3059,23 @@ function dCharts(){
 function dChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
 // ══ ASSETS ══
-const sbdg={active:'<span class="badge badge-green">🟢 Active</span>',warning:'<span class="badge badge-yellow">🟡 Warning</span>',critical:'<span class="badge badge-red">🔴 Critical</span>',inactive:'<span class="badge badge-gray">⚫ Inactive</span>'};
+const sbdg={active:'<span class="badge badge-green">🟢 Active</span>',warning:'<span class="badge badge-yellow">🟡 Warning</span>',critical:'<span class="badge badge-red">🔴 Critical</span>',inactive:'<span class="badge badge-gray">⚫ Inactive</span>',standby:'<span class="badge badge-blue">🔵 Standby</span>',decommissioned:'<span class="badge badge-gray">🔚 Decom.</span>'};
 const lbdg={new:'<span class="badge badge-blue">🆕 New</span>',operating:'<span class="badge badge-green">✅ Operating</span>',aging:'<span class="badge badge-yellow">⚠ Aging</span>',critical:'<span class="badge badge-red">🔴 Critical</span>',eol:'<span class="badge badge-gray">🔚 EOL</span>'};
+const critbdg={P1:'<span class="badge badge-red" style="font-size:9px;padding:1px 6px">P1</span>',P2:'<span class="badge badge-orange" style="font-size:9px;padding:1px 6px">P2</span>',P3:'<span class="badge badge-yellow" style="font-size:9px;padding:1px 6px">P3</span>',P4:'<span class="badge badge-green" style="font-size:9px;padding:1px 6px">P4</span>'};
+const SYS_SUB={AC:['Chiller','Cooling Tower','AHU','FCU','PAU','Split AC','Pump-CHW','Pump-CW','VRF/VRV','Exhaust Fan','Ventilation Fan'],EE:['MDB','Distribution Board','Transformer','Capacitor Bank','ATS/STS','Solar PV','Inverter','LV Panel'],EL:['Passenger Lift','Service Lift','Escalator','Dumbwaiter','Car Lift'],FA:['FACP','Smoke Detector','Heat Detector','Sprinkler','Pull Station','Alarm Bell'],FP:['Fire Pump','Jockey Pump','Sprinkler Valve','Fire Cabinet','Portable Extinguisher','FM200/Gas'],BAS:['Controller','DDC','Sensor','Gateway','BACnet Panel','SCADA'],SN:['Water Pump','Pressure Tank','Water Meter','Sump Pump','Sewage Pump','Grease Trap'],TR:['Conveyor','Loading Dock','Turntable'],WWT:['STP','Aeration Tank','Clarifier','Chemical Dosing','UV System'],GE:['Generator','ATS','UPS','Battery Bank','Charger'],CV:['Structure','Roof','Waterproof','Facade','Road','Parking'],IT:['Server','Switch','Router','Firewall','Access Point','CCTV Recorder','NAS'],SG:['CCTV Camera','Access Control','Guard Tour','Intercom','Boom Gate'],PL:['Pool Pump','Filter System','Chemical System','Landscaping','Irrigation'],LT:['Emergency Light','Exit Sign','Street Light','Flood Light','Panel Board']};
+function updateSubSys(){
+  const sys=document.getElementById('ai-sy').value;
+  const sub=document.getElementById('ai-sub');if(!sub)return;
+  const opts=SYS_SUB[sys]||[];
+  sub.innerHTML='<option value="">— Sub-System —</option>'+opts.map(o=>`<option value="${o}">${o}</option>`).join('');
+}
 function renderAssets(){
   assets=DB.get('assets',[]);
   const s=(document.getElementById('a-search')?.value||'').toLowerCase();
   const sf=document.getElementById('a-fs')?.value||'';
   const sy=document.getElementById('a-fsy')?.value||'';
   const list=bFilter(assets).filter(a=>{if(s&&!JSON.stringify(a).toLowerCase().includes(s))return false;if(sf&&a.status!==sf)return false;if(sy&&a.sys!==sy)return false;return true;});
-  document.getElementById('a-tbody').innerHTML=list.length?list.map(a=>`<tr><td><span class="tag ffm">${a.id}</span></td><td><div class="fw6" style="font-size:12px">${a.name}</div><div style="font-size:10px;color:var(--text3)">${a.brand||'—'}</div></td><td><span class="badge badge-orange">${a.sys}</span></td><td style="font-size:12px">${a.loc||'—'}</td><td style="font-size:12px">${a.module||'—'}</td><td>${sbdg[a.status]||'—'}</td><td>${lbdg[a.lifecycle]||'—'}</td><td class="ffm tg" style="font-size:12px">${a.nbv?'฿'+a.nbv.toLocaleString():'—'}</td><td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="editAsset('${a.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="delAsset('${a.id}')">🗑</button></div></td></tr>`).join(''):'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล</td></tr>';
+  document.getElementById('a-tbody').innerHTML=list.length?list.map(a=>`<tr><td><span class="tag ffm">${a.id}</span></td><td><div class="fw6" style="font-size:12px">${a.name}</div><div style="font-size:10px;color:var(--text3)">${[a.brand,a.model].filter(Boolean).join(' / ')||a.brand||'—'}</div></td><td><div><span class="badge badge-orange">${a.sys}</span></div><div style="font-size:10px;color:var(--text3);margin-top:2px">${a.subSys||''}</div></td><td style="font-size:12px"><div>${a.building||''}</div><div style="font-size:10px;color:var(--text3)">${[a.floor,a.zone].filter(Boolean).join(' · ')||a.loc||'—'}</div></td><td>${critbdg[a.criticality]||'<span style="font-size:10px;color:var(--text3)">—</span>'}</td><td>${sbdg[a.status]||'—'}</td><td>${lbdg[a.lifecycle]||'—'}</td><td class="ffm tg" style="font-size:12px">${a.nbv?'฿'+a.nbv.toLocaleString():'—'}</td><td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="editAsset('${a.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="delAsset('${a.id}')">🗑</button></div></td></tr>`).join(''):'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล</td></tr>';
 }
 function saveAsset(){
   const id=document.getElementById('ai-id').value.trim();const nm=document.getElementById('ai-nm').value.trim();
@@ -3064,20 +3086,91 @@ function saveAsset(){
   const ins=document.getElementById('ai-id2').value;
   const yu=ins?Math.max(0,(new Date()-new Date(ins))/(365.25*24*3600*1000)):0;
   const nbv=Math.max(0,cost-(cost/ly)*yu);
-  const obj={id,name:nm,sys:document.getElementById('ai-sy').value,loc:document.getElementById('ai-lc').value,status:document.getElementById('ai-st').value,lifecycle:document.getElementById('ai-lf').value,serial:document.getElementById('ai-sr').value,brand:document.getElementById('ai-br').value,cost,installDate:ins,lifeYears:ly,module:document.getElementById('ai-md').value,nbv:Math.round(nbv),businessGroup:myBG()};
+  const obj={
+    id,name:nm,
+    sys:document.getElementById('ai-sy').value,
+    subSys:document.getElementById('ai-sub').value,
+    assetType:document.getElementById('ai-tp').value,
+    building:document.getElementById('ai-bld').value,
+    floor:document.getElementById('ai-fl').value,
+    zone:document.getElementById('ai-zn').value,
+    room:document.getElementById('ai-rm').value,
+    loc:document.getElementById('ai-lc').value,
+    brand:document.getElementById('ai-brd').value,
+    model:document.getElementById('ai-mdl').value,
+    serial:document.getElementById('ai-sr').value,
+    capacity:parseFloat(document.getElementById('ai-cap').value)||null,
+    capacityUnit:document.getElementById('ai-cu').value,
+    mfgYear:parseInt(document.getElementById('ai-my').value)||null,
+    cost,installDate:ins,lifeYears:ly,
+    replaceCost:parseFloat(document.getElementById('ai-rc').value)||0,
+    module:document.getElementById('ai-md').value,
+    pmInterval:parseInt(document.getElementById('ai-pm').value)||null,
+    lastPM:document.getElementById('ai-lpd').value||null,
+    warrantyExpire:document.getElementById('ai-wx').value||null,
+    vendor:document.getElementById('ai-ven').value,
+    status:document.getElementById('ai-st').value,
+    criticality:document.getElementById('ai-cr').value,
+    lifecycle:document.getElementById('ai-lf').value,
+    redundancy:document.getElementById('ai-rd').value,
+    notes:document.getElementById('ai-nt').value,
+    nbv:Math.round(nbv),businessGroup:myBG()
+  };
   const ex=assets.findIndex(function(a){return a.id===id;});
   if(ex>=0)assets[ex]=Object.assign({},assets[ex],obj);else assets.push(obj);
   DB.set('assets',assets);
   if(CU&&CU._fromAPI&&API.token()){
-    API.post('/assets',{id,name:nm,system:obj.sys,location:obj.loc,floor:'l1',status:obj.status,lifecycle:obj.lifecycle,serial_no:obj.serial,brand_model:obj.brand,cost,install_date:ins||null,life_years:ly,business_module:obj.module,building_id:CU.company||'BHIRAJBURI'})
-      .catch(function(e){console.warn('saveAsset API error:',e.message);});
+    API.post('/assets',{
+      id,name:nm,system:obj.sys,sub_system:obj.subSys,asset_type:obj.assetType,
+      building:obj.building,floor:obj.floor,zone:obj.zone,room:obj.room,location:obj.loc,
+      brand:obj.brand,model:obj.model,serial_no:obj.serial,
+      capacity:obj.capacity,capacity_unit:obj.capacityUnit,manufacture_year:obj.mfgYear,
+      status:obj.status,criticality:obj.criticality,lifecycle:obj.lifecycle,
+      cost,install_date:ins||null,life_years:ly,replace_cost:obj.replaceCost,
+      pm_interval_days:obj.pmInterval,last_pm_date:obj.lastPM||null,
+      warranty_expire:obj.warrantyExpire||null,vendor:obj.vendor,
+      redundancy:obj.redundancy,notes:obj.notes,
+      business_module:obj.module,building_id:CU.company||'BHIRAJBURI'
+    }).catch(function(e){console.warn('saveAsset API error:',e.message);});
   }
   closeModal('m-asset');renderAssets();popSelects();showToast('💾 บันทึก Asset แล้ว');
 }
 function editAsset(id){
   const a=assets.find(x=>x.id===id);if(!a)return;
   openModal('m-asset');
-  setTimeout(()=>{document.getElementById('ai-id').value=a.id;document.getElementById('ai-nm').value=a.name;document.getElementById('ai-sy').value=a.sys;document.getElementById('ai-lc').value=a.loc||'';document.getElementById('ai-st').value=a.status;document.getElementById('ai-lf').value=a.lifecycle||'operating';document.getElementById('ai-sr').value=a.serial||'';document.getElementById('ai-br').value=a.brand||'';document.getElementById('ai-ct').value=a.cost||0;document.getElementById('ai-id2').value=a.installDate||'';document.getElementById('ai-ly').value=a.lifeYears||15;document.getElementById('ai-md').value=a.module||'Commercial';},50);
+  setTimeout(()=>{
+    document.getElementById('ai-id').value=a.id;
+    document.getElementById('ai-nm').value=a.name;
+    document.getElementById('ai-sy').value=a.sys||'AC';
+    updateSubSys();
+    setTimeout(()=>{document.getElementById('ai-sub').value=a.subSys||'';},10);
+    document.getElementById('ai-tp').value=a.assetType||'Equipment';
+    document.getElementById('ai-bld').value=a.building||'';
+    document.getElementById('ai-fl').value=a.floor||'';
+    document.getElementById('ai-zn').value=a.zone||'';
+    document.getElementById('ai-rm').value=a.room||'';
+    document.getElementById('ai-lc').value=a.loc||'';
+    document.getElementById('ai-brd').value=a.brand||'';
+    document.getElementById('ai-mdl').value=a.model||'';
+    document.getElementById('ai-sr').value=a.serial||'';
+    document.getElementById('ai-cap').value=a.capacity||'';
+    document.getElementById('ai-cu').value=a.capacityUnit||'kW';
+    document.getElementById('ai-my').value=a.mfgYear||'';
+    document.getElementById('ai-ct').value=a.cost||0;
+    document.getElementById('ai-id2').value=a.installDate||'';
+    document.getElementById('ai-ly').value=a.lifeYears||15;
+    document.getElementById('ai-rc').value=a.replaceCost||0;
+    document.getElementById('ai-md').value=a.module||'BHIRAJBURI';
+    document.getElementById('ai-pm').value=a.pmInterval||'';
+    document.getElementById('ai-lpd').value=a.lastPM||'';
+    document.getElementById('ai-wx').value=a.warrantyExpire||'';
+    document.getElementById('ai-ven').value=a.vendor||'';
+    document.getElementById('ai-st').value=a.status||'active';
+    document.getElementById('ai-cr').value=a.criticality||'P3';
+    document.getElementById('ai-lf').value=a.lifecycle||'operating';
+    document.getElementById('ai-rd').value=a.redundancy||'No';
+    document.getElementById('ai-nt').value=a.notes||'';
+  },50);
 }
 function delAsset(id){
   if(!confirm('ลบ?'))return;
@@ -3704,6 +3797,7 @@ function openModal(id){
         const yr=new Date().getFullYear();
         idField.value=`AST-${yr}-${String(next).padStart(3,'0')}`;
       }
+      updateSubSys();
     },50);
   }
 }
