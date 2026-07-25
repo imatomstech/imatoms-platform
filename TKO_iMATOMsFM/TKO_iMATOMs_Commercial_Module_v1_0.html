@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TKO ● iMATOMs Tech — Commercial Module v1.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0D1117;--bg2:#161B22;--bg3:#1C2333;--bg4:#21262D;
+  --border:#30363D;--border2:#3D444D;
+  --orange:#F97316;--orange-dim:rgba(249,115,22,0.12);
+  --green:#22C55E;--green-dim:rgba(34,197,94,0.12);
+  --yellow:#EAB308;--yellow-dim:rgba(234,179,8,0.12);
+  --red:#EF4444;--red-dim:rgba(239,68,68,0.12);
+  --blue:#3B82F6;--blue-dim:rgba(59,130,246,0.12);
+  --purple:#A855F7;--purple-dim:rgba(168,85,247,0.12);
+  --teal:#14B8A6;--teal-dim:rgba(20,184,166,0.12);
+  --accent:#3B82F6;--accent-dim:rgba(59,130,246,0.12);
+  --text:#E6EDF3;--text2:#8B949E;--text3:#6E7681;
+  --sidebar-w:250px;--header-h:56px;
+  --font:'Sarabun',sans-serif;--font-display:'Rajdhani',sans-serif;--font-mono:'JetBrains Mono',monospace;
+  --radius:8px;--radius-lg:12px;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+#sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;overflow-y:auto}
+.sidebar-header{padding:16px 16px 12px;border-bottom:1px solid var(--border)}
+.sidebar-logo{font-family:var(--font-display);font-size:10px;font-weight:700;letter-spacing:2px;color:var(--accent)}
+.sidebar-title{font-family:var(--font-display);font-size:14px;font-weight:600}
+.sidebar-sub{font-size:10px;color:var(--text3);margin-top:2px}
+.sidebar-module-tag{display:inline-block;background:var(--accent-dim);border:1px solid rgba(59,130,246,0.3);color:var(--accent);font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 6px;border-radius:4px;margin-top:4px}
+.sidebar-section{padding:12px 8px 4px;font-size:10px;font-weight:600;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;padding-left:12px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius);margin:1px 8px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .15s;border:1px solid transparent}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--accent-dim);color:var(--accent);border-color:rgba(59,130,246,0.25)}
+.nav-icon{width:16px;height:16px;flex-shrink:0;opacity:.7}.nav-item.active .nav-icon{opacity:1}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 5px;border-radius:8px;min-width:18px;text-align:center}
+.sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
+#main{margin-left:var(--sidebar-w);min-height:100vh}
+#topbar{position:sticky;top:0;height:var(--header-h);background:rgba(13,17,23,0.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;z-index:50}
+.topbar-title{font-family:var(--font-display);font-size:18px;font-weight:600}
+.topbar-breadcrumb{font-size:12px;color:var(--text3)}
+.topbar-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+#content{padding:24px}
+.view{display:none}.view.active{display:block}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px}
+.card-sm{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.blue::before{background:var(--blue)}.kpi.green::before{background:var(--green)}.kpi.yellow::before{background:var(--yellow)}.kpi.red::before{background:var(--red)}.kpi.orange::before{background:var(--orange)}.kpi.teal::before{background:var(--teal)}.kpi.purple::before{background:var(--purple)}
+.kpi-label{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.kpi-value{font-family:var(--font-display);font-size:28px;font-weight:700;line-height:1}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.kpi-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:26px;opacity:.12}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:13px;font-family:var(--font);cursor:pointer;border:1px solid;transition:all .15s;font-weight:500}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn-primary:hover{opacity:.85}
+.btn-secondary{background:transparent;border-color:var(--border2);color:var(--text2)}.btn-secondary:hover{background:var(--bg3);color:var(--text)}
+.btn-success{background:transparent;border-color:var(--green);color:var(--green)}.btn-success:hover{background:var(--green-dim)}
+.btn-danger{background:transparent;border-color:var(--red);color:var(--red)}.btn-danger:hover{background:var(--red-dim)}
+.btn-sm{padding:5px 10px;font-size:12px}.btn-icon{padding:6px}
+.table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3);color:var(--text)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:var(--green-dim);color:var(--green)}.badge-yellow{background:var(--yellow-dim);color:var(--yellow)}.badge-red{background:var(--red-dim);color:var(--red)}.badge-blue{background:var(--blue-dim);color:var(--blue)}.badge-orange{background:var(--orange-dim);color:var(--orange)}.badge-gray{background:rgba(139,148,158,.12);color:var(--text2)}.badge-teal{background:var(--teal-dim);color:var(--teal)}.badge-purple{background:var(--purple-dim);color:var(--purple)}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
+.form-control{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;transition:border .15s}
+.form-control:focus{border-color:var(--accent)}
+select.form-control option{background:var(--bg3)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;width:680px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.modal-title{font-family:var(--font-display);font-size:18px;font-weight:600}
+.tabs{display:flex;gap:2px;background:var(--bg3);border-radius:var(--radius);padding:3px;margin-bottom:20px}
+.tab{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);transition:all .15s;font-weight:500}
+.tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.tab-content{display:none}.tab-content.active{display:block}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.section-title{font-family:var(--font-display);font-size:22px;font-weight:700}
+.section-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.search-input{flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none}
+.search-input:focus{border-color:var(--accent)}
+.chart-wrap{position:relative;height:240px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.flex{display:flex}.flex-center{align-items:center}.gap-8{gap:8px}.gap-12{gap:12px}.justify-between{justify-content:space-between}
+.text-blue{color:var(--blue)}.text-green{color:var(--green)}.text-yellow{color:var(--yellow)}.text-red{color:var(--red)}.text-orange{color:var(--orange)}.text-teal{color:var(--teal)}.text-muted{color:var(--text3)}
+.fw-700{font-weight:700}.ff-display{font-family:var(--font-display)}.ff-mono{font-family:var(--font-mono)}
+.mt-16{margin-top:16px}.mb-16{margin-bottom:16px}.mb-20{margin-bottom:20px}
+.tag{display:inline-block;background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:11px;font-family:var(--font-mono);color:var(--text2)}
+.metric-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.metric-row:last-child{border-bottom:none}
+.alert{padding:12px 16px;border-radius:var(--radius);margin-bottom:10px;font-size:13px}
+.alert-warning{background:var(--yellow-dim);border:1px solid rgba(234,179,8,.3);color:var(--yellow)}
+.alert-danger{background:var(--red-dim);border:1px solid rgba(239,68,68,.3);color:var(--red)}
+.alert-success{background:var(--green-dim);border:1px solid rgba(34,197,94,.3);color:var(--green)}
+.alert-info{background:var(--blue-dim);border:1px solid rgba(59,130,246,.3);color:var(--blue)}
+.eq-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;cursor:pointer;transition:all .15s}
+.eq-card:hover{border-color:var(--accent)}
+.lease-zone{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 4px rgba(239,68,68,0)}}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+@media(max-width:900px){.kpi-grid{grid-template-columns:1fr 1fr}.grid-2,.grid-3{grid-template-columns:1fr}}
+@media(max-width:768px){#sidebar{display:none}#main{margin-left:0}}
+</style>
+</head>
+<body>
+<nav id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">TKO ● iMATOMs Tech</div>
+    <div class="sidebar-title">Commercial Module</div>
+    <div class="sidebar-sub">Mall · Retail · Property Management</div>
+    <div class="sidebar-module-tag">🏢 COMMERCIAL v1.0</div>
+  </div>
+  <div class="sidebar-section">Overview</div>
+  <div class="nav-item active" onclick="showView('com-dashboard')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    Commercial Dashboard
+  </div>
+  <div class="sidebar-section">🏗 Systems & Equipment</div>
+  <div class="nav-item" onclick="showView('elevator')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="1" width="10" height="14" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 5l2-2 2 2M6 11l2 2 2-2" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+    Elevator / Escalator
+  </div>
+  <div class="nav-item" onclick="showView('hvac')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2v12M4 6l4-4 4 4M4 10l4 4 4-4" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg>
+    HVAC System
+  </div>
+  <div class="nav-item" onclick="showView('fire')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2c0 3-3 4-3 7a3 3 0 006 0c0-3-3-4-3-7zm0 8a1 1 0 110 2 1 1 0 010-2z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
+    Fire & Safety System
+    <span class="nav-badge">1</span>
+  </div>
+  <div class="sidebar-section">🏪 Lease Management</div>
+  <div class="nav-item" onclick="showView('lease')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v12H2V2zm3 3h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.3" fill="none"/></svg>
+    Lease Asset Register
+  </div>
+  <div class="nav-item" onclick="showView('customer-safety')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L2 4v4c0 3.3 2.5 6.4 6 7 3.5-.6 6-3.7 6-7V4L8 1z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+    Customer Safety
+    <span class="nav-badge">2</span>
+  </div>
+  <div class="sidebar-section">⚡ Utilities</div>
+  <div class="nav-item" onclick="showView('com-energy')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M9 2L5 9h4l-2 5 6-7H9l2-5z" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+    Energy Dashboard
+  </div>
+  <div class="sidebar-footer">
+    <div onclick="goBack()" style="cursor:pointer;margin-bottom:6px;color:var(--text3)" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">← กลับ iMATOMs Platform</div>
+    <div style="color:var(--accent);font-family:var(--font-display);font-size:11px;font-weight:700">TKO ● iMATOMs Tech</div>
+    <div style="font-size:10px;margin-top:2px">Commercial Module · v1.0 · 2026</div>
+  </div>
+</nav>
+
+<main id="main">
+  <div id="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">🏢 Commercial Dashboard</div>
+      <div class="topbar-breadcrumb" id="topbar-bc">TKO iMATOMs Tech › Commercial Module</div>
+    </div>
+    <div class="topbar-actions">
+      <span id="clock" style="font-family:var(--font-mono);font-size:12px;color:var(--text3)"></span>
+      <button class="btn btn-primary btn-sm" onclick="openModal('addEqModal')">+ เพิ่มอุปกรณ์</button>
+      <button class="btn btn-danger btn-sm" onclick="openModal('incidentModal')">🚨 Customer Incident</button>
+    </div>
+  </div>
+
+  <div id="content">
+
+  <!-- DASHBOARD -->
+  <div id="view-com-dashboard" class="view active">
+    <div class="section-header">
+      <div><div class="section-title">🏢 Commercial Property Overview</div><div class="section-sub">Elevator · HVAC · Fire System · Lease · Customer Safety · Energy · 2026</div></div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi blue"><div class="kpi-label">Total Equipment</div><div class="kpi-value ff-display text-blue">284</div><div class="kpi-sub">ระบบอาคารทั้งหมด</div><div class="kpi-icon">🏗</div></div>
+      <div class="kpi green"><div class="kpi-label">Operational</div><div class="kpi-value ff-display text-green">271</div><div class="kpi-sub">ปกติ 95.4%</div><div class="kpi-icon">✅</div></div>
+      <div class="kpi red"><div class="kpi-label">Out of Service</div><div class="kpi-value ff-display text-red">5</div><div class="kpi-sub">งดใช้งาน</div><div class="kpi-icon">🚫</div></div>
+      <div class="kpi yellow"><div class="kpi-label">PM Due (7d)</div><div class="kpi-value ff-display text-yellow">12</div><div class="kpi-sub">ถึงกำหนด</div><div class="kpi-icon">⚙️</div></div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi teal"><div class="kpi-label">Lease Occupancy</div><div class="kpi-value ff-display text-teal" style="font-size:22px">87.4%</div><div class="kpi-sub">พื้นที่เช่า</div></div>
+      <div class="kpi orange"><div class="kpi-label">Revenue (฿M/เดือน)</div><div class="kpi-value ff-display text-orange" style="font-size:22px">42.8</div><div class="kpi-sub">ค่าเช่า + Service</div></div>
+      <div class="kpi green"><div class="kpi-label">Customer Safety Score</div><div class="kpi-value ff-display text-green" style="font-size:22px">96%</div><div class="kpi-sub">ไม่มี LTI 220 วัน</div></div>
+      <div class="kpi yellow"><div class="kpi-label">Energy (kWh/day)</div><div class="kpi-value ff-display text-yellow" style="font-size:22px">28,400</div><div class="kpi-sub">↓ 2.1%</div></div>
+    </div>
+    <div class="grid-2 mb-16">
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">Equipment Status Distribution</div>
+        <div class="chart-wrap"><canvas id="chartComStatus"></canvas></div>
+      </div>
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">Lease Occupancy by Zone (GFA %)</div>
+        <div class="chart-wrap"><canvas id="chartLease"></canvas></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">⚠ Critical Alerts</div>
+        <div class="alert alert-danger">🚨 ESC-F2-004 — Escalator F2 หยุดทำงาน · รอ Technician OTIS</div>
+        <div class="alert alert-warning">⚠ AHU-B1-012 — Cooling Coil Temperature สูงผิดปกติ</div>
+        <div class="alert alert-warning">⚠ Fire Sprinkler Zone 3 — กำหนด Hydrostatic Test ใน 5 วัน</div>
+        <div class="alert alert-info">ℹ สัญญาเช่า 3 ร้านค้า หมดอายุใน 30 วัน</div>
+      </div>
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">📊 PM Status Summary</div>
+        <div id="com-pm-bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ELEVATOR / ESCALATOR -->
+  <div id="view-elevator" class="view">
+    <div class="section-header">
+      <div><div class="section-title">🛗 Elevator / Escalator</div><div class="section-sub">ลิฟต์โดยสาร · ลิฟต์สินค้า · บันไดเลื่อน · กฎกระทรวงพลังงาน</div></div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('addEqModal')">+ เพิ่มอุปกรณ์</button>
+    </div>
+    <div class="alert alert-danger">🚨 ESC-F2-004 บันไดเลื่อน Floor 2 หยุดทำงาน — แจ้ง OTIS แล้ว รอ Technician ประมาณ 14:00 น.</div>
+    <div class="kpi-grid">
+      <div class="kpi blue"><div class="kpi-label">Elevators</div><div class="kpi-value ff-display text-blue">24</div><div class="kpi-sub">ลิฟต์ทั้งหมด</div></div>
+      <div class="kpi green"><div class="kpi-label">Running</div><div class="kpi-value ff-display text-green">23</div><div class="kpi-sub">ปกติ</div></div>
+      <div class="kpi orange"><div class="kpi-label">Escalators</div><div class="kpi-value ff-display text-orange">18</div><div class="kpi-sub">บันไดเลื่อน</div></div>
+      <div class="kpi red"><div class="kpi-label">Out of Service</div><div class="kpi-value ff-display text-red">2</div><div class="kpi-sub">ซ่อม / PM</div></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Equipment ID</th><th>ชื่อ / ตำแหน่ง</th><th>ประเภท</th><th>ชั้น</th><th>Vendor</th><th>Permit Exp.</th><th>Next PM</th><th>Inspection (กฎกระทรวง)</th><th>สถานะ</th><th>Action</th></tr></thead>
+        <tbody id="elevator-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HVAC -->
+  <div id="view-hvac" class="view">
+    <div class="section-header">
+      <div><div class="section-title">❄ HVAC System</div><div class="section-sub">Chiller · AHU · FCU · Cooling Tower · อุณหภูมิ · ความชื้น</div></div>
+      <button class="btn btn-secondary btn-sm" onclick="showToast('📊 Export HVAC Report...')">📊 Export</button>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi blue"><div class="kpi-label">Chiller Units</div><div class="kpi-value ff-display text-blue">6</div><div class="kpi-sub">Centrifugal + Screw</div></div>
+      <div class="kpi teal"><div class="kpi-label">Cooling Capacity</div><div class="kpi-value ff-display text-teal">92%</div><div class="kpi-sub">ของ Design Capacity</div></div>
+      <div class="kpi yellow"><div class="kpi-label">Avg. Temp (°C)</div><div class="kpi-value ff-display text-yellow">23.4</div><div class="kpi-sub">Target 22–24°C</div></div>
+      <div class="kpi green"><div class="kpi-label">AHU / FCU</div><div class="kpi-value ff-display text-green">148</div><div class="kpi-sub">Units ทั้งหมด</div></div>
+    </div>
+    <div class="grid-2 mb-16">
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">Chiller Performance — COP Trend</div>
+        <div class="chart-wrap"><canvas id="chartCOP"></canvas></div>
+      </div>
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">Zone Temperature Map</div>
+        <div id="temp-map"></div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Unit ID</th><th>ประเภท</th><th>Zone/Floor</th><th>Capacity (TR)</th><th>Current Load%</th><th>Supply Temp (°C)</th><th>COP</th><th>Next PM</th><th>สถานะ</th></tr></thead>
+        <tbody id="hvac-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FIRE -->
+  <div id="view-fire" class="view">
+    <div class="section-header">
+      <div><div class="section-title">🔥 Fire & Safety System</div><div class="section-sub">Fire Detection · Sprinkler · Suppression · Emergency Lighting · Exit Signs</div></div>
+      <button class="btn btn-danger btn-sm" onclick="openModal('fireTestModal')">🔥 บันทึก Fire Drill</button>
+    </div>
+    <div class="alert alert-warning">⚠ Fire Sprinkler Zone 3 (ชั้น B1) — กำหนด Hydrostatic Test ภายใน 5 วัน (กฎกระทรวงมหาดไทย)</div>
+    <div class="kpi-grid">
+      <div class="kpi green"><div class="kpi-label">Fire Detection Points</div><div class="kpi-value ff-display text-green">842</div><div class="kpi-sub">Smoke + Heat Detector</div></div>
+      <div class="kpi blue"><div class="kpi-label">Sprinkler Heads</div><div class="kpi-value ff-display text-blue">2,140</div><div class="kpi-sub">ทั้งอาคาร</div></div>
+      <div class="kpi orange"><div class="kpi-label">Extinguishers</div><div class="kpi-value ff-display text-orange">186</div><div class="kpi-sub">CO₂ + Dry Powder + Water</div></div>
+      <div class="kpi red"><div class="kpi-label">Overdue Inspection</div><div class="kpi-value ff-display text-red" style="animation:pulse-red 2s infinite">1</div><div class="kpi-sub">Zone 3 Sprinkler</div></div>
+    </div>
+    <div class="grid-2 mb-16">
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">Fire Inspection Status by Zone</div>
+        <div id="fire-zone-list"></div>
+      </div>
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">Fire Extinguisher Inspection Status</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chartFireExt"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">🔥 Fire Drill Records</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Drill ID</th><th>วันที่</th><th>อาคาร/ชั้น</th><th>จำนวนผู้เข้าร่วม</th><th>เวลา Evacuation</th><th>ผล</th><th>หมายเหตุ</th></tr></thead>
+          <tbody id="fire-drill-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEASE -->
+  <div id="view-lease" class="view">
+    <div class="section-header">
+      <div><div class="section-title">🏪 Lease Asset Register</div><div class="section-sub">พื้นที่เช่า · สัญญาเช่า · ค่าเช่า · Common Area · ต่อสัญญา</div></div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('addLeaseModal')">+ เพิ่มสัญญาเช่า</button>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi blue"><div class="kpi-label">Total GFA (ตร.ม.)</div><div class="kpi-value ff-display text-blue">48,500</div><div class="kpi-sub">พื้นที่เช่าทั้งหมด</div></div>
+      <div class="kpi green"><div class="kpi-label">Occupied</div><div class="kpi-value ff-display text-green">42,380</div><div class="kpi-sub">87.4% Occupancy</div></div>
+      <div class="kpi yellow"><div class="kpi-label">Expiring (90d)</div><div class="kpi-value ff-display text-yellow">8</div><div class="kpi-sub">สัญญาหมดอายุ</div></div>
+      <div class="kpi orange"><div class="kpi-label">Avg Rent (฿/ตร.ม.)</div><div class="kpi-value ff-display text-orange" style="font-size:22px">1,240</div><div class="kpi-sub">ค่าเช่าเฉลี่ย</div></div>
+    </div>
+    <div class="filter-bar">
+      <input class="search-input" placeholder="🔍 ค้นหาร้านค้า / Unit / ชั้น...">
+      <select class="form-control" style="width:120px"><option>ทุกชั้น</option><option>B1</option><option>G</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+      <select class="form-control" style="width:140px"><option>ทุกประเภท</option><option>Anchor Tenant</option><option>F&B</option><option>Fashion</option><option>Entertainment</option><option>Service</option></select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Unit ID</th><th>ชื่อร้านค้า</th><th>ประเภท</th><th>ชั้น / Zone</th><th>พื้นที่ (ตร.ม.)</th><th>ค่าเช่า/เดือน</th><th>เริ่มสัญญา</th><th>หมดสัญญา</th><th>สถานะ</th><th>Action</th></tr></thead>
+        <tbody id="lease-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CUSTOMER SAFETY -->
+  <div id="view-customer-safety" class="view">
+    <div class="section-header">
+      <div><div class="section-title">🛡 Customer Safety</div><div class="section-sub">Customer Incident · Slip & Fall · Emergency Response · Public Safety</div></div>
+      <button class="btn btn-danger btn-sm" onclick="openModal('incidentModal')">🚨 รายงาน Incident</button>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi green"><div class="kpi-label">Safe Days</div><div class="kpi-value ff-display text-green">220</div><div class="kpi-sub">ไม่มี LTI</div><div class="kpi-icon">🛡</div></div>
+      <div class="kpi yellow"><div class="kpi-label">Open Incidents (MTD)</div><div class="kpi-value ff-display text-yellow">2</div><div class="kpi-sub">Slip & Fall</div></div>
+      <div class="kpi blue"><div class="kpi-label">Near-miss (MTD)</div><div class="kpi-value ff-display text-blue">4</div><div class="kpi-sub">รายงานล่วงหน้า</div></div>
+      <div class="kpi teal"><div class="kpi-label">Security Guards</div><div class="kpi-value ff-display text-teal">48</div><div class="kpi-sub">ปฏิบัติหน้าที่วันนี้</div></div>
+    </div>
+    <div class="grid-2 mb-16">
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">Incident Type Distribution (YTD)</div>
+        <div class="chart-wrap"><canvas id="chartCustSafety"></canvas></div>
+      </div>
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">Hotspot Areas (Incident Count)</div>
+        <div id="hotspot-list"></div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Incident ID</th><th>วันที่</th><th>ประเภท</th><th>พื้นที่</th><th>ความรุนแรง</th><th>การดำเนินการ</th><th>สถานะ</th></tr></thead>
+        <tbody id="customer-incident-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ENERGY -->
+  <div id="view-com-energy" class="view">
+    <div class="section-header">
+      <div><div class="section-title">⚡ Energy Dashboard</div><div class="section-sub">พลังงานไฟฟ้า · HVAC · Lighting · Green Building</div></div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi yellow"><div class="kpi-label">ไฟฟ้า (kWh/วัน)</div><div class="kpi-value ff-display text-yellow">28,400</div><div class="kpi-sub">↓ 2.1%</div><div class="kpi-icon">⚡</div></div>
+      <div class="kpi blue"><div class="kpi-label">EUI (kWh/ตร.ม./ปี)</div><div class="kpi-value ff-display text-blue">210</div><div class="kpi-sub">Target < 200</div></div>
+      <div class="kpi green"><div class="kpi-label">Solar (kWh/วัน)</div><div class="kpi-value ff-display text-green">1,840</div><div class="kpi-sub">Rooftop Solar PV</div></div>
+      <div class="kpi teal"><div class="kpi-label">Carbon (tCO₂e/วัน)</div><div class="kpi-value ff-display text-teal">14.2</div><div class="kpi-sub">↓ 1.8%</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">Energy Trend (kWh/day)</div>
+        <div class="chart-wrap"><canvas id="chartComEnergy"></canvas></div>
+      </div>
+      <div class="card">
+        <div style="font-family:var(--font-display);font-weight:600;margin-bottom:12px">Energy by System</div>
+        <div class="chart-wrap"><canvas id="chartComEnergyPie"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+</main>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="addEqModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">🏗 เพิ่มอุปกรณ์อาคาร</div><button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('addEqModal')">✕</button></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Equipment ID *</label><input class="form-control" placeholder="ELV-001"></div><div class="form-group"><label class="form-label">ชื่ออุปกรณ์ *</label><input class="form-control" placeholder="Passenger Elevator"></div></div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-label">ประเภท</label><select class="form-control"><option>Elevator</option><option>Escalator</option><option>Chiller</option><option>AHU</option><option>Fire Pump</option><option>Sprinkler System</option></select></div>
+      <div class="form-group"><label class="form-label">ชั้น / Zone</label><input class="form-control" placeholder="B1, G, 1, 2..."></div>
+      <div class="form-group"><label class="form-label">Vendor / MA</label><input class="form-control" placeholder="OTIS, Schindler..."></div>
+    </div>
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('addEqModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="closeModal('addEqModal');showToast('✅ บันทึกอุปกรณ์เรียบร้อย')">✅ บันทึก</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="incidentModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">🚨 รายงาน Customer Incident</div><button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('incidentModal')">✕</button></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">ประเภท</label><select class="form-control"><option>Slip & Fall</option><option>Escalator Incident</option><option>Fire Alarm</option><option>Theft</option><option>Medical Emergency</option></select></div>
+      <div class="form-group"><label class="form-label">พื้นที่</label><input class="form-control" placeholder="ชั้น / Zone / จุด"></div>
+    </div>
+    <div class="form-group"><label class="form-label">รายละเอียด</label><textarea class="form-control" rows="4" placeholder="บรรยายเหตุการณ์..."></textarea></div>
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('incidentModal')">ยกเลิก</button>
+      <button class="btn btn-danger" onclick="closeModal('incidentModal');showToast('🚨 รายงาน Incident เรียบร้อย')">🚨 รายงาน</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="addLeaseModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">🏪 เพิ่มสัญญาเช่า</div><button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('addLeaseModal')">✕</button></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Unit ID</label><input class="form-control" placeholder="U1-001"></div><div class="form-group"><label class="form-label">ชื่อร้านค้า</label><input class="form-control" placeholder="ชื่อผู้เช่า"></div></div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-label">ชั้น</label><select class="form-control"><option>B1</option><option>G</option><option>1</option><option>2</option><option>3</option></select></div>
+      <div class="form-group"><label class="form-label">พื้นที่ (ตร.ม.)</label><input class="form-control" type="number" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">ค่าเช่า/เดือน (฿)</label><input class="form-control" type="number" placeholder="0"></div>
+    </div>
+    <div class="form-row"><div class="form-group"><label class="form-label">เริ่มสัญญา</label><input class="form-control" type="date"></div><div class="form-group"><label class="form-label">หมดสัญญา</label><input class="form-control" type="date"></div></div>
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('addLeaseModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="closeModal('addLeaseModal');showToast('✅ บันทึกสัญญาเช่าเรียบร้อย')">✅ บันทึก</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="fireTestModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">🔥 บันทึก Fire Drill</div><button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('fireTestModal')">✕</button></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">วันที่ Drill</label><input class="form-control" type="date"></div><div class="form-group"><label class="form-label">อาคาร / ชั้น</label><input class="form-control" placeholder="ชั้น B1–4"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">ผู้เข้าร่วม (คน)</label><input class="form-control" type="number" placeholder="0"></div><div class="form-group"><label class="form-label">เวลา Evacuation (นาที)</label><input class="form-control" type="number" placeholder="0"></div></div>
+    <div class="form-group"><label class="form-label">ผล</label><select class="form-control"><option>ผ่าน</option><option>ไม่ผ่าน — ต้องซ้อม</option></select></div>
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('fireTestModal')">ยกเลิก</button>
+      <button class="btn btn-success" onclick="closeModal('fireTestModal');showToast('🔥 บันทึก Fire Drill เรียบร้อย')">✅ บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" style="position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 20px;font-size:13px;z-index:999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none"></div>
+
+<script>
+const ELEVATORS=[
+  {id:'ELV-G-001',name:'Passenger Lift A (Public)',type:'Elevator',floor:'G–4F',vendor:'OTIS',permit:'2027-01-15',nextPM:'2026-06-01',insp:'2026-09-01',status:'Running'},
+  {id:'ELV-G-002',name:'Passenger Lift B (Public)',type:'Elevator',floor:'G–4F',vendor:'OTIS',permit:'2027-01-15',nextPM:'2026-06-01',insp:'2026-09-01',status:'Running'},
+  {id:'ELV-B1-003',name:'Service Lift (Cargo)',type:'Elevator',floor:'B1–4F',vendor:'Schindler',permit:'2026-11-30',nextPM:'2026-05-20',insp:'2026-08-01',status:'Running'},
+  {id:'ESC-F1-001',name:'Escalator Floor 1 Up',type:'Escalator',floor:'1F–2F',vendor:'Kone',permit:'2026-12-15',nextPM:'2026-06-15',insp:'2026-09-15',status:'Running'},
+  {id:'ESC-F2-004',name:'Escalator Floor 2 Down',type:'Escalator',floor:'2F–1F',vendor:'OTIS',permit:'2026-10-01',nextPM:'2026-05-10',insp:'2026-08-10',status:'Down'},
+  {id:'ESC-F3-005',name:'Escalator Floor 3 Up',type:'Escalator',floor:'3F–4F',vendor:'Schindler',permit:'2027-02-01',nextPM:'2026-06-20',insp:'2026-09-20',status:'Running'},
+];
+const HVAC_UNITS=[
+  {id:'CHR-001',type:'Centrifugal Chiller',zone:'Central Plant',cap:500,load:78,temp:6.8,cop:5.2,nextPM:'2026-09-01',status:'Running'},
+  {id:'CHR-002',type:'Centrifugal Chiller',zone:'Central Plant',cap:500,load:72,temp:6.9,cop:5.1,nextPM:'2026-09-01',status:'Running'},
+  {id:'CHR-003',type:'Screw Chiller',zone:'Central Plant',cap:300,load:65,temp:7.1,cop:4.8,nextPM:'2026-08-15',status:'Running'},
+  {id:'AHU-B1-012',type:'AHU',zone:'B1 — Parking',cap:12,load:88,temp:14.2,cop:null,nextPM:'2026-05-25',status:'Warning'},
+  {id:'AHU-G-020',type:'AHU',zone:'Ground Floor',cap:18,load:70,temp:13.8,cop:null,nextPM:'2026-06-10',status:'Running'},
+  {id:'FCU-1F-045',type:'FCU',zone:'1F — Retail',cap:2,load:55,temp:13.5,cop:null,nextPM:'2026-07-01',status:'Running'},
+];
+const LEASES=[
+  {id:'U-G-001',name:'Starbucks Coffee',type:'F&B',floor:'G',area:120,rent:180000,start:'2024-01-01',end:'2026-12-31',status:'Active'},
+  {id:'U-G-002',name:'KFC Thailand',type:'F&B',floor:'G',area:180,rent:220000,start:'2023-06-01',end:'2026-05-31',status:'Expiring'},
+  {id:'U-1F-010',name:'Zara Thailand',type:'Fashion',floor:'1',area:800,rent:960000,start:'2022-03-01',end:'2027-02-28',status:'Active'},
+  {id:'U-1F-015',name:'H&M',type:'Fashion',floor:'1',area:600,rent:720000,start:'2023-01-01',end:'2025-12-31',status:'Expired'},
+  {id:'U-2F-020',name:'Central Department Store',type:'Anchor',floor:'2-3',area:5000,rent:3500000,start:'2020-01-01',end:'2030-12-31',status:'Active'},
+  {id:'U-2F-025',name:'SF Cinema',type:'Entertainment',floor:'4',area:2200,rent:1800000,start:'2021-06-01',end:'2026-05-31',status:'Expiring'},
+  {id:'U-3F-030',name:'Tops Market',type:'Supermarket',floor:'B1',area:1500,rent:900000,start:'2022-01-01',end:'2027-12-31',status:'Active'},
+  {id:'U-3F-035',name:'Vacant Unit 3F-12',type:'—',floor:'3',area:250,rent:0,start:'—',end:'—',status:'Vacant'},
+];
+const CUST_INCIDENTS=[
+  {id:'CI-2026-028',date:'2026-05-12',type:'Slip & Fall',area:'B1 Parking Entrance',severity:'Minor',action:'First Aid, ติดป้ายเตือน',status:'Closed'},
+  {id:'CI-2026-027',date:'2026-05-08',type:'Escalator Incident',area:'ESC-F2-004',severity:'Moderate',action:'หยุดเครื่อง, แจ้ง OTIS',status:'Open'},
+  {id:'CI-2026-024',date:'2026-04-28',type:'Slip & Fall',area:'1F Food Court',severity:'Minor',action:'First Aid',status:'Closed'},
+  {id:'CI-2026-020',date:'2026-04-15',type:'Medical Emergency',area:'2F Fashion Zone',severity:'Major',action:'แจ้ง EMS, CPR',status:'Closed'},
+];
+const FIRE_DRILLS=[
+  {id:'FD-2026-002',date:'2026-04-20',floor:'B1–4F',participants:450,time:4.2,result:'ผ่าน',note:'ทุกโซนอพยพครบ'},
+  {id:'FD-2026-001',date:'2025-10-15',floor:'B1–4F',participants:380,time:5.8,result:'ผ่าน',note:'Zone 3 ช้ากว่ากำหนด'},
+];
+
+const TITLES={'com-dashboard':'🏢 Commercial Dashboard','elevator':'🛗 Elevator / Escalator','hvac':'❄ HVAC System','fire':'🔥 Fire & Safety System','lease':'🏪 Lease Asset Register','customer-safety':'🛡 Customer Safety','com-energy':'⚡ Energy Dashboard'};
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')?.includes("'"+id+"'"))n.classList.add('active')});
+  document.getElementById('topbar-title').textContent=TITLES[id]||id;
+  document.getElementById('topbar-bc').textContent='TKO iMATOMs Tech › Commercial Module › '+(TITLES[id]||id);
+  renderView(id);
+}
+function renderView(id){
+  if(id==='com-dashboard'){renderDashCharts();renderPMBars();}
+  if(id==='elevator')renderElevatorTable();
+  if(id==='hvac'){renderHVACCharts();renderHVACTable();}
+  if(id==='fire'){renderFireZones();renderFireCharts();renderFireDrills();}
+  if(id==='lease')renderLeaseTable();
+  if(id==='customer-safety'){renderCustSafetyCharts();renderCustHotspot();renderCustIncident();}
+  if(id==='com-energy')renderEnergyCharts();
+}
+let charts={};
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+function mkChart(id,cfg){dc(id);const ctx=document.getElementById(id);if(ctx)charts[id]=new Chart(ctx,cfg);}
+const months=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.'];
+function baseOpts(){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:11}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#8B949E',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}}}}}
+
+function renderDashCharts(){
+  mkChart('chartComStatus',{type:'doughnut',data:{labels:['Operational','PM','Out of Service','Warning'],datasets:[{data:[271,8,5,3],backgroundColor:['#22C55E','#3B82F6','#EF4444','#EAB308'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8B949E'}}}}});
+  mkChart('chartLease',{type:'bar',data:{labels:['B1','G','1F','2F','3F','4F'],datasets:[{label:'Occupied%',data:[100,95,92,88,78,72],backgroundColor:'#3B82F6',borderRadius:4}]},options:baseOpts()});
+}
+function renderPMBars(){
+  const el=document.getElementById('com-pm-bars');if(!el)return;
+  [['Elevator / Escalator',92,'var(--blue)'],['HVAC / Chiller',88,'var(--teal)'],['Fire System',85,'var(--orange)'],['Electrical System',94,'var(--green)'],['Plumbing',90,'var(--purple)']].forEach(([label,score,color])=>{
+    el.innerHTML+=`<div class="metric-row"><div style="flex:1"><div style="font-size:13px;font-weight:600">${label}</div><div style="height:4px;background:var(--bg4);border-radius:2px;margin-top:4px"><div style="height:100%;width:${score}%;background:${color};border-radius:2px"></div></div></div><div style="font-family:var(--font-display);font-size:16px;font-weight:700;color:${color};margin-left:12px">${score}%</div></div>`;
+  });
+}
+function renderElevatorTable(){
+  const tbody=document.getElementById('elevator-table-body');if(!tbody)return;
+  tbody.innerHTML=ELEVATORS.map(e=>{
+    const sb=e.status==='Running'?'badge-green':e.status==='Down'?'badge-red':'badge-yellow';
+    return`<tr style="${e.status==='Down'?'background:rgba(239,68,68,0.05)':''}"><td><span class="tag">${e.id}</span></td><td style="font-weight:600">${e.name}</td><td><span class="badge badge-gray">${e.type}</span></td><td>${e.floor}</td><td style="font-size:12px">${e.vendor}</td><td style="font-size:12px;color:var(--text2)">${e.permit}</td><td style="font-size:12px">${e.nextPM}</td><td style="font-size:12px">${e.insp}</td><td><span class="badge ${sb}">${e.status}</span></td><td><button class="btn btn-secondary btn-sm btn-icon" onclick="showToast('📋 ${e.id}')">📋</button></td></tr>`;
+  }).join('');
+}
+function renderHVACCharts(){
+  mkChart('chartCOP',{type:'line',data:{labels:months,datasets:[{label:'Chiller-1 COP',data:[5.4,5.2,5.0,5.1,5.2],borderColor:'#3B82F6',tension:.4,fill:false},{label:'Chiller-2 COP',data:[5.3,5.1,4.9,5.0,5.1],borderColor:'#14B8A6',tension:.4,fill:false},{label:'Target COP',data:[5.5,5.5,5.5,5.5,5.5],borderColor:'rgba(34,197,94,0.4)',borderDash:[6,3],borderWidth:1,pointRadius:0}]},options:baseOpts()});
+  const el=document.getElementById('temp-map');if(el){
+    const zones=[['B1 Parking','25.1°C','badge-yellow'],['Ground Floor','22.8°C','badge-green'],['1F Retail','23.2°C','badge-green'],['2F Retail','23.5°C','badge-green'],['3F Entertainment','24.1°C','badge-green'],['4F Cinema','22.0°C','badge-green']];
+    el.innerHTML=zones.map(([z,t,b])=>`<div class="metric-row"><span style="font-size:13px">${z}</span><span class="badge ${b}">${t}</span></div>`).join('');
+  }
+}
+function renderHVACTable(){
+  const tbody=document.getElementById('hvac-table-body');if(!tbody)return;
+  tbody.innerHTML=HVAC_UNITS.map(h=>{
+    const sb=h.status==='Running'?'badge-green':h.status==='Warning'?'badge-yellow':'badge-red';
+    return`<tr><td><span class="tag">${h.id}</span></td><td><span class="badge badge-gray">${h.type}</span></td><td>${h.zone}</td><td>${h.cap}</td><td style="color:${h.load>85?'var(--yellow)':'var(--green)'}">${h.load}%</td><td>${h.temp}°C</td><td>${h.cop||'—'}</td><td style="font-size:12px">${h.nextPM}</td><td><span class="badge ${sb}">${h.status}</span></td></tr>`;
+  }).join('');
+}
+function renderFireZones(){
+  const el=document.getElementById('fire-zone-list');if(!el)return;
+  const zones=[['Zone 1 — B1 Parking','ผ่าน','2026-09-01','badge-green'],['Zone 2 — Ground Floor','ผ่าน','2026-10-01','badge-green'],['Zone 3 — 1F Retail','ต้องทดสอบ','2026-05-21','badge-yellow'],['Zone 4 — 2F Retail','ผ่าน','2026-11-01','badge-green'],['Zone 5 — 3F','ผ่าน','2026-11-15','badge-green'],['Zone 6 — 4F Cinema','ผ่าน','2026-12-01','badge-green']];
+  el.innerHTML=zones.map(([z,s,d,b])=>`<div class="metric-row"><span style="font-size:13px">${z}</span><div class="flex flex-center gap-8"><span style="font-size:12px;color:var(--text3)">${d}</span><span class="badge ${b}">${s}</span></div></div>`).join('');
+}
+function renderFireCharts(){
+  mkChart('chartFireExt',{type:'doughnut',data:{labels:['Pass','Due Soon','Overdue'],datasets:[{data:[162,18,6],backgroundColor:['#22C55E','#EAB308','#EF4444'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8B949E'}}}}});
+}
+function renderFireDrills(){
+  const tbody=document.getElementById('fire-drill-body');if(!tbody)return;
+  tbody.innerHTML=FIRE_DRILLS.map(d=>`<tr><td><span class="tag">${d.id}</span></td><td>${d.date}</td><td>${d.floor}</td><td>${d.participants}</td><td>${d.time} นาที</td><td><span class="badge ${d.result==='ผ่าน'?'badge-green':'badge-red'}">${d.result}</span></td><td style="font-size:12px;color:var(--text3)">${d.note}</td></tr>`).join('');
+}
+function renderLeaseTable(){
+  const tbody=document.getElementById('lease-table-body');if(!tbody)return;
+  tbody.innerHTML=LEASES.map(l=>{
+    const sb=l.status==='Active'?'badge-green':l.status==='Expiring'?'badge-yellow':l.status==='Expired'?'badge-red':'badge-gray';
+    return`<tr><td><span class="tag">${l.id}</span></td><td style="font-weight:600">${l.name}</td><td><span class="badge badge-blue">${l.type}</span></td><td>${l.floor}</td><td>${l.area.toLocaleString()}</td><td style="font-weight:600;color:var(--green)">${l.rent>0?'฿'+l.rent.toLocaleString():'—'}</td><td style="font-size:12px">${l.start}</td><td style="font-size:12px;color:${l.status==='Expiring'?'var(--yellow)':l.status==='Expired'?'var(--red)':'var(--text2)'}">${l.end}</td><td><span class="badge ${sb}">${l.status}</span></td><td><button class="btn btn-secondary btn-sm btn-icon" onclick="showToast('📋 ${l.id}')">📋</button></td></tr>`;
+  }).join('');
+}
+function renderCustSafetyCharts(){
+  mkChart('chartCustSafety',{type:'doughnut',data:{labels:['Slip & Fall','Escalator','Medical','Theft','Fire Alarm'],datasets:[{data:[12,3,4,8,2],backgroundColor:['#EF4444','#F97316','#EAB308','#3B82F6','#A855F7'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8B949E'}}}}});
+}
+function renderCustHotspot(){
+  const el=document.getElementById('hotspot-list');if(!el)return;
+  [['B1 Parking Entrance',8,'badge-red'],['1F Food Court',5,'badge-orange'],['ESC-F2 (บันไดเลื่อน F2)',4,'badge-yellow'],['3F Toilet Area',3,'badge-yellow'],['G Floor — Main Entrance',2,'badge-blue']].forEach(([zone,count,badge])=>{
+    el.innerHTML+=`<div class="metric-row"><span style="font-size:13px">${zone}</span><span class="badge ${badge}">${count} incidents</span></div>`;
+  });
+}
+function renderCustIncident(){
+  const tbody=document.getElementById('customer-incident-body');if(!tbody)return;
+  tbody.innerHTML=CUST_INCIDENTS.map(i=>{
+    const sb=i.status==='Closed'?'badge-green':'badge-red';
+    const sevb=i.severity==='Major'?'badge-red':i.severity==='Moderate'?'badge-yellow':'badge-green';
+    return`<tr><td><span class="tag">${i.id}</span></td><td>${i.date}</td><td><span class="badge badge-orange">${i.type}</span></td><td>${i.area}</td><td><span class="badge ${sevb}">${i.severity}</span></td><td style="font-size:12px">${i.action}</td><td><span class="badge ${sb}">${i.status}</span></td></tr>`;
+  }).join('');
+}
+function renderEnergyCharts(){
+  mkChart('chartComEnergy',{type:'line',data:{labels:months,datasets:[{label:'Consumption (kWh×100)',data:[298,285,291,284,284],borderColor:'#EAB308',tension:.4,fill:false},{label:'Solar (kWh×100)',data:[12,15,16,18,18.4],borderColor:'#22C55E',tension:.4,fill:false}]},options:baseOpts()});
+  mkChart('chartComEnergyPie',{type:'doughnut',data:{labels:['HVAC (Chiller)','Lighting','Escalator/Elevator','Other Elec.','Kitchen/F&B'],datasets:[{data:[55,18,8,12,7],backgroundColor:['#3B82F6','#EAB308','#F97316','#A855F7','#EF4444'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8B949E',font:{size:11}}}}}});
+}
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.opacity='1';t.style.transform='translateY(0)';clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(10px)'},3000)}
+function goBack(){if(window.history.length>1)window.history.back();else window.location.href='TKO_iMATOMs_Tech_v1_0.html';}
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'})},1000);
+renderDashCharts();renderPMBars();
+</script>
+</body>
+</html>
