@@ -781,12 +781,27 @@ body.embedded #content {
         <div class="card mb-16">
           <div class="flex justify-between flex-center mb-12">
             <div>
-              <div style="font-family:var(--font-display);font-size:15px;font-weight:700">📖 WR per Asset History — ประวัติซ่อมรายเครื่อง</div>
-              <div class="text-muted" style="font-size:12px">เลือก Asset เพื่อดูประวัติซ่อมทั้งหมด พร้อมค่าใช้จ่ายสะสม</div>
+              <div style="font-family:var(--font-display);font-size:15px;font-weight:700">📖 Asset History & Total Cost of Ownership — ประวัติ WR / PM / MA รวมมูลค่าคงเหลือ</div>
+              <div class="text-muted" style="font-size:12px">เลือก Asset เพื่อดูประวัติงานซ่อม/บำรุงรักษา/สัญญาบริการทั้งหมด พร้อมสรุปค่าใช้จ่ายสะสมหักจาก Replace Cost</div>
             </div>
             <select class="form-control" style="width:280px" id="hist-asset-select" onchange="renderAssetHistory(this.value)">
               <option value="">-- เลือก Asset --</option>
             </select>
+          </div>
+          <!-- TCO Summary — ค่าใช้จ่ายสะสมหักจาก Replace Cost -->
+          <div id="hist-tco-row" style="display:none">
+            <div class="grid-4 mb-12" style="grid-template-columns:repeat(4,1fr)">
+              <div class="kpi teal"><div class="kpi-label">Replace Cost (ปัจจุบัน)</div><div class="kpi-value ff-display text-teal" style="font-size:16px" id="tco-replace">฿0</div></div>
+              <div class="kpi orange"><div class="kpi-label">ค่าซ่อม (WR) สะสม</div><div class="kpi-value ff-display text-orange" style="font-size:16px" id="tco-wr">฿0</div></div>
+              <div class="kpi yellow"><div class="kpi-label">ค่า PM สะสม</div><div class="kpi-value ff-display text-yellow" style="font-size:16px" id="tco-pm">฿0</div></div>
+              <div class="kpi blue"><div class="kpi-label">ค่าสัญญา MA สะสม</div><div class="kpi-value ff-display text-blue" style="font-size:16px" id="tco-ma">฿0</div></div>
+            </div>
+            <div class="grid-3 mb-12">
+              <div class="kpi purple"><div class="kpi-label">ค่าใช้จ่ายสะสมทั้งหมด (WR+PM+MA)</div><div class="kpi-value ff-display text-purple" style="font-size:16px" id="tco-total">฿0</div></div>
+              <div class="kpi green"><div class="kpi-label">มูลค่าคงเหลือโดยประมาณ</div><div class="kpi-value ff-display text-green" style="font-size:16px" id="tco-remain">฿0</div><div class="kpi-sub" id="tco-remain-pct">—% ของ Replace Cost</div></div>
+              <div class="kpi red"><div class="kpi-label">อายุการใช้งานคงเหลือ (ประมาณ)</div><div class="kpi-value ff-display text-red" style="font-size:16px" id="tco-life">—</div><div class="kpi-sub">ประมาณจากสัดส่วนค่าใช้จ่ายสะสม</div></div>
+            </div>
+            <div class="alert alert-info mb-12" style="font-size:11px">💡 มูลค่าคงเหลือ = Replace Cost − (ค่าซ่อม WR + ค่า PM + ค่าสัญญา MA สะสมทั้งหมด) — เป็นค่าประมาณสำหรับใช้ประกอบการตัดสินใจซ่อม/เปลี่ยนเครื่อง ไม่ใช่มูลค่าทางบัญชี</div>
           </div>
           <div id="hist-kpi-row" style="display:none">
             <div class="grid-4 mb-12" style="grid-template-columns:repeat(4,1fr)">
@@ -806,6 +821,17 @@ body.embedded #content {
               </div>
             </div>
           </div>
+          <!-- Unified Timeline: WR + PM + MA -->
+          <div id="hist-timeline-wrap" style="display:none" class="mb-16">
+            <div style="font-size:13px;font-weight:700;margin-bottom:8px">🕐 Timeline รวม — WR / PM / MA เรียงตามวันที่ล่าสุด</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>วันที่</th><th>ประเภท</th><th>รายละเอียด</th><th>อ้างอิง</th><th>ค่าใช้จ่าย</th></tr></thead>
+                <tbody id="hist-timeline-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px">🔧 รายละเอียด Work Request (WR)</div>
           <div class="table-wrap">
             <table>
               <thead><tr><th>WR No.</th><th>วันที่แจ้ง</th><th>ปัญหา</th><th>ประเภท</th><th>ลักษณะงาน</th><th>ระบบ</th><th>ช่าง</th><th>MTTR (h)</th><th>ค่าซ่อม</th><th>พึงพอใจ</th><th>สถานะ</th></tr></thead>
@@ -1273,8 +1299,22 @@ body.embedded #content {
     </div>
     <div id="asset-tab-general">
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Asset ID *</label><input class="form-control" id="f-id" placeholder="เช่น AST-2025-001"></div>
+        <div class="form-group"><label class="form-label">Asset ID *</label>
+          <div class="flex gap-6">
+            <input class="form-control" id="f-id" placeholder="เช่น VH-AC-CH-01" style="flex:1">
+            <input class="form-control" id="f-idpfx" placeholder="Prefix" title="Prefix เช่น VH, AST" style="width:64px">
+            <button type="button" class="btn btn-secondary btn-sm" title="สร้าง Asset ID อัตโนมัติจากระบบ+ระบบย่อยที่เลือก" onclick="suggestAssetIdOld()">🔄 Gen ID</button>
+          </div>
+        </div>
         <div class="form-group"><label class="form-label">ชื่อสินทรัพย์ *</label><input class="form-control" id="f-name" placeholder="ชื่อเครื่องจักร/อุปกรณ์"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">ระบบ (System)</label>
+          <select class="form-control" id="f-sys" onchange="updateSubSysOld()"></select>
+        </div>
+        <div class="form-group"><label class="form-label">ระบบย่อย (Sub-System)</label>
+          <select class="form-control" id="f-subsys"></select>
+        </div>
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">ประเภทสินทรัพย์</label>
@@ -1317,6 +1357,9 @@ body.embedded #content {
         <div class="form-group"><label class="form-label">วิธีคิดค่าเสื่อม</label>
           <select class="form-control" id="f-depmethod"><option>Straight Line</option><option>Double Declining</option><option>Sum of Years</option></select>
         </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">ราคาทดแทน / Replace Cost (฿)</label><input class="form-control" id="f-replacecost" type="number" placeholder="0" title="ใช้คำนวณมูลค่าคงเหลือใน Asset History (TCO)"></div>
       </div>
       <div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-control" id="f-note" rows="2" placeholder="รายละเอียดเพิ่มเติม"></textarea></div>
     </div>
@@ -1950,6 +1993,53 @@ function normalizeAsset(a){
   });
 }
 
+// ── System / Sub-System taxonomy (ตรงกับ Asset Core ใน index.html) ──
+const SYS_LIST=[['AC','AC — Air Conditioning'],['EE','EE — Electrical'],['EL','EL — Elevator'],['FA','FA — Fire Alarm'],['FP','FP — Fire Protection'],['BAS','BAS — Building Auto'],['SN','SN — Sanitary'],['TR','TR — Transportation'],['WWT','WWT — Waste Water'],['GE','GE — Generator/UPS'],['CV','CV — Civil'],['IT','IT — IT/Network'],['SG','SG — Security'],['PL','PL — Pool/Landscape'],['LT','LT — Lighting']];
+const SYS_SUB={AC:['Chiller','Cooling Tower','AHU','FCU','PAU','Split AC','Pump-CHW','Pump-CW','VRF/VRV','Exhaust Fan','Ventilation Fan'],EE:['MDB','Distribution Board','Transformer','Capacitor Bank','ATS/STS','Solar PV','Inverter','LV Panel'],EL:['Passenger Lift','Service Lift','Escalator','Dumbwaiter','Car Lift'],FA:['FACP','Smoke Detector','Heat Detector','Sprinkler','Pull Station','Alarm Bell'],FP:['Fire Pump','Jockey Pump','Sprinkler Valve','Fire Cabinet','Portable Extinguisher','FM200/Gas'],BAS:['Controller','DDC','Sensor','Gateway','BACnet Panel','SCADA'],SN:['Water Pump','Pressure Tank','Water Meter','Sump Pump','Sewage Pump','Grease Trap'],TR:['Conveyor','Loading Dock','Turntable'],WWT:['STP','Aeration Tank','Clarifier','Chemical Dosing','UV System'],GE:['Generator','ATS','UPS','Battery Bank','Charger'],CV:['Structure','Roof','Waterproof','Facade','Road','Parking'],IT:['Server','Switch','Router','Firewall','Access Point','CCTV Recorder','NAS'],SG:['CCTV Camera','Access Control','Guard Tour','Intercom','Boom Gate'],PL:['Pool Pump','Filter System','Chemical System','Landscaping','Irrigation'],LT:['Emergency Light','Exit Sign','Street Light','Flood Light','Panel Board']};
+const SUBSYS_CODE={
+  AC:{'Chiller':'CH','Cooling Tower':'CT','AHU':'AH','FCU':'FC','PAU':'PA','Split AC':'SA','Pump-CHW':'PC','Pump-CW':'PW','VRF/VRV':'VR','Exhaust Fan':'EF','Ventilation Fan':'VF'},
+  EE:{'MDB':'MD','Distribution Board':'DB','Transformer':'TF','Capacitor Bank':'CB','ATS/STS':'AT','Solar PV':'PV','Inverter':'IV','LV Panel':'LV'},
+  EL:{'Passenger Lift':'PL','Service Lift':'SL','Escalator':'ES','Dumbwaiter':'DW','Car Lift':'CL'},
+  FA:{'FACP':'FC','Smoke Detector':'SD','Heat Detector':'HD','Sprinkler':'SP','Pull Station':'PS','Alarm Bell':'AB'},
+  FP:{'Fire Pump':'FR','Jockey Pump':'JP','Sprinkler Valve':'SV','Fire Cabinet':'FB','Portable Extinguisher':'PE','FM200/Gas':'GS'},
+  BAS:{'Controller':'CO','DDC':'DD','Sensor':'SR','Gateway':'GW','BACnet Panel':'BP','SCADA':'SC'},
+  SN:{'Water Pump':'WP','Pressure Tank':'PT','Water Meter':'WM','Sump Pump':'SM','Sewage Pump':'SW','Grease Trap':'GT'},
+  TR:{'Conveyor':'CY','Loading Dock':'LD','Turntable':'TT'},
+  WWT:{'STP':'ST','Aeration Tank':'AT','Clarifier':'CL','Chemical Dosing':'CD','UV System':'UV'},
+  GE:{'Generator':'GN','ATS':'AT','UPS':'UP','Battery Bank':'BB','Charger':'CH'},
+  CV:{'Structure':'ST','Roof':'RF','Waterproof':'WP','Facade':'FC','Road':'RD','Parking':'PK'},
+  IT:{'Server':'SV','Switch':'SW','Router':'RT','Firewall':'FW','Access Point':'AP','CCTV Recorder':'CR','NAS':'NS'},
+  SG:{'CCTV Camera':'CC','Access Control':'AC','Guard Tour':'GT','Intercom':'IC','Boom Gate':'BG'},
+  PL:{'Pool Pump':'PP','Filter System':'FS','Chemical System':'CS','Landscaping':'LS','Irrigation':'IR'},
+  LT:{'Emergency Light':'EL','Exit Sign':'ES','Street Light':'SL','Flood Light':'FL','Panel Board':'PB'},
+};
+function populateSysSelect(){
+  const sel=document.getElementById('f-sys');if(!sel||sel.options.length)return;
+  sel.innerHTML=SYS_LIST.map(([code,label])=>`<option value="${code}">${label}</option>`).join('');
+  updateSubSysOld();
+}
+function updateSubSysOld(){
+  const sys=document.getElementById('f-sys')?.value||'AC';
+  const sub=document.getElementById('f-subsys');if(!sub)return;
+  const opts=SYS_SUB[sys]||[];
+  sub.innerHTML='<option value="">— Sub-System —</option>'+opts.map(o=>`<option value="${o}">${o}</option>`).join('');
+}
+function suggestAssetIdOld(){
+  const sys=document.getElementById('f-sys')?.value||'';
+  const subName=document.getElementById('f-subsys')?.value||'';
+  if(!subName){alert('⚠ กรุณาเลือก Sub-System ก่อน');return;}
+  const subCode=(SUBSYS_CODE[sys]&&SUBSYS_CODE[sys][subName])||'XX';
+  let pfx=(document.getElementById('f-idpfx')?.value||'').trim().toUpperCase();
+  if(!pfx){
+    const cur=(document.getElementById('f-id')?.value||'').trim();
+    pfx=cur.includes('-')?cur.split('-')[0].toUpperCase():'AST';
+  }
+  const stem=`${pfx}-${sys}-${subCode}-`;
+  const used=assets.filter(a=>(a.id||'').startsWith(stem)).map(a=>parseInt((a.id||'').slice(stem.length))||0);
+  const next=(used.length?Math.max(...used):0)+1;
+  document.getElementById('f-id').value=`${stem}${String(next).padStart(2,'0')}`;
+}
+
 let assets = DB.get('assets', []).map(normalizeAsset);
 let workRequests = DB.get('wr', []);
 let ppmList = DB.get('ppm', []);
@@ -2152,6 +2242,9 @@ function saveAsset() {
     accDep = Math.min(depPerYr * ageYr, cost - salvage);
     nbv = Math.max(cost - accDep, salvage);
   }
+  const replaceCost = parseFloat(document.getElementById('f-replacecost')?.value)||0;
+  const sys = document.getElementById('f-sys')?.value||'';
+  const subSys = document.getElementById('f-subsys')?.value||'';
   const asset = {
     id, name, type: document.getElementById('f-type').value, dept: document.getElementById('f-dept').value,
     location: document.getElementById('f-location').value, phase: document.getElementById('f-phase').value,
@@ -2159,7 +2252,8 @@ function saveAsset() {
     cost, life, salvage, buyDate, depMethod: document.getElementById('f-depmethod').value,
     brand: document.getElementById('f-brand').value, model: document.getElementById('f-model').value,
     serial: document.getElementById('f-serial').value, note: document.getElementById('f-note').value,
-    nbv: Math.round(nbv), accDep: Math.round(accDep)
+    nbv: Math.round(nbv), accDep: Math.round(accDep),
+    sys, subSys, replaceCost
   };
   const idx = assets.findIndex(a => a.id === id);
   if (idx >= 0) assets[idx] = asset; else { assets.push(asset); inspections.push({assetId:id,name,dept:asset.dept,location:asset.location,status:asset.status,result:null,inspDate:null,inspector:null,remark:null}); }
@@ -2171,10 +2265,14 @@ function saveAsset() {
 function editAsset(id) {
   const a = assets.find(x => x.id === id); if (!a) return;
   openModal('addAssetModal');
-  ['id','name','type','dept','location','phase','status','life','eff','cost','salvage','buydate','depmethod','brand','model','serial','note'].forEach(k => {
-    const map = {id:'f-id',name:'f-name',type:'f-type',dept:'f-dept',location:'f-location',phase:'f-phase',status:'f-status',life:'f-life',eff:'f-eff',cost:'f-cost',salvage:'f-salvage',buydate:'f-buydate',depmethod:'f-depmethod',brand:'f-brand',model:'f-model',serial:'f-serial',note:'f-note'};
+  populateSysSelect();
+  ['id','name','type','dept','location','phase','status','life','eff','cost','salvage','buydate','depmethod','brand','model','serial','note','replaceCost'].forEach(k => {
+    const map = {id:'f-id',name:'f-name',type:'f-type',dept:'f-dept',location:'f-location',phase:'f-phase',status:'f-status',life:'f-life',eff:'f-eff',cost:'f-cost',salvage:'f-salvage',buydate:'f-buydate',depmethod:'f-depmethod',brand:'f-brand',model:'f-model',serial:'f-serial',note:'f-note',replaceCost:'f-replacecost'};
     const el = document.getElementById(map[k]); if(el && a[k]!==undefined) el.value = a[k];
   });
+  // ระบบ/ระบบย่อย — ต้องตั้ง sys ก่อนเพื่อให้ dropdown sub-system ตรงตัวเลือก แล้วค่อยตั้งค่า subSys
+  if(a.sys){ document.getElementById('f-sys').value=a.sys; updateSubSysOld(); }
+  if(a.subSys){ const se=document.getElementById('f-subsys'); if(se) se.value=a.subSys; }
 }
 
 function deleteAsset(id) {
@@ -3225,6 +3323,54 @@ function renderAssetHistory(assetId){
     <td style="color:#EAB308;font-size:13px">${w.satisfaction?stars(w.satisfaction):'—'}</td>
     <td>${w.status==='open'?'<span class="badge badge-orange">Open</span>':w.status==='inprogress'||w.status==='arrived'?'<span class="badge badge-blue">In Progress</span>':w.status==='approved'?'<span class="badge badge-teal">Approved</span>':'<span class="badge badge-green">Closed</span>'}</td>
   </tr>`).join(''):'<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มี WR สำหรับ Asset นี้</td></tr>';
+
+  renderAssetTCO(assetId, list, totalCost);
+}
+
+// ── Asset TCO — รวม WR + PM + MA หักจาก Replace Cost ──
+function renderAssetTCO(assetId, wrList, wrTotalCost){
+  const asset = assets.find(a=>a.id===assetId);
+  const pmDone = ppmList.filter(p=>p.assetId===assetId && p.status==='done');
+  const pmTotalCost = pmDone.reduce((s,p)=>s+(p.cost||0),0);
+  const maRecords = maList.filter(m=>m.assetId===assetId);
+  const maTotalCost = maRecords.reduce((s,m)=>s+(m.value||0),0);
+  const grandTotal = wrTotalCost + pmTotalCost + maTotalCost;
+
+  // Replace Cost: ใช้ replaceCost ถ้ามี ไม่งั้น fallback เป็น cost (ราคาซื้อ) ของ asset
+  const replaceCost = (asset && (asset.replaceCost || asset.cost)) || 0;
+  const remain = Math.max(0, replaceCost - grandTotal);
+  const remainPct = replaceCost ? Math.round((remain/replaceCost)*100) : 0;
+  const lifeYears = (asset && (asset.lifeYears || asset.life)) || 10;
+  const remainLifeYears = replaceCost ? Math.max(0, (remainPct/100)*lifeYears).toFixed(1) : '—';
+
+  document.getElementById('hist-tco-row').style.display='block';
+  document.getElementById('tco-replace').textContent = fmtCurrency(replaceCost);
+  document.getElementById('tco-wr').textContent = fmtCurrency(wrTotalCost);
+  document.getElementById('tco-pm').textContent = fmtCurrency(pmTotalCost);
+  document.getElementById('tco-ma').textContent = fmtCurrency(maTotalCost);
+  document.getElementById('tco-total').textContent = fmtCurrency(grandTotal);
+  document.getElementById('tco-remain').textContent = fmtCurrency(remain);
+  document.getElementById('tco-remain-pct').textContent = `${remainPct}% ของ Replace Cost`;
+  document.getElementById('tco-life').textContent = remainLifeYears==='—'?'—':`${remainLifeYears} ปี`;
+  // เตือนถ้าค่าใช้จ่ายสะสมเกิน 70% ของ Replace Cost แล้ว — ควรพิจารณาเปลี่ยนเครื่อง
+  const tcoLifeEl=document.getElementById('tco-life');
+  if(replaceCost && remainPct<=30){ tcoLifeEl.parentElement.style.borderLeft='3px solid var(--red)'; }
+
+  // ── Unified Timeline ──
+  const events=[];
+  wrList.forEach(w=>events.push({date:w.date, type:'WR', typeLabel:'🔧 ซ่อม (WR)', badge:'badge-orange', desc:w.desc||'—', ref:w.id, cost:w.totalCost||0}));
+  pmDone.forEach(p=>events.push({date:p.actualDate||p.planDate, type:'PM', typeLabel:'🛠 บำรุงรักษา (PM)', badge:'badge-yellow', desc:p.name||'—', ref:p.id, cost:p.cost||0}));
+  maRecords.forEach(m=>events.push({date:m.start, type:'MA', typeLabel:'📄 สัญญาบริการ (MA)', badge:'badge-blue', desc:`${m.vendor||'—'} (${m.type||'MA'})`, ref:m.id, cost:m.value||0}));
+  events.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+
+  document.getElementById('hist-timeline-wrap').style.display='block';
+  document.getElementById('hist-timeline-table').innerHTML = events.length?events.map(e=>`<tr>
+    <td style="font-size:11px">${e.date?new Date(e.date).toLocaleDateString('th-TH'):'-'}</td>
+    <td><span class="badge ${e.badge}">${e.typeLabel}</span></td>
+    <td style="font-size:12px;max-width:220px">${e.desc}</td>
+    <td><span class="tag">${e.ref}</span></td>
+    <td class="ff-mono text-green">${fmtCurrency(e.cost)}</td>
+  </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">ยังไม่มีประวัติ WR/PM/MA สำหรับ Asset นี้</td></tr>';
 }
 
 // ── Recurring WR Analysis ──
@@ -4854,6 +5000,7 @@ inspections = DB.get('inspections', []);
 
 populateAssetSelects();
 populatePartSelects();
+populateSysSelect();
 upgradeSeedWR();
 
 // ── iMATOMs SSO Auth Check ──────────────────────────────

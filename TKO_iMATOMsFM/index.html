@@ -1462,7 +1462,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 
 <div class="modal-overlay" id="m-asset"><div class="modal modal-lg"><div class="mhd"><div class="mttl">🏭 เพิ่ม/แก้ไข Asset</div><button class="mclose" onclick="closeModal('m-asset')">✕</button></div>
 <div class="form-sec">🔑 Identity</div>
-<div class="form-row"><div class="form-group"><label class="form-label">Asset ID *</label><input class="form-control" id="ai-id" placeholder="AST-2026-001"></div><div class="form-group"><label class="form-label">ชื่อ Asset *</label><input class="form-control" id="ai-nm" placeholder="Centrifugal Chiller #1"></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">Asset ID *</label><div class="flex g6"><input class="form-control" id="ai-id" placeholder="VH-AC-CH-01" style="flex:1"><input class="form-control" id="ai-idpfx" placeholder="Prefix" title="Prefix เช่น VH, AST" style="width:70px"><button type="button" class="btn btn-secondary btn-sm" title="สร้าง Asset ID อัตโนมัติจากระบบ+ระบบย่อยที่เลือก" onclick="suggestAssetId()">🔄 Gen ID</button></div></div><div class="form-group"><label class="form-label">ชื่อ Asset *</label><input class="form-control" id="ai-nm" placeholder="Centrifugal Chiller #1"></div></div>
 <div class="form-row-3"><div class="form-group"><label class="form-label">ระบบ (System) *</label><select class="form-control" id="ai-sy" onchange="updateSubSys()"><option value="AC">AC — Air Conditioning</option><option value="EE">EE — Electrical</option><option value="EL">EL — Elevator</option><option value="FA">FA — Fire Alarm</option><option value="FP">FP — Fire Protection</option><option value="BAS">BAS — Building Auto</option><option value="SN">SN — Sanitary</option><option value="TR">TR — Transportation</option><option value="WWT">WWT — Waste Water</option><option value="GE">GE — Generator/UPS</option><option value="CV">CV — Civil</option><option value="IT">IT — IT/Network</option><option value="SG">SG — Security</option><option value="PL">PL — Pool/Landscape</option><option value="LT">LT — Lighting</option></select></div><div class="form-group"><label class="form-label">Sub-System</label><select class="form-control" id="ai-sub"></select></div><div class="form-group"><label class="form-label">ประเภท</label><select class="form-control" id="ai-tp"><option value="Equipment">Equipment</option><option value="Instrument">Instrument</option><option value="Infrastructure">Infrastructure</option><option value="IT System">IT System</option><option value="Vehicle">Vehicle</option><option value="Other">Other</option></select></div></div>
 <div class="form-sec">📍 Location</div>
 <div class="form-row-3"><div class="form-group"><label class="form-label">อาคาร</label><input class="form-control" id="ai-bld" placeholder="BHIRAJBURI"></div><div class="form-group"><label class="form-label">ชั้น</label><input class="form-control" id="ai-fl" placeholder="B2 / G / 1 / 2 / R"></div><div class="form-group"><label class="form-label">Zone</label><input class="form-control" id="ai-zn" placeholder="Zone-Mech / North"></div></div>
@@ -3068,6 +3068,41 @@ const sbdg={active:'<span class="badge badge-green">🟢 Active</span>',warning:
 const lbdg={new:'<span class="badge badge-blue">🆕 New</span>',operating:'<span class="badge badge-green">✅ Operating</span>',aging:'<span class="badge badge-yellow">⚠ Aging</span>',critical:'<span class="badge badge-red">🔴 Critical</span>',eol:'<span class="badge badge-gray">🔚 EOL</span>'};
 const critbdg={P1:'<span class="badge badge-red" style="font-size:9px;padding:1px 6px">P1</span>',P2:'<span class="badge badge-orange" style="font-size:9px;padding:1px 6px">P2</span>',P3:'<span class="badge badge-yellow" style="font-size:9px;padding:1px 6px">P3</span>',P4:'<span class="badge badge-green" style="font-size:9px;padding:1px 6px">P4</span>'};
 const SYS_SUB={AC:['Chiller','Cooling Tower','AHU','FCU','PAU','Split AC','Pump-CHW','Pump-CW','VRF/VRV','Exhaust Fan','Ventilation Fan'],EE:['MDB','Distribution Board','Transformer','Capacitor Bank','ATS/STS','Solar PV','Inverter','LV Panel'],EL:['Passenger Lift','Service Lift','Escalator','Dumbwaiter','Car Lift'],FA:['FACP','Smoke Detector','Heat Detector','Sprinkler','Pull Station','Alarm Bell'],FP:['Fire Pump','Jockey Pump','Sprinkler Valve','Fire Cabinet','Portable Extinguisher','FM200/Gas'],BAS:['Controller','DDC','Sensor','Gateway','BACnet Panel','SCADA'],SN:['Water Pump','Pressure Tank','Water Meter','Sump Pump','Sewage Pump','Grease Trap'],TR:['Conveyor','Loading Dock','Turntable'],WWT:['STP','Aeration Tank','Clarifier','Chemical Dosing','UV System'],GE:['Generator','ATS','UPS','Battery Bank','Charger'],CV:['Structure','Roof','Waterproof','Facade','Road','Parking'],IT:['Server','Switch','Router','Firewall','Access Point','CCTV Recorder','NAS'],SG:['CCTV Camera','Access Control','Guard Tour','Intercom','Boom Gate'],PL:['Pool Pump','Filter System','Chemical System','Landscaping','Irrigation'],LT:['Emergency Light','Exit Sign','Street Light','Flood Light','Panel Board']};
+// รหัสย่อ Sub-System (2 ตัวอักษร) — ใช้ประกอบ Asset ID: {PREFIX}-{SYS}-{SUBCODE}-{seq} เช่น VH-AC-CH-01
+const SUBSYS_CODE={
+  AC:{'Chiller':'CH','Cooling Tower':'CT','AHU':'AH','FCU':'FC','PAU':'PA','Split AC':'SA','Pump-CHW':'PC','Pump-CW':'PW','VRF/VRV':'VR','Exhaust Fan':'EF','Ventilation Fan':'VF'},
+  EE:{'MDB':'MD','Distribution Board':'DB','Transformer':'TF','Capacitor Bank':'CB','ATS/STS':'AT','Solar PV':'PV','Inverter':'IV','LV Panel':'LV'},
+  EL:{'Passenger Lift':'PL','Service Lift':'SL','Escalator':'ES','Dumbwaiter':'DW','Car Lift':'CL'},
+  FA:{'FACP':'FC','Smoke Detector':'SD','Heat Detector':'HD','Sprinkler':'SP','Pull Station':'PS','Alarm Bell':'AB'},
+  FP:{'Fire Pump':'FR','Jockey Pump':'JP','Sprinkler Valve':'SV','Fire Cabinet':'FB','Portable Extinguisher':'PE','FM200/Gas':'GS'},
+  BAS:{'Controller':'CO','DDC':'DD','Sensor':'SR','Gateway':'GW','BACnet Panel':'BP','SCADA':'SC'},
+  SN:{'Water Pump':'WP','Pressure Tank':'PT','Water Meter':'WM','Sump Pump':'SM','Sewage Pump':'SW','Grease Trap':'GT'},
+  TR:{'Conveyor':'CY','Loading Dock':'LD','Turntable':'TT'},
+  WWT:{'STP':'ST','Aeration Tank':'AT','Clarifier':'CL','Chemical Dosing':'CD','UV System':'UV'},
+  GE:{'Generator':'GN','ATS':'AT','UPS':'UP','Battery Bank':'BB','Charger':'CH'},
+  CV:{'Structure':'ST','Roof':'RF','Waterproof':'WP','Facade':'FC','Road':'RD','Parking':'PK'},
+  IT:{'Server':'SV','Switch':'SW','Router':'RT','Firewall':'FW','Access Point':'AP','CCTV Recorder':'CR','NAS':'NS'},
+  SG:{'CCTV Camera':'CC','Access Control':'AC','Guard Tour':'GT','Intercom':'IC','Boom Gate':'BG'},
+  PL:{'Pool Pump':'PP','Filter System':'FS','Chemical System':'CS','Landscaping':'LS','Irrigation':'IR'},
+  LT:{'Emergency Light':'EL','Exit Sign':'ES','Street Light':'SL','Flood Light':'FL','Panel Board':'PB'},
+};
+function suggestAssetId(){
+  const sys=document.getElementById('ai-sy')?.value||'';
+  const subName=document.getElementById('ai-sub')?.value||'';
+  const subCode=(SUBSYS_CODE[sys]&&SUBSYS_CODE[sys][subName])||'XX';
+  let pfx=(document.getElementById('ai-idpfx')?.value||'').trim().toUpperCase();
+  if(!pfx){
+    // เดา prefix จาก Asset ID เดิม (ถ้ามี) มิเช่นนั้น default AST
+    const cur=(document.getElementById('ai-id')?.value||'').trim();
+    pfx=cur.includes('-')?cur.split('-')[0].toUpperCase():'AST';
+  }
+  if(!subName){showToast('⚠ กรุณาเลือก Sub-System ก่อน');return;}
+  assets=DB.get('assets',[]);
+  const stem=`${pfx}-${sys}-${subCode}-`;
+  const used=assets.filter(a=>(a.id||'').startsWith(stem)).map(a=>parseInt((a.id||'').slice(stem.length))||0);
+  const next=(used.length?Math.max(...used):0)+1;
+  document.getElementById('ai-id').value=`${stem}${String(next).padStart(2,'0')}`;
+}
 function updateSubSys(){
   const sys=document.getElementById('ai-sy').value;
   const sub=document.getElementById('ai-sub');if(!sub)return;
