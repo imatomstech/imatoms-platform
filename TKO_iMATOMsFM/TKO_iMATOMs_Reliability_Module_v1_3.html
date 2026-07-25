@@ -1908,10 +1908,49 @@ body.embedded #content {
 // ═══════════════════════════════════════════════════════════
 const DB = {
   get: (k, d=[]) => { try { return JSON.parse(localStorage.getItem('alm_'+k)) ?? d; } catch { return d; } },
-  set: (k, v) => localStorage.setItem('alm_'+k, JSON.stringify(v)),
+  set: (k, v) => {
+    localStorage.setItem('alm_'+k, JSON.stringify(v));
+    // Mirror กลับไปให้ Asset Core (index.html หลัก) เห็นข้อมูลชุดเดียวกัน — sync 2 ทาง
+    const sync=['wr','assets','ppm','ma','inv','contract','operation'];
+    if(sync.includes(k)){ try{ localStorage.setItem('tko_v2_'+k, JSON.stringify(v)); }catch(e){} }
+  },
 };
 
-let assets = DB.get('assets', []);
+// ═══════════════════════════════════════════════════════════
+//  SCHEMA BRIDGE — รองรับ Asset ทั้ง schema เก่า (dept/cost/buyDate/life/
+//  status:green-yellow-red) และ schema ใหม่จาก Asset Core
+//  (businessGroup/module/installDate/lifeYears/criticality/
+//  status:active-warning-critical-inactive-standby-decommissioned)
+//  โดยไม่แก้ข้อมูลต้นฉบับ แค่เติม field ที่ view นี้ต้องใช้
+// ═══════════════════════════════════════════════════════════
+function normalizeAsset(a){
+  if(!a) return a;
+  const buyDate = a.buyDate || a.installDate || '';
+  const life    = a.life || a.lifeYears || 10;
+  const cost    = a.cost || 0;
+  const yrs     = buyDate ? Math.max(0,(new Date()-new Date(buyDate))/(365.25*24*3600*1000)) : 0;
+  const calcNbv = Math.max(0, cost - (cost/life)*yrs);
+  const dept    = a.dept || a.zone || a.module || a.businessGroup || '-';
+  const type    = a.type || a.assetType || a.sys || '-';
+  const location= a.location || [a.building,a.floor,a.room].filter(Boolean).join(' / ') || a.loc || '-';
+  // แปลงสถานะเป็น green/yellow/red (ระบบไฟจราจรของหน้านี้)
+  let color = ['green','yellow','red'].includes(a.status) ? a.status : null;
+  if(!color){
+    const s=(a.status||'').toLowerCase(), cr=(a.criticality||'').toUpperCase();
+    if(s==='critical'||s==='inactive'||s==='decommissioned'||cr==='P1') color='red';
+    else if(s==='warning'||s==='standby'||cr==='P2') color='yellow';
+    else color='green';
+  }
+  return Object.assign({}, a, {
+    dept, type, location, buyDate, life, cost,
+    // ใช้ nbv เดิมถ้ามีการคำนวณมาแล้วจริง (>0) ไม่งั้นคำนวณค่าเสื่อมให้ใหม่
+    nbv: (a.nbv && a.nbv>0) ? a.nbv : Math.round(calcNbv),
+    status: color,
+    statusRaw: a.status || color, // เก็บสถานะดิบต้นฉบับไว้เผื่อใช้ที่อื่น
+  });
+}
+
+let assets = DB.get('assets', []).map(normalizeAsset);
 let workRequests = DB.get('wr', []);
 let ppmList = DB.get('ppm', []);
 let maList = DB.get('ma', []);
@@ -2230,7 +2269,7 @@ function renderDashboard() {
   document.getElementById('wr-recent-list').innerHTML = recentWR.length ? recentWR.map(w=>`<div class="metric-row"><span class="tag">${w.id}</span><span style="font-size:12px;flex:1;margin:0 8px;color:var(--text2)">${w.desc}</span>${statusBadge(w.status==='open'?'red':w.status==='inprogress'?'yellow':'green')}</div>`).join('') : '<div class="text-muted text-center" style="font-size:13px;padding:20px">ไม่มี WR</div>';
 }
 
-function refreshDashboard() { assets=DB.get('assets',[]); workRequests=DB.get('wr',[]); ppmList=DB.get('ppm',[]); renderDashboard(); }
+function refreshDashboard() { assets=DB.get('assets',[]).map(normalizeAsset); workRequests=DB.get('wr',[]); ppmList=DB.get('ppm',[]); renderDashboard(); }
 function exportDashboard() { alert('Export Dashboard PDF/Excel — Feature พร้อมใช้งาน'); }
 
 // ═══════════════════════════════════════════════════════════
@@ -2302,17 +2341,29 @@ function processFile(file) {
       const wb = XLSX.read(e.target.result, {type:'binary'});
       const ws = wb.Sheets[wb.SheetNames[0]];
       const raw = XLSX.utils.sheet_to_json(ws, {defval:''});
-      importData = raw.map((r,i) => ({
-        id: r['Asset ID'] || r['id'] || `AST-IMP-${String(i+1).padStart(3,'0')}`,
-        name: r['ชื่อสินทรัพย์'] || r['name'] || r['Asset Name'] || 'Unknown',
-        type: r['ประเภท'] || r['type'] || 'เครื่องจักร',
-        dept: r['แผนก'] || r['dept'] || 'วิศวกรรม',
-        location: r['สถานที่'] || r['location'] || '-',
-        cost: parseFloat(r['ราคาซื้อ'] || r['cost'] || 0) || 0,
-        buyDate: r['วันที่ซื้อ'] || r['buyDate'] || '',
-        life: parseInt(r['อายุการใช้งาน'] || r['life'] || 10) || 10,
-        status: 'green', phase: 'Operation', efficiency: 85, salvage: 0, nbv: parseFloat(r['ราคาซื้อ']||0)||0, accDep: 0, depMethod:'Straight Line'
-      }));
+      importData = raw.map((r,i) => {
+        const cost = parseFloat(r['ราคาซื้อ'] || r['cost'] || r['Purchase Cost (THB)'] || 0) || 0;
+        const buyDate = r['วันที่ซื้อ'] || r['buyDate'] || r['Install Date'] || '';
+        const life = parseInt(r['อายุการใช้งาน'] || r['life'] || r['Life Years'] || 10) || 10;
+        const yrs = buyDate ? Math.max(0,(new Date()-new Date(buyDate))/(365.25*24*3600*1000)) : 0;
+        const nbv = Math.max(0, cost-(cost/life)*yrs);
+        // แปลงสถานะจากไฟล์ (ถ้ามี) เป็นไฟจราจร green/yellow/red — ไม่บังคับ green ทุกแถวเหมือนเดิม
+        const rawStatus = (r['status']||r['Status']||r['สถานะ']||'').toString().toLowerCase();
+        const rawCrit = (r['Criticality']||r['criticality']||'').toString().toUpperCase();
+        let status='green';
+        if(rawStatus.includes('critical')||rawStatus.includes('inactive')||rawCrit==='P1') status='red';
+        else if(rawStatus.includes('warning')||rawStatus.includes('standby')||rawCrit==='P2') status='yellow';
+        return {
+          id: r['Asset ID'] || r['id'] || `AST-IMP-${String(i+1).padStart(3,'0')}`,
+          name: r['ชื่อสินทรัพย์'] || r['name'] || r['Asset Name'] || 'Unknown',
+          type: r['ประเภท'] || r['type'] || r['System Code'] || 'เครื่องจักร',
+          dept: r['แผนก'] || r['dept'] || r['Zone / Department'] || r['Business Group'] || 'วิศวกรรม',
+          location: r['สถานที่'] || r['location'] || [r['Building'],r['Floor']].filter(Boolean).join(' / ') || '-',
+          cost, buyDate, life,
+          status, phase: 'Operation', efficiency: 85, salvage: 0,
+          nbv: Math.round(nbv), accDep: Math.round(cost-nbv), depMethod:'Straight Line'
+        };
+      });
       document.getElementById('import-result').textContent = `✅ พบข้อมูล ${importData.length} รายการ พร้อม Import`;
       const keys = ['id','name','type','dept','location','cost','buyDate','life'];
       document.getElementById('import-thead').innerHTML = `<tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr>`;
@@ -2325,7 +2376,7 @@ function processFile(file) {
 }
 
 function confirmImport() {
-  importData.forEach(row => { const idx = assets.findIndex(a=>a.id===row.id); if(idx>=0) assets[idx]={...assets[idx],...row}; else assets.push(row); });
+  importData.forEach(row => { const idx = assets.findIndex(a=>a.id===row.id); if(idx>=0) assets[idx]=normalizeAsset({...assets[idx],...row}); else assets.push(normalizeAsset(row)); });
   DB.set('assets', assets);
   closeModal('importModal');
   showView('assets');
@@ -2394,15 +2445,23 @@ function renderQR() {
     </div>
   </div>`).join('');
 
-  list.forEach(a => {
+  list.forEach((a,i) => {
     setTimeout(() => {
       const el = document.getElementById(`qr-${a.id}`);
       if (!el || el.querySelector('canvas')) return;
-      new QRCode(el, {
-        text: JSON.stringify({id:a.id,name:a.name,dept:a.dept,location:a.location,status:a.status,nbv:a.nbv}),
-        width:100, height:100, colorDark:'#000000', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M
-      });
-    }, 100);
+      try{
+        // เก็บแค่ Asset ID พอ — ยิงไป lookup รายละเอียดทีหลัง
+        // (เดิมยัด JSON ทั้งก้อนรวมภาษาไทย ทำให้ qrcodejs v1.0.0 คำนวณความยาว UTF-8 ผิดพลาด
+        //  แล้ว throw "code length overflow" แบบเงียบ ๆ เป็นเหตุให้บาง Asset ไม่ขึ้น QR เลย)
+        new QRCode(el, {
+          text: a.id,
+          width:100, height:100, colorDark:'#000000', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M
+        });
+      }catch(err){
+        console.error('QR generate failed for', a.id, err);
+        el.innerHTML = `<div style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--red);text-align:center;border:1px dashed var(--red)">QR Error<br>${a.id}</div>`;
+      }
+    }, 60 + i*15);
   });
 }
 
@@ -4786,7 +4845,7 @@ function updateAdminBadge() {
 //  INIT
 // ═══════════════════════════════════════════════════════════
 seedData();
-assets = DB.get('assets', []);
+assets = DB.get('assets', []).map(normalizeAsset);
 workRequests = DB.get('wr', []);
 ppmList = DB.get('ppm', []);
 maList = DB.get('ma', []);

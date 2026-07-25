@@ -3110,42 +3110,42 @@ function mapImportRow(r){
   const g=(...keys)=>{for(const k of keys){if(r[k]!==undefined&&r[k]!=='')return String(r[k]).trim();}return '';};
   const gn=(...keys)=>{const v=g(...keys);return v?(parseFloat(v)||null):null;};
   const id=g('asset_no','Asset ID *','Asset ID','No.','id');
-  const name=g('asset_name','Asset Name *','ชื่อ Asset *','ชื่อ','name');
+  const name=g('asset_name','Asset Name *','Asset Name','ชื่อ Asset *','ชื่อ','name');
   if(!id||!name)return null;
-  const cost=gn('purchase_price','ราคาซื้อ (฿)')||0;
-  const ly=gn('useful_life_years','อายุการใช้งาน (ปี)')||15;
-  const ins=g('install_date','วันติดตั้ง');
+  const cost=gn('purchase_price','ราคาซื้อ (฿)','Purchase Cost (THB)')||0;
+  const ly=gn('useful_life_years','อายุการใช้งาน (ปี)','Life Years')||15;
+  const ins=g('install_date','วันติดตั้ง','Install Date');
   const yu=ins?Math.max(0,(new Date()-new Date(ins))/(365.25*24*3600*1000)):0;
   const nbv=Math.max(0,cost-(cost/ly)*yu);
   return{
     id,name,
     sys:g('system_code','System Code *','ระบบ (System) *','System Code','sys')||'AC',
     subSys:g('sub_system','Sub-System'),
-    assetType:g('asset_type','ประเภท')||'Equipment',
-    building:g('building','อาคาร'),
-    floor:g('floor','ชั้น'),
-    zone:g('zone','Zone'),
-    room:g('room','ห้อง / Area'),
+    assetType:g('asset_type','ประเภท','Asset Type')||'Equipment',
+    building:g('building','อาคาร','Building'),
+    floor:g('floor','ชั้น','Floor'),
+    zone:g('zone','Zone','Zone / Department'),
+    room:g('room','ห้อง / Area','Room'),
     loc:g('location_detail','Location Detail'),
     brand:g('brand','Brand'),
     model:g('model','Model'),
     serial:g('serial_no','Serial No.'),
     capacity:gn('capacity','Capacity'),
-    capacityUnit:g('capacity_unit','Unit')||'kW',
-    mfgYear:gn('manufacture_year','ปีผลิต'),
+    capacityUnit:g('capacity_unit','Unit','Capacity Unit')||'kW',
+    mfgYear:gn('manufacture_year','ปีผลิต','Mfg. Year'),
     cost,installDate:ins,lifeYears:ly,
-    replaceCost:gn('replace_cost','ราคาทดแทน (฿)')||0,
-    pmInterval:gn('pm_interval_days','PM ทุก (วัน)'),
+    replaceCost:gn('replace_cost','ราคาทดแทน (฿)','Replace Cost (THB)')||0,
+    pmInterval:gn('pm_interval_days','PM ทุก (วัน)','PM Interval (days)'),
     lastPM:g('last_pm_date','Last PM Date')||null,
-    warrantyExpire:g('warranty_expire','ประกันหมด')||null,
-    vendor:g('vendor','Vendor / ผู้รับเหมา MA'),
-    status:g('status','สถานะ *')||'active',
-    criticality:g('criticality','Criticality *')||'P3',
-    lifecycle:g('lifecycle_stage','Lifecycle')||'operating',
+    warrantyExpire:g('warranty_expire','ประกันหมด','Warranty Expire')||null,
+    vendor:g('vendor','Vendor / ผู้รับเหมา MA','Vendor / Contractor'),
+    status:g('status','สถานะ *','Status')||'active',
+    criticality:g('criticality','Criticality *','Criticality')||'P3',
+    lifecycle:g('lifecycle_stage','Lifecycle','Lifecycle Stage')||'operating',
     redundancy:g('redundancy','Redundancy')||'No',
-    notes:g('notes','หมายเหตุ'),
-    module:g('business_module','Business Module')||'BHIRAJBURI',
-    nbv:Math.round(nbv),businessGroup:myBG()
+    notes:g('notes','หมายเหตุ','Notes'),
+    module:g('business_module','Business Module','Module / Hospital')||'BHIRAJBURI',
+    nbv:Math.round(nbv),businessGroup:g('Business Group')||myBG()
   };
 }
 function showImportPreview(data){
