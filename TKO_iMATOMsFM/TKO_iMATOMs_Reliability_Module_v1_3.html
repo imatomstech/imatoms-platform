@@ -491,6 +491,7 @@ body.embedded #content {
       <div class="section-header">
         <div><div class="section-title">🏭 ทะเบียนสินทรัพย์</div><div class="section-sub">Asset Register — บริหารจัดการข้อมูลสินทรัพย์ทั้งหมด</div></div>
         <div class="flex gap-8">
+          <button class="btn btn-secondary btn-sm" onclick="cleanOldDemoAssets()" title="ลบ Asset ที่ ID เป็นรูปแบบเก่า (ไม่มีรหัส Sub-System เช่น VH-AC-01)">🧹 ล้าง ID รูปแบบเก่า</button>
           <button class="btn btn-secondary btn-sm" onclick="openModal('importModal')">📂 Import Excel</button>
           <button class="btn btn-secondary btn-sm" onclick="exportAssets()">⬇ Export Excel</button>
           <button class="btn btn-primary btn-sm" onclick="openModal('addAssetModal')">+ เพิ่มสินทรัพย์</button>
@@ -2280,6 +2281,21 @@ function deleteAsset(id) {
   assets = assets.filter(a => a.id !== id);
   DB.set('assets', assets);
   renderAssets();
+}
+
+// ลบ Asset ที่ ID เป็นรูปแบบเก่า (VH-AC-01) ไม่มีรหัส Sub-System (VH-AC-CH-01)
+// รูปแบบใหม่มี 4 ท่อน (PREFIX-SYS-SUBCODE-seq) รูปแบบเก่ามีแค่ 3 ท่อน (PREFIX-SYS-seq)
+function cleanOldDemoAssets(){
+  const oldPattern=/^[A-Z0-9]+-[A-Z]+-\d+$/i; // เช่น VH-AC-01 (ไม่ใช่ VH-AC-CH-01)
+  const targets=assets.filter(a=>oldPattern.test(a.id||''));
+  if(!targets.length){ alert('ไม่พบ Asset ที่ ID เป็นรูปแบบเก่าค้างอยู่ ✅'); return; }
+  const preview=targets.slice(0,15).map(a=>a.id).join(', ')+(targets.length>15?` ... (+${targets.length-15})`:'');
+  if(!confirm(`พบ Asset รูปแบบเก่า ${targets.length} รายการ:\n${preview}\n\nยืนยันลบทั้งหมด?`))return;
+  const targetIds=new Set(targets.map(a=>a.id));
+  assets=assets.filter(a=>!targetIds.has(a.id));
+  DB.set('assets',assets);
+  renderAssets();populateAssetSelects();
+  alert(`✅ ลบ Asset รูปแบบเก่าแล้ว ${targets.length} รายการ`);
 }
 
 // ═══════════════════════════════════════════════════════════
