@@ -1998,10 +1998,15 @@ function normalizeAsset(a){
     else if(s==='warning'||s==='standby'||cr==='P2') color='yellow';
     else color='green';
   }
+  // ใช้ nbv เดิมถ้ามีการคำนวณมาแล้วจริง (>0) ไม่งั้นคำนวณค่าเสื่อมให้ใหม่
+  const nbv = (a.nbv && a.nbv>0) ? a.nbv : Math.round(calcNbv);
+  // ค่าเสื่อมสะสม — ถ้าไม่เคยมีมาก่อน คำนวณจาก cost - nbv (กันกรณี asset เก่าที่ไม่มี accDep เก็บไว้ ทำให้ Valuation ขึ้น ฿0 ผิดๆ)
+  const accDep = (a.accDep!=null && a.accDep>0) ? a.accDep : Math.round(cost-nbv);
+  // ประสิทธิภาพ — ถ้าไม่เคยกรอกไว้ ใช้ค่า default 85% (เกณฑ์ทั่วไปของเครื่องที่ทำงานปกติ) แทนการโชว์ 0%
+  const efficiency = (typeof a.efficiency==='number') ? a.efficiency : 85;
   return Object.assign({}, a, {
     dept, type, location, buyDate, life, cost,
-    // ใช้ nbv เดิมถ้ามีการคำนวณมาแล้วจริง (>0) ไม่งั้นคำนวณค่าเสื่อมให้ใหม่
-    nbv: (a.nbv && a.nbv>0) ? a.nbv : Math.round(calcNbv),
+    nbv, accDep, efficiency,
     status: color,
     statusRaw: a.status || color, // เก็บสถานะดิบต้นฉบับไว้เผื่อใช้ที่อื่น
   });
