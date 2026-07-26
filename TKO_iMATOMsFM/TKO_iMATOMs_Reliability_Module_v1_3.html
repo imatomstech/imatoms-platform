@@ -691,7 +691,7 @@ body.embedded #content {
         <div class="tab" onclick="filterWR('evaluate',this)">🏅 Evaluate</div>
         <div class="tab" onclick="filterWR('sla',this)">🎯 SLA</div>
         <div class="tab" onclick="filterWR('history',this)">📖 Asset History</div>
-        <div class="tab" onclick="filterWR('recurring',this)">🔄 Recurring</div>
+        <div class="tab" onclick="filterWR('recurring',this)">🔄 Repeated Repairs</div>
         <div class="tab" onclick="filterWR('reoperation',this)">⚙ Re-OPT</div>
         <div class="tab" onclick="filterWR('summarize',this)">📊 Summarize</div>
         <div class="tab" onclick="filterWR('maintainability',this)">🔬 Maintainability</div>
@@ -848,12 +848,12 @@ body.embedded #content {
       <!-- Recurring WR -->
       <div id="wr-recurring-view" style="display:none">
         <div class="grid-3 mb-16">
-          <div class="kpi red"><div class="kpi-label">Recurring Assets</div><div class="kpi-value ff-display text-red" id="rec-assets">0</div><div class="kpi-sub">เครื่องที่ซ่อมซ้ำบ่อย</div></div>
+          <div class="kpi red"><div class="kpi-label">Repeated Repairs Assets</div><div class="kpi-value ff-display text-red" id="rec-assets">0</div><div class="kpi-sub">เครื่องที่ซ่อมซ้ำบ่อย</div></div>
           <div class="kpi yellow"><div class="kpi-label">ควรขึ้น PM</div><div class="kpi-value ff-display text-yellow" id="rec-pm">0</div><div class="kpi-sub">แนะนำสร้างแผน PM</div></div>
           <div class="kpi orange"><div class="kpi-label">WR ซ้ำทั้งหมด</div><div class="kpi-value ff-display text-orange" id="rec-total">0</div><div class="kpi-sub">งานซ่อมที่เกิดซ้ำ</div></div>
         </div>
         <div class="card mb-16">
-          <div style="font-family:var(--font-display);font-size:15px;font-weight:700;margin-bottom:4px">🔄 Recurring WR Analysis</div>
+          <div style="font-family:var(--font-display);font-size:15px;font-weight:700;margin-bottom:4px">🔄 Repeated Repairs Analysis</div>
           <div class="text-muted mb-12" style="font-size:12px">Asset ที่ซ่อมซ้ำ ≥ 2 ครั้ง ในระบบเดียวกัน → แนะนำสร้างแผน PM อัตโนมัติ</div>
           <div id="recurring-list"></div>
         </div>
@@ -1686,6 +1686,13 @@ body.embedded #content {
         <label class="form-label">ค่าเดินทาง (฿)</label>
         <input class="form-control" id="cl-travel-cost" type="number" value="0" oninput="calcTotalCost()">
       </div>
+    </div>
+
+    <!-- Photo Evidence -->
+    <div class="form-group">
+      <label class="form-label">📷 รูปยืนยันการทำงาน / จุดที่ชำรุด (อย่างน้อย 1 รูป จากช่าง แนะนำ 2 รูป) <span style="color:var(--red)">*</span></label>
+      <input type="file" class="form-control" accept="image/*" capture="environment" multiple id="cl-photo-input" onchange="handleClosePhotoUpload(event)">
+      <div id="cl-photo-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
     </div>
 
     <!-- Signature -->
@@ -2851,7 +2858,25 @@ function calcDep() {
 // ═══════════════════════════════════════════════════════════
 //  WORK REQUEST — Full Enhanced Module
 // ═══════════════════════════════════════════════════════════
-let wrTabFilter='all', closingWRId=null, acceptingWRId=null, starScore=0, closedParts=[], sigCtx=null, sigDrawing=false;
+let wrTabFilter='all', closingWRId=null, acceptingWRId=null, starScore=0, closedParts=[], sigCtx=null, sigDrawing=false, closePhotos=[];
+
+function handleClosePhotoUpload(e){
+  const files=[...e.target.files];
+  files.forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{ closePhotos.push(ev.target.result); renderClosePhotos(); };
+    reader.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+function renderClosePhotos(){
+  const el=document.getElementById('cl-photo-list');if(!el)return;
+  el.innerHTML=closePhotos.map((p,i)=>`
+    <div style="position:relative">
+      <img src="${p}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">
+      <span onclick="closePhotos.splice(${i},1);renderClosePhotos()" style="position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">✕</span>
+    </div>`).join('')||'<div class="text-muted" style="font-size:11px">ยังไม่มีรูปแนบ</div>';
+}
 
 // Target time per system (editable)
 const DEFAULT_TARGETS={BD:2,RM:4,CM:8,OM:4,PM:8,MA:24,Sub:48,PJ:72,OTH:8};
@@ -3123,13 +3148,14 @@ function openCloseWR(id){
   st.setMinutes(st.getMinutes()-st.getTimezoneOffset());
   document.getElementById('cl-start-time').value=st.toISOString().slice(0,16);
   document.getElementById('cl-end-time').value=now.toISOString().slice(0,16);
-  closedParts=[];starScore=0;
+  closedParts=[];starScore=0;closePhotos=[];
   document.getElementById('cl-parts-list').innerHTML='';
   document.getElementById('cl-labor-cost').value=0;
   document.getElementById('cl-parts-cost').value=0;
   document.getElementById('cl-travel-cost').value=0;
   document.getElementById('cl-total-cost').textContent='฿0';
   document.getElementById('cl-satisfaction-note').style.display='none';
+  renderClosePhotos();
   document.getElementById('star-rating').querySelectorAll('span').forEach(s=>s.textContent='☆');
   // Populate parts from inventory
   const partSel=document.getElementById('cl-parts-select');
@@ -3200,6 +3226,10 @@ function clearSignature(){if(sigCtx){const c=document.getElementById('sig-pad');
 
 function confirmCloseWR(){
   const idx=workRequests.findIndex(w=>w.id===closingWRId);if(idx<0)return;
+  if(!closePhotos.length){
+    alert('⚠ กรุณาแนบรูปยืนยันการทำงานหรือจุดที่ชำรุดอย่างน้อย 1 รูป จากช่าง ก่อนปิดงานครับ');
+    return;
+  }
   const st=new Date(document.getElementById('cl-start-time').value);
   const et=new Date(document.getElementById('cl-end-time').value);
   const mttrHrs=((et-st)/(3600*1000)).toFixed(2);
@@ -3217,6 +3247,7 @@ function confirmCloseWR(){
   workRequests[idx].travelCost=parseFloat(document.getElementById('cl-travel-cost').value)||0;
   workRequests[idx].totalCost=workRequests[idx].laborCost+workRequests[idx].partsCost+workRequests[idx].travelCost;
   workRequests[idx].parts=closedParts;
+  workRequests[idx].closePhotos=closePhotos;
   workRequests[idx].satisfaction=starScore;
   workRequests[idx].responseTime=responseMins;
   DB.set('wr',workRequests);
@@ -3245,6 +3276,8 @@ function editCloseWR(id){
   document.getElementById('cl-system').value=w.system||'AC';
   document.getElementById('cl-action-detail').value=w.actionDetail||'';
   closedParts=Array.isArray(w.parts)?w.parts.slice():[];
+  closePhotos=Array.isArray(w.closePhotos)?w.closePhotos.slice():[];
+  renderClosePhotos();
   starScore=w.satisfaction||0;
   document.getElementById('cl-labor-cost').value=w.laborCost||0;
   document.getElementById('cl-parts-cost').value=w.partsCost||0;
@@ -3299,15 +3332,18 @@ function renderEvaluate(){
         <div><div class="text-muted" style="font-size:10px">ตอบสนอง</div><span class="text-orange fw-600">${w.responseTime||'—'} นาที</span></div>
         <div><div class="text-muted" style="font-size:10px">MTTR</div><span class="text-teal fw-600">${w.mttr||'—'} ชม.</span></div>
         <div><div class="text-muted" style="font-size:10px">มูลค่าซ่อม</div><span class="text-green fw-600">${fmtCurrency(w.totalCost)}</span></div>
-        <div><div class="text-muted" style="font-size:10px">Recurring</div><span class="badge badge-${w.evalRecurring==='yes'?'red':w.evalRecurring==='review'?'yellow':'gray'}">${w.evalRecurring==='yes'?'ควรทำ PM':w.evalRecurring==='review'?'ตรวจสอบ':'ไม่ซ้ำ'}</span></div>
+        <div><div class="text-muted" style="font-size:10px">Repeated</div><span class="badge badge-${w.evalRecurring==='yes'?'red':w.evalRecurring==='review'?'yellow':'gray'}">${w.evalRecurring==='yes'?'ควรทำ PM':w.evalRecurring==='review'?'ตรวจสอบ':'ไม่ซ้ำ'}</span></div>
       </div>
       ${w.evalStrength?`<div class="alert alert-success" style="font-size:12px;padding:6px 12px;margin-bottom:4px">💪 ${w.evalStrength}</div>`:''}
       ${w.evalWeakness?`<div class="alert alert-warning" style="font-size:12px;padding:6px 12px;margin-bottom:4px">🔧 ${w.evalWeakness}</div>`:''}
       ${w.evalImprove?`<div class="alert alert-info" style="font-size:12px;padding:6px 12px;margin-bottom:8px">🚀 ${w.evalImprove}</div>`:''}
+      ${(w.evalSigClose||w.evalSigApprove)?`<div class="flex gap-12 mb-8" style="align-items:flex-end">
+        ${w.evalSigClose?`<div><div class="text-muted" style="font-size:10px">ลายเซ็นช่าง</div><img src="${w.evalSigClose}" style="height:34px;background:var(--bg3);border-radius:4px"></div>`:''}
+        ${w.evalSigApprove?`<div><div class="text-muted" style="font-size:10px">ลายเซ็น${approved?' '+w.approvedBy?.split(':')[0]:' ผู้อนุมัติ'}</div><img src="${w.evalSigApprove}" style="height:34px;background:var(--bg3);border-radius:4px"></div>`:''}
+      </div>`:''}
       <div class="flex gap-8" style="flex-wrap:wrap">
         <button class="btn btn-secondary btn-sm" onclick="openEvaluateModal('${w.id}')">📄 รายงานเต็ม &amp; ประเมิน</button>
-        ${!approved?`<button class="btn btn-success btn-sm" onclick="approveWR('${w.id}','Manager')">✅ Manager อนุมัติ</button>
-        <button class="btn btn-primary btn-sm" onclick="approveWR('${w.id}','Director')">⭐ Director อนุมัติ</button>`:''}
+        ${!approved?`<button class="btn btn-success btn-sm" onclick="openEvaluateModal('${w.id}')">🖊 เซ็นชื่อและอนุมัติ</button>`:''}
       </div>
     </div>`;
   }).join(''):'<div class="text-muted text-center" style="padding:32px;font-size:13px">ยังไม่มีงานที่ปิดแล้ว — Complete งาน WR ก่อนครับ</div>';
@@ -3356,6 +3392,7 @@ function openEvaluateModal(id){
         </div>
       </div>
       <div style="margin-bottom:10px"><div class="text-muted mb-8" style="font-size:10px;font-weight:600;text-transform:uppercase">อะไหล่ที่ใช้</div><div style="font-size:12px;line-height:1.8">${partsStr}</div></div>
+      ${Array.isArray(w.closePhotos)&&w.closePhotos.length?`<div style="margin-bottom:10px"><div class="text-muted mb-8" style="font-size:10px;font-weight:600;text-transform:uppercase">📷 รูปยืนยันการทำงาน</div><div style="display:flex;flex-wrap:wrap;gap:8px">${w.closePhotos.map(p=>`<img src="${p}" style="width:90px;height:90px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">`).join('')}</div></div>`:''}
       <div class="metric-row"><span class="text-muted">ความพึงพอใจ</span><span style="color:#EAB308;font-size:18px">${stars}</span></div>
       ${w.approvedBy?`<div class="alert alert-success mt-12" style="font-size:12px">✅ อนุมัติโดย ${w.approvedBy} — ${w.approvedDate?new Date(w.approvedDate).toLocaleString('th-TH'):''}</div>`:''}
     </div>
@@ -3363,7 +3400,7 @@ function openEvaluateModal(id){
     <div class="form-group"><label class="form-label">💪 จุดแข็ง (Strength)</label><textarea class="form-control" id="ev-strength" rows="2" placeholder="ช่างตอบสนองเร็ว แก้ปัญหาถูกต้อง ...">${w.evalStrength||''}</textarea></div>
     <div class="form-group"><label class="form-label">🔧 จุดอ่อน (Weakness)</label><textarea class="form-control" id="ev-weakness" rows="2" placeholder="ขาดอะไหล่สำรอง ใช้เวลาวินิจฉัยนาน ...">${w.evalWeakness||''}</textarea></div>
     <div class="form-group"><label class="form-label">🚀 แนวทางพัฒนา (Improvement)</label><textarea class="form-control" id="ev-improve" rows="2" placeholder="เพิ่มอะไหล่ในคลัง จัดอบรม สร้าง PM plan ...">${w.evalImprove||''}</textarea></div>
-    <div class="form-group"><label class="form-label">⚠ Recurring Issue? (งานซ่อมซ้ำ → ควรขึ้น PM)</label>
+    <div class="form-group"><label class="form-label">⚠ Repeated Repair? (งานซ่อมซ้ำ → ควรขึ้น PM)</label>
       <select class="form-control" id="ev-recurring">
         <option value="no" ${!w.evalRecurring||w.evalRecurring==='no'?'selected':''}>ไม่ใช่</option>
         <option value="yes" ${w.evalRecurring==='yes'?'selected':''}>ใช่ — ควรจัดทำแผน PM</option>
@@ -3382,9 +3419,31 @@ function openEvaluateModal(id){
       </div>
     </div>
     <input type="hidden" id="ev-wr-id" value="${w.id}">
+    <div id="ev-approve-status" class="mt-12"></div>
+    <div class="flex gap-8 mt-12" style="justify-content:flex-end">
+      ${!w.approvedBy?`<button class="btn btn-success btn-sm" onclick="confirmApprove('Manager')">✅ Manager เซ็นชื่อและอนุมัติ</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmApprove('Director')">⭐ Director เซ็นชื่อและอนุมัติ</button>`:''}
+    </div>
   `;
   document.getElementById('evaluateModal').classList.add('open');
-  setTimeout(()=>{initSigClose();initSigApprove();},150);
+  setTimeout(()=>{
+    initSigClose();initSigApprove();
+    sigCloseHasInk=!!w.evalSigClose; sigApvHasInk=!!w.evalSigApprove;
+    if(w.evalSigClose)loadSigImage('sig-close',w.evalSigClose);
+    if(w.evalSigApprove)loadSigImage('sig-approve',w.evalSigApprove);
+    renderApproveStatus(w);
+  },150);
+}
+
+function renderApproveStatus(w){
+  const el=document.getElementById('ev-approve-status');if(!el)return;
+  el.innerHTML=w.approvedBy?`<div class="alert alert-success" style="font-size:12px">✅ อนุมัติโดย ${w.approvedBy} — ${w.approvedDate?new Date(w.approvedDate).toLocaleString('th-TH'):''}</div>`:'';
+}
+
+function captureSignatures(idx){
+  const c1=document.getElementById('sig-close'), c2=document.getElementById('sig-approve');
+  if(c1 && sigCloseHasInk) workRequests[idx].evalSigClose=c1.toDataURL();
+  if(c2 && sigApvHasInk) workRequests[idx].evalSigApprove=c2.toDataURL();
 }
 
 function saveEvaluate(){
@@ -3394,6 +3453,7 @@ function saveEvaluate(){
   workRequests[idx].evalWeakness=document.getElementById('ev-weakness').value;
   workRequests[idx].evalImprove=document.getElementById('ev-improve').value;
   workRequests[idx].evalRecurring=document.getElementById('ev-recurring').value;
+  captureSignatures(idx);
   DB.set('wr',workRequests);
   closeModal('evaluateModal');
   if(wrTabFilter==='evaluate')renderEvaluate();
@@ -3411,11 +3471,34 @@ function approveWR(id,role){
   alert(`✅ ${role} อนุมัติงาน ${id} เรียบร้อยครับ`);
 }
 
-let sigCloseCtx=null,sigCloseDrawing=false,sigApvCtx=null,sigApvDrawing=false;
-function initSigClose(){const c=document.getElementById('sig-close');if(!c)return;sigCloseCtx=c.getContext('2d');sigCloseCtx.strokeStyle='#E6EDF3';sigCloseCtx.lineWidth=2;sigCloseCtx.lineCap='round';c.onmousedown=e=>{sigCloseDrawing=true;sigCloseCtx.beginPath();sigCloseCtx.moveTo(e.offsetX,e.offsetY);};c.onmousemove=e=>{if(!sigCloseDrawing)return;sigCloseCtx.lineTo(e.offsetX,e.offsetY);sigCloseCtx.stroke();};c.onmouseup=c.onmouseleave=()=>sigCloseDrawing=false;}
-function clearSigClose(){if(sigCloseCtx){const c=document.getElementById('sig-close');sigCloseCtx.clearRect(0,0,c.width,c.height);}}
-function initSigApprove(){const c=document.getElementById('sig-approve');if(!c)return;sigApvCtx=c.getContext('2d');sigApvCtx.strokeStyle='#E6EDF3';sigApvCtx.lineWidth=2;sigApvCtx.lineCap='round';c.onmousedown=e=>{sigApvDrawing=true;sigApvCtx.beginPath();sigApvCtx.moveTo(e.offsetX,e.offsetY);};c.onmousemove=e=>{if(!sigApvDrawing)return;sigApvCtx.lineTo(e.offsetX,e.offsetY);sigApvCtx.stroke();};c.onmouseup=c.onmouseleave=()=>sigApvDrawing=false;}
-function clearSigApprove(){if(sigApvCtx){const c=document.getElementById('sig-approve');sigApvCtx.clearRect(0,0,c.width,c.height);}}
+function confirmApprove(role){
+  const id=document.getElementById('ev-wr-id').value;
+  const idx=workRequests.findIndex(w=>w.id===id);if(idx<0)return;
+  if(!sigApvHasInk && !workRequests[idx].evalSigApprove){
+    alert('⚠ กรุณาให้ Manager/Director เซ็นชื่อในช่อง "ลายเซ็น Manager / Director" ก่อนอนุมัติครับ');
+    return;
+  }
+  workRequests[idx].evalStrength=document.getElementById('ev-strength').value;
+  workRequests[idx].evalWeakness=document.getElementById('ev-weakness').value;
+  workRequests[idx].evalImprove=document.getElementById('ev-improve').value;
+  workRequests[idx].evalRecurring=document.getElementById('ev-recurring').value;
+  captureSignatures(idx);
+  DB.set('wr',workRequests);
+  approveWR(id,role);
+}
+
+let sigCloseCtx=null,sigCloseDrawing=false,sigApvCtx=null,sigApvDrawing=false,sigCloseHasInk=false,sigApvHasInk=false;
+function initSigClose(){const c=document.getElementById('sig-close');if(!c)return;sigCloseCtx=c.getContext('2d');sigCloseCtx.strokeStyle='#E6EDF3';sigCloseCtx.lineWidth=2;sigCloseCtx.lineCap='round';c.onmousedown=e=>{sigCloseDrawing=true;sigCloseHasInk=true;sigCloseCtx.beginPath();sigCloseCtx.moveTo(e.offsetX,e.offsetY);};c.onmousemove=e=>{if(!sigCloseDrawing)return;sigCloseCtx.lineTo(e.offsetX,e.offsetY);sigCloseCtx.stroke();};c.onmouseup=c.onmouseleave=()=>sigCloseDrawing=false;}
+function clearSigClose(){if(sigCloseCtx){const c=document.getElementById('sig-close');sigCloseCtx.clearRect(0,0,c.width,c.height);sigCloseHasInk=false;}}
+function initSigApprove(){const c=document.getElementById('sig-approve');if(!c)return;sigApvCtx=c.getContext('2d');sigApvCtx.strokeStyle='#E6EDF3';sigApvCtx.lineWidth=2;sigApvCtx.lineCap='round';c.onmousedown=e=>{sigApvDrawing=true;sigApvHasInk=true;sigApvCtx.beginPath();sigApvCtx.moveTo(e.offsetX,e.offsetY);};c.onmousemove=e=>{if(!sigApvDrawing)return;sigApvCtx.lineTo(e.offsetX,e.offsetY);sigApvCtx.stroke();};c.onmouseup=c.onmouseleave=()=>sigApvDrawing=false;}
+function clearSigApprove(){if(sigApvCtx){const c=document.getElementById('sig-approve');sigApvCtx.clearRect(0,0,c.width,c.height);sigApvHasInk=false;}}
+function loadSigImage(canvasId,dataURL){
+  const c=document.getElementById(canvasId);if(!c||!dataURL)return;
+  const ctx=c.getContext('2d');
+  const img=new Image();
+  img.onload=()=>ctx.drawImage(img,0,0,c.width,c.height);
+  img.src=dataURL;
+}
 
 // ── SLA Tracking ──
 const SLA_TARGETS={critical:5,urgently:15,normal:480}; // minutes
@@ -3609,7 +3692,7 @@ function renderRecurring(){
       </div>
       <div class="text-muted mb-8" style="font-size:11px">ล่าสุด: ${lastDate?new Date(lastDate).toLocaleDateString('th-TH'):'-'} | ปัญหา: ${r.list.map(w=>w.desc?.substring(0,20)).join(' / ')}</div>
       <div class="flex gap-8">
-        <button class="btn btn-success btn-sm" onclick="createPMFromRecurring('${r.assetId}','${r.system}')">📅 สร้างแผน PM จาก Recurring</button>
+        <button class="btn btn-success btn-sm" onclick="createPMFromRecurring('${r.assetId}','${r.system}')">📅 สร้างแผน PM จาก Repeated Repairs</button>
         <button class="btn btn-secondary btn-sm" onclick="filterWR('history',document.querySelector('.tab:nth-child(8)'));setTimeout(()=>{document.getElementById('hist-asset-select').value='${r.assetId}';renderAssetHistory('${r.assetId}')},100)">📖 ดูประวัติ</button>
       </div>
     </div>`;
@@ -3620,7 +3703,7 @@ function createPMFromRecurring(assetId,system){
   if(!confirm(`สร้างแผน PM สำหรับ Asset: ${assetId} ระบบ: ${system}?`))return;
   const asset=assets.find(a=>a.id===assetId);
   const pmId=`PPM-REC-${String(ppmList.length+1).padStart(4,'0')}`;
-  ppmList.push({id:pmId,assetId,name:`PM จาก Recurring — ระบบ ${system}`,freq:'รายเดือน',planDate:new Date().toISOString().split('T')[0],measured:'',std:'',assign:'ช่าง A',status:'planned',mtbf:0,note:`สร้างจาก Recurring WR Analysis`});
+  ppmList.push({id:pmId,assetId,name:`PM จาก Repeated Repairs — ระบบ ${system}`,freq:'รายเดือน',planDate:new Date().toISOString().split('T')[0],measured:'',std:'',assign:'ช่าง A',status:'planned',mtbf:0,note:`สร้างจาก Repeated Repairs Analysis`});
   DB.set('ppm',ppmList);
   alert(`✅ สร้างแผน PM ${pmId} สำเร็จ!\nAsset: ${assetId} — ${asset?.name||''}\nระบบ: ${system}\nความถี่: รายเดือน\n→ ไปที่ PPM เพื่อดูแผน`);
 }
