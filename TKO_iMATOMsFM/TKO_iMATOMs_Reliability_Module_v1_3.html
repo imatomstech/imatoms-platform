@@ -344,10 +344,10 @@ body.embedded #content {
     Dashboard
   </div>
 
-  <div class="sidebar-section">Asset Core</div>
-  <div class="nav-item" onclick="showView('assets')">
-    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L2 4v4c0 3.3 2.5 6.4 6 7 3.5-.6 6-3.7 6-7V4L8 1z"/></svg>
-    Asset ID & Register
+  <div class="sidebar-section">Asset Life-Cycle Management</div>
+  <div class="nav-item" onclick="showView('valuation')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm1 10.5H7V10h2v1.5zm0-3H7V4h2v4.5z"/></svg>
+    Overview Value Add
   </div>
   <div class="nav-item" onclick="showView('lifecycle')">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8 4v4l3 2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
@@ -362,12 +362,12 @@ body.embedded #content {
     Annual Review
     <span class="nav-badge">!</span>
   </div>
-  <div class="nav-item" onclick="showView('valuation')">
-    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm1 10.5H7V10h2v1.5zm0-3H7V4h2v4.5z"/></svg>
-    Value Add / มูลค่า
+  <div class="nav-item" onclick="showView('assets')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L2 4v4c0 3.3 2.5 6.4 6 7 3.5-.6 6-3.7 6-7V4L8 1z"/></svg>
+    Asset ID & Register
   </div>
 
-  <div class="sidebar-section">Framework ALM</div>
+  <div class="sidebar-section">Facility Management</div>
   <div class="nav-item" onclick="showView('workrequest')">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v12H2V2zm2 3v1h8V5H4zm0 3v1h8V8H4zm0 3v1h5v-1H4z"/></svg>
     Work Request (WR)
@@ -609,7 +609,7 @@ body.embedded #content {
     <!-- ══════════════ VALUATION ══════════════ -->
     <div id="view-valuation" class="view">
       <div class="section-header">
-        <div><div class="section-title">💰 Value Add — มูลค่าสินทรัพย์</div><div class="section-sub">คำนวณค่าเสื่อมราคา มูลค่า ณ ปัจจุบัน และมูลค่าคงเหลือ</div></div>
+        <div><div class="section-title">💰 Overview Value Add</div><div class="section-sub">คำนวณค่าเสื่อมราคา มูลค่า ณ ปัจจุบัน และมูลค่าคงเหลือ</div></div>
         <button class="btn btn-secondary btn-sm" onclick="openModal('calcDepModal')">🧮 คำนวณค่าเสื่อม</button>
       </div>
 
@@ -2176,7 +2176,7 @@ function seedData() {
 const viewTitles = {
   dashboard:'Dashboard — ภาพรวม', assets:'Asset ID & Register',
   lifecycle:'Lifecycle Tracker', qrcode:'QR Code Assets',
-  inspection:'Annual Review', valuation:'Value Add — มูลค่า',
+  inspection:'Annual Review', valuation:'Overview Value Add',
   workrequest:'Work Request System', operation:'Operation System',
   ppm:'Preventive Maintenance', contract:'MA Contract', inventory:'Inventory',
   adminmgmt:'Admin Management'
