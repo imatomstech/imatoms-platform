@@ -119,6 +119,9 @@ select.form-control option{background:var(--bg3)}
 .tabs{display:flex;gap:2px;background:var(--bg3);border-radius:var(--radius);padding:3px;margin-bottom:20px}
 .tab{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);transition:all .15s;font-weight:500}
 .tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+#wr-vtabs{width:240px !important;gap:4px;padding:6px}
+#wr-vtabs .tab{padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--font-display);letter-spacing:.3px;border-radius:8px}
+#wr-vtabs .tab.active{border-left:3px solid var(--orange)}
 /* ─── VIEWS ─── */
 .view{display:none}
 .view.active{display:block}
@@ -692,18 +695,18 @@ body.embedded #content {
       </div>
 
       <div style="display:flex;gap:16px;align-items:flex-start">
-      <div class="tabs" style="flex-direction:column;width:180px;flex-shrink:0;margin-bottom:0">
-        <div class="tab active" onclick="filterWR('all',this)">ทั้งหมด</div>
-        <div class="tab" onclick="filterWR('open',this)">📋 List WR<span class="tab-badge" id="tab-badge-open" style="display:none">0</span></div>
-        <div class="tab" onclick="filterWR('inprogress',this)">⚡ In Progress<span class="tab-badge" id="tab-badge-inprogress" style="display:none">0</span></div>
+      <div class="tabs" id="wr-vtabs" style="flex-direction:column;width:180px;flex-shrink:0;margin-bottom:0">
+        <div class="tab active" onclick="filterWR('all',this)">📊 Overview</div>
+        <div class="tab" onclick="filterWR('open',this)">📋 New WR<span class="tab-badge" id="tab-badge-open" style="display:none">0</span></div>
+        <div class="tab" onclick="filterWR('inprogress',this)">⚡ In Progress / Pending<span class="tab-badge" id="tab-badge-inprogress" style="display:none">0</span></div>
         <div class="tab" onclick="filterWR('closed',this)">✅ Closed<span class="tab-badge" id="tab-badge-closed" style="display:none">0</span></div>
-        <div class="tab" onclick="filterWR('evaluate',this)">🏅 Evaluate<span class="tab-badge" id="tab-badge-evaluate" style="display:none">0</span></div>
+        <div class="tab" onclick="filterWR('evaluate',this)">🏅 Evaluate &amp; Approve<span class="tab-badge" id="tab-badge-evaluate" style="display:none">0</span></div>
+        <div class="tab" onclick="filterWR('summarize',this)">📈 Summarize WR</div>
+        <div class="tab" onclick="filterWR('maintainability',this)">🔬 Maintainability</div>
         <div class="tab" onclick="filterWR('sla',this)">🎯 SLA</div>
-        <div class="tab" onclick="filterWR('history',this)">📖 Asset History</div>
         <div class="tab" onclick="filterWR('recurring',this)">🔄 Repeated Repairs</div>
         <div class="tab" onclick="filterWR('reoperation',this)">⚙ Re-OPT</div>
-        <div class="tab" onclick="filterWR('summarize',this)">📊 Summarize</div>
-        <div class="tab" onclick="filterWR('maintainability',this)">🔬 Maintainability</div>
+        <div class="tab" onclick="filterWR('history',this)">📖 Asset History</div>
       </div>
       <div style="flex:1;min-width:0">
 
@@ -767,9 +770,45 @@ body.embedded #content {
             </table>
           </div>
         </div>
-        <div class="card">
+        <div class="card mb-16">
           <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:12px">Target Time (hr) ต่อระบบ — แก้ไขได้</div>
           <div id="target-time-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px"></div>
+        </div>
+
+        <!-- System Frequency (AC/SN/FP/EE ฯลฯ) -->
+        <div class="card mb-16">
+          <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:4px">🏭 ความถี่แจ้งซ่อมตามระบบ (AC/SN/FP/EE ฯลฯ)</div>
+          <div class="text-muted mb-12" style="font-size:12px">นับจากระบบของ Asset ที่ผูกกับ WR ทุกสถานะ — เรียงจากระบบที่แจ้ง/เสียบ่อยที่สุด</div>
+          <div class="chart-wrap" style="height:220px;margin-bottom:12px"><canvas id="chartSysFreq"></canvas></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ระบบ</th><th>จำนวนแจ้งซ่อม</th><th>ปิดงานแล้ว</th><th>MTTR เฉลี่ย (ชม.)</th><th>ค่าซ่อมรวม</th></tr></thead>
+              <tbody id="sysfreq-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Top 10 Similar Issues -->
+        <div class="card">
+          <div class="flex justify-between flex-center mb-12" style="flex-wrap:wrap;gap:10px">
+            <div>
+              <div style="font-family:var(--font-display);font-size:14px;font-weight:600">🔟 Top 10 อาการเสียที่ใกล้เคียงกัน</div>
+              <div class="text-muted" style="font-size:11px">จัดกลุ่มจากข้อความอาการที่ตรงกัน — เลือกช่วงเดือน/ปีเพื่อดูแนวโน้ม</div>
+            </div>
+            <div class="flex gap-8" style="align-items:center;flex-wrap:wrap">
+              <label class="flex gap-8" style="align-items:center;font-size:12px;color:var(--text2);cursor:pointer;user-select:none" title="จัดกลุ่มอาการที่เขียนต่างกันแต่ความหมายใกล้เคียงกันเข้าด้วยกัน">
+                <input type="checkbox" id="top10-smart" checked onchange="renderTop10Issues()"> 🧠 Smart Match (จับคำคล้ายกัน)
+              </label>
+              <select class="form-control" id="top10-month" onchange="renderTop10Issues()" style="width:120px"></select>
+              <select class="form-control" id="top10-year" onchange="renderTop10Issues()" style="width:100px"></select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>อาการ/ปัญหา (ตัวแทนกลุ่ม)</th><th>ระบบที่พบบ่อย</th><th>จำนวนครั้ง</th></tr></thead>
+              <tbody id="top10-table"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -3933,11 +3972,160 @@ function renderSummarize(){
         <span style="font-size:12px;color:var(--text3)">ชั่วโมง</span>
       </div>
     </div>`).join('');
+
+  renderSysFreq();
+  renderTop10Issues();
 }
 
 function updateTarget(sys,val){
   systemTargets[sys]=parseFloat(val)||8;
   DB.set('wrTargets',systemTargets);
+}
+
+// ── ระบบที่แจ้งซ่อม/เสียบ่อย (AC/SN/FP/EE ฯลฯ) ──
+function getWRSystemCode(w){
+  const a=assets.find(x=>x.id===w.assetId);
+  return (a&&a.sys) || w.system || 'อื่นๆ';
+}
+function renderSysFreq(){
+  const counts={};
+  workRequests.forEach(w=>{
+    const sys=getWRSystemCode(w);
+    if(!counts[sys])counts[sys]={count:0,closed:0,mttrSum:0,mttrN:0,cost:0};
+    counts[sys].count++;
+    if(w.status==='closed'||w.status==='approved'){
+      counts[sys].closed++;
+      counts[sys].cost+=w.totalCost||0;
+      if(w.mttr){counts[sys].mttrSum+=parseFloat(w.mttr);counts[sys].mttrN++;}
+    }
+  });
+  const rows=Object.keys(counts).map(sys=>({sys,...counts[sys],mttrAvg:counts[sys].mttrN?parseFloat((counts[sys].mttrSum/counts[sys].mttrN).toFixed(2)):0}))
+    .sort((a,b)=>b.count-a.count);
+  const tbl=document.getElementById('sysfreq-table');
+  if(tbl)tbl.innerHTML=rows.length?rows.map(r=>`<tr>
+    <td class="fw-700">${r.sys}</td>
+    <td class="ff-mono text-orange fw-600">${r.count}</td>
+    <td class="ff-mono">${r.closed}</td>
+    <td class="ff-mono text-teal">${r.mttrAvg||'—'}</td>
+    <td class="ff-mono text-green">฿${r.cost.toLocaleString()}</td>
+  </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูล</td></tr>';
+
+  if(document.getElementById('chartSysFreq')){
+    destroyChart('sysFreq');
+    charts.sysFreq=new Chart(document.getElementById('chartSysFreq'),{
+      type:'bar',
+      data:{labels:rows.map(r=>r.sys),datasets:[{label:'จำนวนแจ้งซ่อม',data:rows.map(r=>r.count),backgroundColor:rows.map((r,i)=>i===0?'#EF4444':i===1?'#F97316':'#3B82F6'),borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`แจ้งซ่อม: ${ctx.raw} ครั้ง`}}},
+        scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}
+    });
+  }
+}
+
+// ── Top 10 อาการเสียที่ใกล้เคียงกัน (รายเดือน/รายปี) ──
+function populateTop10Filters(){
+  const mSel=document.getElementById('top10-month'), ySel=document.getElementById('top10-year');
+  if(!mSel||!ySel)return;
+  if(!mSel.dataset.init){
+    const months=['ทั้งปี','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    mSel.innerHTML=months.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+    mSel.value=new Date().getMonth()+1;
+    mSel.dataset.init='1';
+  }
+  if(!ySel.dataset.init){
+    const curY=new Date().getFullYear();
+    const years=new Set(workRequests.filter(w=>w.date).map(w=>new Date(w.date).getFullYear()));
+    years.add(curY);
+    const sorted=[...years].sort((a,b)=>b-a);
+    ySel.innerHTML=sorted.map(y=>`<option value="${y}">ปี ${y+543}</option>`).join('');
+    ySel.value=curY;
+    ySel.dataset.init='1';
+  }
+}
+// ── Smart Match: fuzzy grouping ของข้อความอาการ (รองรับภาษาไทยที่ไม่มีช่องว่างระหว่างคำ) ──
+// ใช้ character n-gram (trigram) + Jaccard similarity แทน word-tokenizing เพราะข้อความไทยส่วนใหญ่เขียนติดกัน
+function normalizeIssueText(s){
+  return (s||'')
+    .toLowerCase()
+    .replace(/[.,!?()\-_/\\"'`~*#@:;๐-๙0-9]/g,' ')   // ตัดเครื่องหมาย/ตัวเลข ที่ทำให้ข้อความคล้ายกันดูต่างกัน
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function getTextGrams(norm,n){
+  n=n||3;
+  const clean=norm.replace(/ /g,''); // ต่อคำติดกันเพื่อทำ n-gram แบบตัวอักษร (เหมาะกับภาษาไทย)
+  if(clean.length<n) return new Set([clean]);
+  const grams=new Set();
+  for(let i=0;i<=clean.length-n;i++) grams.add(clean.substring(i,i+n));
+  return grams;
+}
+function jaccardSim(a,b){
+  if(!a.size||!b.size)return 0;
+  let inter=0;
+  a.forEach(g=>{ if(b.has(g)) inter++; });
+  const union=a.size+b.size-inter;
+  return union?inter/union:0;
+}
+const SMART_MATCH_THRESHOLD=0.42;
+
+function clusterIssues(list){
+  const clusters=[]; // {desc, grams, count, systems:{}}
+  list.forEach(w=>{
+    const desc=(w.desc||'').trim();
+    if(!desc)return;
+    const norm=normalizeIssueText(desc);
+    const grams=getTextGrams(norm,3);
+    const sys=getWRSystemCode(w);
+    let best=null,bestScore=0;
+    clusters.forEach(c=>{
+      const score=jaccardSim(grams,c.grams);
+      if(score>bestScore){ bestScore=score; best=c; }
+    });
+    if(best && bestScore>=SMART_MATCH_THRESHOLD){
+      best.count++;
+      best.systems[sys]=(best.systems[sys]||0)+1;
+      // เก็บข้อความที่สั้น/กระชับที่สุดไว้เป็นตัวแทนกลุ่ม
+      if(desc.length<best.desc.length) best.desc=desc;
+    }else{
+      clusters.push({desc,grams,count:1,systems:{[sys]:1}});
+    }
+  });
+  return clusters;
+}
+function exactGroupIssues(list){
+  const groups={};
+  list.forEach(w=>{
+    const key=(w.desc||'').trim().toLowerCase();
+    if(!key)return;
+    if(!groups[key])groups[key]={desc:w.desc.trim(),count:0,systems:{}};
+    groups[key].count++;
+    const sys=getWRSystemCode(w);
+    groups[key].systems[sys]=(groups[key].systems[sys]||0)+1;
+  });
+  return Object.values(groups);
+}
+
+function renderTop10Issues(){
+  populateTop10Filters();
+  const mEl=document.getElementById('top10-month'), yEl=document.getElementById('top10-year'), sEl=document.getElementById('top10-smart');
+  if(!mEl||!yEl)return;
+  const month=parseInt(mEl.value)||0;
+  const year=parseInt(yEl.value)||new Date().getFullYear();
+  const smart=sEl?sEl.checked:true;
+  let list=workRequests.filter(w=>w.date && new Date(w.date).getFullYear()===year);
+  if(month>0) list=list.filter(w=>new Date(w.date).getMonth()+1===month);
+
+  const clusters=smart?clusterIssues(list):exactGroupIssues(list);
+  const top10=clusters.sort((a,b)=>b.count-a.count).slice(0,10);
+  const tbl=document.getElementById('top10-table');
+  if(tbl)tbl.innerHTML=top10.length?top10.map((g,i)=>{
+    const topSys=Object.entries(g.systems).sort((a,b)=>b[1]-a[1])[0]?.[0]||'—';
+    return `<tr>
+      <td class="ff-mono fw-700 text-orange">${i+1}</td>
+      <td style="max-width:320px;font-size:12px">${g.desc}</td>
+      <td><span class="tag">${topSys}</span></td>
+      <td class="ff-mono text-red fw-600">${g.count}</td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--text3)">ไม่พบข้อมูลในช่วงที่เลือก</td></tr>';
 }
 
 // ── Maintainability per Asset ──
