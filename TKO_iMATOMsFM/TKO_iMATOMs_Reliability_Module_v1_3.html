@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -346,7 +347,7 @@ body.embedded #content {
   <div class="sidebar-section">Asset Core</div>
   <div class="nav-item" onclick="showView('assets')">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L2 4v4c0 3.3 2.5 6.4 6 7 3.5-.6 6-3.7 6-7V4L8 1z"/></svg>
-    ทะเบียนสินทรัพย์
+    Asset ID & Register
   </div>
   <div class="nav-item" onclick="showView('lifecycle')">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8 4v4l3 2" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
@@ -358,7 +359,7 @@ body.embedded #content {
   </div>
   <div class="nav-item" onclick="showView('inspection')">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M6 2a4 4 0 100 8A4 4 0 006 2zm0 1.5a2.5 2.5 0 110 5 2.5 2.5 0 010-5z"/><path d="M9.9 9.9l3.5 3.5-1.1 1.1-3.5-3.5 1.1-1.1z"/></svg>
-    ตรวจสอบประจำปี
+    Annual Review
     <span class="nav-badge">!</span>
   </div>
   <div class="nav-item" onclick="showView('valuation')">
@@ -385,7 +386,7 @@ body.embedded #content {
   </div>
   <div class="nav-item" onclick="showView('inventory')">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M2 12V6l6-4 6 4v6l-6 3-6-3z" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 2v13M2 6l6 4 6-4" stroke="currentColor" stroke-width="1.3" fill="none"/></svg>
-    Inventory (คลังวัสดุ)
+    Inventory
   </div>
 
   <div class="sidebar-section">System</div>
@@ -489,7 +490,7 @@ body.embedded #content {
     <!-- ══════════════ ASSET REGISTER ══════════════ -->
     <div id="view-assets" class="view">
       <div class="section-header">
-        <div><div class="section-title">🏭 ทะเบียนสินทรัพย์</div><div class="section-sub">Asset Register — บริหารจัดการข้อมูลสินทรัพย์ทั้งหมด</div></div>
+        <div><div class="section-title">🏭 Asset ID & Register</div><div class="section-sub">Asset Register — บริหารจัดการข้อมูลสินทรัพย์ทั้งหมด</div></div>
         <div class="flex gap-8">
           <button class="btn btn-secondary btn-sm" onclick="cleanOldDemoAssets()" title="ลบ Asset ที่ ID เป็นรูปแบบเก่า (ไม่มีรหัส Sub-System เช่น VH-AC-01)">🧹 ล้าง ID รูปแบบเก่า</button>
           <button class="btn btn-secondary btn-sm" onclick="openModal('importModal')">📂 Import Excel</button>
@@ -578,9 +579,9 @@ body.embedded #content {
     <!-- ══════════════ ANNUAL INSPECTION ══════════════ -->
     <div id="view-inspection" class="view">
       <div class="section-header">
-        <div><div class="section-title">🔍 ระบบตรวจสอบ Asset ประจำปี</div><div class="section-sub">Annual Asset Verification — สแกน QR Code เพื่ออัปเดตสถานะ</div></div>
+        <div><div class="section-title">🔍 Annual Review</div><div class="section-sub">Annual Asset Verification — สแกน QR Code เพื่ออัปเดตสถานะ</div></div>
         <div class="flex gap-8">
-          <button class="btn btn-secondary btn-sm" onclick="openModal('inspectModal')">📱 สแกน QR (ทดสอบ)</button>
+          <button class="btn btn-secondary btn-sm" onclick="openModal('inspectModal')">📷 สแกน QR ด้วยกล้อง</button>
           <button class="btn btn-primary btn-sm" onclick="exportInspection()">⬇ Export Report</button>
         </div>
       </div>
@@ -1191,7 +1192,7 @@ body.embedded #content {
     <!-- ══════════════ INVENTORY ══════════════ -->
     <div id="view-inventory" class="view">
       <div class="section-header">
-        <div><div class="section-title">📦 Inventory System — คลังวัสดุ</div><div class="section-sub">รับเข้า/จ่ายออก — ROP Calculation — มูลค่าคงเหลือ</div></div>
+        <div><div class="section-title">📦 Inventory System</div><div class="section-sub">รับเข้า/จ่ายออก — ROP Calculation — มูลค่าคงเหลือ</div></div>
         <div class="flex gap-8">
           <button class="btn btn-success btn-sm" onclick="openModal('receiveModal')">+ รับเข้าคลัง</button>
           <button class="btn btn-danger btn-sm" onclick="openModal('issueModal')">- จ่ายออกคลัง</button>
@@ -1401,9 +1402,21 @@ body.embedded #content {
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title">📱 ตรวจสอบสินทรัพย์ (QR Scan)</div>
-      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('inspectModal')">✕</button>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeQRScanner();closeModal('inspectModal')">✕</button>
     </div>
-    <div class="form-group"><label class="form-label">Asset ID (สแกน QR หรือพิมพ์)</label><input class="form-control" id="insp-assetid" placeholder="เช่น AST-2025-001" oninput="loadInspectAsset(this.value)"></div>
+    <div class="form-group"><label class="form-label">Asset ID (สแกน QR หรือพิมพ์)</label>
+      <div class="flex gap-6">
+        <input class="form-control" id="insp-assetid" placeholder="เช่น VH-AC-CH-01" style="flex:1" oninput="loadInspectAsset(this.value)">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-open-scanner" title="เปิดกล้องสแกน QR" onclick="openQRScanner()">📷 สแกน</button>
+      </div>
+    </div>
+    <div id="qr-scanner-wrap" style="display:none;margin-bottom:12px">
+      <div id="qr-scanner-box" style="border-radius:8px;overflow:hidden;background:#000;min-height:220px"></div>
+      <div class="flex justify-between flex-center mt-8">
+        <div class="text-muted" style="font-size:11px" id="qr-scanner-status">📷 หันกล้องไปที่ QR Code บนสินทรัพย์</div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeQRScanner()">✕ ปิดกล้อง</button>
+      </div>
+    </div>
     <div id="inspect-info" style="display:none">
       <div class="card-sm mb-12" id="inspect-asset-card"></div>
       <div class="form-group"><label class="form-label">ผลการตรวจสอบ</label>
@@ -1422,7 +1435,7 @@ body.embedded #content {
       <div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-control" id="insp-remark" rows="2" placeholder="รายละเอียดเพิ่มเติม"></textarea></div>
     </div>
     <div class="flex gap-8 mt-16" style="justify-content:flex-end">
-      <button class="btn btn-secondary" onclick="closeModal('inspectModal')">ยกเลิก</button>
+      <button class="btn btn-secondary" onclick="closeQRScanner();closeModal('inspectModal')">ยกเลิก</button>
       <button class="btn btn-primary" onclick="saveInspection()">💾 บันทึกผลตรวจ</button>
     </div>
   </div>
@@ -2156,9 +2169,9 @@ function seedData() {
 //  VIEW NAVIGATION
 // ═══════════════════════════════════════════════════════════
 const viewTitles = {
-  dashboard:'Dashboard — ภาพรวม', assets:'ทะเบียนสินทรัพย์',
+  dashboard:'Dashboard — ภาพรวม', assets:'Asset ID & Register',
   lifecycle:'Lifecycle Tracker', qrcode:'QR Code Assets',
-  inspection:'ตรวจสอบประจำปี', valuation:'Value Add — มูลค่า',
+  inspection:'Annual Review', valuation:'Value Add — มูลค่า',
   workrequest:'Work Request System', operation:'Operation System',
   ppm:'Preventive Maintenance', contract:'MA Contract', inventory:'Inventory',
   adminmgmt:'Admin Management'
@@ -2624,6 +2637,51 @@ function quickInspect(id) {
   openModal('inspectModal');
   document.getElementById('insp-assetid').value = id;
   loadInspectAsset(id);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  QR CAMERA SCANNER — สแกน QR ที่ติดอยู่บนสินทรัพย์จริงผ่านกล้องมือถือ/เว็บแคม
+// ═══════════════════════════════════════════════════════════
+let _qrScanner = null;
+function openQRScanner(){
+  if (typeof Html5Qrcode === 'undefined'){
+    alert('⚠ โหลดไลบรารีกล้องไม่สำเร็จ (ต้องมีอินเทอร์เน็ต) — พิมพ์ Asset ID เองแทนได้');
+    return;
+  }
+  document.getElementById('qr-scanner-wrap').style.display = 'block';
+  document.getElementById('qr-scanner-status').textContent = '📷 กำลังเปิดกล้อง...';
+  _qrScanner = new Html5Qrcode('qr-scanner-box');
+  Html5Qrcode.getCameras().then(cams=>{
+    // ใช้กล้องหลัง (back camera) เป็นค่าเริ่มต้นบนมือถือ ถ้ามี
+    const backCam = cams.find(c=>/back|rear|environment/i.test(c.label));
+    const cameraId = backCam ? backCam.id : (cams[0] ? cams[0].id : null);
+    if (!cameraId){ document.getElementById('qr-scanner-status').textContent='❌ ไม่พบกล้อง'; return; }
+    _qrScanner.start(
+      cameraId,
+      { fps: 10, qrbox: { width: 220, height: 220 } },
+      (decodedText) => {
+        // สแกนเจอ — เติม Asset ID อัตโนมัติแล้วปิดกล้อง
+        document.getElementById('insp-assetid').value = decodedText.trim();
+        loadInspectAsset(decodedText.trim());
+        document.getElementById('qr-scanner-status').textContent = `✅ สแกนพบ: ${decodedText}`;
+        setTimeout(closeQRScanner, 600);
+      },
+      () => { /* decode error ต่อเนื่อง — เงียบไว้ ไม่ต้อง spam log */ }
+    ).catch(err=>{
+      document.getElementById('qr-scanner-status').textContent = '❌ เปิดกล้องไม่ได้ — ตรวจสอบสิทธิ์การใช้กล้องของเบราว์เซอร์';
+      console.error('QR scanner start failed', err);
+    });
+  }).catch(err=>{
+    document.getElementById('qr-scanner-status').textContent = '❌ ไม่พบกล้อง หรือไม่ได้อนุญาตสิทธิ์กล้อง';
+    console.error('getCameras failed', err);
+  });
+}
+function closeQRScanner(){
+  document.getElementById('qr-scanner-wrap').style.display = 'none';
+  if (_qrScanner){
+    _qrScanner.stop().then(()=>_qrScanner.clear()).catch(()=>{});
+    _qrScanner = null;
+  }
 }
 
 function loadInspectAsset(id) {

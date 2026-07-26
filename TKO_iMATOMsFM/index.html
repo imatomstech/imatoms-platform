@@ -475,10 +475,10 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     <div class="acc-bd" id="ab-s1">
       <!-- Asset Core -->
       <div style="padding:5px 10px 2px 22px;font-size:9px;font-weight:700;letter-spacing:1px;color:var(--text3);text-transform:uppercase;font-family:var(--font-display)">Asset Core</div>
-      <div class="ni" style="--nc:var(--orange)" id="nav-assets" onclick="openReliabilityView('assets')"><span class="ni-dot"></span>ทะเบียนสินทรัพย์</div>
+      <div class="ni" style="--nc:var(--orange)" id="nav-assets" onclick="openReliabilityView('assets')"><span class="ni-dot"></span>Asset ID & Register</div>
       <div class="ni" style="--nc:var(--orange)" id="nav-lifecycle" onclick="openReliabilityView('lifecycle')"><span class="ni-dot"></span>Lifecycle Tracker</div>
       <div class="ni" style="--nc:var(--orange)" id="nav-qrcode" onclick="openReliabilityView('qrcode')"><span class="ni-dot"></span>QR Code Assets</div>
-      <div class="ni" style="--nc:var(--orange)" id="nav-inspection" onclick="openReliabilityView('inspection')"><span class="ni-dot"></span>ตรวจสอบประจำปี</div>
+      <div class="ni" style="--nc:var(--orange)" id="nav-inspection" onclick="openReliabilityView('inspection')"><span class="ni-dot"></span>Annual Review</div>
       <div class="ni" style="--nc:var(--orange)" id="nav-valuation" onclick="openReliabilityView('valuation')"><span class="ni-dot"></span>Value Add / มูลค่า</div>
       <!-- Framework ALM -->
       <div style="padding:5px 10px 2px 22px;font-size:9px;font-weight:700;letter-spacing:1px;color:var(--text3);text-transform:uppercase;font-family:var(--font-display)">Framework ALM</div>
@@ -486,7 +486,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       <div class="ni" style="--nc:var(--orange)" id="nav-operation" onclick="openReliabilityView('operation')"><span class="ni-dot"></span>Operation (OPT)</div>
       <div class="ni" style="--nc:var(--orange)" id="nav-ppm" onclick="openReliabilityView('ppm')"><span class="ni-dot"></span>Preventive Maint. (PPM)</div>
       <div class="ni" style="--nc:var(--orange)" id="nav-contract" onclick="openReliabilityView('contract')"><span class="ni-dot"></span>MA Contract</div>
-      <div class="ni" style="--nc:var(--orange)" id="nav-inventory" onclick="openReliabilityView('inventory')"><span class="ni-dot"></span>Inventory (คลังวัสดุ)</div>
+      <div class="ni" style="--nc:var(--orange)" id="nav-inventory" onclick="openReliabilityView('inventory')"><span class="ni-dot"></span>Inventory</div>
     </div>
   </div>
 
@@ -696,7 +696,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 
     <!-- ASSETS -->
     <div id="view-assets" class="view">
-      <div class="sh"><div><div class="st">🔧 ทะเบียนสินทรัพย์ (ALC)</div><div class="ss">Asset Lifecycle Control · Reliability</div></div><button class="btn btn-primary" onclick="openModal('m-asset')">+ เพิ่ม Asset</button></div>
+      <div class="sh"><div><div class="st">🔧 Asset ID & Register (ALC)</div><div class="ss">Asset Lifecycle Control · Reliability</div></div><button class="btn btn-primary" onclick="openModal('m-asset')">+ เพิ่ม Asset</button></div>
       <div class="fb">
         <input class="si" placeholder="🔍 ค้นหา Asset ID, ชื่อ..." id="a-search" oninput="renderAssets()">
         <select class="form-control" style="width:140px" id="a-fs" onchange="renderAssets()"><option value="">ทุกสถานะ</option><option value="active">🟢 Active</option><option value="warning">🟡 Warning</option><option value="critical">🔴 Critical</option><option value="inactive">⚫ Inactive</option></select>
@@ -775,7 +775,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 
     <!-- INVENTORY -->
     <div id="view-inventory" class="view">
-      <div class="sh"><div><div class="st">📦 Inventory (คลังวัสดุ)</div><div class="ss">อะไหล่ · Min/Max · เบิก-จ่าย</div></div><button class="btn btn-primary" onclick="openModal('m-inv')">+ เพิ่มรายการ</button></div>
+      <div class="sh"><div><div class="st">📦 Inventory</div><div class="ss">อะไหล่ · Min/Max · เบิก-จ่าย</div></div><button class="btn btn-primary" onclick="openModal('m-inv')">+ เพิ่มรายการ</button></div>
       <div class="kpi-grid">
         <div class="kpi blue"><div class="kl">รายการทั้งหมด</div><div class="kv ffd" id="iv-tot">0</div></div>
         <div class="kpi red"><div class="kl">ต่ำกว่า Min</div><div class="kv ffd" id="iv-low">0</div></div>
@@ -2281,12 +2281,12 @@ const T = {
   'system':         {th:'System',               en:'System'},
   'admin':          {th:'⚙️ Admin Management', en:'⚙️ Admin Management'},
   // Sidebar subitems
-  'assets':         {th:'ทะเบียนสินทรัพย์ (ALC)',  en:'Asset Register (ALC)'},
+  'assets':         {th:'Asset ID & Register (ALC)',  en:'Asset Register (ALC)'},
   'work_request':   {th:'Work Request (WR)',          en:'Work Request (WR)'},
   'ppm':            {th:'Preventive Maint. (PPM)',     en:'Preventive Maint. (PPM)'},
   'operation':      {th:'Operation (OM)',              en:'Operation (OM)'},
   'ma_contract':    {th:'MA Contract',                 en:'MA Contract'},
-  'inventory':      {th:'Inventory (คลังวัสดุ)',       en:'Inventory (Spare Parts)'},
+  'inventory':      {th:'Inventory',       en:'Inventory (Spare Parts)'},
   'inspection':     {th:'Annual Inspection',           en:'Annual Inspection'},
   'ncr':            {th:'NCR / CAR / PAR',             en:'NCR / CAR / PAR'},
   'fmea':           {th:'FMEA Risk Analysis',          en:'FMEA Risk Analysis'},
@@ -2505,11 +2505,11 @@ function getReliabilityFile(){
 
 function openReliabilityView(viewName){
   const labels={
-    assets:'ทะเบียนสินทรัพย์',lifecycle:'Lifecycle Tracker',
-    qrcode:'QR Code Assets',inspection:'ตรวจสอบประจำปี',
+    assets:'Asset ID & Register',lifecycle:'Lifecycle Tracker',
+    qrcode:'QR Code Assets',inspection:'Annual Review',
     valuation:'Value Add / มูลค่า',workrequest:'Work Request (WR)',
     operation:'Operation (OPT)',ppm:'Preventive Maint. (PPM)',
-    contract:'MA Contract',inventory:'Inventory (คลังวัสดุ)',
+    contract:'MA Contract',inventory:'Inventory',
   };
   // ── Hide ALL views + force-hide modframe (has flex inline override) ──
   document.querySelectorAll('.view').forEach(v=>{
@@ -2935,7 +2935,7 @@ const META={
   modules:{t:'🏢 Business Module Hub',b:'Business Modules'},
   ai:{t:'🤖 AI Analytics',b:'Claude API · 6-Strategy Intelligence'},
   integrations:{t:'🔌 Integrations',b:'IoT · BAS · Line OA · Looker · Google'},
-  assets:{t:'🔧 ทะเบียนสินทรัพย์ (ALC)',b:'Reliability › Asset Lifecycle'},
+  assets:{t:'🔧 Asset ID & Register (ALC)',b:'Reliability › Asset Lifecycle'},
   'rel-frame':{t:'🔧 Reliability Module',b:'iMATOMs System › Reliability'},
   workrequest:{t:'🔧 Work Request (WR)',b:'Reliability › แจ้งซ่อม'},
   ppm:{t:'📅 Preventive Maintenance',b:'Reliability › PPM'},
