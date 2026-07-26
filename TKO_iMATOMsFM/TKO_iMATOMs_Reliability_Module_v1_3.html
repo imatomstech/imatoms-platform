@@ -689,7 +689,7 @@ body.embedded #content {
           <div class="chart-wrap" style="height:180px"><canvas id="chartMTTR"></canvas></div>
         </div>
         <div class="card">
-          <div style="font-family:var(--font-display);font-size:13px;font-weight:600;margin-bottom:6px">Maintainability <span style="font-size:11px;color:var(--text3);font-weight:400">(%)</span></div>
+          <div style="font-family:var(--font-display);font-size:13px;font-weight:600;margin-bottom:6px">Maintainability <span style="font-size:11px;color:var(--text3);font-weight:400">(%) — แยกตามระบบ (AC/SN/FP/EE ฯลฯ)</span></div>
           <div class="chart-wrap" style="height:180px"><canvas id="chartMaintWR"></canvas></div>
         </div>
       </div>
@@ -761,7 +761,7 @@ body.embedded #content {
             <table>
               <thead>
                 <tr>
-                  <th>System</th><th>Count (times)</th><th>Time (hr)</th>
+                  <th>ประเภทงาน (Work Type)</th><th>Count (times)</th><th>Time (hr)</th>
                   <th>MTTR (hr/times)</th><th>Target (hr)</th>
                   <th>Cost (THB)</th><th>Maintainability</th><th>ระดับ</th>
                 </tr>
@@ -771,7 +771,7 @@ body.embedded #content {
           </div>
         </div>
         <div class="card mb-16">
-          <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:12px">Target Time (hr) ต่อระบบ — แก้ไขได้</div>
+          <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:12px">Target Time (hr) ต่อประเภทงาน (Work Type) — แก้ไขได้</div>
           <div id="target-time-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px"></div>
         </div>
 
@@ -3059,18 +3059,24 @@ function renderWR(){
       scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E',callback:v=>v+'h'},grid:{color:'#21262D'}}}}
   });
 
-  // Maintainability chart
+  // Maintainability chart — แยกตามระบบจริง (AC/SN/EE/FP/EL ฯลฯ) ตามที่ขอไว้
   destroyChart('maintWR');
-  const maintData=WR_SYSTEMS.map(sys=>{
-    const list=workRequests.filter(w=>w.status==='closed'&&w.worktype===sys&&w.mttr);
-    if(!list.length)return 0;
-    const avgM=list.reduce((s,w)=>s+parseFloat(w.mttr),0)/list.length;
-    const target=systemTargets[sys]||8;
-    return parseFloat((1-Math.exp(-target/avgM)*100).toFixed(1));
+  const MAINT_TARGET_HR=8;
+  const maintBySys={};
+  workRequests.filter(w=>w.status==='closed'&&w.mttr).forEach(w=>{
+    const sys=getWRSystemCode(w);
+    if(!maintBySys[sys])maintBySys[sys]=[];
+    maintBySys[sys].push(parseFloat(w.mttr));
+  });
+  const maintSysList=Object.keys(maintBySys).sort((a,b)=>maintBySys[b].length-maintBySys[a].length);
+  const maintData=maintSysList.map(sys=>{
+    const list=maintBySys[sys];
+    const avgM=list.reduce((s,v)=>s+v,0)/list.length;
+    return avgM>0?parseFloat(((1-Math.exp(-MAINT_TARGET_HR/avgM))*100).toFixed(1)):0;
   });
   charts.maintWR=new Chart(document.getElementById('chartMaintWR'),{
     type:'bar',
-    data:{labels:WR_SYSTEMS,datasets:[{label:'Maintainability (%)',data:maintData,
+    data:{labels:maintSysList.length?maintSysList:['ยังไม่มีข้อมูล'],datasets:[{label:'Maintainability (%)',data:maintData.length?maintData:[0],
       backgroundColor:maintData.map(v=>v>=90?'#22C55E':v>=70?'#EAB308':'#EF4444'),borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`M = ${ctx.raw}%`}}},
