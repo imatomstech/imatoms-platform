@@ -40,6 +40,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .nav-icon{width:16px;height:16px;flex-shrink:0;opacity:.7}
 .nav-item.active .nav-icon{opacity:1}
 .nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 5px;border-radius:8px;min-width:18px;text-align:center}
+.tab-badge{margin-left:6px;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:9px;min-width:16px;display:inline-block;vertical-align:middle}
+.tab-badge.blink{animation:tabBadgeBlink 1s ease-in-out infinite}
+@keyframes tabBadgeBlink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.15)}}
 .sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
 /* ─── MAIN ─── */
 #main{margin-left:var(--sidebar-w);min-height:100vh}
@@ -237,6 +240,12 @@ body.embedded #content {
 </style>
 </head>
 <body>
+
+<!-- Image Lightbox (photo viewer) -->
+<div id="img-lightbox" onclick="closeImageLightbox()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;cursor:zoom-out">
+  <img id="img-lightbox-src" src="" style="max-width:92vw;max-height:92vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.6)">
+  <button onclick="closeImageLightbox()" style="position:absolute;top:18px;right:24px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;width:36px;height:36px;border-radius:50%;cursor:pointer">✕</button>
+</div>
 
 <!-- ══════════════════════════════════════════════════════
      LOGIN SCREEN
@@ -685,10 +694,10 @@ body.embedded #content {
       <div style="display:flex;gap:16px;align-items:flex-start">
       <div class="tabs" style="flex-direction:column;width:180px;flex-shrink:0;margin-bottom:0">
         <div class="tab active" onclick="filterWR('all',this)">ทั้งหมด</div>
-        <div class="tab" onclick="filterWR('open',this)">📋 List WR</div>
-        <div class="tab" onclick="filterWR('inprogress',this)">⚡ In Progress</div>
-        <div class="tab" onclick="filterWR('closed',this)">✅ Closed</div>
-        <div class="tab" onclick="filterWR('evaluate',this)">🏅 Evaluate</div>
+        <div class="tab" onclick="filterWR('open',this)">📋 List WR<span class="tab-badge" id="tab-badge-open" style="display:none">0</span></div>
+        <div class="tab" onclick="filterWR('inprogress',this)">⚡ In Progress<span class="tab-badge" id="tab-badge-inprogress" style="display:none">0</span></div>
+        <div class="tab" onclick="filterWR('closed',this)">✅ Closed<span class="tab-badge" id="tab-badge-closed" style="display:none">0</span></div>
+        <div class="tab" onclick="filterWR('evaluate',this)">🏅 Evaluate<span class="tab-badge" id="tab-badge-evaluate" style="display:none">0</span></div>
         <div class="tab" onclick="filterWR('sla',this)">🎯 SLA</div>
         <div class="tab" onclick="filterWR('history',this)">📖 Asset History</div>
         <div class="tab" onclick="filterWR('recurring',this)">🔄 Repeated Repairs</div>
@@ -700,6 +709,22 @@ body.embedded #content {
 
       <!-- Main WR table (all / open / inprogress / closed) -->
       <div id="wr-main-view">
+        <div class="card-sm mb-12" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+          <div><label class="form-label" style="font-size:10px">จากวันที่</label><input type="date" class="form-control" id="wrf-datefrom" onchange="renderWR()" style="width:140px"></div>
+          <div><label class="form-label" style="font-size:10px">ถึงวันที่</label><input type="date" class="form-control" id="wrf-dateto" onchange="renderWR()" style="width:140px"></div>
+          <div><label class="form-label" style="font-size:10px">อาคาร</label><select class="form-control" id="wrf-building" onchange="renderWR()" style="width:130px"><option value="">อาคาร: ทั้งหมด</option></select></div>
+          <div><label class="form-label" style="font-size:10px">พื้นที่/โซน</label><select class="form-control" id="wrf-zone" onchange="renderWR()" style="width:130px"><option value="">พื้นที่: ทั้งหมด</option></select></div>
+          <div><label class="form-label" style="font-size:10px">ช่างผู้ดำเนินการ</label><select class="form-control" id="wrf-tech" onchange="renderWR()" style="width:140px"><option value="">ช่าง: ทั้งหมด</option></select></div>
+          <div><label class="form-label" style="font-size:10px">ประเภทงาน</label><select class="form-control" id="wrf-type" onchange="renderWR()" style="width:120px">
+            <option value="">ทั้งหมด</option>
+            <option value="BD">BD</option><option value="RM">RM</option><option value="CM">CM</option><option value="OM">OM</option><option value="PM">PM</option><option value="MA">MA</option><option value="Sub">Sub</option><option value="PJ">PJ</option><option value="OTH">OTH</option>
+          </select></div>
+          <div><label class="form-label" style="font-size:10px">ระบบ</label><select class="form-control" id="wrf-system" onchange="renderWR()" style="width:120px">
+            <option value="">ทั้งหมด</option>
+            <option>AC</option><option>BAS</option><option>BS</option><option>CCTV</option><option>EC</option><option>EE</option><option>EL</option><option>ER</option><option>FA</option><option>FP</option><option>FUR</option><option>MATV</option><option>SN</option><option>TR</option><option>VN</option><option>WWT</option>
+          </select></div>
+          <button class="btn btn-secondary btn-sm" onclick="resetWRFilters()">🗑 ล้างตัวกรอง</button>
+        </div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -2858,6 +2883,71 @@ function calcDep() {
 // ═══════════════════════════════════════════════════════════
 //  WORK REQUEST — Full Enhanced Module
 // ═══════════════════════════════════════════════════════════
+function populateWRFilterOptions(){
+  const bSel=document.getElementById('wrf-building'), zSel=document.getElementById('wrf-zone'), tSel=document.getElementById('wrf-tech');
+  if(!bSel||!zSel||!tSel)return;
+  const curB=bSel.value, curZ=zSel.value, curT=tSel.value;
+  const buildings=[...new Set(assets.map(a=>a.building).filter(Boolean))].sort();
+  const zones=[...new Set(assets.map(a=>a.zone).filter(Boolean))].sort();
+  const techs=[...new Set(workRequests.map(w=>w.assign).filter(Boolean))].sort();
+  bSel.innerHTML='<option value="">อาคาร: ทั้งหมด</option>'+buildings.map(b=>`<option value="${b}" ${b===curB?'selected':''}>${b}</option>`).join('');
+  zSel.innerHTML='<option value="">พื้นที่: ทั้งหมด</option>'+zones.map(z=>`<option value="${z}" ${z===curZ?'selected':''}>${z}</option>`).join('');
+  tSel.innerHTML='<option value="">ช่าง: ทั้งหมด</option>'+techs.map(t=>`<option value="${t}" ${t===curT?'selected':''}>${t}</option>`).join('');
+}
+function applyWRFilters(list){
+  const df=document.getElementById('wrf-datefrom')?.value;
+  const dt=document.getElementById('wrf-dateto')?.value;
+  const bld=document.getElementById('wrf-building')?.value;
+  const zn=document.getElementById('wrf-zone')?.value;
+  const tech=document.getElementById('wrf-tech')?.value;
+  const type=document.getElementById('wrf-type')?.value;
+  const sys=document.getElementById('wrf-system')?.value;
+  if(!df&&!dt&&!bld&&!zn&&!tech&&!type&&!sys)return list;
+  return list.filter(w=>{
+    if(df && w.date && new Date(w.date) < new Date(df)) return false;
+    if(dt && w.date && new Date(w.date) > new Date(dt+'T23:59:59')) return false;
+    const wA=assets.find(a=>a.id===w.assetId);
+    const bldVal=w.building||wA?.building||'';
+    const znVal=w.zone||wA?.zone||'';
+    if(bld && bldVal!==bld) return false;
+    if(zn && znVal!==zn) return false;
+    if(tech && w.assign!==tech) return false;
+    if(type && w.worktype!==type) return false;
+    if(sys && w.system!==sys) return false;
+    return true;
+  });
+}
+function resetWRFilters(){
+  ['wrf-datefrom','wrf-dateto','wrf-building','wrf-zone','wrf-tech','wrf-type','wrf-system'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderWR();
+}
+
+function setTabBadge(id,count){
+  const el=document.getElementById(id);if(!el)return;
+  if(count>0){ el.textContent=count>99?'99+':count; el.style.display='inline-block'; el.classList.add('blink'); }
+  else{ el.style.display='none'; el.classList.remove('blink'); }
+}
+function updateBadges(){
+  if(typeof workRequests==='undefined')return;
+  const openCount=workRequests.filter(w=>w.status==='open').length;
+  const inpCount=workRequests.filter(w=>['inprogress','arrived'].includes(w.status)).length;
+  const closedPending=workRequests.filter(w=>w.status==='closed'&&!w.reviewed).length;
+  const evalPending=workRequests.filter(w=>(w.status==='closed'||w.status==='approved')&&!w.approvedBy).length;
+  setTabBadge('tab-badge-open',openCount);
+  setTabBadge('tab-badge-inprogress',inpCount);
+  setTabBadge('tab-badge-closed',closedPending);
+  setTabBadge('tab-badge-evaluate',evalPending);
+}
+
+function openImageLightbox(src){
+  document.getElementById('img-lightbox-src').src=src;
+  document.getElementById('img-lightbox').style.display='flex';
+}
+function closeImageLightbox(){
+  document.getElementById('img-lightbox').style.display='none';
+  document.getElementById('img-lightbox-src').src='';
+}
+
 let wrTabFilter='all', closingWRId=null, acceptingWRId=null, starScore=0, closedParts=[], sigCtx=null, sigDrawing=false, closePhotos=[];
 
 function handleClosePhotoUpload(e){
@@ -2873,8 +2963,8 @@ function renderClosePhotos(){
   const el=document.getElementById('cl-photo-list');if(!el)return;
   el.innerHTML=closePhotos.map((p,i)=>`
     <div style="position:relative">
-      <img src="${p}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">
-      <span onclick="closePhotos.splice(${i},1);renderClosePhotos()" style="position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">✕</span>
+      <img src="${p}" onclick="openImageLightbox('${p}')" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:zoom-in">
+      <span onclick="event.stopPropagation();closePhotos.splice(${i},1);renderClosePhotos()" style="position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">✕</span>
     </div>`).join('')||'<div class="text-muted" style="font-size:11px">ยังไม่มีรูปแนบ</div>';
 }
 
@@ -2966,6 +3056,11 @@ function renderWR(){
   if(wrTabFilter==='open')list=workRequests.filter(w=>w.status==='open');
   else if(wrTabFilter==='inprogress')list=workRequests.filter(w=>['inprogress','arrived'].includes(w.status));
   else if(wrTabFilter==='closed')list=workRequests.filter(w=>w.status==='closed');
+  if(['all','open','inprogress','closed'].includes(wrTabFilter)){
+    populateWRFilterOptions();
+    list=applyWRFilters(list);
+  }
+  list=[...list].sort((a,b)=>new Date(b.closeDate||b.date||0)-new Date(a.closeDate||a.date||0));
 
   document.getElementById('wr-table').innerHTML=list.length?list.map(w=>{
     const statusBadge=w.status==='open'?'<span class="badge badge-orange">📋 List WR</span>':
@@ -2978,7 +3073,7 @@ function renderWR(){
     const locTxt=locParts.length?locParts.join(' / '):(wA?.location||'—');
     return `<tr>
       <td style="text-align:center">${w.status==='closed'?`<input type="checkbox" ${w.reviewed?'checked':''} title="ติ๊กเมื่อข้อมูลตรวจสอบครบถ้วนแล้ว" onchange="toggleWRReview('${w.id}',this.checked)">`:''}</td>
-      <td><span class="tag ff-mono">${w.id}</span>${w.status==='closed'&&!w.reviewed?'<div style="color:var(--orange);font-size:10px;margin-top:2px">⚠ รอตรวจสอบ</div>':''}</td>
+      <td><span class="tag ff-mono">${w.id}</span>${w.status==='closed'&&!w.reviewed?'<div style="color:var(--orange);font-size:10px;margin-top:2px">⚠ รอตรวจสอบ</div>':''}${w.status==='closed'&&w.evalRejectReason?`<div style="color:var(--red);font-size:10px;margin-top:2px" title="${w.evalRejectReason}">↩ ${w.evalRejectReason.substring(0,25)}${w.evalRejectReason.length>25?'…':''}</div>`:''}</td>
       <td><span class="tag">${w.assetId||'—'}</span></td>
       <td style="font-size:11px;max-width:140px">${locTxt}${w.locationDetail?`<div style="color:var(--orange);margin-top:2px">📍 ${w.locationDetail}</div>`:''}</td>
       <td style="max-width:180px;font-size:12px">${w.desc}</td>
@@ -3250,6 +3345,7 @@ function confirmCloseWR(){
   workRequests[idx].closePhotos=closePhotos;
   workRequests[idx].satisfaction=starScore;
   workRequests[idx].responseTime=responseMins;
+  if(workRequests[idx].evalRejectReason){ workRequests[idx].evalRejectReason=null; workRequests[idx].evalRejectDate=null; }
   DB.set('wr',workRequests);
   closeModal('closeWRModal');
   renderWR();
@@ -3310,7 +3406,8 @@ function toggleWRReview(id,checked){
 
 // ── Evaluate & Approve ──
 function renderEvaluate(){
-  const closed=workRequests.filter(w=>w.status==='closed'||w.status==='approved');
+  const closed=workRequests.filter(w=>w.status==='closed'||w.status==='approved')
+    .sort((a,b)=>new Date(b.closeDate||b.date||0)-new Date(a.closeDate||a.date||0));
   document.getElementById('evaluate-list').innerHTML=closed.length?closed.map(w=>{
     const approved=w.approvedBy;
     const stars='★'.repeat(w.satisfaction||0)+'☆'.repeat(5-(w.satisfaction||0));
@@ -3322,8 +3419,12 @@ function renderEvaluate(){
           <span class="fw-600" style="font-size:13px">${w.desc?.substring(0,45)||'—'}</span>
           ${typeBadge(w.type)} ${priorityBadge(w.priority)}
         </div>
-        <span style="font-size:11px;color:${statusColor};white-space:nowrap">${approved?`✅ อนุมัติ: ${w.approvedBy}`:'⏳ รออนุมัติ'}</span>
+        <div class="flex gap-8 flex-center" style="flex-wrap:wrap">
+          <span style="font-size:11px;color:${statusColor};white-space:nowrap">${approved?`✅ อนุมัติ: ${w.approvedBy}`:'⏳ รออนุมัติ'}</span>
+          <button class="btn btn-secondary btn-sm" onclick="rejectEvaluate('${w.id}')" title="ส่งกลับให้ช่างแก้ไขข้อมูล">↩ แก้ไข</button>
+        </div>
       </div>
+      ${w.evalRejectReason?`<div class="alert alert-warning" style="font-size:12px;padding:6px 12px;margin-bottom:8px">↩ ส่งกลับแก้ไขล่าสุด (${w.evalRejectDate?new Date(w.evalRejectDate).toLocaleString('th-TH'):''}): ${w.evalRejectReason}</div>`:''}
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
         <div><div class="text-muted" style="font-size:10px">Asset</div><span class="tag">${w.assetId||'—'}</span></div>
         <div><div class="text-muted" style="font-size:10px">ลักษณะ/ระบบ</div><span class="fw-600" style="font-size:12px">${w.worktype||'—'} / ${w.system||'—'}</span></div>
@@ -3338,8 +3439,8 @@ function renderEvaluate(){
       ${w.evalWeakness?`<div class="alert alert-warning" style="font-size:12px;padding:6px 12px;margin-bottom:4px">🔧 ${w.evalWeakness}</div>`:''}
       ${w.evalImprove?`<div class="alert alert-info" style="font-size:12px;padding:6px 12px;margin-bottom:8px">🚀 ${w.evalImprove}</div>`:''}
       ${(w.evalSigClose||w.evalSigApprove)?`<div class="flex gap-12 mb-8" style="align-items:flex-end">
-        ${w.evalSigClose?`<div><div class="text-muted" style="font-size:10px">ลายเซ็นช่าง</div><img src="${w.evalSigClose}" style="height:34px;background:var(--bg3);border-radius:4px"></div>`:''}
-        ${w.evalSigApprove?`<div><div class="text-muted" style="font-size:10px">ลายเซ็น${approved?' '+w.approvedBy?.split(':')[0]:' ผู้อนุมัติ'}</div><img src="${w.evalSigApprove}" style="height:34px;background:var(--bg3);border-radius:4px"></div>`:''}
+        ${w.evalSigClose?`<div><div class="text-muted" style="font-size:10px">ลายเซ็นช่าง</div><img src="${w.evalSigClose}" onclick="openImageLightbox('${w.evalSigClose}')" style="height:34px;background:var(--bg3);border-radius:4px;cursor:zoom-in"></div>`:''}
+        ${w.evalSigApprove?`<div><div class="text-muted" style="font-size:10px">ลายเซ็น${approved?' '+w.approvedBy?.split(':')[0]:' ผู้อนุมัติ'}</div><img src="${w.evalSigApprove}" onclick="openImageLightbox('${w.evalSigApprove}')" style="height:34px;background:var(--bg3);border-radius:4px;cursor:zoom-in"></div>`:''}
       </div>`:''}
       <div class="flex gap-8" style="flex-wrap:wrap">
         <button class="btn btn-secondary btn-sm" onclick="openEvaluateModal('${w.id}')">📄 รายงานเต็ม &amp; ประเมิน</button>
@@ -3392,7 +3493,7 @@ function openEvaluateModal(id){
         </div>
       </div>
       <div style="margin-bottom:10px"><div class="text-muted mb-8" style="font-size:10px;font-weight:600;text-transform:uppercase">อะไหล่ที่ใช้</div><div style="font-size:12px;line-height:1.8">${partsStr}</div></div>
-      ${Array.isArray(w.closePhotos)&&w.closePhotos.length?`<div style="margin-bottom:10px"><div class="text-muted mb-8" style="font-size:10px;font-weight:600;text-transform:uppercase">📷 รูปยืนยันการทำงาน</div><div style="display:flex;flex-wrap:wrap;gap:8px">${w.closePhotos.map(p=>`<img src="${p}" style="width:90px;height:90px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">`).join('')}</div></div>`:''}
+      ${Array.isArray(w.closePhotos)&&w.closePhotos.length?`<div style="margin-bottom:10px"><div class="text-muted mb-8" style="font-size:10px;font-weight:600;text-transform:uppercase">📷 รูปยืนยันการทำงาน (คลิกเพื่อขยาย)</div><div style="display:flex;flex-wrap:wrap;gap:8px">${w.closePhotos.map(p=>`<img src="${p}" onclick="openImageLightbox('${p}')" style="width:90px;height:90px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:zoom-in">`).join('')}</div></div>`:''}
       <div class="metric-row"><span class="text-muted">ความพึงพอใจ</span><span style="color:#EAB308;font-size:18px">${stars}</span></div>
       ${w.approvedBy?`<div class="alert alert-success mt-12" style="font-size:12px">✅ อนุมัติโดย ${w.approvedBy} — ${w.approvedDate?new Date(w.approvedDate).toLocaleString('th-TH'):''}</div>`:''}
     </div>
@@ -3471,6 +3572,25 @@ function approveWR(id,role){
   alert(`✅ ${role} อนุมัติงาน ${id} เรียบร้อยครับ`);
 }
 
+function rejectEvaluate(id){
+  const reason=prompt('เหตุผลที่ส่งกลับให้ช่างแก้ไข (สั้นๆ):');
+  if(reason===null)return;
+  if(!reason.trim()){ alert('⚠ กรุณาระบุเหตุผลสั้นๆ ก่อนส่งกลับแก้ไขครับ'); return; }
+  const idx=workRequests.findIndex(w=>w.id===id);if(idx<0)return;
+  workRequests[idx].status='closed';
+  workRequests[idx].reviewed=false;
+  workRequests[idx].evalRejectReason=reason.trim();
+  workRequests[idx].evalRejectDate=new Date().toISOString();
+  workRequests[idx].prevApprovedBy=workRequests[idx].approvedBy||workRequests[idx].prevApprovedBy||null;
+  workRequests[idx].approvedBy=null;
+  workRequests[idx].approvedDate=null;
+  DB.set('wr',workRequests);
+  closeModal('evaluateModal');
+  alert(`↩ ส่งกลับ ${id} ให้ช่างแก้ไขแล้ว: "${reason.trim()}"`);
+  const closedTab=[...document.querySelectorAll('#view-workrequest .tab')].find(t=>t.getAttribute('onclick')&&t.getAttribute('onclick').includes("filterWR('closed'"));
+  filterWR('closed',closedTab||document.querySelector('#view-workrequest .tab'));
+}
+
 function confirmApprove(role){
   const id=document.getElementById('ev-wr-id').value;
   const idx=workRequests.findIndex(w=>w.id===id);if(idx<0)return;
@@ -3513,7 +3633,7 @@ function renderSLA(){
 
   const priColor={critical:'var(--red)',urgently:'var(--yellow)',normal:'var(--green)'};
   const priTarget={critical:'≤5 นาที',urgently:'≤15 นาที',normal:'≤480 นาที'};
-  document.getElementById('sla-table').innerHTML=workRequests.filter(w=>w.date).map(w=>{
+  document.getElementById('sla-table').innerHTML=workRequests.filter(w=>w.date).sort((a,b)=>new Date(b.date)-new Date(a.date)).map(w=>{
     const target=SLA_TARGETS[w.priority||'normal'];
     const actual=w.responseTime;
     const slaOk=actual!=null&&actual<=target;
