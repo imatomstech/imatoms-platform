@@ -682,7 +682,8 @@ body.embedded #content {
         </div>
       </div>
 
-      <div class="tabs">
+      <div style="display:flex;gap:16px;align-items:flex-start">
+      <div class="tabs" style="flex-direction:column;width:180px;flex-shrink:0;margin-bottom:0">
         <div class="tab active" onclick="filterWR('all',this)">ทั้งหมด</div>
         <div class="tab" onclick="filterWR('open',this)">📋 List WR</div>
         <div class="tab" onclick="filterWR('inprogress',this)">⚡ In Progress</div>
@@ -695,6 +696,7 @@ body.embedded #content {
         <div class="tab" onclick="filterWR('summarize',this)">📊 Summarize</div>
         <div class="tab" onclick="filterWR('maintainability',this)">🔬 Maintainability</div>
       </div>
+      <div style="flex:1;min-width:0">
 
       <!-- Main WR table (all / open / inprogress / closed) -->
       <div id="wr-main-view">
@@ -879,6 +881,9 @@ body.embedded #content {
           <div class="chart-wrap" style="height:220px"><canvas id="chartReOpt"></canvas></div>
         </div>
       </div>
+
+      </div><!-- end content col -->
+      </div><!-- end flex wrap -->
 
     </div><!-- end view-workrequest -->
     <div id="view-operation" class="view">
