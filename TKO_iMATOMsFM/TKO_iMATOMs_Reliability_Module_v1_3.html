@@ -702,7 +702,7 @@ body.embedded #content {
           <table>
             <thead>
               <tr>
-                <th>WR No.</th><th>Asset ID</th><th>อาการ/ปัญหา</th>
+                <th>WR No.</th><th>Asset ID</th><th>ตำแหน่ง</th><th>อาการ/ปัญหา</th>
                 <th>ประเภท</th><th>ลำดับเร่งด่วน</th><th>ผู้แจ้ง</th>
                 <th>โทรติดต่อ</th><th>เวลาที่แจ้ง</th><th>ช่วงเวลาเข้าดำเนินการ</th>
                 <th>MTTR</th><th>สถานะ</th><th>Actions</th>
@@ -1326,8 +1326,13 @@ body.embedded #content {
           <select class="form-control" id="f-dept"><option>วิศวกรรม</option><option>ผลิต</option><option>คุณภาพ</option><option>ซ่อมบำรุง</option><option>สาธารณูปโภค</option></select>
         </div>
       </div>
+      <div class="form-row-3">
+        <div class="form-group"><label class="form-label">อาคาร / Building</label><input class="form-control" id="f-building" placeholder="เช่น BHIRAJBURI"></div>
+        <div class="form-group"><label class="form-label">ชั้น / Floor</label><input class="form-control" id="f-floor" placeholder="เช่น B1, G, 4"></div>
+        <div class="form-group"><label class="form-label">โซน / Zone</label><input class="form-control" id="f-zone" placeholder="เช่น Zone-Mech"></div>
+      </div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">สถานที่ / ตำแหน่ง</label><input class="form-control" id="f-location" placeholder="เช่น อาคาร A ชั้น 2"></div>
+        <div class="form-group"><label class="form-label">ห้อง / Room (ระบุให้ชัดเจน)</label><input class="form-control" id="f-room" placeholder="เช่น Chiller Plant Room, AHU Room 4A" title="สำคัญ: QR Code มักติดในพื้นที่กว้าง ระบุห้องตรงนี้เพื่อให้ WR แสดงตำแหน่งชัดเจน"></div>
         <div class="form-group"><label class="form-label">Lifecycle Phase</label>
           <select class="form-control" id="f-phase"><option>Planning</option><option>Acquisition</option><option>Operation</option><option>Maintenance</option><option>Disposal</option></select>
         </div>
@@ -1459,19 +1464,26 @@ body.embedded #content {
   <div class="modal modal-lg">
     <div class="modal-header">
       <div class="modal-title">🔧 แจ้งงาน Work Request</div>
-      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('addWRModal')">✕</button>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeQRScanner('wr-qr-scanner-wrap');closeModal('addWRModal')">✕</button>
     </div>
 
     <!-- QR Scan or Select Asset -->
     <div class="alert alert-info mb-12" style="display:flex;align-items:center;gap:12px">
       <span>📱 สแกน QR Asset หรือเลือกจากรายการ</span>
-      <button class="btn btn-secondary btn-sm" onclick="simulateScanAsset()">⚡ Scan QR Asset</button>
+      <button class="btn btn-secondary btn-sm" onclick="openQRScanner({wrapId:'wr-qr-scanner-wrap',boxId:'wr-qr-scanner-box',statusId:'wr-qr-scanner-status',onDecoded:handleWRScan})">📷 Scan QR Asset</button>
+    </div>
+    <div id="wr-qr-scanner-wrap" style="display:none;margin-bottom:12px">
+      <div id="wr-qr-scanner-box" style="border-radius:8px;overflow:hidden;background:#000;min-height:220px"></div>
+      <div class="flex justify-between flex-center mt-8">
+        <div class="text-muted" style="font-size:11px" id="wr-qr-scanner-status">📷 หันกล้องไปที่ QR Code บนสินทรัพย์</div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeQRScanner('wr-qr-scanner-wrap')">✕ ปิดกล้อง</button>
+      </div>
     </div>
 
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Asset ID *</label>
-        <select class="form-control" id="wr-asset"><option value="">-- เลือก Asset --</option></select>
+        <select class="form-control" id="wr-asset" onchange="loadWRAssetLocation(this.value)"><option value="">-- เลือก Asset --</option></select>
       </div>
       <div class="form-group">
         <label class="form-label">ประเภทงาน *</label>
@@ -1481,6 +1493,16 @@ body.embedded #content {
           <option value="PJ">📋 Project (PJ)</option>
         </select>
       </div>
+    </div>
+
+    <!-- ตำแหน่งตามทะเบียน Asset — auto-fill เมื่อเลือก/สแกน Asset -->
+    <div id="wr-loc-card" style="display:none" class="card-sm mb-12" style="background:var(--bg3)">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:4px">📍 ตำแหน่งตามทะเบียน Asset</div>
+      <div id="wr-loc-text" style="font-size:13px;font-weight:600"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ตำแหน่งที่พบปัญหาจริง (ระบุเพิ่มเติม)</label>
+      <input class="form-control" id="wr-loc-detail" placeholder="เช่น มุมห้องฝั่งซ้าย, ใกล้ประตูทางเข้า — กรณี QR ติดพื้นที่กว้าง ให้ระบุจุดที่แน่นอนตรงนี้">
     </div>
 
     <div class="form-group">
@@ -1529,7 +1551,7 @@ body.embedded #content {
     </div>
 
     <div class="flex gap-8 mt-16" style="justify-content:flex-end">
-      <button class="btn btn-secondary" onclick="closeModal('addWRModal')">ยกเลิก</button>
+      <button class="btn btn-secondary" onclick="closeQRScanner('wr-qr-scanner-wrap');closeModal('addWRModal')">ยกเลิก</button>
       <button class="btn btn-primary" onclick="saveWR()">📤 แจ้งงาน WR</button>
     </div>
   </div>
@@ -1989,7 +2011,7 @@ function normalizeAsset(a){
   const calcNbv = Math.max(0, cost - (cost/life)*yrs);
   const dept    = a.dept || a.zone || a.module || a.businessGroup || '-';
   const type    = a.type || a.assetType || a.sys || '-';
-  const location= a.location || [a.building,a.floor,a.room].filter(Boolean).join(' / ') || a.loc || '-';
+  const location= a.location || [a.building,a.floor,a.zone,a.room].filter(Boolean).join(' / ') || a.loc || '-';
   // แปลงสถานะเป็น green/yellow/red (ระบบไฟจราจรของหน้านี้)
   let color = ['green','yellow','red'].includes(a.status) ? a.status : null;
   if(!color){
@@ -2264,9 +2286,15 @@ function saveAsset() {
   const replaceCost = parseFloat(document.getElementById('f-replacecost')?.value)||0;
   const sys = document.getElementById('f-sys')?.value||'';
   const subSys = document.getElementById('f-subsys')?.value||'';
+  const building = document.getElementById('f-building')?.value||'';
+  const floor = document.getElementById('f-floor')?.value||'';
+  const zone = document.getElementById('f-zone')?.value||'';
+  const room = document.getElementById('f-room')?.value||'';
+  // location = string รวมไว้ให้โค้ดเก่าที่ยังอ่าน a.location ใช้ได้ต่อ (แสดงผล) — ข้อมูลจริงเก็บแยกที่ building/floor/zone/room
+  const location = [building, floor, zone, room].filter(Boolean).join(' / ');
   const asset = {
     id, name, type: document.getElementById('f-type').value, dept: document.getElementById('f-dept').value,
-    location: document.getElementById('f-location').value, phase: document.getElementById('f-phase').value,
+    building, floor, zone, room, location, phase: document.getElementById('f-phase').value,
     status: document.getElementById('f-status').value, efficiency: parseInt(document.getElementById('f-eff').value)||85,
     cost, life, salvage, buyDate, depMethod: document.getElementById('f-depmethod').value,
     brand: document.getElementById('f-brand').value, model: document.getElementById('f-model').value,
@@ -2285,10 +2313,12 @@ function editAsset(id) {
   const a = assets.find(x => x.id === id); if (!a) return;
   openModal('addAssetModal');
   populateSysSelect();
-  ['id','name','type','dept','location','phase','status','life','eff','cost','salvage','buydate','depmethod','brand','model','serial','note','replaceCost'].forEach(k => {
-    const map = {id:'f-id',name:'f-name',type:'f-type',dept:'f-dept',location:'f-location',phase:'f-phase',status:'f-status',life:'f-life',eff:'f-eff',cost:'f-cost',salvage:'f-salvage',buydate:'f-buydate',depmethod:'f-depmethod',brand:'f-brand',model:'f-model',serial:'f-serial',note:'f-note',replaceCost:'f-replacecost'};
+  ['id','name','type','dept','phase','status','life','eff','cost','salvage','buydate','depmethod','brand','model','serial','note','replaceCost','building','floor','zone','room'].forEach(k => {
+    const map = {id:'f-id',name:'f-name',type:'f-type',dept:'f-dept',phase:'f-phase',status:'f-status',life:'f-life',eff:'f-eff',cost:'f-cost',salvage:'f-salvage',buydate:'f-buydate',depmethod:'f-depmethod',brand:'f-brand',model:'f-model',serial:'f-serial',note:'f-note',replaceCost:'f-replacecost',building:'f-building',floor:'f-floor',zone:'f-zone',room:'f-room'};
     const el = document.getElementById(map[k]); if(el && a[k]!==undefined) el.value = a[k];
   });
+  // Asset เก่าที่มีแค่ location รวม (ไม่มี building/floor/zone/room แยก) — เติมลง Room ให้เป็นค่าเริ่มต้นเพื่อไม่ให้ข้อมูลหาย
+  if(!a.building && !a.room && a.location){ document.getElementById('f-room').value = a.location; }
   // ระบบ/ระบบย่อย — ต้องตั้ง sys ก่อนเพื่อให้ dropdown sub-system ตรงตัวเลือก แล้วค่อยตั้งค่า subSys
   if(a.sys){ document.getElementById('f-sys').value=a.sys; updateSubSysOld(); }
   if(a.subSys){ const se=document.getElementById('f-subsys'); if(se) se.value=a.subSys; }
@@ -2648,41 +2678,46 @@ function quickInspect(id) {
 //  QR CAMERA SCANNER — สแกน QR ที่ติดอยู่บนสินทรัพย์จริงผ่านกล้องมือถือ/เว็บแคม
 // ═══════════════════════════════════════════════════════════
 let _qrScanner = null;
-function openQRScanner(){
+// ใช้งานได้ทั้งหน้า Annual Review และ Work Request — ระบุ id ของ box/wrap/status เอง ถ้าไม่ระบุใช้ของ Annual Review เป็นค่าเริ่มต้น
+function openQRScanner(opts){
+  opts = opts || {};
+  const wrapId = opts.wrapId || 'qr-scanner-wrap';
+  const boxId = opts.boxId || 'qr-scanner-box';
+  const statusId = opts.statusId || 'qr-scanner-status';
+  const onDecoded = opts.onDecoded || (text=>{ document.getElementById('insp-assetid').value=text; loadInspectAsset(text); });
   if (typeof Html5Qrcode === 'undefined'){
     alert('⚠ โหลดไลบรารีกล้องไม่สำเร็จ (ต้องมีอินเทอร์เน็ต) — พิมพ์ Asset ID เองแทนได้');
     return;
   }
-  document.getElementById('qr-scanner-wrap').style.display = 'block';
-  document.getElementById('qr-scanner-status').textContent = '📷 กำลังเปิดกล้อง...';
-  _qrScanner = new Html5Qrcode('qr-scanner-box');
+  document.getElementById(wrapId).style.display = 'block';
+  document.getElementById(statusId).textContent = '📷 กำลังเปิดกล้อง...';
+  _qrScanner = new Html5Qrcode(boxId);
   Html5Qrcode.getCameras().then(cams=>{
     // ใช้กล้องหลัง (back camera) เป็นค่าเริ่มต้นบนมือถือ ถ้ามี
     const backCam = cams.find(c=>/back|rear|environment/i.test(c.label));
     const cameraId = backCam ? backCam.id : (cams[0] ? cams[0].id : null);
-    if (!cameraId){ document.getElementById('qr-scanner-status').textContent='❌ ไม่พบกล้อง'; return; }
+    if (!cameraId){ document.getElementById(statusId).textContent='❌ ไม่พบกล้อง'; return; }
     _qrScanner.start(
       cameraId,
       { fps: 10, qrbox: { width: 220, height: 220 } },
       (decodedText) => {
         // สแกนเจอ — เติม Asset ID อัตโนมัติแล้วปิดกล้อง
-        document.getElementById('insp-assetid').value = decodedText.trim();
-        loadInspectAsset(decodedText.trim());
-        document.getElementById('qr-scanner-status').textContent = `✅ สแกนพบ: ${decodedText}`;
-        setTimeout(closeQRScanner, 600);
+        onDecoded(decodedText.trim());
+        document.getElementById(statusId).textContent = `✅ สแกนพบ: ${decodedText}`;
+        setTimeout(()=>closeQRScanner(wrapId), 600);
       },
       () => { /* decode error ต่อเนื่อง — เงียบไว้ ไม่ต้อง spam log */ }
     ).catch(err=>{
-      document.getElementById('qr-scanner-status').textContent = '❌ เปิดกล้องไม่ได้ — ตรวจสอบสิทธิ์การใช้กล้องของเบราว์เซอร์';
+      document.getElementById(statusId).textContent = '❌ เปิดกล้องไม่ได้ — ตรวจสอบสิทธิ์การใช้กล้องของเบราว์เซอร์';
       console.error('QR scanner start failed', err);
     });
   }).catch(err=>{
-    document.getElementById('qr-scanner-status').textContent = '❌ ไม่พบกล้อง หรือไม่ได้อนุญาตสิทธิ์กล้อง';
+    document.getElementById(statusId).textContent = '❌ ไม่พบกล้อง หรือไม่ได้อนุญาตสิทธิ์กล้อง';
     console.error('getCameras failed', err);
   });
 }
-function closeQRScanner(){
-  document.getElementById('qr-scanner-wrap').style.display = 'none';
+function closeQRScanner(wrapId){
+  document.getElementById(wrapId||'qr-scanner-wrap').style.display = 'none';
   if (_qrScanner){
     _qrScanner.stop().then(()=>_qrScanner.clear()).catch(()=>{});
     _qrScanner = null;
@@ -2908,9 +2943,13 @@ function renderWR(){
       w.status==='arrived'?'<span class="badge badge-teal">📍 ถึงหน้างาน</span>':
       '<span class="badge badge-green">✅ Closed</span>';
     const phoneLink=w.phone?`<a href="tel:${w.phone}" class="btn btn-success btn-sm btn-icon" title="โทร ${w.phone}">📞</a>`:'—';
+    const wA=assets.find(x=>x.id===w.assetId);
+    const locParts=[w.building||wA?.building, w.floor||wA?.floor, w.zone||wA?.zone, w.room||wA?.room].filter(Boolean);
+    const locTxt=locParts.length?locParts.join(' / '):(wA?.location||'—');
     return `<tr>
       <td><span class="tag ff-mono">${w.id}</span></td>
       <td><span class="tag">${w.assetId||'—'}</span></td>
+      <td style="font-size:11px;max-width:140px">${locTxt}${w.locationDetail?`<div style="color:var(--orange);margin-top:2px">📍 ${w.locationDetail}</div>`:''}</td>
       <td style="max-width:180px;font-size:12px">${w.desc}</td>
       <td>${typeBadge(w.type)}</td>
       <td>${priorityBadge(w.priority)}</td>
@@ -2948,12 +2987,30 @@ function filterWR(f,el){
   renderWR();
 }
 
+// เติมตำแหน่งตามทะเบียน Asset ให้อัตโนมัติเมื่อเลือก/สแกน Asset ในฟอร์ม WR
+function loadWRAssetLocation(id){
+  const card=document.getElementById('wr-loc-card');
+  const a=assets.find(x=>x.id===id);
+  if(!a){ card.style.display='none'; return; }
+  const parts=[a.building,a.floor,a.zone,a.room].filter(Boolean);
+  const txt = parts.length ? parts.join(' / ') : (a.location||a.dept||'—ยังไม่ระบุตำแหน่งในทะเบียน—');
+  document.getElementById('wr-loc-text').textContent = txt;
+  card.style.display='block';
+}
+function handleWRScan(val){
+  const sel=document.getElementById('wr-asset');
+  const found=[...sel.options].some(o=>o.value===val);
+  if(found){ sel.value=val; loadWRAssetLocation(val); }
+  else{ alert(`⚠ ไม่พบ Asset ID "${val}" ในระบบ — กรุณาเลือกจากรายการเอง`); }
+}
+
 function saveWR(){
   const asset=document.getElementById('wr-asset').value;
   const desc=document.getElementById('wr-desc').value.trim();
   if(!desc){alert('กรุณากรอกรายละเอียดปัญหา');return;}
   const priority=document.querySelector('input[name="wr-priority"]:checked')?.value||'normal';
   const id=`WR-${String(workRequests.length+1).padStart(4,'0')}`;
+  const a=assets.find(x=>x.id===asset);
   workRequests.push({
     id, assetId:asset, desc,
     type:document.getElementById('wr-type').value,
@@ -2962,6 +3019,9 @@ function saveWR(){
     phone:document.getElementById('wr-phone').value,
     date:document.getElementById('wr-date').value||new Date().toISOString(),
     availableTime:document.getElementById('wr-available-time').value,
+    // ตำแหน่งตามทะเบียน Asset ณ เวลาที่แจ้ง (เผื่อ asset ย้ายที่ภายหลัง ประวัติ WR ยังอ้างอิงตำแหน่งตอนแจ้งได้)
+    building:a?.building||'', floor:a?.floor||'', zone:a?.zone||'', room:a?.room||'',
+    locationDetail:document.getElementById('wr-loc-detail').value.trim(),
     status:'open', closeDate:null, mttr:null,
     assign:null, arrivalTime:null, startTime:null, endTime:null,
     worktype:null, system:null, laborCost:0, partsCost:0, travelCost:0,
@@ -2969,6 +3029,8 @@ function saveWR(){
   });
   DB.set('wr',workRequests);
   closeModal('addWRModal');
+  document.getElementById('wr-loc-detail').value='';
+  document.getElementById('wr-loc-card').style.display='none';
   renderWR();
   if(priority==='critical') alert(`🚨 CRITICAL: แจ้งงาน ${id} — ต้องตอบสนองภายใน 5 นาที!\nแจ้งช่างทีมทันที`);
 }
@@ -3027,6 +3089,8 @@ function editWR(id){
   setTimeout(()=>{
     populateAssetSelects();
     document.getElementById('wr-asset').value=w.assetId||'';
+    loadWRAssetLocation(w.assetId||'');
+    document.getElementById('wr-loc-detail').value=w.locationDetail||'';
     document.getElementById('wr-type').value=w.type||'CM';
     document.getElementById('wr-desc').value=w.desc||'';
     document.getElementById('wr-reporter').value=w.reporter||'';
@@ -3437,7 +3501,7 @@ function renderAssetTCO(assetId, wrList, wrTotalCost){
 
   // ── Unified Timeline ──
   const events=[];
-  wrList.forEach(w=>events.push({date:w.date, type:'WR', typeLabel:'🔧 ซ่อม (WR)', badge:'badge-orange', desc:w.desc||'—', ref:w.id, cost:w.totalCost||0}));
+  wrList.forEach(w=>events.push({date:w.date, type:'WR', typeLabel:'🔧 ซ่อม (WR)', badge:'badge-orange', desc:(w.desc||'—')+(w.locationDetail?` (📍 ${w.locationDetail})`:''), ref:w.id, cost:w.totalCost||0}));
   pmDone.forEach(p=>events.push({date:p.actualDate||p.planDate, type:'PM', typeLabel:'🛠 บำรุงรักษา (PM)', badge:'badge-yellow', desc:p.name||'—', ref:p.id, cost:p.cost||0}));
   maRecords.forEach(m=>events.push({date:m.start, type:'MA', typeLabel:'📄 สัญญาบริการ (MA)', badge:'badge-blue', desc:`${m.vendor||'—'} (${m.type||'MA'})`, ref:m.id, cost:m.value||0}));
   events.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
