@@ -704,7 +704,7 @@ body.embedded #content {
           <table>
             <thead>
               <tr>
-                <th>WR No.</th><th>Asset ID</th><th>ตำแหน่ง</th><th>อาการ/ปัญหา</th>
+                <th>ตรวจสอบ</th><th>WR No.</th><th>Asset ID</th><th>ตำแหน่ง</th><th>อาการ/ปัญหา</th>
                 <th>ประเภท</th><th>ลำดับเร่งด่วน</th><th>ผู้แจ้ง</th>
                 <th>โทรติดต่อ</th><th>เวลาที่แจ้ง</th><th>ช่วงเวลาเข้าดำเนินการ</th>
                 <th>MTTR</th><th>สถานะ</th><th>Actions</th>
@@ -2952,7 +2952,8 @@ function renderWR(){
     const locParts=[w.building||wA?.building, w.floor||wA?.floor, w.zone||wA?.zone, w.room||wA?.room].filter(Boolean);
     const locTxt=locParts.length?locParts.join(' / '):(wA?.location||'—');
     return `<tr>
-      <td><span class="tag ff-mono">${w.id}</span></td>
+      <td style="text-align:center">${w.status==='closed'?`<input type="checkbox" ${w.reviewed?'checked':''} title="ติ๊กเมื่อข้อมูลตรวจสอบครบถ้วนแล้ว" onchange="toggleWRReview('${w.id}',this.checked)">`:''}</td>
+      <td><span class="tag ff-mono">${w.id}</span>${w.status==='closed'&&!w.reviewed?'<div style="color:var(--orange);font-size:10px;margin-top:2px">⚠ รอตรวจสอบ</div>':''}</td>
       <td><span class="tag">${w.assetId||'—'}</span></td>
       <td style="font-size:11px;max-width:140px">${locTxt}${w.locationDetail?`<div style="color:var(--orange);margin-top:2px">📍 ${w.locationDetail}</div>`:''}</td>
       <td style="max-width:180px;font-size:12px">${w.desc}</td>
@@ -2976,11 +2977,12 @@ function renderWR(){
             <button class="btn btn-success btn-sm" onclick="openCloseWR('${w.id}')">Complete</button>
           `:''}
           ${w.status==='arrived'?`<button class="btn btn-success btn-sm" onclick="openCloseWR('${w.id}')">Complete</button>`:''}
-          ${w.status==='closed'?`<button class="btn btn-secondary btn-sm" onclick="viewCloseDetail('${w.id}')">📄 Close Detail</button>`:''}
+          ${w.status==='closed'?`<button class="btn btn-secondary btn-sm" onclick="viewCloseDetail('${w.id}')">📄 Close Detail</button>
+            <button class="btn btn-secondary btn-sm" onclick="editCloseWR('${w.id}')" title="แก้ไขข้อมูลปิดงาน">✏ แก้ไข</button>`:''}
         </div>
       </td>
     </tr>`;
-  }).join(''):`<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล WR</td></tr>`;
+  }).join(''):`<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล WR</td></tr>`;
 
   updateBadges();
 }
@@ -3225,6 +3227,52 @@ function confirmCloseWR(){
 
 function viewCloseDetail(id){
   openEvaluateModal(id);
+}
+
+function editCloseWR(id){
+  closingWRId=id;
+  const w=workRequests.find(x=>x.id===id);if(!w)return;
+  document.getElementById('close-wr-info').innerHTML=`
+    <div class="fw-600 mb-8">${w.id} — ${w.desc} <span class="badge badge-orange" style="margin-left:6px">✏ กำลังแก้ไขงานที่ปิดแล้ว</span></div>
+    <div class="metric-row"><span class="text-muted">Asset</span><span class="tag">${w.assetId||'—'}</span></div>
+    <div class="metric-row"><span class="text-muted">ช่าง</span><span>${w.assign||'—'}</span></div>
+    <div class="metric-row"><span class="text-muted">เวลาแจ้ง</span><span style="font-size:12px">${w.date?new Date(w.date).toLocaleString('th-TH'):'-'}</span></div>`;
+  // Prefill start/end from saved close data
+  const toLocalInput=d=>{ if(!d)return ''; const dt=new Date(d); dt.setMinutes(dt.getMinutes()-dt.getTimezoneOffset()); return dt.toISOString().slice(0,16); };
+  document.getElementById('cl-start-time').value=toLocalInput(w.startTime)||toLocalInput(w.arrivalTime)||'';
+  document.getElementById('cl-end-time').value=toLocalInput(w.endTime)||'';
+  document.getElementById('cl-worktype').value=w.worktype||'BD';
+  document.getElementById('cl-system').value=w.system||'AC';
+  document.getElementById('cl-action-detail').value=w.actionDetail||'';
+  closedParts=Array.isArray(w.parts)?w.parts.slice():[];
+  starScore=w.satisfaction||0;
+  document.getElementById('cl-labor-cost').value=w.laborCost||0;
+  document.getElementById('cl-parts-cost').value=w.partsCost||0;
+  document.getElementById('cl-travel-cost').value=w.travelCost||0;
+  document.getElementById('cl-satisfaction-note').style.display=starScore&&starScore<=3?'block':'none';
+  document.getElementById('star-rating').querySelectorAll('span').forEach((s,i)=>{s.textContent=i<starScore?'★':'☆';s.classList.toggle('active',i<starScore);});
+  // Populate parts from inventory + render existing parts
+  const partSel=document.getElementById('cl-parts-select');
+  partSel.innerHTML='<option value="">-- เลือกอะไหล่จากคลัง --</option>'+inventory.map(p=>`<option value="${p.id}|${p.name}|${p.price}">${p.id} — ${p.name} (฿${p.price}/${p.unit})</option>`).join('');
+  renderClosedParts();
+  calcCloseTime();
+  calcTotalCost();
+  openModal('closeWRModal');
+  initSignature();
+}
+
+function toggleWRReview(id,checked){
+  const idx=workRequests.findIndex(w=>w.id===id);if(idx<0)return;
+  workRequests[idx].reviewed=checked;
+  DB.set('wr',workRequests);
+  if(checked){
+    renderWR();
+    alert(`✅ ${id} ตรวจสอบข้อมูลครบถ้วน — กำลังไปหน้า Evaluate`);
+    const evalTab=[...document.querySelectorAll('#view-workrequest .tab')].find(t=>t.getAttribute('onclick')&&t.getAttribute('onclick').includes("filterWR('evaluate'"));
+    filterWR('evaluate',evalTab||document.querySelector('#view-workrequest .tab'));
+  }else{
+    renderWR();
+  }
 }
 
 // ── Evaluate & Approve ──
