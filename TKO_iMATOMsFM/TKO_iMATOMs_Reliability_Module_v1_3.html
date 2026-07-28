@@ -4347,6 +4347,57 @@ function upgradeSeedWR(){
 //  OPERATION (OM) — Checklist Templates + Execution + Approve
 // ═══════════════════════════════════════════════════════════
 const DEFAULT_OM_TEMPLATES = [
+  {id:'TPL-OM-03',formCode:'FA-RPH-OM-03',sys:'AC',name:'Chiller Plant Daily Check List (ตรวจทุกกะ M1/M2/A/N)',items:[
+    // MODE (Monitor) — STD: Running
+    {id:'ch-mode-chiller',label:'[MODE] Chiller Mode (มาตรฐาน: Running)',type:'visual',unit:'',min:null,max:null},
+    {id:'ch-mode-ckt1',label:'[MODE] Circuit 1 Mode (มาตรฐาน: Running)',type:'visual',unit:'',min:null,max:null},
+    {id:'ch-mode-cpsr1a',label:'[MODE] Cpsr 1A Mode (มาตรฐาน: Running)',type:'visual',unit:'',min:null,max:null},
+    {id:'ch-mode-ckt2',label:'[MODE] Circuit 2 Mode (มาตรฐาน: Running)',type:'visual',unit:'',min:null,max:null},
+    {id:'ch-mode-cpsr2a',label:'[MODE] Cpsr 2A Mode (มาตรฐาน: Running)',type:'visual',unit:'',min:null,max:null},
+    // CHILLER (Monitor)
+    {id:'ch-evap-lwt',label:'[CHILLER] Evap Leaving Water Temp',type:'measurement',unit:'F',min:50,max:55},
+    {id:'ch-evap-rwt',label:'[CHILLER] Evap Return Water Temp',type:'measurement',unit:'F',min:55,max:60},
+    {id:'ch-active-cwsp',label:'[CHILLER] Active Chilled Water Setpoint',type:'measurement',unit:'F',min:45,max:50},
+    {id:'ch-active-clsp',label:'[CHILLER] Active Current Limit Setpoint',type:'measurement',unit:'%RLA',min:90,max:100},
+    {id:'ch-oat',label:'[CHILLER] Outdoor Air Temp',type:'measurement',unit:'F',min:null,max:null},
+    // COMPRESSOR (Monitor) — 1A / 2A
+    {id:'ch-comp1a-l1',label:'[COMPRESSOR 1A] %RLA L1 (%/A)',type:'photo',unit:'%/A',min:null,max:null},
+    {id:'ch-comp1a-l2',label:'[COMPRESSOR 1A] %RLA L2 (%/A)',type:'photo',unit:'%/A',min:null,max:null},
+    {id:'ch-comp1a-l3',label:'[COMPRESSOR 1A] %RLA L3 (%/A)',type:'photo',unit:'%/A',min:null,max:null},
+    {id:'ch-comp2a-l1',label:'[COMPRESSOR 2A] %RLA L1 (%/A)',type:'photo',unit:'%/A',min:null,max:null},
+    {id:'ch-comp2a-l2',label:'[COMPRESSOR 2A] %RLA L2 (%/A)',type:'photo',unit:'%/A',min:null,max:null},
+    {id:'ch-comp2a-l3',label:'[COMPRESSOR 2A] %RLA L3 (%/A)',type:'photo',unit:'%/A',min:null,max:null},
+    {id:'ch-unit-volt',label:'[COMPRESSOR] Unit Volt',type:'measurement',unit:'VAC',min:380,max:400},
+    {id:'ch-oil-temp',label:'[COMPRESSOR] Oil Temperature',type:'measurement',unit:'F',min:null,max:null},
+    {id:'ch-oil-press',label:'[COMPRESSOR] Intermediate Oil Pressure',type:'measurement',unit:'F',min:null,max:null},
+    {id:'ch-suction-press',label:'[COMPRESSOR] Suction Pressure',type:'measurement',unit:'F',min:null,max:null},
+    {id:'ch-run-hrs',label:'[COMPRESSOR] Start/Run Hours',type:'measurement',unit:'HRS',min:null,max:null},
+    // CKT (Monitor) — Circuit 1 / 2
+    {id:'ch-ckt1-cond-p',label:'[CKT-1] COND. RFGT. Pressure',type:'measurement',unit:'Psig',min:null,max:null},
+    {id:'ch-ckt1-sat-cond-t',label:'[CKT-1] SAT. COND. RFGT. Temp',type:'measurement',unit:'F',min:null,max:null},
+    {id:'ch-ckt1-evap-p',label:'[CKT-1] EVAP. RFGT. Pressure',type:'measurement',unit:'Psig',min:null,max:null},
+    {id:'ch-ckt1-sat-evap-t',label:'[CKT-1] SAT. EVAP. RFGT. Temp',type:'measurement',unit:'F',min:null,max:null},
+    {id:'ch-ckt1-approach-t',label:'[CKT-1] EVAP. APPROACH Temp',type:'measurement',unit:'F',min:null,max:5.0},
+    {id:'ch-ckt1-liquid-lvl',label:'[CKT-1] RFGT Liquid Level',type:'measurement',unit:'IN',min:0.0,max:null},
+    {id:'ch-ckt2-cond-p',label:'[CKT-2] COND. RFGT. Pressure',type:'measurement',unit:'Psig',min:null,max:null},
+    {id:'ch-ckt2-sat-cond-t',label:'[CKT-2] SAT. COND. RFGT. Temp',type:'measurement',unit:'F',min:null,max:null},
+    {id:'ch-ckt2-evap-p',label:'[CKT-2] EVAP. RFGT. Pressure',type:'measurement',unit:'Psig',min:null,max:null},
+    {id:'ch-ckt2-sat-evap-t',label:'[CKT-2] SAT. EVAP. RFGT. Temp',type:'measurement',unit:'F',min:null,max:null},
+    {id:'ch-ckt2-approach-t',label:'[CKT-2] EVAP. APPROACH Temp',type:'measurement',unit:'F',min:null,max:5.0},
+    {id:'ch-ckt2-liquid-lvl',label:'[CKT-2] RFGT Liquid Level',type:'measurement',unit:'IN',min:0.0,max:null},
+    // CHILLER WATER (in/out) + CHP
+    {id:'ch-cw-offpress',label:'[CHILLER WATER] Off Pressure Inlet-Outlet (Gauge)',type:'measurement',unit:'Psig',min:60,max:65},
+    {id:'ch-cw-tempin',label:'[CHILLER WATER] Temp Inlet (Gauge)',type:'measurement',unit:'F',min:55,max:60},
+    {id:'ch-cw-tempout',label:'[CHILLER WATER] Temp Outlet (Gauge)',type:'measurement',unit:'F',min:50,max:55},
+    {id:'ch-chp-working',label:'[CHP] CHP No. Working (ระบุหมายเลขปั๊มที่ทำงาน)',type:'visual',unit:'',min:null,max:null},
+    {id:'ch-chp-pressin',label:'[CHP] Pressure Inlet (Gauge)',type:'measurement',unit:'Psig',min:0,max:null},
+    {id:'ch-chp-pressout',label:'[CHP] Pressure Outlet (Gauge)',type:'measurement',unit:'Psig',min:50,max:70},
+    {id:'ch-chp-volt',label:'[CHP] Volt Rate',type:'measurement',unit:'V',min:380,max:400},
+    {id:'ch-chp-amp',label:'[CHP] Ampare Rate',type:'measurement',unit:'A',min:null,max:43},
+    {id:'ch-chp-power',label:'[CHP] Power Consumption',type:'photo',unit:'KW',min:null,max:null},
+    {id:'ch-chp-energy',label:'[CHP] Energy Consumption',type:'photo',unit:'KWh',min:null,max:null},
+    {id:'ch-chp-totalenergy',label:'[CHP] Total Energy Consumption',type:'photo',unit:'KWh',min:null,max:null},
+  ]},
   {id:'TPL-OM-02',formCode:'FM-RAH-OM-02',sys:'WWT',name:'Wastewater Treatment — Aerator / Effluent Daily Check',items:[
     {id:'wwt-ap1',label:'Aerator Pump (AP)-1 — สถานะการทำงาน (R/S/T)',type:'visual',unit:'',min:null,max:null},
     {id:'wwt-ap2',label:'Aerator Pump (AP)-2 — สถานะการทำงาน (R/S/T)',type:'visual',unit:'',min:null,max:null},
