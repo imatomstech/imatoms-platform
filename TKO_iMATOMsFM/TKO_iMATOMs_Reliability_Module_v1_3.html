@@ -119,9 +119,9 @@ select.form-control option{background:var(--bg3)}
 .tabs{display:flex;gap:2px;background:var(--bg3);border-radius:var(--radius);padding:3px;margin-bottom:20px}
 .tab{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);transition:all .15s;font-weight:500}
 .tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4)}
-#wr-vtabs{width:240px !important;gap:4px;padding:6px}
-#wr-vtabs .tab{padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--font-display);letter-spacing:.3px;border-radius:8px}
-#wr-vtabs .tab.active{border-left:3px solid var(--orange)}
+#wr-vtabs,#om-vtabs{width:240px !important;gap:4px;padding:6px}
+#wr-vtabs .tab,#om-vtabs .tab{padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--font-display);letter-spacing:.3px;border-radius:8px}
+#wr-vtabs .tab.active,#om-vtabs .tab.active{border-left:3px solid var(--orange)}
 /* ─── VIEWS ─── */
 .view{display:none}
 .view.active{display:block}
@@ -952,27 +952,69 @@ body.embedded #content {
     </div><!-- end view-workrequest -->
     <div id="view-operation" class="view">
       <div class="section-header">
-        <div><div class="section-title">⚙️ Operation System (OPT)</div><div class="section-sub">แผนตรวจสอบรายวัน/รายชั่วโมง — Availability Calculation</div></div>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addOptModal')">+ บันทึกผลการเดินระบบ</button>
+        <div><div class="section-title">⚙️ Operation System (OM)</div><div class="section-sub">OM Checklist ผ่านมือถือ — Availability &amp; Readiness Monitoring</div></div>
+        <div class="flex gap-8 flex-wrap">
+          <button class="btn btn-secondary btn-sm" onclick="openOMScannerStart()">📷 สแกนเข้าทำ OM</button>
+          <button class="btn btn-primary btn-sm" onclick="openNewOM()">+ เริ่มทำ OM</button>
+        </div>
       </div>
 
       <div class="kpi-grid">
-        <div class="kpi green"><div class="kpi-label">Availability (%)</div><div class="kpi-value ff-display text-green" id="opt-avail">98.5%</div></div>
-        <div class="kpi blue"><div class="kpi-label">Uptime Today (hrs)</div><div class="kpi-value ff-display text-blue" id="opt-uptime">20.4</div></div>
-        <div class="kpi red"><div class="kpi-label">Downtime Today</div><div class="kpi-value ff-display text-red" id="opt-down">3.6h</div></div>
-        <div class="kpi yellow"><div class="kpi-label">Alerts Today</div><div class="kpi-value ff-display text-yellow" id="opt-alerts">2</div></div>
+        <div class="kpi green"><div class="kpi-label">Availability (%)</div><div class="kpi-value ff-display text-green" id="om-avail">—</div></div>
+        <div class="kpi blue"><div class="kpi-label">OM วันนี้</div><div class="kpi-value ff-display text-blue" id="om-today">0</div></div>
+        <div class="kpi red"><div class="kpi-label">พบผิดปกติ (สร้าง WR แล้ว)</div><div class="kpi-value ff-display text-red" id="om-abnormal">0</div></div>
+        <div class="kpi yellow"><div class="kpi-label">รอหัวหน้างานอนุมัติ</div><div class="kpi-value ff-display text-yellow" id="om-pending">0</div></div>
       </div>
 
-      <div class="card mb-16">
-        <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:12px">Availability Trend (30 วัน)</div>
-        <div class="chart-wrap" style="height:200px"><canvas id="chartAvail"></canvas></div>
-      </div>
+      <div style="display:flex;gap:16px;align-items:flex-start">
+        <div class="tabs" id="om-vtabs" style="flex-direction:column;width:240px;flex-shrink:0;margin-bottom:0">
+          <div class="tab active" onclick="filterOM('all',this)">📊 Overview<span class="tab-badge" id="tab-badge-om-all" style="display:none">0</span></div>
+          <div class="tab" onclick="filterOM('inprogress',this)">⚡ In Progress / Pending<span class="tab-badge" id="tab-badge-om-inprogress" style="display:none">0</span></div>
+          <div class="tab" onclick="filterOM('closed',this)">✅ Closed</div>
+          <div class="tab" onclick="filterOM('evaluate',this)">🏅 Evaluate &amp; Approve<span class="tab-badge" id="tab-badge-om-evaluate" style="display:none">0</span></div>
+          <div class="tab" onclick="filterOM('templates',this)">🧾 Checklist Setup</div>
+          <div class="tab" onclick="filterOM('history',this)">📖 Asset History</div>
+        </div>
+        <div style="flex:1;min-width:0">
 
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>วันที่</th><th>เวลา</th><th>Asset ID</th><th>Parameter</th><th>ค่าที่วัดได้</th><th>ค่ามาตรฐาน</th><th>หน่วย</th><th>สถานะ</th><th>ผู้บันทึก</th><th>หมายเหตุ</th></tr></thead>
-          <tbody id="opt-table"></tbody>
-        </table>
+          <!-- Overview / Main list -->
+          <div id="om-main-view">
+            <div class="card mb-16">
+              <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:12px">Availability Trend (30 วัน)</div>
+              <div class="chart-wrap" style="height:200px"><canvas id="chartAvail"></canvas></div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>OM No.</th><th>Asset</th><th>Checklist</th><th>วันที่/เวลา</th><th>ผลตรวจ</th><th>ความพร้อม</th><th>ระยะเวลา</th><th>ผู้ตรวจ</th><th>สถานะ</th><th>Actions</th></tr></thead>
+                <tbody id="om-table"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Evaluate & Approve -->
+          <div id="om-evaluate-view" style="display:none">
+            <div id="om-evaluate-list"></div>
+          </div>
+
+          <!-- Checklist Setup (Templates) -->
+          <div id="om-templates-view" style="display:none">
+            <div class="section-header" style="margin-bottom:12px">
+              <div><div style="font-family:var(--font-display);font-size:14px;font-weight:600">🧾 Checklist Templates ต่อระบบ/เครื่องจักร</div><div class="text-muted" style="font-size:12px">สร้างหัวข้อ/โครงสร้างไว้ก่อน แล้วค่อยกรอกรายละเอียดทีละเครื่องจักรภายหลัง</div></div>
+              <button class="btn btn-primary btn-sm" onclick="openOMTemplateModal(null)">+ เพิ่ม Checklist ใหม่</button>
+            </div>
+            <div id="om-templates-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
+          </div>
+
+          <!-- Asset History -->
+          <div id="om-history-view" style="display:none">
+            <div class="card">
+              <div class="text-muted" style="font-size:12px;margin-bottom:12px">เลือก Asset เพื่อดูประวัติการทำ OM ทั้งหมด (เหมือนหน้า Asset History ของ WR)</div>
+              <select class="form-control" id="om-hist-asset-select" onchange="renderOMAssetHistory(this.value)" style="max-width:320px;margin-bottom:16px"><option value="">-- เลือก Asset --</option></select>
+              <div id="om-hist-content"></div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
 
@@ -2045,15 +2087,85 @@ body.embedded #content {
 </div>
 
 <!-- OPERATION LOG MODAL -->
-<div class="modal-overlay" id="addOptModal">
-  <div class="modal">
-    <div class="modal-header"><div class="modal-title">⚙️ บันทึกผลการเดินระบบ</div><button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('addOptModal')">✕</button></div>
-    <div class="form-row"><div class="form-group"><label class="form-label">Asset ID</label><select class="form-control" id="opt-asset"><option value="">-- เลือก Asset --</option></select></div><div class="form-group"><label class="form-label">วันที่/เวลา</label><input class="form-control" id="opt-datetime" type="datetime-local"></div></div>
-    <div class="form-row"><div class="form-group"><label class="form-label">Parameter ที่วัด</label><input class="form-control" id="opt-param" placeholder="เช่น อุณหภูมิ, แรงดัน"></div><div class="form-group"><label class="form-label">ค่าที่วัดได้</label><input class="form-control" id="opt-val" placeholder="ค่า"></div></div>
-    <div class="form-row"><div class="form-group"><label class="form-label">ค่ามาตรฐาน</label><input class="form-control" id="opt-std" placeholder="มาตรฐาน"></div><div class="form-group"><label class="form-label">หน่วย</label><input class="form-control" id="opt-unit" placeholder="°C, bar, rpm"></div></div>
-    <div class="form-row"><div class="form-group"><label class="form-label">ผู้บันทึก</label><input class="form-control" id="opt-person" placeholder="ชื่อ"></div><div class="form-group"><label class="form-label">สถานะ</label><select class="form-control" id="opt-status"><option value="normal">ปกติ</option><option value="alert">เกินมาตรฐาน</option><option value="critical">วิกฤต</option></select></div></div>
-    <div class="form-group"><label class="form-label">หมายเหตุ</label><input class="form-control" id="opt-note" placeholder="หมายเหตุ"></div>
-    <div class="flex gap-8 mt-16" style="justify-content:flex-end"><button class="btn btn-secondary" onclick="closeModal('addOptModal')">ยกเลิก</button><button class="btn btn-primary" onclick="saveOpt()">💾 บันทึก</button></div>
+<!-- OM CHECKLIST TEMPLATE EDITOR -->
+<div class="modal-overlay" id="omTemplateModal">
+  <div class="modal modal-lg">
+    <div class="modal-header"><div class="modal-title" id="omtpl-modal-title">🧾 Checklist Template</div><button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('omTemplateModal')">✕</button></div>
+    <input type="hidden" id="omtpl-id">
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">ชื่อ Checklist</label><input class="form-control" id="omtpl-name" placeholder="เช่น Jockey Pump Daily Check"></div>
+      <div class="form-group"><label class="form-label">ระบบ (System)</label><select class="form-control" id="omtpl-sys">
+        <option>AC</option><option>BAS</option><option>BS</option><option>CCTV</option><option>EC</option><option>EE</option><option>EL</option><option>ER</option><option>FA</option><option>FP</option><option>FUR</option><option>MATV</option><option>SN</option><option>TR</option><option>VN</option><option>WWT</option><option>OTH</option>
+      </select></div>
+    </div>
+    <div class="form-group"><label class="form-label">รหัสอ้างอิงฟอร์ม (ถ้ามี — ใช้ภายในเท่านั้น ไม่แสดงบนแบบฟอร์มจริง)</label><input class="form-control" id="omtpl-formcode" placeholder="เช่น FM-RPH-OM-11"></div>
+
+    <div class="flex justify-between flex-center mb-8" style="margin-top:14px">
+      <div style="font-family:var(--font-display);font-size:13px;font-weight:600">หัวข้อตรวจสอบ (Checklist Items)</div>
+      <button class="btn btn-secondary btn-sm" onclick="addOMTemplateItemRow()">+ เพิ่มหัวข้อ</button>
+    </div>
+    <div id="omtpl-items-list"></div>
+    <div class="text-muted mt-8" style="font-size:11px">💡 สร้างหัวข้อไว้ก่อนได้เลย ยังไม่ต้องใส่ชื่อครบก็บันทึกได้ แล้วค่อยกลับมาแก้รายละเอียดทีละเครื่องจักรภายหลัง</div>
+
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('omTemplateModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveOMTemplate()">💾 บันทึก Checklist</button>
+    </div>
+  </div>
+</div>
+
+<!-- OM CHECKLIST EXECUTION (New OM) -->
+<div class="modal-overlay" id="omCheckModal">
+  <div class="modal modal-lg">
+    <div class="modal-header"><div class="modal-title">⚙️ ทำ OM Checklist</div><button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('omCheckModal')">✕</button></div>
+    <input type="hidden" id="om-record-id">
+
+    <div id="om-qr-scanner-wrap" style="display:none;margin-bottom:12px">
+      <div id="om-qr-scanner-box" style="width:100%;max-width:320px;margin:0 auto"></div>
+      <div id="om-qr-scanner-status" class="text-muted text-center" style="font-size:12px;margin-top:6px"></div>
+      <div class="text-center mt-8"><button class="btn btn-secondary btn-sm" onclick="closeQRScanner('om-qr-scanner-wrap')">✕ ปิดกล้อง</button></div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Asset</label>
+        <div class="flex gap-8">
+          <select class="form-control" id="om-asset" onchange="loadOMChecklistForAsset(this.value)"><option value="">-- เลือก Asset --</option></select>
+          <button class="btn btn-secondary btn-sm" onclick="openOMScannerInModal()" title="สแกน QR">📷</button>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Checklist ที่ใช้</label><select class="form-control" id="om-template" onchange="loadOMTemplateIntoItems(this.value)"><option value="">-- เลือก Checklist --</option></select></div>
+    </div>
+    <div class="card-sm mb-12" id="om-asset-info" style="display:none"></div>
+
+    <!-- Equipment baseline photos -->
+    <div class="form-group" id="om-equip-photo-wrap">
+      <label class="form-label">📷 รูปอุปกรณ์จริง <span id="om-equip-photo-required" style="color:var(--red)"></span></label>
+      <input type="file" class="form-control" accept="image/*" capture="environment" multiple id="om-equip-photo-input" onchange="handleOMEquipPhotoUpload(event)">
+      <div id="om-equip-photo-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+    </div>
+
+    <div id="om-items-form"></div>
+
+    <div class="form-row mt-16">
+      <div class="form-group"><label class="form-label">ประเมินความพร้อมใช้งาน</label>
+        <select class="form-control" id="om-readiness">
+          <option value="ready">🟢 พร้อมใช้งาน</option>
+          <option value="temp">🟡 ใช้งานชั่วคราว</option>
+          <option value="down">🔴 หยุดซ่อมทันที</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">ผู้ตรวจสอบ (ช่างประจำกะ)</label><input class="form-control" id="om-person" placeholder="ชื่อ"></div>
+    </div>
+    <div class="grid-3 mb-12">
+      <div class="card-sm" style="background:var(--bg3)"><div class="text-muted" style="font-size:11px">เริ่มตรวจ</div><div class="fw-700" id="om-start-time-display" style="font-size:13px">—</div></div>
+      <div class="card-sm" style="background:var(--bg3)"><div class="text-muted" style="font-size:11px">หัวข้อผิดปกติ</div><div class="fw-700 text-red" id="om-abnormal-count" style="font-size:18px">0</div></div>
+      <div class="card-sm" style="background:var(--bg3)"><div class="text-muted" style="font-size:11px">ระยะเวลาโดยประมาณ</div><div class="fw-700 text-teal" id="om-duration-display" style="font-size:13px">—</div></div>
+    </div>
+
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('omCheckModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="submitOM()">✅ Submit ส่งหัวหน้างานอนุมัติ</button>
+    </div>
   </div>
 </div>
 
@@ -2066,7 +2178,7 @@ const DB = {
   set: (k, v) => {
     localStorage.setItem('alm_'+k, JSON.stringify(v));
     // Mirror กลับไปให้ Asset Core (index.html หลัก) เห็นข้อมูลชุดเดียวกัน — sync 2 ทาง
-    const sync=['wr','assets','ppm','ma','inv','contract','operation'];
+    const sync=['wr','assets','ppm','ma','inv','contract','operation','omRecords','omTemplates'];
     if(sync.includes(k)){ try{ localStorage.setItem('tko_v2_'+k, JSON.stringify(v)); }catch(e){} }
   },
 };
@@ -2164,7 +2276,6 @@ let maList = DB.get('ma', []);
 let inventory = DB.get('inv', []);
 let invTx = DB.get('invtx', []);
 let inspections = DB.get('inspections', []);
-let optLogs = DB.get('optlogs', []);
 
 // ═══════════════════════════════════════════════════════════
 //  SEED DATA
@@ -2288,7 +2399,7 @@ function showView(name) {
   document.getElementById('topbar-breadcrumb').textContent = `TKO iMATOMs ALM › ${viewTitles[name]||name}`;
   const renders = {dashboard:renderDashboard,assets:renderAssets,lifecycle:renderLifecycleSelect,
     qrcode:renderQR,inspection:renderInspection,valuation:renderValuation,
-    workrequest:renderWR,operation:renderOpt,ppm:renderPPM,contract:renderMA,inventory:renderInventory,
+    workrequest:renderWR,operation:renderOM,ppm:renderPPM,contract:renderMA,inventory:renderInventory,
     adminmgmt:renderAdminmgmt};
   if(renders[name]) renders[name]();
 }
@@ -2316,7 +2427,7 @@ setInterval(updateClock, 1000); updateClock();
 //  POPULATE SELECTS
 // ═══════════════════════════════════════════════════════════
 function populateAssetSelects() {
-  ['wr-asset','ppm-asset','ma-asset','opt-asset','lc-asset-select','reopt-asset','hist-asset-select'].forEach(id => {
+  ['wr-asset','ppm-asset','ma-asset','opt-asset','om-asset','lc-asset-select','reopt-asset','hist-asset-select'].forEach(id => {
     const el = document.getElementById(id); if(!el) return;
     const cur = el.value;
     el.innerHTML = `<option value="">-- เลือก Asset --</option>` + assets.map(a=>`<option value="${a.id}">${a.id} — ${a.name}</option>`).join('');
@@ -4232,39 +4343,523 @@ function upgradeSeedWR(){
 // ═══════════════════════════════════════════════════════════
 //  OPERATION
 // ═══════════════════════════════════════════════════════════
-function renderOpt() {
-  destroyChart('avail');
-  const days = Array.from({length:14},(_,i)=>{const d=new Date();d.setDate(d.getDate()-13+i);return d.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit'});});
-  charts.avail = new Chart(document.getElementById('chartAvail'), {
-    type:'line',data:{labels:days,datasets:[{label:'Availability (%)',data:days.map(()=>(Math.random()*5+95).toFixed(1)),borderColor:'#22C55E',fill:true,backgroundColor:'rgba(34,197,94,.1)',tension:.4},{label:'Target (98%)',data:days.map(()=>98),borderColor:'#EAB308',borderDash:[4,4],fill:false}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E'}}},scales:{x:{ticks:{color:'#8B949E'}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'},min:90,max:100}}}
-  });
+// ═══════════════════════════════════════════════════════════
+//  OPERATION (OM) — Checklist Templates + Execution + Approve
+// ═══════════════════════════════════════════════════════════
+const DEFAULT_OM_TEMPLATES = [
+  {id:'TPL-OM-06',formCode:'FM-RPH-OM-06',sys:'BS',name:'บันทึกอุณหภูมิและความชื้น (Temperature & Humidity Log)',items:[]},
+  {id:'TPL-OM-07',formCode:'FM-RPH-OM-07',sys:'MATV',name:'MATV System Daily Check',items:[]},
+  {id:'TPL-OM-09',formCode:'FM-RPH-OM-09',sys:'EE',name:'Daily Electricity Meter Check (TOD)',items:[]},
+  {id:'TPL-OM-11',formCode:'FM-RPH-OM-11',sys:'FP',name:'Jockey Pump Daily Check',items:[]},
+  {id:'TPL-OM-13',formCode:'FM-RPH-OM-13',sys:'SN',name:'Booster Pump Daily Check',items:[]},
+  {id:'TPL-OM-14',formCode:'FM-RPH-OM-14',sys:'OTH',name:'GAS Station Check',items:[]},
+  {id:'TPL-OM-16',formCode:'FM-RPH-OM-16',sys:'BS',name:'Emergency Shower & Eye Wash Check',items:[]},
+  {id:'TPL-OM-18',formCode:'FM-RPH-OM-18',sys:'AC',name:'Cooling Plant Daily Check',items:[]},
+];
+let omTemplates = DB.get('omTemplates', DEFAULT_OM_TEMPLATES);
+let omRecords = DB.get('omRecords', []);
+let omTabFilter = 'all';
+let omCurrentItems = [];
+let omEquipPhotos = [];
+let omStartTime = null;
+let omTplWorkingItems = [];
 
-  const logs = DB.get('optlogs', []);
-  document.getElementById('opt-table').innerHTML = logs.length ? logs.map(l=>`<tr>
-    <td style="font-size:12px">${fmtDate(l.datetime)}</td>
-    <td style="font-size:12px">${l.datetime?new Date(l.datetime).toLocaleTimeString('th-TH'):'-'}</td>
-    <td><span class="tag">${l.assetId}</span></td>
-    <td>${l.param}</td>
-    <td class="fw-600">${l.val}</td>
-    <td class="text-muted">${l.std}</td>
-    <td class="text-muted">${l.unit}</td>
-    <td>${l.status==='alert'?'<span class="badge badge-yellow">⚠ เกินมาตรฐาน</span>':l.status==='critical'?'<span class="badge badge-red">🔴 วิกฤต</span>':'<span class="badge badge-green">✅ ปกติ</span>'}</td>
-    <td style="font-size:12px">${l.person}</td>
-    <td style="font-size:12px;color:var(--text3)">${l.note||'-'}</td>
-  </tr>`).join('') : '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีข้อมูลการเดินระบบ — คลิก "+ บันทึกผลการเดินระบบ"</td></tr>';
+// ── Template management ──
+function renderOMTemplates(){
+  const list=document.getElementById('om-templates-list');
+  if(!list)return;
+  list.innerHTML=omTemplates.length?omTemplates.map(t=>`
+    <div class="card-sm">
+      <div class="flex justify-between flex-center mb-8">
+        <span class="tag">${t.sys}</span>
+        <span class="text-muted" style="font-size:10px">${t.formCode||''}</span>
+      </div>
+      <div class="fw-600 mb-8" style="font-size:13px">${t.name||'(ยังไม่ตั้งชื่อ)'}</div>
+      <div class="text-muted mb-12" style="font-size:11px">${t.items.length?`${t.items.length} หัวข้อตรวจสอบ`:'⚠ ยังไม่มีหัวข้อตรวจสอบ'}</div>
+      <div class="flex gap-8">
+        <button class="btn btn-secondary btn-sm" onclick="openOMTemplateModal('${t.id}')">✏ แก้ไข</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteOMTemplate('${t.id}')">🗑</button>
+      </div>
+    </div>`).join(''):'<div class="text-muted text-center" style="padding:24px">ยังไม่มี Checklist — กด "+ เพิ่ม Checklist ใหม่"</div>';
+}
+function openOMTemplateModal(id){
+  const t=id?omTemplates.find(x=>x.id===id):null;
+  document.getElementById('omtpl-id').value=id||'';
+  document.getElementById('omtpl-modal-title').textContent=t?`🧾 แก้ไข: ${t.name}`:'🧾 เพิ่ม Checklist ใหม่';
+  document.getElementById('omtpl-name').value=t?.name||'';
+  document.getElementById('omtpl-sys').value=t?.sys||'AC';
+  document.getElementById('omtpl-formcode').value=t?.formCode||'';
+  omTplWorkingItems=t?JSON.parse(JSON.stringify(t.items||[])):[];
+  renderOMTplItems();
+  openModal('omTemplateModal');
+}
+function renderOMTplItems(){
+  const el=document.getElementById('omtpl-items-list');if(!el)return;
+  el.innerHTML=omTplWorkingItems.length?omTplWorkingItems.map((item,i)=>`
+    <div class="card-sm mb-8" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input class="form-control" style="flex:2;min-width:180px" placeholder="ชื่อหัวข้อตรวจสอบ" value="${(item.label||'').replace(/"/g,'&quot;')}" onchange="updateOMTplItem(${i},'label',this.value)">
+      <select class="form-control" style="width:170px" onchange="updateOMTplItem(${i},'type',this.value)">
+        <option value="visual" ${item.type==='visual'?'selected':''}>ตรวจสภาพ (ปกติ/ผิดปกติ)</option>
+        <option value="measurement" ${item.type==='measurement'?'selected':''}>ค่าที่วัด (ตัวเลข)</option>
+        <option value="photo" ${item.type==='photo'?'selected':''}>ถ่ายรูป+อ่านค่า</option>
+      </select>
+      ${item.type==='measurement'||item.type==='photo'?`
+        <input class="form-control" style="width:70px" placeholder="หน่วย" value="${item.unit||''}" onchange="updateOMTplItem(${i},'unit',this.value)">
+        <input class="form-control" style="width:70px" type="number" placeholder="Min" value="${item.min??''}" onchange="updateOMTplItem(${i},'min',this.value)">
+        <input class="form-control" style="width:70px" type="number" placeholder="Max" value="${item.max??''}" onchange="updateOMTplItem(${i},'max',this.value)">
+      `:''}
+      <button class="btn btn-danger btn-sm btn-icon" onclick="removeOMTplItem(${i})">✕</button>
+    </div>`).join(''):'<div class="text-muted" style="font-size:12px;padding:8px">ยังไม่มีหัวข้อ — กด "+ เพิ่มหัวข้อ"</div>';
+}
+function addOMTemplateItemRow(){
+  omTplWorkingItems.push({id:'itm'+Date.now()+Math.floor(Math.random()*1000),label:'',type:'visual',unit:'',min:null,max:null});
+  renderOMTplItems();
+}
+function updateOMTplItem(i,key,val){
+  if(!omTplWorkingItems[i])return;
+  if(key==='min'||key==='max') omTplWorkingItems[i][key]=val===''?null:parseFloat(val);
+  else omTplWorkingItems[i][key]=val;
+  if(key==='type') renderOMTplItems();
+}
+function removeOMTplItem(i){ omTplWorkingItems.splice(i,1); renderOMTplItems(); }
+function saveOMTemplate(){
+  const id=document.getElementById('omtpl-id').value;
+  const name=document.getElementById('omtpl-name').value.trim();
+  if(!name){ alert('⚠ กรุณาตั้งชื่อ Checklist ก่อนครับ'); return; }
+  const sys=document.getElementById('omtpl-sys').value;
+  const formCode=document.getElementById('omtpl-formcode').value.trim();
+  omTplWorkingItems.forEach((it,i)=>{ if(!it.id) it.id='itm'+Date.now()+i; });
+  if(id){
+    const idx=omTemplates.findIndex(t=>t.id===id);
+    if(idx>=0) omTemplates[idx]={...omTemplates[idx],name,sys,formCode,items:omTplWorkingItems};
+  }else{
+    omTemplates.push({id:'TPL-'+Date.now(),name,sys,formCode,items:omTplWorkingItems});
+  }
+  DB.set('omTemplates',omTemplates);
+  closeModal('omTemplateModal');
+  renderOMTemplates();
+  populateOMTemplateSelect();
+}
+function deleteOMTemplate(id){
+  const t=omTemplates.find(x=>x.id===id);if(!t)return;
+  if(!confirm(`ลบ Checklist "${t.name}" ใช่หรือไม่?`))return;
+  omTemplates=omTemplates.filter(x=>x.id!==id);
+  DB.set('omTemplates',omTemplates);
+  renderOMTemplates();
 }
 
-function saveOpt() {
-  const logs = DB.get('optlogs', []);
-  logs.unshift({ assetId:document.getElementById('opt-asset').value, datetime:document.getElementById('opt-datetime').value,
-    param:document.getElementById('opt-param').value, val:document.getElementById('opt-val').value,
-    std:document.getElementById('opt-std').value, unit:document.getElementById('opt-unit').value,
-    person:document.getElementById('opt-person').value, status:document.getElementById('opt-status').value,
-    note:document.getElementById('opt-note').value });
-  DB.set('optlogs', logs);
-  closeModal('addOptModal');
-  renderOpt();
+// ── Execution (New OM) ──
+function populateOMTemplateSelect(){
+  const sel=document.getElementById('om-template');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">-- เลือก Checklist --</option>'+omTemplates.map(t=>`<option value="${t.id}">${t.sys} — ${t.name}</option>`).join('');
+  if(cur) sel.value=cur;
+}
+function openNewOM(assetId){
+  document.getElementById('om-record-id').value='';
+  populateOMTemplateSelect();
+  omCurrentItems=[];
+  omEquipPhotos=[];
+  omStartTime=new Date();
+  document.getElementById('om-start-time-display').textContent=omStartTime.toLocaleTimeString('th-TH');
+  document.getElementById('om-duration-display').textContent='—';
+  document.getElementById('om-readiness').value='ready';
+  document.getElementById('om-person').value='';
+  document.getElementById('om-asset-info').style.display='none';
+  document.getElementById('om-equip-photo-list').innerHTML='';
+  document.getElementById('om-equip-photo-required').textContent='';
+  document.getElementById('om-items-form').innerHTML='<div class="text-muted" style="font-size:12px;padding:12px">เลือก Asset และ Checklist ก่อนครับ</div>';
+  openModal('omCheckModal');
+  if(assetId){
+    setTimeout(()=>{ const sel=document.getElementById('om-asset'); if(sel){ sel.value=assetId; loadOMChecklistForAsset(assetId); } },50);
+  }
+}
+function loadOMChecklistForAsset(assetId){
+  if(!assetId)return;
+  const a=assets.find(x=>x.id===assetId);
+  const infoEl=document.getElementById('om-asset-info');
+  if(a){
+    infoEl.style.display='block';
+    infoEl.innerHTML=`<div class="fw-600" style="font-size:13px">${a.id} — ${a.name||''}</div><div class="text-muted" style="font-size:11px">${[a.building,a.floor,a.zone,a.room].filter(Boolean).join(' / ')||a.location||'-'}</div>`;
+  }
+  // ตรวจว่าเป็นครั้งแรกของ Asset นี้หรือไม่ (สำหรับบังคับรูปอุปกรณ์ ≥2 รูป)
+  const prevWithPhotos=omRecords.some(o=>o.assetId===assetId && Array.isArray(o.equipmentPhotos) && o.equipmentPhotos.length>=2);
+  document.getElementById('om-equip-photo-required').textContent=prevWithPhotos?'':'(ครั้งแรกของเครื่องนี้ — ต้องมีอย่างน้อย 2 รูป) *';
+  // auto-pick template ตาม sys ของ asset
+  const sel=document.getElementById('om-template');
+  const match=a&&a.sys?omTemplates.find(t=>t.sys===a.sys):null;
+  if(match){ sel.value=match.id; loadOMTemplateIntoItems(match.id); }
+}
+function loadOMTemplateIntoItems(templateId){
+  const t=omTemplates.find(x=>x.id===templateId);
+  if(!t){ omCurrentItems=[]; renderOMChecklistItems(); return; }
+  omCurrentItems=(t.items||[]).map(it=>({...it,result:'normal',value:'',detail:'',photo:null}));
+  renderOMChecklistItems();
+}
+function renderOMChecklistItems(){
+  const el=document.getElementById('om-items-form');if(!el)return;
+  if(!omCurrentItems.length){
+    el.innerHTML='<div class="text-muted" style="font-size:12px;padding:12px">Checklist นี้ยังไม่มีหัวข้อตรวจสอบ — ไปที่ "🧾 Checklist Setup" เพื่อเพิ่มหัวข้อก่อนครับ</div>';
+    document.getElementById('om-abnormal-count').textContent='0';
+    return;
+  }
+  el.innerHTML=omCurrentItems.map((item,i)=>{
+    const isAbnormal=item.result==='abnormal';
+    const outOfRange=(item.type==='measurement'||item.type==='photo')&&item.value!==''&&item.value!=null&&
+      ((item.min!=null&&parseFloat(item.value)<item.min)||(item.max!=null&&parseFloat(item.value)>item.max));
+    return `<div class="card-sm mb-8" style="border-left:3px solid ${isAbnormal?'var(--red)':'var(--border)'}">
+      <div class="fw-600 mb-8" style="font-size:13px">${i+1}. ${item.label||'(ยังไม่ตั้งชื่อหัวข้อ)'}</div>
+      <div class="flex gap-8" style="flex-wrap:wrap;align-items:center">
+        <button class="btn btn-sm ${item.result==='normal'?'btn-success':'btn-secondary'}" onclick="setOMItemResult(${i},'normal')">✅ ปกติ</button>
+        <button class="btn btn-sm ${isAbnormal?'btn-danger':'btn-secondary'}" onclick="setOMItemResult(${i},'abnormal')">⚠ ผิดปกติ</button>
+        ${(item.type==='measurement'||item.type==='photo')?`
+          <input class="form-control" style="width:110px" type="number" placeholder="ค่าที่วัดได้" value="${item.value}" oninput="setOMItemValue(${i},this.value)">
+          <span class="text-muted" style="font-size:11px">${item.unit||''} ${(item.min!=null||item.max!=null)?`(เกณฑ์ ${item.min??'-'}–${item.max??'-'})`:''}</span>
+          ${outOfRange?'<span class="badge badge-red">⚠ นอกเกณฑ์</span>':''}
+        `:''}
+        ${item.type==='photo'?`<input type="file" accept="image/*" capture="environment" onchange="handleOMItemPhoto(${i},event)" style="max-width:200px">`:''}
+      </div>
+      ${item.photo?`<img src="${item.photo}" onclick="openImageLightbox('${item.photo}')" style="width:70px;height:70px;object-fit:cover;border-radius:6px;margin-top:8px;cursor:zoom-in">`:''}
+      ${isAbnormal?`<div class="mt-8">
+        <textarea class="form-control" rows="2" placeholder="รายละเอียดอาการผิดปกติ" oninput="setOMItemDetail(${i},this.value)">${item.detail||''}</textarea>
+        <div class="flex gap-8 mt-8" style="align-items:center">
+          <button class="btn btn-secondary btn-sm" onclick="startOMVoiceNote(${i})">🎤 บันทึกเสียง (พูดแทนพิมพ์)</button>
+          <span id="om-voice-status-${i}" class="text-muted" style="font-size:11px"></span>
+        </div>
+      </div>`:''}
+    </div>`;
+  }).join('');
+  const abCount=omCurrentItems.filter(x=>x.result==='abnormal').length;
+  document.getElementById('om-abnormal-count').textContent=abCount;
+}
+function setOMItemResult(i,val){ omCurrentItems[i].result=val; renderOMChecklistItems(); }
+function setOMItemValue(i,val){ omCurrentItems[i].value=val; }
+function setOMItemDetail(i,val){ omCurrentItems[i].detail=val; }
+function handleOMItemPhoto(i,e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{ omCurrentItems[i].photo=ev.target.result; renderOMChecklistItems(); };
+  reader.readAsDataURL(file);
+}
+function startOMVoiceNote(i){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const statusEl=document.getElementById(`om-voice-status-${i}`);
+  if(!SR){ if(statusEl)statusEl.textContent='⚠ เบราว์เซอร์นี้ไม่รองรับ กรุณาพิมพ์แทนครับ'; return; }
+  const rec=new SR();
+  rec.lang='th-TH'; rec.interimResults=false; rec.maxAlternatives=1;
+  if(statusEl)statusEl.textContent='🎙 กำลังฟัง...';
+  rec.onresult=(e)=>{
+    const text=e.results[0][0].transcript;
+    omCurrentItems[i].detail=(omCurrentItems[i].detail?omCurrentItems[i].detail+' ':'')+text;
+    renderOMChecklistItems();
+  };
+  rec.onerror=()=>{ if(statusEl)statusEl.textContent='⚠ ไม่สามารถบันทึกเสียงได้'; };
+  rec.onend=()=>{ const s=document.getElementById(`om-voice-status-${i}`); if(s&&s.textContent==='🎙 กำลังฟัง...')s.textContent=''; };
+  rec.start();
+}
+
+// Equipment baseline photos
+function handleOMEquipPhotoUpload(e){
+  const files=[...e.target.files];
+  files.forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{ omEquipPhotos.push(ev.target.result); renderOMEquipPhotos(); };
+    reader.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+function renderOMEquipPhotos(){
+  const el=document.getElementById('om-equip-photo-list');if(!el)return;
+  el.innerHTML=omEquipPhotos.map((p,i)=>`
+    <div style="position:relative">
+      <img src="${p}" onclick="openImageLightbox('${p}')" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:zoom-in">
+      <span onclick="event.stopPropagation();omEquipPhotos.splice(${i},1);renderOMEquipPhotos()" style="position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">✕</span>
+    </div>`).join('');
+}
+
+function openOMScannerInModal(){
+  openQRScanner({
+    wrapId:'om-qr-scanner-wrap', boxId:'om-qr-scanner-box', statusId:'om-qr-scanner-status',
+    onDecoded:(val)=>{
+      const sel=document.getElementById('om-asset');
+      const found=[...sel.options].some(o=>o.value===val);
+      if(found){ sel.value=val; loadOMChecklistForAsset(val); closeQRScanner('om-qr-scanner-wrap'); }
+      else alert(`⚠ ไม่พบ Asset ID "${val}" ในระบบ`);
+    }
+  });
+}
+function openOMScannerStart(){
+  openNewOM();
+  setTimeout(()=>openOMScannerInModal(),200);
+}
+
+function submitOM(){
+  const assetId=document.getElementById('om-asset').value;
+  const templateId=document.getElementById('om-template').value;
+  if(!assetId){ alert('⚠ กรุณาเลือก Asset ก่อนครับ'); return; }
+  if(!templateId){ alert('⚠ กรุณาเลือก Checklist ก่อนครับ'); return; }
+  if(!omCurrentItems.length){ alert('⚠ Checklist นี้ยังไม่มีหัวข้อตรวจสอบ กรุณาไปเพิ่มหัวข้อที่ "Checklist Setup" ก่อนครับ'); return; }
+  const person=document.getElementById('om-person').value.trim();
+  if(!person){ alert('⚠ กรุณาระบุชื่อผู้ตรวจสอบครับ'); return; }
+  const prevWithPhotos=omRecords.some(o=>o.assetId===assetId && Array.isArray(o.equipmentPhotos) && o.equipmentPhotos.length>=2);
+  if(!prevWithPhotos && omEquipPhotos.length<2){
+    alert('⚠ เครื่องนี้ยังไม่เคยมีรูปอุปกรณ์จริง กรุณาแนบรูปอุปกรณ์อย่างน้อย 2 รูปก่อนครับ (ครั้งแรกเท่านั้น)');
+    return;
+  }
+  const t=omTemplates.find(x=>x.id===templateId);
+  const endTime=new Date();
+  const durationMin=omStartTime?Math.round((endTime-omStartTime)/60000):null;
+  const recId='OM-'+Date.now();
+  const om={
+    id:recId, assetId, templateId, templateName:t?.name||'', sys:t?.sys||'',
+    items:JSON.parse(JSON.stringify(omCurrentItems)),
+    equipmentPhotos: omEquipPhotos.length?omEquipPhotos.slice():(omRecords.find(o=>o.assetId===assetId)?.equipmentPhotos||[]),
+    readiness:document.getElementById('om-readiness').value,
+    person, startTime:omStartTime?omStartTime.toISOString():null, endTime:endTime.toISOString(), durationMin,
+    status:'pending', submittedDate:endTime.toISOString(),
+    reviewedBy:null, reviewedDate:null, rejectReason:null, linkedWRs:[]
+  };
+  const abnormalItems=omCurrentItems.filter(x=>x.result==='abnormal');
+  abnormalItems.forEach((item,idx)=>{
+    const wrId=createWRFromOMItem(om,item,idx);
+    om.linkedWRs.push(wrId);
+  });
+  omRecords.unshift(om);
+  DB.set('omRecords',omRecords);
+  closeModal('omCheckModal');
+  renderOM();
+  const msg=abnormalItems.length
+    ?`✅ ส่ง OM ${recId} เรียบร้อย!\nพบผิดปกติ ${abnormalItems.length} หัวข้อ → สร้าง WR อัตโนมัติแล้ว (${om.linkedWRs.join(', ')})\nรอหัวหน้างานอนุมัติ`
+    :`✅ ส่ง OM ${recId} เรียบร้อย! ไม่พบความผิดปกติ — รอหัวหน้างานอนุมัติ`;
+  alert(msg);
+}
+
+function createWRFromOMItem(om,item,idx){
+  const wrId='WR-OM-'+Date.now()+'-'+idx;
+  const a=assets.find(x=>x.id===om.assetId);
+  const wr={
+    id:wrId, assetId:om.assetId, desc:`[OM] ${item.label}${item.detail?': '+item.detail:''}`,
+    type:'CM', priority:'urgently', reporter:`ระบบ OM (${om.person})`, phone:'',
+    date:new Date().toISOString(), availableTime:'ตลอดเวลา',
+    building:a?.building||'', floor:a?.floor||'', zone:a?.zone||'', room:a?.room||'',
+    locationDetail:'', status:'open', closeDate:null, mttr:null,
+    sourceOM:om.id, sourceOMItem:item.label
+  };
+  workRequests.unshift(wr);
+  DB.set('wr',workRequests);
+  return wrId;
+}
+
+// ── List / Render / Filter ──
+function filterOM(f,el){
+  omTabFilter=f;
+  document.querySelectorAll('#om-vtabs .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderOM();
+}
+function renderOM(){
+  populateOMTemplateSelect();
+  renderOMTemplates();
+  // Availability KPI (แบบง่าย: จากสถานะความพร้อมของ OM ล่าสุดต่อ asset)
+  const latestByAsset={};
+  omRecords.forEach(o=>{ if(!latestByAsset[o.assetId]) latestByAsset[o.assetId]=o; });
+  const latestList=Object.values(latestByAsset);
+  const readyCount=latestList.filter(o=>o.readiness==='ready').length;
+  const availPct=latestList.length?Math.round(readyCount/latestList.length*1000)/10:null;
+  document.getElementById('om-avail').textContent=availPct!=null?availPct+'%':'—';
+  const today=new Date().toDateString();
+  const todayCount=omRecords.filter(o=>o.submittedDate&&new Date(o.submittedDate).toDateString()===today).length;
+  document.getElementById('om-today').textContent=todayCount;
+  const abnormalTotal=omRecords.reduce((s,o)=>s+(o.linkedWRs?.length||0),0);
+  document.getElementById('om-abnormal').textContent=abnormalTotal;
+  const pendingCount=omRecords.filter(o=>o.status==='pending').length;
+  document.getElementById('om-pending').textContent=pendingCount;
+
+  // badges
+  const rejectedCount=omRecords.filter(o=>o.status==='rejected').length;
+  setTabBadge('tab-badge-om-inprogress',pendingCount+rejectedCount);
+  setTabBadge('tab-badge-om-evaluate',pendingCount);
+
+  // Views visibility
+  const views=['om-main-view','om-evaluate-view','om-templates-view','om-history-view'];
+  views.forEach(id=>document.getElementById(id).style.display='none');
+  if(omTabFilter==='templates'){ document.getElementById('om-templates-view').style.display='block'; return; }
+  if(omTabFilter==='history'){ document.getElementById('om-history-view').style.display='block'; populateOMHistorySelect(); return; }
+  if(omTabFilter==='evaluate'){ document.getElementById('om-evaluate-view').style.display='block'; renderOMEvaluate(); return; }
+  document.getElementById('om-main-view').style.display='block';
+
+  destroyChart('avail');
+  const days=Array.from({length:14},(_,i)=>{const d=new Date();d.setDate(d.getDate()-13+i);return d.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit'});});
+  const availByDay=days.map((_,i)=>{
+    const d=new Date();d.setDate(d.getDate()-13+i);
+    const dayStr=d.toDateString();
+    const dayRecs=omRecords.filter(o=>o.submittedDate&&new Date(o.submittedDate).toDateString()===dayStr);
+    if(!dayRecs.length)return null;
+    const ready=dayRecs.filter(o=>o.readiness==='ready').length;
+    return Math.round(ready/dayRecs.length*1000)/10;
+  });
+  charts.avail=new Chart(document.getElementById('chartAvail'),{
+    type:'line',
+    data:{labels:days,datasets:[
+      {label:'Availability (%)',data:availByDay,borderColor:'#22C55E',fill:true,backgroundColor:'rgba(34,197,94,.1)',tension:.4,spanGaps:true},
+      {label:'Target (98%)',data:days.map(()=>98),borderColor:'#EAB308',borderDash:[4,4],fill:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E'}}},scales:{x:{ticks:{color:'#8B949E'}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'},min:80,max:100}}}
+  });
+
+  let list=omRecords;
+  if(omTabFilter==='inprogress') list=omRecords.filter(o=>o.status==='pending'||o.status==='rejected');
+  else if(omTabFilter==='closed') list=omRecords.filter(o=>o.status==='approved');
+  list=[...list].sort((a,b)=>new Date(b.submittedDate||0)-new Date(a.submittedDate||0));
+
+  const readinessBadge={ready:'<span class="badge badge-green">🟢 พร้อมใช้งาน</span>',temp:'<span class="badge badge-yellow">🟡 ใช้งานชั่วคราว</span>',down:'<span class="badge badge-red">🔴 หยุดซ่อมทันที</span>'};
+  const statusBadge={pending:'<span class="badge badge-yellow">⏳ รออนุมัติ</span>',approved:'<span class="badge badge-green">✅ อนุมัติแล้ว</span>',rejected:'<span class="badge badge-red">↩ ส่งกลับแก้ไข</span>'};
+  document.getElementById('om-table').innerHTML=list.length?list.map(o=>{
+    const abCount=o.items?o.items.filter(x=>x.result==='abnormal').length:0;
+    return `<tr>
+      <td><span class="tag ff-mono">${o.id}</span>${o.status==='rejected'?`<div style="color:var(--red);font-size:10px;margin-top:2px" title="${o.rejectReason||''}">↩ ${(o.rejectReason||'').substring(0,25)}</div>`:''}</td>
+      <td><span class="tag">${o.assetId}</span></td>
+      <td style="font-size:12px">${o.templateName||'-'}</td>
+      <td style="font-size:11px;color:var(--text2)">${o.submittedDate?new Date(o.submittedDate).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'}):'-'}</td>
+      <td>${abCount?`<span class="badge badge-red">⚠ ผิดปกติ ${abCount}</span>`:'<span class="badge badge-green">✅ ปกติทั้งหมด</span>'}</td>
+      <td>${readinessBadge[o.readiness]||'-'}</td>
+      <td class="ff-mono" style="font-size:12px">${o.durationMin!=null?o.durationMin+' นาที':'—'}</td>
+      <td style="font-size:12px">${o.person||'-'}</td>
+      <td>${statusBadge[o.status]||o.status}</td>
+      <td>
+        <div class="flex gap-8" style="flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm" onclick="viewOMDetail('${o.id}')">📄 ดูรายละเอียด</button>
+          ${o.status==='rejected'?`<button class="btn btn-primary btn-sm" onclick="editOM('${o.id}')">✏ แก้ไข</button>`:''}
+        </div>
+      </td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีข้อมูล OM — คลิก "+ เริ่มทำ OM"</td></tr>';
+}
+
+function viewOMDetail(id){
+  const o=omRecords.find(x=>x.id===id);if(!o)return;
+  const abList=o.items.filter(x=>x.result==='abnormal');
+  let msg=`OM: ${o.id}\nAsset: ${o.assetId}\nChecklist: ${o.templateName}\nผู้ตรวจ: ${o.person}\nความพร้อม: ${o.readiness}\nระยะเวลา: ${o.durationMin||'-'} นาที\n\nหัวข้อผิดปกติ: ${abList.length}`;
+  if(abList.length) msg+='\n'+abList.map(a=>`- ${a.label}: ${a.detail||''}`).join('\n');
+  alert(msg);
+}
+
+function editOM(id){
+  const o=omRecords.find(x=>x.id===id);if(!o)return;
+  document.getElementById('om-record-id').value=o.id;
+  populateOMTemplateSelect();
+  omCurrentItems=JSON.parse(JSON.stringify(o.items||[]));
+  omEquipPhotos=Array.isArray(o.equipmentPhotos)?o.equipmentPhotos.slice():[];
+  omStartTime=o.startTime?new Date(o.startTime):new Date();
+  document.getElementById('om-start-time-display').textContent=omStartTime.toLocaleTimeString('th-TH');
+  document.getElementById('om-duration-display').textContent=o.durationMin?o.durationMin+' นาที':'—';
+  document.getElementById('om-readiness').value=o.readiness||'ready';
+  document.getElementById('om-person').value=o.person||'';
+  document.getElementById('om-equip-photo-required').textContent='';
+  renderOMEquipPhotos();
+  openModal('omCheckModal');
+  setTimeout(()=>{
+    const sel=document.getElementById('om-asset'); if(sel)sel.value=o.assetId;
+    loadOMChecklistForAsset(o.assetId);
+    document.getElementById('om-template').value=o.templateId;
+    omCurrentItems=JSON.parse(JSON.stringify(o.items||[]));
+    renderOMChecklistItems();
+  },50);
+}
+
+// ── Evaluate & Approve ──
+function renderOMEvaluate(){
+  const list=omRecords.filter(o=>o.status==='pending'||o.status==='approved')
+    .sort((a,b)=>new Date(b.submittedDate||0)-new Date(a.submittedDate||0));
+  document.getElementById('om-evaluate-list').innerHTML=list.length?list.map(o=>{
+    const approved=o.status==='approved';
+    const abCount=o.items?o.items.filter(x=>x.result==='abnormal').length:0;
+    const statusColor=approved?'var(--green)':'var(--yellow)';
+    return `<div class="card-sm mb-12" style="border-left:3px solid ${statusColor}">
+      <div class="flex justify-between flex-center mb-10">
+        <div class="flex gap-8 flex-center" style="flex-wrap:wrap">
+          <span class="tag ff-mono">${o.id}</span>
+          <span class="tag">${o.assetId}</span>
+          <span class="fw-600" style="font-size:13px">${o.templateName}</span>
+          ${abCount?`<span class="badge badge-red">⚠ ผิดปกติ ${abCount}</span>`:'<span class="badge badge-green">✅ ปกติ</span>'}
+        </div>
+        <div class="flex gap-8 flex-center" style="flex-wrap:wrap">
+          <span style="font-size:11px;color:${statusColor};white-space:nowrap">${approved?`✅ อนุมัติโดย ${o.reviewedBy}`:'⏳ รออนุมัติ'}</span>
+          <button class="btn btn-secondary btn-sm" onclick="rejectOM('${o.id}')">↩ แก้ไข</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
+        <div><div class="text-muted" style="font-size:10px">ผู้ตรวจ</div><span style="font-size:12px">${o.person}</span></div>
+        <div><div class="text-muted" style="font-size:10px">ความพร้อม</div><span style="font-size:12px">${o.readiness==='ready'?'🟢 พร้อมใช้งาน':o.readiness==='temp'?'🟡 ใช้งานชั่วคราว':'🔴 หยุดซ่อมทันที'}</span></div>
+        <div><div class="text-muted" style="font-size:10px">ระยะเวลา</div><span class="text-teal fw-600" style="font-size:12px">${o.durationMin||'-'} นาที</span></div>
+        <div><div class="text-muted" style="font-size:10px">วันที่ส่ง</div><span style="font-size:12px">${o.submittedDate?new Date(o.submittedDate).toLocaleString('th-TH'):'-'}</span></div>
+      </div>
+      ${o.linkedWRs&&o.linkedWRs.length?`<div class="alert alert-warning" style="font-size:12px;padding:6px 12px;margin-bottom:8px">🔧 สร้าง WR อัตโนมัติ: ${o.linkedWRs.join(', ')}</div>`:''}
+      <div class="flex gap-8">
+        <button class="btn btn-secondary btn-sm" onclick="viewOMDetail('${o.id}')">📄 ดูรายละเอียด</button>
+        ${!approved?`<button class="btn btn-success btn-sm" onclick="approveOM('${o.id}')">✅ อนุมัติ</button>`:''}
+      </div>
+    </div>`;
+  }).join(''):'<div class="text-muted text-center" style="padding:32px;font-size:13px">ยังไม่มี OM ที่ส่งเข้ามา</div>';
+}
+function approveOM(id){
+  const idx=omRecords.findIndex(o=>o.id===id);if(idx<0)return;
+  omRecords[idx].status='approved';
+  omRecords[idx].reviewedBy=currentUser?.name||'หัวหน้างาน';
+  omRecords[idx].reviewedDate=new Date().toISOString();
+  DB.set('omRecords',omRecords);
+  renderOM();
+  alert(`✅ อนุมัติ OM ${id} เรียบร้อยครับ`);
+}
+function rejectOM(id){
+  const reason=prompt('เหตุผลที่ส่งกลับให้ช่างแก้ไข (สั้นๆ):');
+  if(reason===null)return;
+  if(!reason.trim()){ alert('⚠ กรุณาระบุเหตุผลสั้นๆ ก่อนส่งกลับแก้ไขครับ'); return; }
+  const idx=omRecords.findIndex(o=>o.id===id);if(idx<0)return;
+  omRecords[idx].status='rejected';
+  omRecords[idx].rejectReason=reason.trim();
+  omRecords[idx].rejectDate=new Date().toISOString();
+  DB.set('omRecords',omRecords);
+  renderOM();
+  alert(`↩ ส่งกลับ OM ${id} ให้แก้ไขแล้ว: "${reason.trim()}"`);
+}
+
+// ── Asset History (OM) ──
+function populateOMHistorySelect(){
+  const sel=document.getElementById('om-hist-asset-select');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">-- เลือก Asset --</option>'+assets.map(a=>`<option value="${a.id}">${a.id} — ${a.name||''}</option>`).join('');
+  if(cur){ sel.value=cur; renderOMAssetHistory(cur); }
+}
+function renderOMAssetHistory(assetId){
+  const el=document.getElementById('om-hist-content');if(!el)return;
+  if(!assetId){ el.innerHTML=''; return; }
+  const list=omRecords.filter(o=>o.assetId===assetId).sort((a,b)=>new Date(b.submittedDate||0)-new Date(a.submittedDate||0));
+  if(!list.length){ el.innerHTML='<div class="text-muted text-center" style="padding:24px">ยังไม่มีประวัติการทำ OM สำหรับ Asset นี้</div>'; return; }
+  const readyCount=list.filter(o=>o.readiness==='ready').length;
+  const avail=Math.round(readyCount/list.length*1000)/10;
+  const abnormalTotal=list.reduce((s,o)=>s+(o.linkedWRs?.length||0),0);
+  el.innerHTML=`
+    <div class="grid-3 mb-16">
+      <div class="kpi green"><div class="kpi-label">Availability (%)</div><div class="kpi-value ff-display text-green">${avail}%</div></div>
+      <div class="kpi blue"><div class="kpi-label">จำนวนครั้งที่ทำ OM</div><div class="kpi-value ff-display text-blue">${list.length}</div></div>
+      <div class="kpi red"><div class="kpi-label">พบผิดปกติสะสม</div><div class="kpi-value ff-display text-red">${abnormalTotal}</div></div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>OM No.</th><th>วันที่</th><th>Checklist</th><th>ผลตรวจ</th><th>ความพร้อม</th><th>ผู้ตรวจ</th><th>สถานะ</th></tr></thead>
+      <tbody>${list.map(o=>{
+        const abCount=o.items?o.items.filter(x=>x.result==='abnormal').length:0;
+        return `<tr>
+          <td><span class="tag ff-mono">${o.id}</span></td>
+          <td style="font-size:11px">${o.submittedDate?new Date(o.submittedDate).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'}):'-'}</td>
+          <td style="font-size:12px">${o.templateName}</td>
+          <td>${abCount?`<span class="badge badge-red">⚠ ${abCount}</span>`:'<span class="badge badge-green">✅</span>'}</td>
+          <td style="font-size:12px">${o.readiness==='ready'?'🟢':o.readiness==='temp'?'🟡':'🔴'}</td>
+          <td style="font-size:12px">${o.person}</td>
+          <td style="font-size:12px">${o.status}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
 }
 
 // ═══════════════════════════════════════════════════════════
