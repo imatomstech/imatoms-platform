@@ -4347,6 +4347,18 @@ function upgradeSeedWR(){
 //  OPERATION (OM) — Checklist Templates + Execution + Approve
 // ═══════════════════════════════════════════════════════════
 const DEFAULT_OM_TEMPLATES = [
+  {id:'TPL-OM-02',formCode:'FM-RAH-OM-02',sys:'WWT',name:'Wastewater Treatment — Aerator / Effluent Daily Check',items:[
+    {id:'wwt-ap1',label:'Aerator Pump (AP)-1 — สถานะการทำงาน (R/S/T)',type:'visual',unit:'',min:null,max:null},
+    {id:'wwt-ap2',label:'Aerator Pump (AP)-2 — สถานะการทำงาน (R/S/T)',type:'visual',unit:'',min:null,max:null},
+    {id:'wwt-sv30',label:'SV30 — Sediment Charge (วัดใน Aeration Pond)',type:'measurement',unit:'ml',min:200,max:300},
+    {id:'wwt-do',label:'DO — Dissolved Oxygen (วัดใน Aeration Pond, ตรวจ 2 ครั้ง/สัปดาห์)',type:'measurement',unit:'mg/L',min:2,max:4},
+    {id:'wwt-cl',label:'Chlorine (Effluent — วัดที่จุดปล่อยน้ำทิ้ง)',type:'measurement',unit:'mg/L',min:0.2,max:1},
+    {id:'wwt-ph',label:'pH (Effluent — วัดที่จุดปล่อยน้ำทิ้ง)',type:'measurement',unit:'',min:5,max:9},
+    {id:'wwt-tds',label:'TDS (Effluent)',type:'measurement',unit:'mg/L',min:null,max:500},
+    {id:'wwt-temp',label:'Temperature (Effluent)',type:'measurement',unit:'°C',min:null,max:40},
+    {id:'wwt-clpump',label:'Chlorine Pumps — สถานะ (ปกติ/ผิดปกติ)',type:'visual',unit:'',min:null,max:null},
+    {id:'wwt-cltank',label:'Chlorine Level in Tank (ต้อง > 100 ลิตร)',type:'measurement',unit:'liter',min:100,max:null},
+  ]},
   {id:'TPL-OM-06',formCode:'FM-RPH-OM-06',sys:'BS',name:'บันทึกอุณหภูมิและความชื้น (Temperature & Humidity Log)',items:[]},
   {id:'TPL-OM-07',formCode:'FM-RPH-OM-07',sys:'MATV',name:'MATV System Daily Check',items:[]},
   {id:'TPL-OM-09',formCode:'FM-RPH-OM-09',sys:'EE',name:'Daily Electricity Meter Check (TOD)',items:[]},
@@ -4357,6 +4369,11 @@ const DEFAULT_OM_TEMPLATES = [
   {id:'TPL-OM-18',formCode:'FM-RPH-OM-18',sys:'AC',name:'Cooling Plant Daily Check',items:[]},
 ];
 let omTemplates = DB.get('omTemplates', DEFAULT_OM_TEMPLATES);
+// เติม template มาตรฐานใหม่ที่เพิ่งเพิ่มเข้ามาให้อัตโนมัติ (จับคู่ด้วย id) โดยไม่ทับ template ที่ผู้ใช้แก้ไว้แล้ว
+DEFAULT_OM_TEMPLATES.forEach(dt=>{
+  if(!omTemplates.some(t=>t.id===dt.id)) omTemplates.push(JSON.parse(JSON.stringify(dt)));
+});
+DB.set('omTemplates', omTemplates);
 let omRecords = DB.get('omRecords', []);
 let omTabFilter = 'all';
 let omCurrentItems = [];
