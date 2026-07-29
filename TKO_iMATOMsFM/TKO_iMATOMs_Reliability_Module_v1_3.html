@@ -1005,6 +1005,11 @@ body.embedded #content {
               <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:12px">Availability Trend (30 วัน)</div>
               <div class="chart-wrap" style="height:200px"><canvas id="chartAvail"></canvas></div>
             </div>
+            <div class="card-sm mb-12" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+              <div><label class="form-label" style="font-size:10px">จากวันที่</label><input type="date" class="form-control" id="omf-datefrom" onchange="renderOM()" style="width:140px"></div>
+              <div><label class="form-label" style="font-size:10px">ถึงวันที่</label><input type="date" class="form-control" id="omf-dateto" onchange="renderOM()" style="width:140px"></div>
+              <button class="btn btn-secondary btn-sm" onclick="resetOMFilters()">🗑 ล้างตัวกรอง</button>
+            </div>
             <div class="table-wrap">
               <table>
                 <thead><tr><th>OM No.</th><th>Asset</th><th>Checklist</th><th>วันที่/เวลา</th><th>ผลตรวจ</th><th>ความพร้อม</th><th>ระยะเวลา</th><th>ผู้ตรวจ</th><th>สถานะ</th><th>Actions</th></tr></thead>
@@ -1036,6 +1041,11 @@ body.embedded #content {
 
           <!-- Evaluate & Approve -->
           <div id="om-evaluate-view" style="display:none">
+            <div class="card-sm mb-12" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+              <div><label class="form-label" style="font-size:10px">จากวันที่</label><input type="date" class="form-control" id="omef-datefrom" onchange="renderOMEvaluate()" style="width:140px"></div>
+              <div><label class="form-label" style="font-size:10px">ถึงวันที่</label><input type="date" class="form-control" id="omef-dateto" onchange="renderOMEvaluate()" style="width:140px"></div>
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('omef-datefrom').value='';document.getElementById('omef-dateto').value='';renderOMEvaluate()">🗑 ล้างตัวกรอง</button>
+            </div>
             <div id="om-evaluate-list"></div>
           </div>
 
@@ -1139,6 +1149,26 @@ body.embedded #content {
 
       <!-- Main PM table -->
       <div id="ppm-main-view">
+        <div class="card-sm mb-12" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+          <div><label class="form-label" style="font-size:10px">จากวันที่</label><input type="date" class="form-control" id="ppmf-datefrom" onchange="renderPPM()" style="width:140px"></div>
+          <div><label class="form-label" style="font-size:10px">ถึงวันที่</label><input type="date" class="form-control" id="ppmf-dateto" onchange="renderPPM()" style="width:140px"></div>
+          <div><label class="form-label" style="font-size:10px">อาคาร</label><select class="form-control" id="ppmf-building" onchange="renderPPM()" style="width:130px"><option value="">อาคาร: ทั้งหมด</option></select></div>
+          <div><label class="form-label" style="font-size:10px">พื้นที่/โซน</label><select class="form-control" id="ppmf-zone" onchange="renderPPM()" style="width:130px"><option value="">พื้นที่: ทั้งหมด</option></select></div>
+          <div><label class="form-label" style="font-size:10px">ผู้รับผิดชอบ</label><select class="form-control" id="ppmf-assign" onchange="renderPPM()" style="width:140px"><option value="">ผู้รับผิดชอบ: ทั้งหมด</option></select></div>
+          <div><label class="form-label" style="font-size:10px">ระบบ</label><select class="form-control" id="ppmf-system" onchange="renderPPM()" style="width:120px">
+            <option value="">ทั้งหมด</option>
+            <option value="AC">AC</option><option value="BAS">BAS</option><option value="EL">EL</option><option value="EC">EC</option><option value="EE">EE</option><option value="FA">FA</option><option value="FP">FP</option><option value="SN">SN</option><option value="VN">VN</option><option value="WWT">WWT</option><option value="TR">TR</option><option value="GE">GE</option><option value="OTH">OTH</option>
+          </select></div>
+          <div><label class="form-label" style="font-size:10px">กลุ่มหัวข้อที่ทำ PM</label><select class="form-control" id="ppmf-subtype" onchange="renderPPM()" style="width:150px">
+            <option value="">ทั้งหมด</option>
+            <option value="R">R — Replacement</option><option value="A">A — Adjustment</option><option value="L">L — Lubricant</option><option value="C">C — Cleaning</option><option value="T">T — Tighten</option><option value="CB">CB — Condition Base</option>
+          </select></div>
+          <div><label class="form-label" style="font-size:10px">งาน PM ที่สำคัญ</label><select class="form-control" id="ppmf-priority" onchange="renderPPM()" style="width:140px">
+            <option value="">ทั้งหมด</option>
+            <option value="critical">🔴 Critical</option><option value="urgently">🟡 Urgently</option><option value="normal">🟢 Normal</option>
+          </select></div>
+          <button class="btn btn-secondary btn-sm" onclick="resetPPMFilters()">🗑 ล้างตัวกรอง</button>
+        </div>
         <div class="table-wrap">
           <table>
             <thead><tr><th>PM No.</th><th>Asset ID</th><th>ชื่องาน PM</th><th>ความถี่</th><th>ลำดับด่วน</th><th>แผน</th><th>ผลจริง</th><th>ผู้รับผิดชอบ</th><th>เบอร์โทร</th><th>ค่าวัด</th><th>มาตรฐาน</th><th>MTBF(h)</th><th>Cost(฿)</th><th>สถานะ</th><th>Actions</th></tr></thead>
@@ -5339,6 +5369,7 @@ function renderOM(){
   let list=omRecords;
   if(omTabFilter==='inprogress') list=omRecords.filter(o=>o.status==='pending'||o.status==='rejected');
   else if(omTabFilter==='closed') list=omRecords.filter(o=>o.status==='approved');
+  if(['all','inprogress','closed'].includes(omTabFilter)) list=applyOMFilters(list);
   list=[...list].sort((a,b)=>new Date(b.submittedDate||0)-new Date(a.submittedDate||0));
 
   const readinessBadge={ready:'<span class="badge badge-green">🟢 พร้อมใช้งาน</span>',temp:'<span class="badge badge-yellow">🟡 ใช้งานชั่วคราว</span>',down:'<span class="badge badge-red">🔴 หยุดซ่อมทันที</span>'};
@@ -5363,6 +5394,21 @@ function renderOM(){
       </td>
     </tr>`;
   }).join(''):'<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีข้อมูล OM — คลิก "+ เริ่มทำ OM"</td></tr>';
+}
+
+function applyOMFilters(list){
+  const df=document.getElementById('omf-datefrom')?.value;
+  const dt=document.getElementById('omf-dateto')?.value;
+  if(!df&&!dt) return list;
+  return list.filter(o=>{
+    if(df && o.submittedDate && new Date(o.submittedDate) < new Date(df)) return false;
+    if(dt && o.submittedDate && new Date(o.submittedDate) > new Date(dt+'T23:59:59')) return false;
+    return true;
+  });
+}
+function resetOMFilters(){
+  ['omf-datefrom','omf-dateto'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderOM();
 }
 
 function viewOMDetail(id){
@@ -5398,8 +5444,12 @@ function editOM(id){
 
 // ── Evaluate & Approve ──
 function renderOMEvaluate(){
-  const list=omRecords.filter(o=>o.status==='pending'||o.status==='approved')
-    .sort((a,b)=>new Date(b.submittedDate||0)-new Date(a.submittedDate||0));
+  const ef=document.getElementById('omef-datefrom')?.value;
+  const et=document.getElementById('omef-dateto')?.value;
+  let list=omRecords.filter(o=>o.status==='pending'||o.status==='approved');
+  if(ef) list=list.filter(o=>o.submittedDate && new Date(o.submittedDate) >= new Date(ef));
+  if(et) list=list.filter(o=>o.submittedDate && new Date(o.submittedDate) <= new Date(et+'T23:59:59'));
+  list=list.sort((a,b)=>new Date(b.submittedDate||0)-new Date(a.submittedDate||0));
   document.getElementById('om-evaluate-list').innerHTML=list.length?list.map(o=>{
     const approved=o.status==='approved';
     const abCount=o.items?o.items.filter(x=>x.result==='abnormal').length:0;
@@ -5668,6 +5718,10 @@ function renderPPM(){
   if(ppmTabFilter==='list')list=ppmList.filter(p=>p.status==='planned');
   else if(ppmTabFilter==='inprogress')list=ppmList.filter(p=>p.status==='inprogress');
   else if(ppmTabFilter==='closed')list=ppmList.filter(p=>p.status==='done');
+  if(['all','list','inprogress','closed'].includes(ppmTabFilter)){
+    populatePPMFilterOptions();
+    list=applyPPMFilters(list);
+  }
 
   document.getElementById('ppm-table').innerHTML=list.length?list.map(p=>{
     const statusBadge=p.status==='done'?'<span class="badge badge-green">✅ Done</span>':p.status==='overdue'?'<span class="badge badge-red">⏰ Overdue</span>':p.status==='inprogress'?'<span class="badge badge-blue">⚡ In Progress</span>':'<span class="badge badge-blue">📅 แผน</span>';
@@ -6609,6 +6663,47 @@ function calcNextPMDate(){
   const days=Math.ceil(hrs/hrsDay);const next=new Date();next.setDate(next.getDate()+days);
   document.getElementById('ppm-hr-calc').innerHTML=`<span class="text-teal">ทุก ${hrs}h = ทุก <b>${days} วัน</b></span> &nbsp; <span class="text-orange">วันถัดไป: ${next.toLocaleDateString('th-TH')}</span>`;
   if(document.getElementById('ppm-plan-date'))document.getElementById('ppm-plan-date').value=next.toISOString().split('T')[0];
+}
+
+function populatePPMFilterOptions(){
+  const bSel=document.getElementById('ppmf-building'), zSel=document.getElementById('ppmf-zone'), aSel=document.getElementById('ppmf-assign');
+  if(!bSel||!zSel||!aSel)return;
+  const curB=bSel.value, curZ=zSel.value, curA=aSel.value;
+  const buildings=[...new Set(ppmList.map(p=>{const a=assets.find(x=>x.id===p.assetId);return a?.building;}).filter(Boolean))];
+  const zones=[...new Set(ppmList.map(p=>{const a=assets.find(x=>x.id===p.assetId);return a?.zone;}).filter(Boolean))];
+  const assigns=[...new Set(ppmList.map(p=>p.assign).filter(Boolean))];
+  bSel.innerHTML='<option value="">อาคาร: ทั้งหมด</option>'+buildings.map(b=>`<option value="${b}" ${b===curB?'selected':''}>${b}</option>`).join('');
+  zSel.innerHTML='<option value="">พื้นที่: ทั้งหมด</option>'+zones.map(z=>`<option value="${z}" ${z===curZ?'selected':''}>${z}</option>`).join('');
+  aSel.innerHTML='<option value="">ผู้รับผิดชอบ: ทั้งหมด</option>'+assigns.map(a=>`<option value="${a}" ${a===curA?'selected':''}>${a}</option>`).join('');
+}
+function applyPPMFilters(list){
+  const df=document.getElementById('ppmf-datefrom')?.value;
+  const dt=document.getElementById('ppmf-dateto')?.value;
+  const bld=document.getElementById('ppmf-building')?.value;
+  const zn=document.getElementById('ppmf-zone')?.value;
+  const asg=document.getElementById('ppmf-assign')?.value;
+  const sys=document.getElementById('ppmf-system')?.value;
+  const subtype=document.getElementById('ppmf-subtype')?.value;
+  const pri=document.getElementById('ppmf-priority')?.value;
+  if(!df&&!dt&&!bld&&!zn&&!asg&&!sys&&!subtype&&!pri)return list;
+  return list.filter(p=>{
+    if(df && p.planDate && new Date(p.planDate) < new Date(df)) return false;
+    if(dt && p.planDate && new Date(p.planDate) > new Date(dt+'T23:59:59')) return false;
+    const pA=assets.find(a=>a.id===p.assetId);
+    const bldVal=pA?.building||'';
+    const znVal=pA?.zone||'';
+    if(bld && bldVal!==bld) return false;
+    if(zn && znVal!==zn) return false;
+    if(asg && p.assign!==asg) return false;
+    if(sys && p.system!==sys) return false;
+    if(pri && (p.priority||'normal')!==pri) return false;
+    if(subtype && !(p.subItems||[]).some(s=>s.type===subtype)) return false;
+    return true;
+  });
+}
+function resetPPMFilters(){
+  ['ppmf-datefrom','ppmf-dateto','ppmf-building','ppmf-zone','ppmf-assign','ppmf-system','ppmf-subtype','ppmf-priority'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderPPM();
 }
 
 function savePPM(){
