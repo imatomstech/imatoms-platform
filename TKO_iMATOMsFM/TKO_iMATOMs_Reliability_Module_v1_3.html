@@ -119,9 +119,9 @@ select.form-control option{background:var(--bg3)}
 .tabs{display:flex;gap:2px;background:var(--bg3);border-radius:var(--radius);padding:3px;margin-bottom:20px}
 .tab{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);transition:all .15s;font-weight:500}
 .tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4)}
-#wr-vtabs,#om-vtabs{width:240px !important;gap:4px;padding:6px}
-#wr-vtabs .tab,#om-vtabs .tab{padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--font-display);letter-spacing:.3px;border-radius:8px}
-#wr-vtabs .tab.active,#om-vtabs .tab.active{border-left:3px solid var(--orange)}
+#wr-vtabs,#om-vtabs,#ppm-vtabs{width:240px !important;gap:4px;padding:6px}
+#wr-vtabs .tab,#om-vtabs .tab,#ppm-vtabs .tab{padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--font-display);letter-spacing:.3px;border-radius:8px}
+#wr-vtabs .tab.active,#om-vtabs .tab.active,#ppm-vtabs .tab.active{border-left:3px solid var(--orange)}
 /* ─── VIEWS ─── */
 .view{display:none}
 .view.active{display:block}
@@ -208,8 +208,8 @@ select.form-control option{background:var(--bg3)}
   .section-header{flex-direction:column;align-items:flex-start;gap:10px}
   /* แถบ tab แนวตั้ง (WR/OM) → พับเป็นแถบแนวนอนเลื่อนได้ ไม่กินพื้นที่จอมือถือ */
   .vtabs-layout{flex-direction:column}
-  #wr-vtabs,#om-vtabs{width:100% !important;flex-direction:row !important;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;padding:6px}
-  #wr-vtabs .tab,#om-vtabs .tab{white-space:nowrap;flex-shrink:0;padding:10px 14px;font-size:13px}
+  #wr-vtabs,#om-vtabs,#ppm-vtabs{width:100% !important;flex-direction:row !important;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;padding:6px}
+  #wr-vtabs .tab,#om-vtabs .tab,#ppm-vtabs .tab{white-space:nowrap;flex-shrink:0;padding:10px 14px;font-size:13px}
   .modal,.modal-lg{width:96vw !important;max-width:96vw;padding:16px;max-height:94vh}
   .grid-3,.grid-4,.kpi-grid{grid-template-columns:1fr 1fr !important}
   table{font-size:12px}
@@ -1054,7 +1054,7 @@ body.embedded #content {
         <div class="flex gap-8 flex-wrap">
           <button class="btn btn-secondary btn-sm" onclick="showView('workrequest')" title="ดู WR ที่เกี่ยวข้อง">🔧 WR</button>
           <button class="btn btn-secondary btn-sm" onclick="openPMQR()">📱 QR PM</button>
-          <button class="btn btn-primary btn-sm" onclick="openModal('addPPMModal')">+ เพิ่มแผน PM</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddPPM()">+ เพิ่มแผน PM</button>
         </div>
       </div>
 
@@ -1076,22 +1076,25 @@ body.embedded #content {
       </div>
 
       <!-- Tabs -->
-      <div class="tabs">
-        <div class="tab active" onclick="filterPPM('all',this)">ทั้งหมด</div>
-        <div class="tab" onclick="filterPPM('list',this)">📋 List PM</div>
-        <div class="tab" onclick="filterPPM('inprogress',this)">⚡ In Progress</div>
-        <div class="tab" onclick="filterPPM('closed',this)">✅ Closed</div>
-        <div class="tab" onclick="filterPPM('evaluate',this)">🏅 Evaluate</div>
-        <div class="tab" onclick="filterPPM('sla',this)">🎯 SLA</div>
-        <div class="tab" onclick="filterPPM('history',this)">📖 Asset History_PM</div>
-        <div class="tab" onclick="filterPPM('recurring',this)">🔄 Recurring_PM</div>
-        <div class="tab" onclick="filterPPM('reoperation',this)">⚙ Re-OPT</div>
-        <div class="tab" onclick="filterPPM('summarize',this)">📊 Summarize PM</div>
-        <div class="tab" onclick="filterPPM('reliability',this)">🔬 Reliability Report</div>
-        <div class="tab" onclick="filterPPM('notify',this)" id="ppm-notify-tab">
-          🔔 PM Notify <span class="nav-badge" id="ppm-notify-badge" style="display:none">0</span>
+      <div class="vtabs-layout" style="display:flex;gap:16px;align-items:flex-start">
+        <div class="tabs" id="ppm-vtabs" style="flex-direction:column;width:240px;flex-shrink:0;margin-bottom:0">
+          <div class="tab active" onclick="filterPPM('all',this)">📊 Overview</div>
+          <div class="tab" onclick="filterPPM('list',this)">📋 List PM</div>
+          <div class="tab" onclick="filterPPM('inprogress',this)">⚡ In Progress</div>
+          <div class="tab" onclick="filterPPM('closed',this)">✅ Closed</div>
+          <div class="tab" onclick="filterPPM('evaluate',this)">🏅 Evaluate & Approve</div>
+          <div class="tab" onclick="filterPPM('sla',this)">🎯 SLA</div>
+          <div class="tab" onclick="filterPPM('history',this)">📖 Asset History_PM</div>
+          <div class="tab" onclick="filterPPM('recurring',this)">🔄 Recurring PM</div>
+          <div class="tab" onclick="filterPPM('reoperation',this)">⚙ Re-OPT</div>
+          <div class="tab" onclick="filterPPM('summarize',this)">📊 Summarize PM</div>
+          <div class="tab" onclick="filterPPM('reliability',this)">🔬 Reliability Report</div>
+          <div class="tab" onclick="filterPPM('notify',this)" id="ppm-notify-tab">
+            🔔 PM Notify <span class="nav-badge" id="ppm-notify-badge" style="display:none">0</span>
+          </div>
+          <div class="tab" onclick="filterPPM('schedule',this)">⚙ PPM Setting</div>
         </div>
-      </div>
+        <div style="flex:1;min-width:0">
 
       <!-- Main PM table -->
       <div id="ppm-main-view">
@@ -1293,6 +1296,18 @@ body.embedded #content {
         </div>
         <div class="card"><div style="font-family:var(--font-display);font-size:15px;font-weight:700;margin-bottom:12px">🔔 PM Notifications — การแจ้งเตือนทั้งหมด</div><div id="pm-notify-list"></div></div>
       </div>
+
+      <!-- PPM Setting -->
+      <div id="ppm-schedule-view" style="display:none">
+        <div class="section-header" style="margin-bottom:12px">
+          <div><div style="font-family:var(--font-display);font-size:14px;font-weight:600">⚙ PPM Setting — จัดการ Checklist Template ตามระบบ/เครื่องจักร</div><div class="text-muted" style="font-size:12px">ตั้งค่าหัวข้อการตรวจสอบ PM ล่วงหน้า — กรอกทีละข้อ หรือแนบรูปสแกนตารางเช็คลิสต์จากฟอร์มกระดาษแทนก็ได้</div></div>
+          <button class="btn btn-primary btn-sm" onclick="openPPMTemplateModal(null)">+ เพิ่ม Checklist Template</button>
+        </div>
+        <div id="ppm-template-list" class="grid-3"></div>
+      </div>
+
+        </div><!-- end content column -->
+      </div><!-- end vtabs-layout -->
 
     </div><!-- end view-ppm -->
 
@@ -1991,9 +2006,22 @@ body.embedded #content {
     <hr class="divider">
 
     <!-- PM Sub-items -->
-    <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:10px">📋 หัวข้อการตรวจสอบ PM</div>
+    <div class="flex justify-between flex-center mb-8" style="flex-wrap:wrap;gap:8px">
+      <div style="font-family:var(--font-display);font-size:14px;font-weight:600">📋 หัวข้อการตรวจสอบ PM</div>
+      <div class="flex gap-8 flex-center" style="flex-wrap:wrap">
+        <select class="form-control" id="pm-load-template" style="width:220px;font-size:12px" onchange="loadPPMTemplateIntoForm(this.value)">
+          <option value="">-- โหลดจาก Checklist Template --</option>
+        </select>
+      </div>
+    </div>
+    <div class="card-sm mb-12" style="background:var(--bg3)">
+      <div class="text-muted mb-8" style="font-size:11px">ไม่อยากกรอกทีละข้อ? แนบรูปสแกนตารางเช็คลิสต์จากฟอร์มกระดาษแทนได้เลยครับ</div>
+      <input type="file" id="pm-checklist-scan-input" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePMChecklistImageUpload(event)">
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('pm-checklist-scan-input').click()">📷 แนบรูปสแกน Checklist</button>
+      <div id="pm-checklist-scan-list" class="flex gap-8" style="flex-wrap:wrap;margin-top:10px"></div>
+    </div>
     <div id="pm-subitem-list"></div>
-    <button class="btn btn-secondary btn-sm mb-12" onclick="addPMSubItem()">+ เพิ่มหัวข้อ</button>
+    <button class="btn btn-secondary btn-sm mb-12" onclick="addPMSubItem()">+ เพิ่มหัวข้อ (กรอกเอง)</button>
 
     <div class="form-row">
       <div class="form-group"><label class="form-label">ผู้รับผิดชอบ</label><input class="form-control" id="ppm-assign" placeholder="ชื่อช่าง"></div>
@@ -2008,6 +2036,48 @@ body.embedded #content {
     <div class="flex gap-8 mt-16" style="justify-content:flex-end">
       <button class="btn btn-secondary" onclick="closeModal('addPPMModal')">ยกเลิก</button>
       <button class="btn btn-primary" onclick="savePPM()">💾 บันทึกแผน PM</button>
+    </div>
+  </div>
+</div>
+
+<!-- PPM CHECKLIST TEMPLATE MODAL -->
+<div class="modal-overlay" id="ppmTemplateModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="ppmtpl-modal-title">🧾 Checklist Template (PPM)</div>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('ppmTemplateModal')">✕</button>
+    </div>
+    <input type="hidden" id="ppmtpl-id">
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">ชื่อ Template *</label><input class="form-control" id="ppmtpl-name" placeholder="เช่น Chiller Water Cool Check List"></div>
+      <div class="form-group"><label class="form-label">Form No.</label><input class="form-control" id="ppmtpl-formcode" placeholder="เช่น FM-RPH-AC-01"></div>
+    </div>
+    <div class="form-group"><label class="form-label">ระบบ</label>
+      <select class="form-control" id="ppmtpl-sys">
+        <option value="">—</option><option value="AC">AC</option><option value="BAS">BAS</option>
+        <option value="EL">EL</option><option value="EC">EC</option><option value="EE">EE</option>
+        <option value="FA">FA</option><option value="FP">FP</option><option value="SN">SN</option>
+        <option value="VN">VN</option><option value="WWT">WWT</option><option value="TR">TR</option>
+        <option value="GE">GE</option><option value="OTH">OTH</option>
+      </select>
+    </div>
+
+    <hr class="divider">
+
+    <div style="font-family:var(--font-display);font-size:13px;font-weight:600;margin-bottom:8px">📷 รูปสแกนตารางเช็คลิสต์ (แนะนำ — ใช้แทนการกรอกทีละข้อ)</div>
+    <div class="card-sm mb-12" style="background:var(--bg3)">
+      <input type="file" id="ppmtpl-scan-input" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePPMTplImageUpload(event)">
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('ppmtpl-scan-input').click()">📷 อัปโหลด/ถ่ายรูปสแกน</button>
+      <div id="ppmtpl-scan-list" class="flex gap-8" style="flex-wrap:wrap;margin-top:10px"></div>
+    </div>
+
+    <div style="font-family:var(--font-display);font-size:13px;font-weight:600;margin-bottom:8px">📋 หรือกรอกหัวข้อตรวจสอบทีละข้อ (ไม่บังคับ)</div>
+    <div id="ppmtpl-items-list"></div>
+    <button class="btn btn-secondary btn-sm mb-12" onclick="addPPMTplItemRow()">+ เพิ่มหัวข้อ</button>
+
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('ppmTemplateModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="savePPMTemplate()">💾 บันทึก Template</button>
     </div>
   </div>
 </div>
@@ -2208,7 +2278,7 @@ const DB = {
   set: (k, v) => {
     localStorage.setItem('alm_'+k, JSON.stringify(v));
     // Mirror กลับไปให้ Asset Core (index.html หลัก) เห็นข้อมูลชุดเดียวกัน — sync 2 ทาง
-    const sync=['wr','assets','ppm','ma','inv','contract','operation','omRecords','omTemplates','omSchedule','omShiftTimes'];
+    const sync=['wr','assets','ppm','ma','inv','contract','operation','omRecords','omTemplates','omSchedule','omShiftTimes','ppmTemplates'];
     if(sync.includes(k)){ try{ localStorage.setItem('tko_v2_'+k, JSON.stringify(v)); }catch(e){} }
   },
 };
@@ -2302,6 +2372,7 @@ function suggestAssetIdOld(){
 let assets = DB.get('assets', []).map(normalizeAsset);
 let workRequests = DB.get('wr', []);
 let ppmList = DB.get('ppm', []);
+let ppmTemplates = DB.get('ppmTemplates', []);
 let maList = DB.get('ma', []);
 let inventory = DB.get('inv', []);
 let invTx = DB.get('invtx', []);
@@ -4766,7 +4837,7 @@ function renderOMSchedule(){
             <td>${it.standard||'-'}</td>
             <td>${it.formCode||'-'}</td>
             <td>${it.freq==='daily'?'ทุกวัน':it.freq==='weekly'?'ทุกสัปดาห์':it.freq==='monthly'?'ทุกเดือน':it.freq}</td>
-            <td>${it.enabled?'<span style="color:var(--success)">✔ ใช้งาน</span>':'<span class="text-muted">✖ ปิดใช้งาน</span>'}</td>
+            <td>${it.enabled?'<span style="color:var(--green)">✔ ใช้งาน</span>':'<span class="text-muted">✖ ปิดใช้งาน</span>'}</td>
             <td style="white-space:nowrap">
               <button class="btn btn-sm btn-outline" onclick="openOMScheduleModal('${it.id}')">✏</button>
               <button class="btn btn-sm ${it.enabled?'btn-outline':'btn-primary'}" onclick="toggleOMScheduleItem('${it.id}')">${it.enabled?'ยกเลิก':'เปิดใช้'}</button>
@@ -4825,7 +4896,7 @@ function openOMScheduleModal(id){
           </div>
         </div>
         <div class="modal-footer">
-          ${it?`<button class="btn btn-outline" style="color:var(--danger)" onclick="deleteOMScheduleItem('${it.id}')">🗑 ลบ</button>`:''}
+          ${it?`<button class="btn btn-outline" style="color:var(--red)" onclick="deleteOMScheduleItem('${it.id}')">🗑 ลบ</button>`:''}
           <button class="btn btn-outline" onclick="document.getElementById('omScheduleItemModal').remove()">ยกเลิก</button>
           <button class="btn btn-primary" onclick="saveOMScheduleItem()">บันทึก</button>
         </div>
@@ -5440,9 +5511,9 @@ function renderPPM(){
   });
 
   // Show/hide views
-  const allPPMViews=['ppm-main-view','ppm-evaluate-view','ppm-sla-view','ppm-history-view','ppm-recurring-view','ppm-reoperation-view','ppm-summarize-view','ppm-reliability-view','ppm-notify-view'];
+  const allPPMViews=['ppm-main-view','ppm-evaluate-view','ppm-sla-view','ppm-history-view','ppm-recurring-view','ppm-reoperation-view','ppm-summarize-view','ppm-reliability-view','ppm-notify-view','ppm-schedule-view'];
   allPPMViews.forEach(id=>document.getElementById(id).style.display='none');
-  const ppmViewMap={all:'ppm-main-view',list:'ppm-main-view',inprogress:'ppm-main-view',closed:'ppm-main-view',evaluate:'ppm-evaluate-view',sla:'ppm-sla-view',history:'ppm-history-view',recurring:'ppm-recurring-view',reoperation:'ppm-reoperation-view',summarize:'ppm-summarize-view',reliability:'ppm-reliability-view',notify:'ppm-notify-view'};
+  const ppmViewMap={all:'ppm-main-view',list:'ppm-main-view',inprogress:'ppm-main-view',closed:'ppm-main-view',evaluate:'ppm-evaluate-view',sla:'ppm-sla-view',history:'ppm-history-view',recurring:'ppm-recurring-view',reoperation:'ppm-reoperation-view',summarize:'ppm-summarize-view',reliability:'ppm-reliability-view',notify:'ppm-notify-view',schedule:'ppm-schedule-view'};
   if(ppmViewMap[ppmTabFilter])document.getElementById(ppmViewMap[ppmTabFilter]).style.display='block';
 
   if(ppmTabFilter==='evaluate'){renderPPMEvaluate();return;}
@@ -5453,6 +5524,7 @@ function renderPPM(){
   if(ppmTabFilter==='summarize'){renderPPMSummarize();return;}
   if(ppmTabFilter==='reliability'){renderReliability();return;}
   if(ppmTabFilter==='notify'){renderPMNotify();return;}
+  if(ppmTabFilter==='schedule'){renderPPMTemplates();return;}
 
   // Main table
   let list=ppmList;
@@ -5517,6 +5589,9 @@ function openEditPPM(id){
     // Load subitems
     pmSubItems=[...(p.subItems||[])];
     renderPMSubItems();
+    pmChecklistImages=[...(p.checklistImages||[])];
+    renderPMChecklistImages();
+    populatePPMTemplateSelect();
     // Override save to update existing
     const saveBtn=document.querySelector('#addPPMModal .btn-primary');
     if(saveBtn){
@@ -5540,10 +5615,12 @@ function updatePPM(id){
     phone:document.getElementById('ppm-phone').value,
     std:document.getElementById('ppm-std').value,
     status:document.getElementById('ppm-status').value,
-    subItems:[...pmSubItems]
+    subItems:[...pmSubItems],
+    checklistImages:[...pmChecklistImages]
   };
   DB.set('ppm',ppmList);
   pmSubItems=[];renderPMSubItems();
+  pmChecklistImages=[];renderPMChecklistImages();
   closeModal('addPPMModal');
   renderPPM();
 }
@@ -6231,6 +6308,157 @@ function renderPMSubItems(){
   </div>`).join('');
 }
 
+function openAddPPM(){
+  pmSubItems=[];renderPMSubItems();
+  pmChecklistImages=[];renderPMChecklistImages();
+  populatePPMTemplateSelect();
+  openModal('addPPMModal');
+  setTimeout(()=>{
+    const saveBtn=document.querySelector('#addPPMModal .btn-primary');
+    if(saveBtn){ saveBtn.textContent='💾 บันทึกแผน PM'; saveBtn.onclick=()=>savePPM(); }
+  },50);
+}
+
+// ── PM Checklist scan images (แนบรูปสแกนแทนการกรอกทีละข้อ) ──
+let pmChecklistImages=[];
+function handlePMChecklistImageUpload(e){
+  const files=Array.from(e.target.files||[]);
+  files.forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{ pmChecklistImages.push({src:ev.target.result,name:f.name}); renderPMChecklistImages(); };
+    reader.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+function removePMChecklistImage(i){ pmChecklistImages.splice(i,1); renderPMChecklistImages(); }
+function renderPMChecklistImages(){
+  const wrap=document.getElementById('pm-checklist-scan-list');
+  if(!wrap)return;
+  wrap.innerHTML=pmChecklistImages.map((im,i)=>`
+    <div style="position:relative;width:90px;height:90px">
+      <img src="${im.src}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="openImageLightbox('${im.src}')">
+      <button onclick="removePMChecklistImage(${i})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;border:none;cursor:pointer;font-size:11px;line-height:1">✕</button>
+    </div>`).join('');
+}
+
+// ── PPM Checklist Templates (PPM Setting) ──
+function populatePPMTemplateSelect(){
+  const sel=document.getElementById('pm-load-template');
+  if(!sel)return;
+  sel.innerHTML='<option value="">-- โหลดจาก Checklist Template --</option>'+
+    ppmTemplates.map(t=>`<option value="${t.id}">${t.formCode?t.formCode+' — ':''}${t.name}${t.sys?' ('+t.sys+')':''}</option>`).join('');
+}
+function loadPPMTemplateIntoForm(tplId){
+  if(!tplId)return;
+  const t=ppmTemplates.find(x=>x.id===tplId);
+  if(!t)return;
+  if(t.sys && document.getElementById('ppm-system')) document.getElementById('ppm-system').value=t.sys;
+  if(Array.isArray(t.images) && t.images.length){
+    t.images.forEach(im=>pmChecklistImages.push({...im}));
+    renderPMChecklistImages();
+  }
+  if(Array.isArray(t.items) && t.items.length){
+    t.items.forEach(it=>pmSubItems.push({type:'C',desc:it.label||it.desc||'',stdOp:'between',stdMin:it.min||'',stdMax:it.max||'',unit:it.unit||'',notifyMonths:1,trigHrs:0,measured:''}));
+    renderPMSubItems();
+  }
+}
+
+let ppmTplWorkingItems=[];
+let ppmTplScanImages=[];
+function renderPPMTemplates(){
+  const wrap=document.getElementById('ppm-template-list');
+  if(!wrap)return;
+  wrap.innerHTML=ppmTemplates.length?ppmTemplates.map(t=>`
+    <div class="card-sm">
+      <div class="flex justify-between flex-center mb-8">
+        <div>
+          <div style="font-weight:600;font-size:13px">${t.name}</div>
+          <div class="text-muted" style="font-size:11px">${t.formCode||'—'} ${t.sys?'· '+t.sys:''}</div>
+        </div>
+        <span class="badge badge-blue">${(t.images||[]).length?'📷 '+t.images.length+' รูป':(t.items||[]).length+' ข้อ'}</span>
+      </div>
+      ${(t.images&&t.images[0])?`<img src="${t.images[0].src}" style="width:100%;height:110px;object-fit:cover;border-radius:6px;margin-bottom:8px;cursor:pointer" onclick="openImageLightbox('${t.images[0].src}')">`:''}
+      <div class="flex gap-8">
+        <button class="btn btn-sm btn-outline" style="flex:1" onclick="openPPMTemplateModal('${t.id}')">✏ แก้ไข</button>
+        <button class="btn btn-sm btn-outline" style="color:var(--red)" onclick="deletePPMTemplate('${t.id}')">🗑</button>
+      </div>
+    </div>`).join(''):'<div class="text-muted" style="font-size:12px;padding:12px">ยังไม่มี Checklist Template — กด "+ เพิ่ม Checklist Template" เพื่อเริ่มต้น</div>';
+  populatePPMTemplateSelect();
+}
+function openPPMTemplateModal(id){
+  const t=id?ppmTemplates.find(x=>x.id===id):null;
+  document.getElementById('ppmtpl-id').value=t?t.id:'';
+  document.getElementById('ppmtpl-modal-title').textContent=t?'✏ แก้ไข Checklist Template':'🧾 เพิ่ม Checklist Template ใหม่';
+  document.getElementById('ppmtpl-name').value=t?t.name||'':'';
+  document.getElementById('ppmtpl-formcode').value=t?t.formCode||'':'';
+  document.getElementById('ppmtpl-sys').value=t?t.sys||'':'';
+  ppmTplWorkingItems=t?JSON.parse(JSON.stringify(t.items||[])):[];
+  ppmTplScanImages=t?JSON.parse(JSON.stringify(t.images||[])):[];
+  renderPPMTplItems();
+  renderPPMTplScanImages();
+  openModal('ppmTemplateModal');
+}
+function addPPMTplItemRow(){ ppmTplWorkingItems.push({label:'',unit:'',min:'',max:''}); renderPPMTplItems(); }
+function updatePPMTplItem(i,key,val){ ppmTplWorkingItems[i][key]=val; }
+function removePPMTplItem(i){ ppmTplWorkingItems.splice(i,1); renderPPMTplItems(); }
+function renderPPMTplItems(){
+  const wrap=document.getElementById('ppmtpl-items-list');
+  if(!wrap)return;
+  wrap.innerHTML=ppmTplWorkingItems.map((it,i)=>`
+    <div class="flex gap-8 mb-8 flex-center" style="flex-wrap:wrap">
+      <input class="form-control" style="flex:2;min-width:160px;font-size:12px" placeholder="รายการตรวจสอบ" value="${(it.label||'').replace(/"/g,'&quot;')}" oninput="updatePPMTplItem(${i},'label',this.value)">
+      <input class="form-control" style="width:70px;font-size:12px" placeholder="หน่วย" value="${it.unit||''}" oninput="updatePPMTplItem(${i},'unit',this.value)">
+      <input class="form-control" style="width:70px;font-size:12px" placeholder="min" value="${it.min||''}" oninput="updatePPMTplItem(${i},'min',this.value)">
+      <input class="form-control" style="width:70px;font-size:12px" placeholder="max" value="${it.max||''}" oninput="updatePPMTplItem(${i},'max',this.value)">
+      <button class="btn btn-sm btn-outline" style="color:var(--red)" onclick="removePPMTplItem(${i})">✕</button>
+    </div>`).join('');
+}
+function handlePPMTplImageUpload(e){
+  const files=Array.from(e.target.files||[]);
+  files.forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{ ppmTplScanImages.push({src:ev.target.result,name:f.name}); renderPPMTplScanImages(); };
+    reader.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+function removePPMTplImage(i){ ppmTplScanImages.splice(i,1); renderPPMTplScanImages(); }
+function renderPPMTplScanImages(){
+  const wrap=document.getElementById('ppmtpl-scan-list');
+  if(!wrap)return;
+  wrap.innerHTML=ppmTplScanImages.map((im,i)=>`
+    <div style="position:relative;width:90px;height:90px">
+      <img src="${im.src}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="openImageLightbox('${im.src}')">
+      <button onclick="removePPMTplImage(${i})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;border:none;cursor:pointer;font-size:11px;line-height:1">✕</button>
+    </div>`).join('');
+}
+function savePPMTemplate(){
+  const name=document.getElementById('ppmtpl-name').value.trim();
+  if(!name){ alert('⚠ กรุณาระบุชื่อ Template ครับ'); return; }
+  const id=document.getElementById('ppmtpl-id').value;
+  const data={
+    name, formCode:document.getElementById('ppmtpl-formcode').value.trim(),
+    sys:document.getElementById('ppmtpl-sys').value,
+    items:ppmTplWorkingItems.filter(it=>(it.label||'').trim()),
+    images:[...ppmTplScanImages],
+  };
+  if(id){
+    const idx=ppmTemplates.findIndex(t=>t.id===id);
+    if(idx>=0) ppmTemplates[idx]={...ppmTemplates[idx],...data};
+  }else{
+    ppmTemplates.push({id:'PPMTPL-'+Date.now(), ...data});
+  }
+  DB.set('ppmTemplates',ppmTemplates);
+  closeModal('ppmTemplateModal');
+  renderPPMTemplates();
+}
+function deletePPMTemplate(id){
+  if(!confirm('ยืนยันลบ Checklist Template นี้?'))return;
+  ppmTemplates=ppmTemplates.filter(t=>t.id!==id);
+  DB.set('ppmTemplates',ppmTemplates);
+  renderPPMTemplates();
+}
+
 function togglePPMTrigger(){
   const v=document.querySelector('input[name="ppm-trigger"]:checked')?.value;
   document.getElementById('trigger-freq-block').style.display=(v==='freq'||v==='both')?'block':'none';
@@ -6259,9 +6487,10 @@ function savePPM(){
     planDate:document.getElementById('ppm-plan-date').value,
     assign:document.getElementById('ppm-assign').value,phone:document.getElementById('ppm-phone').value,
     std:document.getElementById('ppm-std').value,status:document.getElementById('ppm-status').value,
-    subItems:[...pmSubItems],measured:'',mtbf:0,cost:0,daysDiff:null
+    subItems:[...pmSubItems],checklistImages:[...pmChecklistImages],measured:'',mtbf:0,cost:0,daysDiff:null
   });
   DB.set('ppm',ppmList);pmSubItems=[];renderPMSubItems();
+  pmChecklistImages=[];renderPMChecklistImages();
   closeModal('addPPMModal');renderPPM();checkPMNotifications();
 }
 function completePPM(id){openClosePPM(id);}
