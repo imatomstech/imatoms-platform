@@ -988,11 +988,13 @@ body.embedded #content {
       <div class="vtabs-layout" style="display:flex;gap:16px;align-items:flex-start">
         <div class="tabs" id="om-vtabs" style="flex-direction:column;width:240px;flex-shrink:0;margin-bottom:0">
           <div class="tab active" onclick="filterOM('all',this)">📊 Overview<span class="tab-badge" id="tab-badge-om-all" style="display:none">0</span></div>
+          <div class="tab" onclick="filterOM('plan',this)">📅 OM Plan</div>
           <div class="tab" onclick="filterOM('inprogress',this)">⚡ In Progress / Pending<span class="tab-badge" id="tab-badge-om-inprogress" style="display:none">0</span></div>
           <div class="tab" onclick="filterOM('closed',this)">✅ Closed</div>
           <div class="tab" onclick="filterOM('evaluate',this)">🏅 Evaluate &amp; Approve<span class="tab-badge" id="tab-badge-om-evaluate" style="display:none">0</span></div>
           <div class="tab" onclick="filterOM('templates',this)">🧾 Checklist Setup</div>
           <div class="tab" onclick="filterOM('history',this)">📖 Asset History</div>
+          <div class="tab" onclick="filterOM('summarize',this)">📈 Summarize OM</div>
           <div class="tab" onclick="filterOM('schedule',this)">⚙ OM Setting</div>
         </div>
         <div style="flex:1;min-width:0">
@@ -1008,6 +1010,27 @@ body.embedded #content {
                 <thead><tr><th>OM No.</th><th>Asset</th><th>Checklist</th><th>วันที่/เวลา</th><th>ผลตรวจ</th><th>ความพร้อม</th><th>ระยะเวลา</th><th>ผู้ตรวจ</th><th>สถานะ</th><th>Actions</th></tr></thead>
                 <tbody id="om-table"></tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- OM Plan (แผนงาน OM รายวัน อ้างอิงจาก OM Setting เหมือน WR ดูย้อนหลัง/ล่วงหน้าได้) -->
+          <div id="om-plan-view" style="display:none">
+            <div class="card mb-16">
+              <div class="flex justify-between flex-center mb-12" style="flex-wrap:wrap;gap:10px">
+                <div><div style="font-family:var(--font-display);font-size:14px;font-weight:600">📅 OM Plan — แผนงาน OM รายวัน</div><div class="text-muted" style="font-size:12px">ดูว่าวันนี้ (หรือวันที่เลือก) มีแผนตรวจ OM อะไรบ้าง ตามตารางเวรใน OM Setting — เลือกวันที่ย้อนหลัง/ล่วงหน้าได้เหมือน WR</div></div>
+                <div class="flex gap-8 flex-center">
+                  <button class="btn btn-sm btn-outline" onclick="shiftOMPlanDate(-1)">◀</button>
+                  <input type="date" class="form-control" id="om-plan-date" style="width:160px" onchange="renderOMPlan()">
+                  <button class="btn btn-sm btn-outline" onclick="shiftOMPlanDate(1)">▶</button>
+                  <button class="btn btn-sm btn-primary" onclick="setOMPlanToday()">วันนี้</button>
+                </div>
+              </div>
+              <div class="grid-3 mb-12" id="om-plan-kpi">
+                <div class="kpi blue"><div class="kpi-label">แผนทั้งหมด</div><div class="kpi-value ff-display text-blue" id="omplan-total">0</div></div>
+                <div class="kpi green"><div class="kpi-label">ทำแล้ว</div><div class="kpi-value ff-display text-green" id="omplan-done">0</div></div>
+                <div class="kpi yellow"><div class="kpi-label">ยังไม่ทำ</div><div class="kpi-value ff-display text-yellow" id="omplan-pending">0</div></div>
+              </div>
+              <div id="om-plan-content"></div>
             </div>
           </div>
 
@@ -1031,6 +1054,24 @@ body.embedded #content {
               <div class="text-muted" style="font-size:12px;margin-bottom:12px">เลือก Asset เพื่อดูประวัติการทำ OM ทั้งหมด (เหมือนหน้า Asset History ของ WR)</div>
               <select class="form-control" id="om-hist-asset-select" onchange="renderOMAssetHistory(this.value)" style="max-width:320px;margin-bottom:16px"><option value="">-- เลือก Asset --</option></select>
               <div id="om-hist-content"></div>
+            </div>
+          </div>
+
+          <!-- Summarize OM (ภาพรวมความพร้อมใช้งานแยกตามระบบ/เครื่องจักร) -->
+          <div id="om-summarize-view" style="display:none">
+            <div class="card mb-16">
+              <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:4px">📈 Summarize OM — ภาพรวมความพร้อมใช้งานแยกตามระบบ</div>
+              <div class="text-muted mb-12" style="font-size:12px">สรุปว่าเครื่องจักร/ระบบใดพร้อมใช้งานมากน้อยแค่ไหน จากผลตรวจ OM ทั้งหมด</div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>ระบบ</th><th>จำนวนครั้งตรวจ</th><th>พร้อมใช้งาน</th><th>ใช้งานชั่วคราว</th><th>หยุดซ่อมทันที</th><th>Availability เฉลี่ย (%)</th><th>ผิดปกติสะสม</th><th>ระดับ</th></tr></thead>
+                  <tbody id="om-summarize-table"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:10px">Availability เฉลี่ยต่อระบบ (%)</div><div class="chart-wrap" style="height:240px"><canvas id="chartOMSumAvail"></canvas></div></div>
+              <div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:10px">สัดส่วนความพร้อมใช้งาน (ทุกระบบ)</div><div class="chart-wrap" style="height:240px"><canvas id="chartOMSumReady"></canvas></div></div>
             </div>
           </div>
 
@@ -5038,7 +5079,7 @@ function populateOMTemplateSelect(){
 function openNewOM(assetId){
   if(!omSchedule.some(s=>s.enabled)){
     alert('⚠ ยังไม่ได้ตั้งค่า OM Setting (ตารางเวร M/A/N)\nกรุณาไปที่แท็บ "⚙ OM Setting" เพื่อกำหนดรายการตรวจก่อนจึงจะเริ่มทำ OM ได้ครับ');
-    filterOM('schedule', document.querySelector('#om-vtabs .tab:nth-child(7)'));
+    filterOM('schedule', document.querySelector('#om-vtabs .tab:nth-child(9)'));
     return;
   }
   document.getElementById('om-record-id').value='';
@@ -5266,11 +5307,13 @@ function renderOM(){
   setTabBadge('tab-badge-om-evaluate',pendingCount);
 
   // Views visibility
-  const views=['om-main-view','om-evaluate-view','om-templates-view','om-history-view','om-schedule-view'];
+  const views=['om-main-view','om-plan-view','om-evaluate-view','om-templates-view','om-history-view','om-summarize-view','om-schedule-view'];
   views.forEach(id=>document.getElementById(id).style.display='none');
+  if(omTabFilter==='plan'){ document.getElementById('om-plan-view').style.display='block'; renderOMPlan(); return; }
   if(omTabFilter==='templates'){ document.getElementById('om-templates-view').style.display='block'; return; }
   if(omTabFilter==='history'){ document.getElementById('om-history-view').style.display='block'; populateOMHistorySelect(); return; }
   if(omTabFilter==='evaluate'){ document.getElementById('om-evaluate-view').style.display='block'; renderOMEvaluate(); return; }
+  if(omTabFilter==='summarize'){ document.getElementById('om-summarize-view').style.display='block'; renderOMSummarize(); return; }
   if(omTabFilter==='schedule'){ document.getElementById('om-schedule-view').style.display='block'; renderOMSchedule(); return; }
   document.getElementById('om-main-view').style.display='block';
 
@@ -5446,6 +5489,100 @@ function renderOMAssetHistory(assetId){
         </tr>`;
       }).join('')}</tbody>
     </table></div>`;
+}
+
+// ── OM Plan: แผนงาน OM รายวัน (อ้างอิงจาก OM Setting) ──
+let omPlanDate = new Date().toISOString().split('T')[0];
+
+function shiftOMPlanDate(days){
+  const cur=document.getElementById('om-plan-date')?.value||omPlanDate;
+  const d=new Date(cur+'T00:00:00');
+  d.setDate(d.getDate()+days);
+  omPlanDate=d.toISOString().split('T')[0];
+  const inp=document.getElementById('om-plan-date'); if(inp)inp.value=omPlanDate;
+  renderOMPlan();
+}
+function setOMPlanToday(){
+  omPlanDate=new Date().toISOString().split('T')[0];
+  const inp=document.getElementById('om-plan-date'); if(inp)inp.value=omPlanDate;
+  renderOMPlan();
+}
+function renderOMPlan(){
+  const inp=document.getElementById('om-plan-date');
+  if(!inp)return;
+  if(!inp.value) inp.value=omPlanDate; else omPlanDate=inp.value;
+  const dateObj=new Date(omPlanDate+'T00:00:00');
+  const dayStr=dateObj.toLocaleDateString('th-TH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const shifts=[{k:'M',label:'🌅 Morning (M1)'},{k:'A',label:'🌇 Afternoon (A)'},{k:'N',label:'🌙 Night (N)'}];
+  const enabledItems=omSchedule.filter(s=>s.enabled);
+  let totalCount=0, doneCount=0;
+  let html=`<div class="text-muted mb-12" style="font-size:12px">📆 ${dayStr}</div>`;
+  shifts.forEach(sh=>{
+    const items=enabledItems.filter(s=>s.shift===sh.k).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+    if(!items.length)return;
+    html+=`<div class="card-sm mb-12">
+      <div style="font-weight:600;font-size:13px;margin-bottom:8px">${sh.label}</div>
+      <div class="table-wrap"><table style="font-size:12px">
+        <thead><tr><th>เวลา</th><th>รายการ</th><th>Form No.</th><th>สถานะวันที่เลือก</th></tr></thead>
+        <tbody>${items.map(it=>{
+          const tplId=omScheduleTplId(it.formCode);
+          let statusCell;
+          if(tplId){
+            totalCount++;
+            const done=omRecords.some(o=>o.templateId===tplId && o.submittedDate && o.submittedDate.split('T')[0]===omPlanDate);
+            if(done)doneCount++;
+            statusCell=done?'<span style="color:var(--green)">✔ ทำแล้ว</span>':'<span style="color:var(--yellow)">⏳ ยังไม่ทำ</span>';
+          }else{
+            statusCell='<span class="text-muted">— งานทั่วไป (ไม่มี Checklist ผูก)</span>';
+          }
+          return `<tr><td>${it.time||'-'}</td><td>${it.desc}</td><td>${it.formCode||'-'}</td><td>${statusCell}</td></tr>`;
+        }).join('')}</tbody>
+      </table></div>
+    </div>`;
+  });
+  document.getElementById('om-plan-content').innerHTML=html||'<div class="text-muted" style="font-size:12px;padding:12px">ยังไม่มีรายการเวรที่เปิดใช้งาน — ไปตั้งค่าที่ "⚙ OM Setting" ก่อนครับ</div>';
+  document.getElementById('omplan-total').textContent=totalCount;
+  document.getElementById('omplan-done').textContent=doneCount;
+  document.getElementById('omplan-pending').textContent=totalCount-doneCount;
+}
+
+// ── Summarize OM: ภาพรวมความพร้อมใช้งานแยกตามระบบ ──
+function renderOMSummarize(){
+  const sysList=[...new Set(omRecords.map(o=>o.sys).filter(Boolean))].sort();
+  const rows=sysList.map(sys=>{
+    const recs=omRecords.filter(o=>o.sys===sys);
+    const ready=recs.filter(o=>o.readiness==='ready').length;
+    const temp=recs.filter(o=>o.readiness==='temp').length;
+    const down=recs.filter(o=>o.readiness==='down').length;
+    const availPct=recs.length?Math.round(ready/recs.length*1000)/10:0;
+    const abnormalTotal=recs.reduce((s,o)=>s+(o.linkedWRs?.length||0),0);
+    const grade=availPct>=95?'<span class="badge badge-green">🟢 ดีเยี่ยม</span>':availPct>=90?'<span class="badge badge-yellow">🟡 ปกติ</span>':'<span class="badge badge-red">🔴 ต้องปรับปรุง</span>';
+    return {sys,count:recs.length,ready,temp,down,availPct,abnormalTotal,grade};
+  });
+  document.getElementById('om-summarize-table').innerHTML=rows.length?rows.map(r=>`
+    <tr>
+      <td><span class="tag">${r.sys}</span></td>
+      <td>${r.count}</td>
+      <td class="text-green">${r.ready}</td>
+      <td class="text-yellow">${r.temp}</td>
+      <td class="text-red">${r.down}</td>
+      <td class="ff-mono">${r.availPct}%</td>
+      <td class="ff-mono text-red">${r.abnormalTotal}</td>
+      <td>${r.grade}</td>
+    </tr>`).join(''):'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีข้อมูล OM</td></tr>';
+
+  destroyChart('omSumAvail'); destroyChart('omSumReady');
+  charts.omSumAvail=new Chart(document.getElementById('chartOMSumAvail'),{
+    type:'bar',
+    data:{labels:rows.map(r=>r.sys),datasets:[{label:'Availability (%)',data:rows.map(r=>r.availPct),backgroundColor:rows.map(r=>r.availPct>=95?'#22C55E':r.availPct>=90?'#EAB308':'#EF4444')}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E'}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'},min:0,max:100}}}
+  });
+  const totalReady=rows.reduce((s,r)=>s+r.ready,0), totalTemp=rows.reduce((s,r)=>s+r.temp,0), totalDown=rows.reduce((s,r)=>s+r.down,0);
+  charts.omSumReady=new Chart(document.getElementById('chartOMSumReady'),{
+    type:'doughnut',
+    data:{labels:['พร้อมใช้งาน','ใช้งานชั่วคราว','หยุดซ่อมทันที'],datasets:[{data:[totalReady,totalTemp,totalDown],backgroundColor:['#22C55E','#EAB308','#EF4444']}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8B949E',font:{size:10}}}}}
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
