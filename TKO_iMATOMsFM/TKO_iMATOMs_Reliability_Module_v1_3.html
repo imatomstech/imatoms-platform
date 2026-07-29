@@ -2208,7 +2208,7 @@ const DB = {
   set: (k, v) => {
     localStorage.setItem('alm_'+k, JSON.stringify(v));
     // Mirror กลับไปให้ Asset Core (index.html หลัก) เห็นข้อมูลชุดเดียวกัน — sync 2 ทาง
-    const sync=['wr','assets','ppm','ma','inv','contract','operation','omRecords','omTemplates','omSchedule'];
+    const sync=['wr','assets','ppm','ma','inv','contract','operation','omRecords','omTemplates','omSchedule','omShiftTimes'];
     if(sync.includes(k)){ try{ localStorage.setItem('tko_v2_'+k, JSON.stringify(v)); }catch(e){} }
   },
 };
@@ -4693,7 +4693,55 @@ DB.set('omSchedule', omSchedule);
 
 let omScheduleShiftFilter='ALL';
 
+// ── เวลาเริ่ม/สิ้นสุดของแต่ละกะ (Start/Finish Time) ──
+const DEFAULT_OM_SHIFT_TIMES={ M:{start:'07:00',end:'15:00'}, A:{start:'15:00',end:'23:00'}, N:{start:'23:00',end:'07:00'} };
+let omShiftTimes=DB.get('omShiftTimes', DEFAULT_OM_SHIFT_TIMES);
+Object.keys(DEFAULT_OM_SHIFT_TIMES).forEach(k=>{ if(!omShiftTimes[k]) omShiftTimes[k]=DEFAULT_OM_SHIFT_TIMES[k]; });
+DB.set('omShiftTimes', omShiftTimes);
+let omShiftTimeEditing=null; // shift key currently in edit mode
+
 function omScheduleTplId(formCode){ return OM_FORMCODE_TO_TPL[formCode] || ''; }
+
+function renderOMShiftTimeBar(){
+  const shifts=[{k:'M',label:'🌅 Morning'},{k:'A',label:'🌇 Afternoon'},{k:'N',label:'🌙 Night'}];
+  return `<div class="grid-3" style="gap:10px;margin-bottom:14px">
+    ${shifts.map(sh=>{
+      const t=omShiftTimes[sh.k]||{start:'',end:''};
+      const editing=omShiftTimeEditing===sh.k;
+      return `<div class="card-sm" style="padding:12px">
+        <div class="flex justify-between flex-center mb-8">
+          <div style="font-weight:600;font-size:13px">${sh.label} (${sh.k})</div>
+          ${editing?'':`<button class="btn btn-sm btn-outline" onclick="omShiftTimeEditing='${sh.k}';renderOMSchedule()">✏ แก้เวลา</button>`}
+        </div>
+        ${editing?`
+          <div class="flex gap-8 flex-center" style="flex-wrap:wrap">
+            <div><label class="text-muted" style="font-size:11px">Start Time</label><input type="time" class="form-control" id="shtime-start-${sh.k}" value="${t.start||''}" style="padding:6px"></div>
+            <div><label class="text-muted" style="font-size:11px">Finish Time</label><input type="time" class="form-control" id="shtime-end-${sh.k}" value="${t.end||''}" style="padding:6px"></div>
+          </div>
+          <div class="flex gap-8" style="margin-top:8px">
+            <button class="btn btn-sm btn-primary" onclick="saveOMShiftTime('${sh.k}')">บันทึก</button>
+            <button class="btn btn-sm btn-outline" onclick="omShiftTimeEditing=null;renderOMSchedule()">ยกเลิก</button>
+          </div>
+        `:`
+          <div class="flex gap-8" style="font-size:12px">
+            <div class="text-muted">Start: <b style="color:var(--text)">${t.start||'—'}</b></div>
+            <div class="text-muted">Finish: <b style="color:var(--text)">${t.end||'—'}</b></div>
+          </div>
+        `}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function saveOMShiftTime(shift){
+  const start=document.getElementById('shtime-start-'+shift).value;
+  const end=document.getElementById('shtime-end-'+shift).value;
+  if(!start||!end){ alert('⚠ กรุณาระบุเวลาเริ่มและเวลาสิ้นสุดครับ'); return; }
+  omShiftTimes[shift]={start,end};
+  DB.set('omShiftTimes',omShiftTimes);
+  omShiftTimeEditing=null;
+  renderOMSchedule();
+}
 
 function renderOMSchedule(){
   const wrap=document.getElementById('om-schedule-content');
@@ -4702,7 +4750,7 @@ function renderOMSchedule(){
   const filterBar=`<div class="flex gap-8 mb-12" style="flex-wrap:wrap">
     ${['ALL','M','A','N'].map(k=>`<button class="btn btn-sm ${omScheduleShiftFilter===k?'btn-primary':'btn-outline'}" onclick="omScheduleShiftFilter='${k}';renderOMSchedule()">${k==='ALL'?'ทั้งหมด':k}</button>`).join('')}
   </div>`;
-  let html=filterBar;
+  let html=renderOMShiftTimeBar()+filterBar;
   shifts.filter(sh=>omScheduleShiftFilter==='ALL'||omScheduleShiftFilter===sh.k).forEach(sh=>{
     const items=omSchedule.filter(s=>s.shift===sh.k).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
     if(!items.length) return;
