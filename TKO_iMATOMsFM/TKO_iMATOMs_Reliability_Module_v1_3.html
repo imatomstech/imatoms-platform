@@ -198,7 +198,26 @@ select.form-control option{background:var(--bg3)}
 .notify-card.orange{background:var(--orange-dim);border-color:var(--orange);color:var(--text)}
 /* ─── RESPONSIVE ─── */
 @media(max-width:900px){.kpi-grid{grid-template-columns:1fr 1fr}.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
-@media(max-width:768px){#sidebar{display:none}#main{margin-left:0}.form-row,.form-row-3{grid-template-columns:1fr}}
+@media(max-width:768px){
+  #sidebar{display:none}
+  #main{margin-left:0}
+  .form-row,.form-row-3{grid-template-columns:1fr}
+  html,body{overflow-x:hidden;max-width:100vw}
+  #topbar{padding:0 12px;gap:8px}
+  .topbar-title{font-size:15px}
+  .section-header{flex-direction:column;align-items:flex-start;gap:10px}
+  /* แถบ tab แนวตั้ง (WR/OM) → พับเป็นแถบแนวนอนเลื่อนได้ ไม่กินพื้นที่จอมือถือ */
+  .vtabs-layout{flex-direction:column}
+  #wr-vtabs,#om-vtabs{width:100% !important;flex-direction:row !important;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;padding:6px}
+  #wr-vtabs .tab,#om-vtabs .tab{white-space:nowrap;flex-shrink:0;padding:10px 14px;font-size:13px}
+  .modal,.modal-lg{width:96vw !important;max-width:96vw;padding:16px;max-height:94vh}
+  .grid-3,.grid-4,.kpi-grid{grid-template-columns:1fr 1fr !important}
+  table{font-size:12px}
+}
+@media(max-width:480px){
+  .kpi-grid,.grid-3,.grid-4{grid-template-columns:1fr !important}
+  .modal-header .modal-title{font-size:15px}
+}
 /* ─── LOGIN SCREEN ─── */
 #login-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity .3s}
 #login-screen.hidden{display:none}
@@ -694,7 +713,7 @@ body.embedded #content {
         </div>
       </div>
 
-      <div style="display:flex;gap:16px;align-items:flex-start">
+      <div class="vtabs-layout" style="display:flex;gap:16px;align-items:flex-start">
       <div class="tabs" id="wr-vtabs" style="flex-direction:column;width:180px;flex-shrink:0;margin-bottom:0">
         <div class="tab active" onclick="filterWR('all',this)">📊 Overview</div>
         <div class="tab" onclick="filterWR('open',this)">📋 New WR<span class="tab-badge" id="tab-badge-open" style="display:none">0</span></div>
@@ -724,7 +743,7 @@ body.embedded #content {
           </select></div>
           <div><label class="form-label" style="font-size:10px">ระบบ</label><select class="form-control" id="wrf-system" onchange="renderWR()" style="width:120px">
             <option value="">ทั้งหมด</option>
-            <option>AC</option><option>BAS</option><option>BS</option><option>CCTV</option><option>EC</option><option>EE</option><option>EL</option><option>ER</option><option>FA</option><option>FP</option><option>FUR</option><option>MATV</option><option>SN</option><option>TR</option><option>VN</option><option>WWT</option>
+            <option>AC</option><option>BAS</option><option>BS</option><option>CCTV</option><option>EC</option><option>EE</option><option>EL</option><option>ER</option><option>FA</option><option>FP</option><option>FUR</option><option>GE</option><option>MATV</option><option>SN</option><option>TR</option><option>VN</option><option>WWT</option>
           </select></div>
           <button class="btn btn-secondary btn-sm" onclick="resetWRFilters()">🗑 ล้างตัวกรอง</button>
         </div>
@@ -966,7 +985,7 @@ body.embedded #content {
         <div class="kpi yellow"><div class="kpi-label">รอหัวหน้างานอนุมัติ</div><div class="kpi-value ff-display text-yellow" id="om-pending">0</div></div>
       </div>
 
-      <div style="display:flex;gap:16px;align-items:flex-start">
+      <div class="vtabs-layout" style="display:flex;gap:16px;align-items:flex-start">
         <div class="tabs" id="om-vtabs" style="flex-direction:column;width:240px;flex-shrink:0;margin-bottom:0">
           <div class="tab active" onclick="filterOM('all',this)">📊 Overview<span class="tab-badge" id="tab-badge-om-all" style="display:none">0</span></div>
           <div class="tab" onclick="filterOM('inprogress',this)">⚡ In Progress / Pending<span class="tab-badge" id="tab-badge-om-inprogress" style="display:none">0</span></div>
@@ -974,6 +993,7 @@ body.embedded #content {
           <div class="tab" onclick="filterOM('evaluate',this)">🏅 Evaluate &amp; Approve<span class="tab-badge" id="tab-badge-om-evaluate" style="display:none">0</span></div>
           <div class="tab" onclick="filterOM('templates',this)">🧾 Checklist Setup</div>
           <div class="tab" onclick="filterOM('history',this)">📖 Asset History</div>
+          <div class="tab" onclick="filterOM('schedule',this)">⚙ OM Setting</div>
         </div>
         <div style="flex:1;min-width:0">
 
@@ -1012,6 +1032,15 @@ body.embedded #content {
               <select class="form-control" id="om-hist-asset-select" onchange="renderOMAssetHistory(this.value)" style="max-width:320px;margin-bottom:16px"><option value="">-- เลือก Asset --</option></select>
               <div id="om-hist-content"></div>
             </div>
+          </div>
+
+          <!-- OM Setting (ตารางเวร M/A/N) -->
+          <div id="om-schedule-view" style="display:none">
+            <div class="section-header" style="margin-bottom:12px">
+              <div><div style="font-family:var(--font-display);font-size:14px;font-weight:600">⚙ OM Setting — ตั้งค่าตารางเวรทำงาน (Morning / Afternoon / Night)</div><div class="text-muted" style="font-size:12px">กำหนดว่ากะไหนต้องตรวจอะไร เวลาไหน ความถี่เท่าไหร่ — หัวหน้างานปรับได้ตามความเหมาะสมของแต่ละอาคาร ปิดใช้งานรายการที่ไม่ต้องการได้โดยไม่ต้องลบ</div></div>
+              <button class="btn btn-primary btn-sm" onclick="openOMScheduleModal(null)">+ เพิ่มรายการเวร</button>
+            </div>
+            <div id="om-schedule-content"></div>
           </div>
 
         </div>
@@ -1730,6 +1759,7 @@ body.embedded #content {
           <option value="FA">FA — Fire Alarm</option>
           <option value="FP">FP — Fire Protection</option>
           <option value="FUR">FUR — Furniture</option>
+          <option value="GE">GE — Generator/UPS</option>
           <option value="MATV">MATV — Master Antenna TV</option>
           <option value="SN">SN — Sanitary</option>
           <option value="TR">TR — Transformer</option>
@@ -2095,7 +2125,7 @@ body.embedded #content {
     <div class="form-row">
       <div class="form-group"><label class="form-label">ชื่อ Checklist</label><input class="form-control" id="omtpl-name" placeholder="เช่น Jockey Pump Daily Check"></div>
       <div class="form-group"><label class="form-label">ระบบ (System)</label><select class="form-control" id="omtpl-sys">
-        <option>AC</option><option>BAS</option><option>BS</option><option>CCTV</option><option>EC</option><option>EE</option><option>EL</option><option>ER</option><option>FA</option><option>FP</option><option>FUR</option><option>MATV</option><option>SN</option><option>TR</option><option>VN</option><option>WWT</option><option>OTH</option>
+        <option>AC</option><option>BAS</option><option>BS</option><option>CCTV</option><option>EC</option><option>EE</option><option>EL</option><option>ER</option><option>FA</option><option>FP</option><option>FUR</option><option>GE</option><option>MATV</option><option>SN</option><option>TR</option><option>VN</option><option>WWT</option><option>OTH</option>
       </select></div>
     </div>
     <div class="form-group"><label class="form-label">รหัสอ้างอิงฟอร์ม (ถ้ามี — ใช้ภายในเท่านั้น ไม่แสดงบนแบบฟอร์มจริง)</label><input class="form-control" id="omtpl-formcode" placeholder="เช่น FM-RPH-OM-11"></div>
@@ -2178,7 +2208,7 @@ const DB = {
   set: (k, v) => {
     localStorage.setItem('alm_'+k, JSON.stringify(v));
     // Mirror กลับไปให้ Asset Core (index.html หลัก) เห็นข้อมูลชุดเดียวกัน — sync 2 ทาง
-    const sync=['wr','assets','ppm','ma','inv','contract','operation','omRecords','omTemplates'];
+    const sync=['wr','assets','ppm','ma','inv','contract','operation','omRecords','omTemplates','omSchedule'];
     if(sync.includes(k)){ try{ localStorage.setItem('tko_v2_'+k, JSON.stringify(v)); }catch(e){} }
   },
 };
@@ -4347,6 +4377,92 @@ function upgradeSeedWR(){
 //  OPERATION (OM) — Checklist Templates + Execution + Approve
 // ═══════════════════════════════════════════════════════════
 const DEFAULT_OM_TEMPLATES = [
+  {id:'TPL-OM-17',formCode:'FM-RPH-OM-17',sys:'GE',name:'UPS Daily Check List',items:[
+    {id:'ups-in-r',label:'[Input] Voltage R (มาตรฐาน 220-240V)',type:'measurement',unit:'V',min:220,max:240},
+    {id:'ups-in-s',label:'[Input] Voltage S (มาตรฐาน 220-240V)',type:'measurement',unit:'V',min:220,max:240},
+    {id:'ups-in-t',label:'[Input] Voltage T (มาตรฐาน 220-240V)',type:'measurement',unit:'V',min:220,max:240},
+    {id:'ups-in-freq',label:'[Input] Frequency (มาตรฐาน 50Hz)',type:'measurement',unit:'Hz',min:49.5,max:50.5},
+    {id:'ups-out-r',label:'[Output] Voltage R (มาตรฐาน 228-233V)',type:'measurement',unit:'V',min:228,max:233},
+    {id:'ups-out-s',label:'[Output] Voltage S (มาตรฐาน 228-233V)',type:'measurement',unit:'V',min:228,max:233},
+    {id:'ups-out-t',label:'[Output] Voltage T (มาตรฐาน 228-233V)',type:'measurement',unit:'V',min:228,max:233},
+    {id:'ups-out-load',label:'[Output] Load Percentage',type:'measurement',unit:'%',min:null,max:null},
+    {id:'ups-out-freq',label:'[Output] Frequency (มาตรฐาน 50Hz)',type:'measurement',unit:'Hz',min:49.5,max:50.5},
+    {id:'ups-batt-chargev',label:'[Battery Condition] Charging Voltage (มาตรฐาน 403Vdc ±1%)',type:'measurement',unit:'Vdc',min:399,max:407},
+    {id:'ups-batt-cellv',label:'[Battery Condition] Voltage per Cell (มาตรฐาน 2.21-2.25Vdc)',type:'measurement',unit:'Vdc',min:2.21,max:2.25},
+    {id:'ups-batt-current',label:'[Battery Condition] Charge Current',type:'measurement',unit:'A',min:null,max:null},
+    {id:'ups-batt-backup',label:'[Battery Condition] Back-up Time (มาตรฐาน >5 นาที)',type:'measurement',unit:'min',min:5,max:null},
+    {id:'ups-batt-temp',label:'[Battery Condition] Temperature (มาตรฐาน 25-30°C)',type:'measurement',unit:'°C',min:25,max:30},
+    {id:'ups-batt-oil',label:'[Battery] Battery Oil Status (ควรเป็น ON)',type:'visual',unit:'',min:null,max:null},
+    {id:'ups-status',label:'[UPS Status] สถานะ UPS (ควรเป็น Normal)',type:'visual',unit:'',min:null,max:null},
+    {id:'ups-toload',label:'[UPS Status] UPS To Load Status (ควรเป็น ON Rectifier)',type:'visual',unit:'',min:null,max:null},
+    {id:'ups-alarm',label:'[UPS Status] Alarm Log (ตรวจสอบว่ามี Alarm ค้างหรือไม่)',type:'visual',unit:'',min:null,max:null},
+    {id:'ups-room-temp',label:'[Environment] Room Temperature (มาตรฐาน 22-24°C)',type:'measurement',unit:'°C',min:22,max:24},
+  ]},
+  {id:'TPL-OM-15',formCode:'FM-RPH-OM-15',sys:'EE',name:'Main Distribution Board (MDB) Daily Check List',items:[
+    {id:'mdb-edc-rs',label:'[FROM EDC-MCB] R-S Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-edc-st',label:'[FROM EDC-MCB] S-T Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-edc-tr',label:'[FROM EDC-MCB] T-R Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-edc-kw',label:'[FROM EDC-MCB] Power',type:'photo',unit:'kW',min:null,max:null},
+    {id:'mdb-edc-acb',label:'[FROM EDC-MCB] ACB (Breaker) Status — Alarm fault monitor / Charger condition / Pilot lamp',type:'visual',unit:'',min:null,max:null},
+    {id:'mdb-amcc-rs',label:'[AMCC] R-S Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-amcc-st',label:'[AMCC] S-T Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-amcc-tr',label:'[AMCC] T-R Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-amcc-acb',label:'[AMCC] ACB (Breaker) Status — Alarm fault monitor / Charger condition / Pilot lamp',type:'visual',unit:'',min:null,max:null},
+    {id:'mdb-bus-rs',label:'[BUSDUCT B0-1(B-G-2-3)] R-S Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-bus-st',label:'[BUSDUCT B0-1(B-G-2-3)] S-T Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-bus-tr',label:'[BUSDUCT B0-1(B-G-2-3)] T-R Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-bus-acb',label:'[BUSDUCT B0-1(B-G-2-3)] ACB (Breaker) Status — Alarm fault monitor / Charger condition / Pilot lamp',type:'visual',unit:'',min:null,max:null},
+    {id:'mdb-dpg-rs',label:'[DPG (G FLOOR)] R-S Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-dpg-st',label:'[DPG (G FLOOR)] S-T Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-dpg-tr',label:'[DPG (G FLOOR)] T-R Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-dpg-acb',label:'[DPG (G FLOOR)] ACB (Breaker) Status — Alarm fault monitor / Charger condition / Pilot lamp',type:'visual',unit:'',min:null,max:null},
+    {id:'mdb-f7-rs',label:'[MDB F7 (CHILLER SYSTEM)] R-S Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-f7-st',label:'[MDB F7 (CHILLER SYSTEM)] S-T Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-f7-tr',label:'[MDB F7 (CHILLER SYSTEM)] T-R Phase Current',type:'photo',unit:'A',min:null,max:null},
+    {id:'mdb-f7-acb',label:'[MDB F7 (CHILLER SYSTEM)] ACB (Breaker) Status — Alarm fault monitor / Charger condition / Pilot lamp',type:'visual',unit:'',min:null,max:null},
+  ]},
+  {id:'TPL-OM-12',formCode:'FM-RPH-GM-12',sys:'SN',name:'Transfer Pump Daily Check List',items:[
+    {id:'tp-selector',label:'Selector Switch Condition — Status & Function (Auto/Manual)',type:'visual',unit:'',min:null,max:null},
+    {id:'tp-fuel',label:'Fuel Level (ระดับน้ำมันเชื้อเพลิง)',type:'photo',unit:'%',min:null,max:null},
+    {id:'tp-lamp',label:'Lamp (ตรวจสอบไฟสัญญาณแผงควบคุม)',type:'visual',unit:'',min:null,max:null},
+    {id:'tp-voltage',label:'Record Voltage',type:'photo',unit:'V',min:null,max:null},
+    {id:'tp-ampere',label:'Record Current (Ampere)',type:'photo',unit:'A',min:null,max:null},
+    {id:'tp-general',label:'General Condition Availability (สภาพทั่วไปของเครื่อง)',type:'visual',unit:'',min:null,max:null},
+    {id:'tp-battery',label:'Cabinet Control Operation of Battery (แบตเตอรี่ตู้ควบคุม)',type:'visual',unit:'',min:null,max:null},
+    {id:'tp-starter',label:'Control System of Starter (ระบบสตาร์ทเครื่อง)',type:'visual',unit:'',min:null,max:null},
+  ]},
+  {id:'TPL-OM-10',formCode:'FM-RPH-GM-10',sys:'SN',name:'Daily Water Meter Check List',items:[
+    {id:'wm-current',label:'Water Meter — Current Value (อ่านค่ามิเตอร์น้ำ ระบุหมายเลขมิเตอร์ในรายละเอียด Asset)',type:'photo',unit:'m³',min:null,max:null},
+  ]},
+  {id:'TPL-OM-08',formCode:'FM-RPH-GM-03',sys:'EE',name:'Daily Electricity Meter Check List',items:[
+    {id:'em-edc-val-day',label:'[EDC-MDB Meter] Currently Value ช่วงกลางวัน (08:00-18:00)',type:'photo',unit:'kWh',min:null,max:null},
+    {id:'em-edc-val-night',label:'[EDC-MDB Meter] Currently Value ช่วงกลางคืน (18:00-08:00)',type:'photo',unit:'kWh',min:null,max:null},
+    {id:'em-edc-demand',label:'[EDC-MDB Meter] Demand Peak',type:'photo',unit:'kW',min:null,max:null},
+    {id:'em-edc-pf',label:'[EDC-MDB Meter] Power Factor (มาตรฐาน P.F > 0.90)',type:'measurement',unit:'P.F',min:0.90,max:null},
+    {id:'em-chiller-val-day',label:'[Chiller MDB-F7 Meter] Currently Value ช่วงกลางวัน (08:00-18:00)',type:'photo',unit:'kWh',min:null,max:null},
+    {id:'em-chiller-val-night',label:'[Chiller MDB-F7 Meter] Currently Value ช่วงกลางคืน (18:00-08:00)',type:'photo',unit:'kWh',min:null,max:null},
+    {id:'em-chiller-demand',label:'[Chiller MDB-F7 Meter] Demand Peak',type:'photo',unit:'kW',min:null,max:null},
+    {id:'em-chiller-pf',label:'[Chiller MDB-F7 Meter] Power Factor (มาตรฐาน P.F > 0.90)',type:'measurement',unit:'P.F',min:0.90,max:null},
+  ]},
+  {id:'TPL-OM-05',formCode:'FM-RPH-OM-05',sys:'FP',name:'Fire Pump Daily Check List',items:[
+    {id:'fpm-selector',label:'Selector Switch Condition — Status & Function (Auto/Manual)',type:'visual',unit:'',min:null,max:null},
+    {id:'fpm-fuel',label:'Fuel Level (ระดับน้ำมันเชื้อเพลิง)',type:'photo',unit:'%',min:null,max:null},
+    {id:'fpm-lamp',label:'Lamp (ตรวจสอบไฟสัญญาณแผงควบคุม)',type:'visual',unit:'',min:null,max:null},
+    {id:'fpm-pressure',label:'Pressure (แรงดันปั๊มดับเพลิง)',type:'measurement',unit:'psi',min:130,max:150},
+    {id:'fpm-dcvolt',label:'Record Voltage at Cabinet Charger — DC Voltage',type:'photo',unit:'V',min:null,max:null},
+    {id:'fpm-ampere',label:'Record Current at Cabinet Charger — Ampere',type:'photo',unit:'A',min:null,max:null},
+    {id:'fpm-general',label:'General Condition Availability (สภาพทั่วไปของเครื่อง)',type:'visual',unit:'',min:null,max:null},
+    {id:'fpm-battery',label:'Cabinet Control Operation of Battery (แบตเตอรี่ตู้ควบคุม)',type:'visual',unit:'',min:null,max:null},
+    {id:'fpm-starter',label:'Control System of Starter (ระบบสตาร์ทเครื่อง)',type:'visual',unit:'',min:null,max:null},
+  ]},
+  {id:'TPL-OM-04',formCode:'FM-RPH-GM-01',sys:'GE',name:'Generator Daily Check List',items:[
+    {id:'ge-selector',label:'Selector Switch Condition — Status & Function (Auto/Manual)',type:'visual',unit:'',min:null,max:null},
+    {id:'ge-fuel',label:'Fuel Level (ระดับน้ำมันเชื้อเพลิง)',type:'photo',unit:'%',min:null,max:null},
+    {id:'ge-lamp',label:'Lamp (ตรวจสอบไฟสัญญาณแผงควบคุม)',type:'visual',unit:'',min:null,max:null},
+    {id:'ge-general',label:'General Condition Availability (สภาพทั่วไปของเครื่อง)',type:'visual',unit:'',min:null,max:null},
+    {id:'ge-battery',label:'Cabinet Control Operation of Battery (แบตเตอรี่ตู้ควบคุม)',type:'visual',unit:'',min:null,max:null},
+    {id:'ge-starter',label:'Control System of Starter (ระบบสตาร์ทเครื่อง)',type:'visual',unit:'',min:null,max:null},
+  ]},
   {id:'TPL-OM-03',formCode:'FA-RPH-OM-03',sys:'AC',name:'Chiller Plant Daily Check List (ตรวจทุกกะ M1/M2/A/N)',items:[
     // MODE (Monitor) — STD: Running
     {id:'ch-mode-chiller',label:'[MODE] Chiller Mode (มาตรฐาน: Running)',type:'visual',unit:'',min:null,max:null},
@@ -4410,21 +4526,298 @@ const DEFAULT_OM_TEMPLATES = [
     {id:'wwt-clpump',label:'Chlorine Pumps — สถานะ (ปกติ/ผิดปกติ)',type:'visual',unit:'',min:null,max:null},
     {id:'wwt-cltank',label:'Chlorine Level in Tank (ต้อง > 100 ลิตร)',type:'measurement',unit:'liter',min:100,max:null},
   ]},
-  {id:'TPL-OM-06',formCode:'FM-RPH-OM-06',sys:'BS',name:'บันทึกอุณหภูมิและความชื้น (Temperature & Humidity Log)',items:[]},
-  {id:'TPL-OM-07',formCode:'FM-RPH-OM-07',sys:'MATV',name:'MATV System Daily Check',items:[]},
-  {id:'TPL-OM-09',formCode:'FM-RPH-OM-09',sys:'EE',name:'Daily Electricity Meter Check (TOD)',items:[]},
-  {id:'TPL-OM-11',formCode:'FM-RPH-OM-11',sys:'FP',name:'Jockey Pump Daily Check',items:[]},
-  {id:'TPL-OM-13',formCode:'FM-RPH-OM-13',sys:'SN',name:'Booster Pump Daily Check',items:[]},
-  {id:'TPL-OM-14',formCode:'FM-RPH-OM-14',sys:'OTH',name:'GAS Station Check',items:[]},
-  {id:'TPL-OM-16',formCode:'FM-RPH-OM-16',sys:'BS',name:'Emergency Shower & Eye Wash Check',items:[]},
-  {id:'TPL-OM-18',formCode:'FM-RPH-OM-18',sys:'AC',name:'Cooling Plant Daily Check',items:[]},
+  {id:'TPL-OM-06',formCode:'FM-RPH-OM-06',sys:'BS',name:'บันทึกอุณหภูมิและความชื้น (Temperature & Humidity Log)',items:[
+    {id:'th-icu1-temp',label:'[Negative Isolate (ICU1)] Temperature (มาตรฐาน 21-25°C)',type:'measurement',unit:'°C',min:21,max:25},
+    {id:'th-icu1-rh',label:'[Negative Isolate (ICU1)] Relative Humidity (มาตรฐาน 40-60%RH)',type:'measurement',unit:'%RH',min:40,max:60},
+    {id:'th-icu-temp',label:'[Negative ICU] Temperature (มาตรฐานไม่เกิน 25°C)',type:'measurement',unit:'°C',min:null,max:25},
+    {id:'th-icu-rh',label:'[Negative ICU] Relative Humidity (มาตรฐาน 35-65%RH)',type:'measurement',unit:'%RH',min:35,max:65},
+    {id:'th-er-temp',label:'[Negative Isolate (ER)] Temperature (มาตรฐานไม่เกิน 25°C)',type:'measurement',unit:'°C',min:null,max:25},
+    {id:'th-er-rh',label:'[Negative Isolate (ER)] Relative Humidity (มาตรฐาน 35-65%RH)',type:'measurement',unit:'%RH',min:35,max:65},
+    {id:'th-cpr-temp',label:'[CPR (ER)] Temperature',type:'measurement',unit:'°C',min:null,max:null},
+    {id:'th-cpr-rh',label:'[CPR (ER)] Relative Humidity',type:'measurement',unit:'%RH',min:null,max:null},
+    {id:'th-outside-temp',label:'[Outside the Building] Outdoor Temperature',type:'measurement',unit:'°C',min:null,max:null},
+    {id:'th-weather',label:'[Weather] สภาพอากาศ (ฝนตก/ไม่ตก)',type:'visual',unit:'',min:null,max:null},
+  ]},
+  {id:'TPL-OM-07',formCode:'FM-RPH-OM-07',sys:'MATV',name:'MATV System Daily Check List',items:[
+    {id:'matv-p1',label:'Program 1 — ตรวจสัญญาณช่อง (/ Normal, X Abnormal, - Unable to Detect: ระบุในรายละเอียดผิดปกติ)',type:'visual',unit:'',min:null,max:null},
+    {id:'matv-p2',label:'Program 2 — ตรวจสัญญาณช่อง',type:'visual',unit:'',min:null,max:null},
+    {id:'matv-p3',label:'Program 3 — ตรวจสัญญาณช่อง',type:'visual',unit:'',min:null,max:null},
+    {id:'matv-p4',label:'Program 4 — ตรวจสัญญาณช่อง',type:'visual',unit:'',min:null,max:null},
+    {id:'matv-p5',label:'Program 5 — ตรวจสัญญาณช่อง',type:'visual',unit:'',min:null,max:null},
+    {id:'matv-p6',label:'Program 6 — ตรวจสัญญาณช่อง',type:'visual',unit:'',min:null,max:null},
+    {id:'matv-p7',label:'Program 7 — ตรวจสัญญาณช่อง',type:'visual',unit:'',min:null,max:null},
+    {id:'matv-p8',label:'Program 8 — ตรวจสัญญาณช่อง',type:'visual',unit:'',min:null,max:null},
+    {id:'matv-p9',label:'Program 9 — ตรวจสัญญาณช่อง',type:'visual',unit:'',min:null,max:null},
+    {id:'matv-p10',label:'Program 10 — ตรวจสัญญาณช่อง',type:'visual',unit:'',min:null,max:null},
+  ]},
+  {id:'TPL-OM-09',formCode:'FM-RPH-OM-09',sys:'EE',name:'Daily Electricity Meter Check (TOD)',items:[
+    {id:'tod-energy',label:'[Electrical Energy] Currently Value (อ่านค่ามิเตอร์)',type:'photo',unit:'kWh',min:null,max:null},
+    {id:'tod-onpeak',label:'[Demand Peak] On-Peak (08:00-06:00)',type:'photo',unit:'kW',min:null,max:null},
+    {id:'tod-partialpeak',label:'[Demand Peak] Partial Peak',type:'photo',unit:'kW',min:null,max:null},
+    {id:'tod-offpeak',label:'[Demand Peak] Off-Peak',type:'photo',unit:'kW',min:null,max:null},
+    {id:'tod-pf',label:'Power Factor (มาตรฐาน P.F > 0.90)',type:'measurement',unit:'P.F',min:0.90,max:null},
+  ]},
+  {id:'TPL-OM-11',formCode:'FM-RPH-OM-11',sys:'FP',name:'Jockey Pump Daily Check List',items:[
+    {id:'jp-selector',label:'Selector Switch Condition — Status & Function (Auto/Manual)',type:'visual',unit:'',min:null,max:null},
+    {id:'jp-fuel',label:'Fuel Level (ระดับน้ำมันเชื้อเพลิง)',type:'photo',unit:'%',min:null,max:null},
+    {id:'jp-lamp',label:'Lamp (ตรวจสอบไฟสัญญาณแผงควบคุม)',type:'visual',unit:'',min:null,max:null},
+    {id:'jp-dcvolt',label:'Record Voltage at Cabinet Charger — DC Voltage',type:'photo',unit:'V',min:null,max:null},
+    {id:'jp-ampere',label:'Record Current at Cabinet Charger — Ampere',type:'photo',unit:'A',min:null,max:null},
+    {id:'jp-general',label:'General Condition Availability (สภาพทั่วไปของเครื่อง)',type:'visual',unit:'',min:null,max:null},
+    {id:'jp-battery',label:'Cabinet Control Operation of Battery (แบตเตอรี่ตู้ควบคุม)',type:'visual',unit:'',min:null,max:null},
+    {id:'jp-starter',label:'Control System of Starter (ระบบสตาร์ทเครื่อง)',type:'visual',unit:'',min:null,max:null},
+  ]},
+  {id:'TPL-OM-13',formCode:'FM-RPH-OM-13',sys:'FP',name:'Booster Pump Daily Check List',items:[
+    {id:'bp-selector',label:'Selector Switch Condition — Status & Function (Auto/Manual)',type:'visual',unit:'',min:null,max:null},
+    {id:'bp-fuel',label:'Fuel Level (ระดับน้ำมันเชื้อเพลิง)',type:'photo',unit:'%',min:null,max:null},
+    {id:'bp-lamp',label:'Lamp (ตรวจสอบไฟสัญญาณแผงควบคุม)',type:'visual',unit:'',min:null,max:null},
+    {id:'bp-dcvolt',label:'Record Voltage at Cabinet Charger — DC Voltage',type:'photo',unit:'V',min:null,max:null},
+    {id:'bp-ampere',label:'Record Current at Cabinet Charger — Ampere',type:'photo',unit:'A',min:null,max:null},
+    {id:'bp-general',label:'General Condition Availability (สภาพทั่วไปของเครื่อง)',type:'visual',unit:'',min:null,max:null},
+    {id:'bp-battery',label:'Cabinet Control Operation of Battery (แบตเตอรี่ตู้ควบคุม)',type:'visual',unit:'',min:null,max:null},
+    {id:'bp-starter',label:'Control System of Starter (ระบบสตาร์ทเครื่อง)',type:'visual',unit:'',min:null,max:null},
+  ]},
+  {id:'TPL-OM-14',formCode:'FM-RPH-OM-14',sys:'OTH',name:'GAS Station Daily Check List',items:[
+    {id:'gs-valve',label:'Emergency Valve is Available (วาล์วฉุกเฉินพร้อมใช้งาน)',type:'visual',unit:'',min:null,max:null},
+    {id:'gs-alarm',label:'Alarm Gas Leakage System is Working (ระบบแจ้งเตือนแก๊สรั่วทำงานปกติ)',type:'visual',unit:'',min:null,max:null},
+    {id:'gs-pipe',label:'Check Flexible Gas Pipe (สภาพท่อแก๊สแบบยืดหยุ่น)',type:'visual',unit:'',min:null,max:null},
+    {id:'gs-door',label:'The Door Station Normal Close All Time (ประตูสถานีปิดสนิทตลอดเวลา)',type:'visual',unit:'',min:null,max:null},
+    {id:'gs-extinguisher',label:'Fire Extinguisher is Available (ถังดับเพลิงพร้อมใช้งาน)',type:'visual',unit:'',min:null,max:null},
+    {id:'gs-cleaning',label:'Cleaning Area and Gas Tank (ความสะอาดพื้นที่และถังแก๊ส)',type:'visual',unit:'',min:null,max:null},
+    {id:'gs-pressure',label:'Pressure Gas Supply',type:'measurement',unit:'bar',min:null,max:null},
+  ]},
+  {id:'TPL-OM-16',formCode:'FM-RPH-OM-16',sys:'BS',name:'Emergency Shower Eye Wash Check List',items:[
+    {id:'esw-drain',label:'Activate Eyewash — Drainage Test (มาตรฐาน: ระบายน้ำต่อเนื่อง 2 นาที เพื่อไล่สนิม/เชื้อจุลินทรีย์ในท่อ)',type:'visual',unit:'',min:null,max:null},
+    {id:'esw-pressure',label:'Check for Equal Pressure — ทั้งสองฝั่งควรไขว้กันตรงกลาง (มาตรฐาน: แรงดันเท่ากัน)',type:'visual',unit:'',min:null,max:null},
+    {id:'esw-flow',label:'Check for Adequate Flow of Water (มาตรฐาน: น้ำไหลเต็มที่จากฝักบัว/อ่างล้างตา)',type:'visual',unit:'',min:null,max:null},
+    {id:'esw-drainclog',label:'Check for Clogged Drains or Leakage Around Pipes (มาตรฐาน: ท่อ/รูระบายไม่อุดตัน ไม่รั่วซึม)',type:'visual',unit:'',min:null,max:null},
+    {id:'esw-culture',label:'[ตรวจรายเดือน] Water Quality — Water Culture (Eye Wash)',type:'visual',unit:'',min:null,max:null},
+    {id:'esw-amoeba',label:'[ตรวจรายเดือน] Water Quality — Wet Smear for Amoeba (Cyst and Trophozoites) (Eye Wash)',type:'visual',unit:'',min:null,max:null},
+  ]},
+  {id:'TPL-OM-18',formCode:'FM-RPH-OM-18',sys:'AC',name:'Cooling Plant Daily Check List',items:[
+    {id:'cp-filling',label:'[Cooling Tower] Filling Condition (มาตรฐาน: No Dirty/No Broken)',type:'visual',unit:'',min:null,max:null},
+    {id:'cp-float',label:'[Cooling Tower] Float Control Water Level (มาตรฐาน: On-Off Normal)',type:'visual',unit:'',min:null,max:null},
+    {id:'cp-color',label:'[Cooling Tower] Color Water in Cooling (มาตรฐาน: White / No Yellow)',type:'visual',unit:'',min:null,max:null},
+    {id:'cp-conductivity',label:'[Cooling Tower] Conductivity Control',type:'measurement',unit:'µs/cm',min:null,max:1500},
+    {id:'cp-ph',label:'[Cooling Tower] pH (มาตรฐาน 6-8)',type:'measurement',unit:'',min:6,max:8},
+    {id:'cp-tds',label:'[Cooling Tower] TDS',type:'measurement',unit:'ppm',min:null,max:null},
+    {id:'cp-wetbulb',label:'[Cooling Tower] Wet-Bulb Temperature',type:'measurement',unit:'F',min:null,max:null},
+    {id:'cp-efficiency',label:'[Cooling Tower] Cooling Tower Efficiency (มาตรฐาน >90%)',type:'measurement',unit:'%',min:90,max:null},
+    {id:'cp-amp-r',label:'[Ampere Rate] Phase R',type:'photo',unit:'A',min:null,max:null},
+    {id:'cp-amp-s',label:'[Ampere Rate] Phase S',type:'photo',unit:'A',min:null,max:null},
+    {id:'cp-amp-t',label:'[Ampere Rate] Phase T',type:'photo',unit:'A',min:null,max:null},
+    {id:'cp-volt-r',label:'[Volts] Phase R (มาตรฐาน 380-416V)',type:'measurement',unit:'V',min:380,max:416},
+    {id:'cp-volt-s',label:'[Volts] Phase S (มาตรฐาน 380-416V)',type:'measurement',unit:'V',min:380,max:416},
+    {id:'cp-volt-t',label:'[Volts] Phase T (มาตรฐาน 380-416V)',type:'measurement',unit:'V',min:380,max:416},
+  ]},
 ];
 let omTemplates = DB.get('omTemplates', DEFAULT_OM_TEMPLATES);
 // เติม template มาตรฐานใหม่ที่เพิ่งเพิ่มเข้ามาให้อัตโนมัติ (จับคู่ด้วย id) โดยไม่ทับ template ที่ผู้ใช้แก้ไว้แล้ว
 DEFAULT_OM_TEMPLATES.forEach(dt=>{
-  if(!omTemplates.some(t=>t.id===dt.id)) omTemplates.push(JSON.parse(JSON.stringify(dt)));
+  const idx=omTemplates.findIndex(t=>t.id===dt.id);
+  if(idx<0){
+    omTemplates.push(JSON.parse(JSON.stringify(dt)));
+  }else if((!omTemplates[idx].items || omTemplates[idx].items.length===0) && dt.items && dt.items.length>0){
+    // template นี้เคยเป็นแค่โครงว่าง (ยังไม่มีหัวข้อ) — ตอนนี้กรอกรายละเอียดแล้ว ให้อัปเดตให้อัตโนมัติ
+    omTemplates[idx]=JSON.parse(JSON.stringify(dt));
+  }
 });
 DB.set('omTemplates', omTemplates);
+
+// ── OM Setting: ตารางเวร M(Morning)/A(Afternoon)/N(Night) ──
+const DEFAULT_OM_SCHEDULE = [
+  // ===== MORNING (M1) =====
+  {id:'sch-m-01',shift:'M',section:'เปิดเครื่อง',desc:'FOUNTAIN PUMP (ON)',standard:'-',time:'07:00',formCode:'',freq:'daily'},
+  {id:'sch-m-02',shift:'M',section:'MEDICAL GAS',desc:'MEDICAL GAS OXYGEN (Pressure in line)',standard:'___ Bar',time:'07:10',formCode:'',freq:'daily'},
+  {id:'sch-m-03',shift:'M',section:'MEDICAL GAS',desc:'MEDICAL GAS NITROUS (Pressure in line)',standard:'___ Bar',time:'07:10',formCode:'',freq:'daily'},
+  {id:'sch-m-04',shift:'M',section:'MEDICAL GAS',desc:'MEDICAL GAS VACUUM (Pressure in line)',standard:'___ Bar',time:'07:10',formCode:'',freq:'daily'},
+  {id:'sch-m-05',shift:'M',section:'MEDICAL GAS',desc:'MEDICAL GAS AIR COMP (Pressure in line)',standard:'___ Bar',time:'07:10',formCode:'',freq:'daily'},
+  {id:'sch-m-06',shift:'M',section:'MEDICAL GAS',desc:'BODY REFRIGERANT (ON)',standard:'___ °C',time:'07:15',formCode:'',freq:'daily'},
+  {id:'sch-m-07',shift:'M',section:'WATER STORAGE TANK',desc:'GROUND TANK (120 m³)',standard:'>80% (96 m³)',time:'07:10',formCode:'',freq:'daily'},
+  {id:'sch-m-08',shift:'M',section:'WATER STORAGE TANK',desc:'ROOF TANK (50 m³)',standard:'>80% (40 m³)',time:'07:10',formCode:'',freq:'daily'},
+  {id:'sch-m-09',shift:'M',section:'TRANSFER PUMP',desc:'CONTROL PANEL STATUS',standard:'Normal / Ab Normal',time:'07:15',formCode:'FM-RAH-OM-12',freq:'daily'},
+  {id:'sch-m-10',shift:'M',section:'TRANSFER PUMP',desc:'WORKING VIBRATION',standard:'Normal / Ab Normal',time:'07:15',formCode:'FM-RAH-OM-12',freq:'daily'},
+  {id:'sch-m-11',shift:'M',section:'TRANSFER PUMP',desc:'VALVES LEAKING',standard:'Normal / Ab Normal',time:'07:15',formCode:'FM-RAH-OM-12',freq:'daily'},
+  {id:'sch-m-12',shift:'M',section:'TRANSFER PUMP',desc:'PRESSURE RANGE',standard:'___ PSIG',time:'07:20',formCode:'FM-RAH-OM-12',freq:'daily'},
+  {id:'sch-m-13',shift:'M',section:'BOOSTER PUMP',desc:'CONTROL PANEL STATUS',standard:'Normal / Ab Normal',time:'07:15',formCode:'',freq:'daily'},
+  {id:'sch-m-14',shift:'M',section:'BOOSTER PUMP',desc:'WORKING VIBRATION',standard:'Normal / Ab Normal',time:'07:15',formCode:'',freq:'daily'},
+  {id:'sch-m-15',shift:'M',section:'BOOSTER PUMP',desc:'VALVES LEAKING',standard:'Normal / Ab Normal',time:'07:15',formCode:'',freq:'daily'},
+  {id:'sch-m-16',shift:'M',section:'BOOSTER PUMP',desc:'PRESSURE RANGE',standard:'2.5-3.0 PSIG',time:'07:20',formCode:'',freq:'daily'},
+  {id:'sch-m-17',shift:'M',section:'MAIN MACHINE',desc:'FIRE PUMP DAILY CHECK LIST (PRESSURE ON SYSTEM 130-150 Psig)',standard:'130-150 Psig',time:'07:20',formCode:'FM-RAH-OM-5',freq:'daily'},
+  {id:'sch-m-18',shift:'M',section:'MAIN MACHINE',desc:'CHILLER PLANT DAILY CHECK LIST',standard:'-',time:'07:25',formCode:'FM-RAH-OM-03',freq:'daily'},
+  {id:'sch-m-19',shift:'M',section:'MAIN MACHINE',desc:'CHILLER PLANT DAILY CHECK LIST',standard:'-',time:'10:00',formCode:'FM-RAH-OM-03',freq:'daily'},
+  {id:'sch-m-20',shift:'M',section:'MAIN MACHINE',desc:'CHILLER PLANT DAILY CHECK LIST',standard:'-',time:'15:00',formCode:'FM-RAH-OM-03',freq:'daily'},
+  {id:'sch-m-21',shift:'M',section:'MAIN MACHINE',desc:'UPS DAILY CHECK LIST',standard:'-',time:'07:20',formCode:'FM-RAH-OM-17',freq:'daily'},
+  {id:'sch-m-22',shift:'M',section:'MAIN MACHINE',desc:'WASTE WATER TREATMENT CHECK LIST',standard:'-',time:'08:00',formCode:'FM-RAH-OM-02',freq:'daily'},
+  // ===== AFTERNOON (A) =====
+  {id:'sch-a-01',shift:'A',section:'เปิดไฟ',desc:'BANNERS IN FRONT OF THE HOSPITAL (ON)',standard:'-',time:'17:40',formCode:'',freq:'daily'},
+  {id:'sch-a-02',shift:'A',section:'เปิดไฟ',desc:'ON THE ROAD (ON)',standard:'-',time:'17:45',formCode:'',freq:'daily'},
+  {id:'sch-a-03',shift:'A',section:'เปิดไฟ',desc:'BACK THE BRAHMA (ON)',standard:'-',time:'18:00',formCode:'',freq:'daily'},
+  {id:'sch-a-04',shift:'A',section:'เปิดไฟ',desc:'GARDEN NEAR THE FOUNTAIN (ON)',standard:'-',time:'18:05',formCode:'',freq:'daily'},
+  {id:'sch-a-05',shift:'A',section:'เปิดไฟ',desc:'CAR PARKING (ON)',standard:'-',time:'18:10',formCode:'',freq:'daily'},
+  {id:'sch-a-06',shift:'A',section:'เปิดไฟ',desc:'ROOFTOP (ON)',standard:'-',time:'18:15',formCode:'',freq:'daily'},
+  {id:'sch-a-07',shift:'A',section:'MAIN MACHINE',desc:'FOUNTAIN PUMP (OFF)',standard:'-',time:'15:00',formCode:'',freq:'daily'},
+  {id:'sch-a-08',shift:'A',section:'MAIN MACHINE',desc:'TURN OFF AHU (AIR CONDITION AT OPD) — Full PT=17:30, Not full=16:30',standard:'-',time:'16:30',formCode:'',freq:'daily'},
+  {id:'sch-a-09',shift:'A',section:'MAIN MACHINE',desc:'AUTO DOOR (FRONT ENTRANCE)',standard:'-',time:'20:00',formCode:'',freq:'daily'},
+  {id:'sch-a-10',shift:'A',section:'MAIN MACHINE',desc:'CHILLER PLANT DAILY CHECK LIST',standard:'-',time:'20:15',formCode:'FM-RAH-OM-03',freq:'daily'},
+  {id:'sch-a-11',shift:'A',section:'MAIN MACHINE',desc:'UPS DAILY CHECK LIST',standard:'-',time:'20:20',formCode:'FM-RAH-OM-17',freq:'daily'},
+  {id:'sch-a-12',shift:'A',section:'MAIN MACHINE',desc:'FIRE PUMP DAILY CHECK LIST',standard:'-',time:'20:35',formCode:'FM-RAH-OM-05',freq:'daily'},
+  {id:'sch-a-13',shift:'A',section:'MAIN MACHINE',desc:'ELEVATOR 1 & 2 (PASSENGER) (OFF) — No.1(off)=Couple, No.2(off)=Single',standard:'-',time:'21:00',formCode:'',freq:'daily'},
+  {id:'sch-a-14',shift:'A',section:'MAIN MACHINE',desc:'ELEVATOR 3 (SERVICE) (OFF)',standard:'-',time:'21:00',formCode:'',freq:'daily'},
+  // ===== NIGHT (N) =====
+  {id:'sch-n-01',shift:'N',section:'ปิดไฟ',desc:'BANNERS IN FRONT OF THE HOSPITAL (OFF)',standard:'-',time:'00:05',formCode:'',freq:'daily'},
+  {id:'sch-n-02',shift:'N',section:'ปิดไฟ',desc:'ON THE ROAD (OFF)',standard:'-',time:'00:05',formCode:'',freq:'daily'},
+  {id:'sch-n-03',shift:'N',section:'ปิดไฟ',desc:'BACK THE BRAHMA (OFF)',standard:'-',time:'00:05',formCode:'',freq:'daily'},
+  {id:'sch-n-04',shift:'N',section:'ปิดไฟ',desc:'GARDEN NEAR THE FOUNTAIN (OFF)',standard:'-',time:'00:05',formCode:'',freq:'daily'},
+  {id:'sch-n-05',shift:'N',section:'ปิดไฟ',desc:'CAR PARKING (OFF)',standard:'-',time:'00:05',formCode:'',freq:'daily'},
+  {id:'sch-n-06',shift:'N',section:'ปิดไฟ',desc:'ROOFTOP (OFF)',standard:'-',time:'00:05',formCode:'',freq:'daily'},
+  {id:'sch-n-07',shift:'N',section:'MAIN MACHINE',desc:'CHILLER PLANT DAILY CHECK LIST',standard:'-',time:'00:10',formCode:'FM-RAH-OM-03',freq:'daily'},
+  {id:'sch-n-08',shift:'N',section:'MAIN MACHINE',desc:'FIRE PUMP DAILY CHECK LIST (PRESSURE ON SYSTEM 130-150 Psig)',standard:'130-150 Psig',time:'00:30',formCode:'FM-RAH-OM-05',freq:'daily'},
+  {id:'sch-n-09',shift:'N',section:'MAIN MACHINE',desc:'TURN ON AHU (AIR CONDITION AT OPD) (ON)',standard:'-',time:'05:30',formCode:'',freq:'daily'},
+  {id:'sch-n-10',shift:'N',section:'MAIN MACHINE',desc:'ELEVATOR 1 & 2 (PASSENGER) (ON)',standard:'-',time:'05:30',formCode:'',freq:'daily'},
+  {id:'sch-n-11',shift:'N',section:'MAIN MACHINE',desc:'ELEVATOR 3 (SERVICE) (ON)',standard:'-',time:'05:30',formCode:'',freq:'daily'},
+  {id:'sch-n-12',shift:'N',section:'MAIN MACHINE',desc:'AUTO DOOR (FRONT ENTRANCE) (ON)',standard:'-',time:'05:45',formCode:'',freq:'daily'},
+  {id:'sch-n-13',shift:'N',section:'MAIN MACHINE',desc:'FOUNTAIN PUMP (ON)',standard:'-',time:'06:00',formCode:'',freq:'daily'},
+  {id:'sch-n-14',shift:'N',section:'MAIN MACHINE',desc:'DAILY ELECTRICITY METER CHECK LIST (ON)',standard:'___ kWh',time:'06:15',formCode:'FM-RAH-OM-08',freq:'daily'},
+  {id:'sch-n-15',shift:'N',section:'MAIN MACHINE',desc:'DAILY WATER METER CHECK LIST',standard:'___ Cu.m',time:'06:30',formCode:'FM-RAH-OM-10',freq:'daily'},
+].map(s=>({...s, enabled:true}));
+
+const OM_FORMCODE_TO_TPL={ 'FM-RAH-OM-12':'TPL-OM-12', 'FM-RAH-OM-5':'TPL-OM-05', 'FM-RAH-OM-05':'TPL-OM-05', 'FM-RAH-OM-03':'TPL-OM-03', 'FM-RAH-OM-17':'TPL-OM-17', 'FM-RAH-OM-02':'TPL-OM-02', 'FM-RAH-OM-08':'TPL-OM-08', 'FM-RAH-OM-10':'TPL-OM-10' };
+
+let omSchedule = DB.get('omSchedule', DEFAULT_OM_SCHEDULE);
+// เติมรายการเวรมาตรฐานใหม่ที่ยังไม่มี (จับคู่ด้วย id) โดยไม่ทับรายการที่หัวหน้างานแก้ไว้แล้ว
+DEFAULT_OM_SCHEDULE.forEach(ds=>{
+  if(!omSchedule.some(s=>s.id===ds.id)) omSchedule.push(JSON.parse(JSON.stringify(ds)));
+});
+DB.set('omSchedule', omSchedule);
+
+let omScheduleShiftFilter='ALL';
+
+function omScheduleTplId(formCode){ return OM_FORMCODE_TO_TPL[formCode] || ''; }
+
+function renderOMSchedule(){
+  const wrap=document.getElementById('om-schedule-content');
+  if(!wrap)return;
+  const shifts=[{k:'M',label:'🌅 Morning (M1)'},{k:'A',label:'🌇 Afternoon (A)'},{k:'N',label:'🌙 Night (N)'}];
+  const filterBar=`<div class="flex gap-8 mb-12" style="flex-wrap:wrap">
+    ${['ALL','M','A','N'].map(k=>`<button class="btn btn-sm ${omScheduleShiftFilter===k?'btn-primary':'btn-outline'}" onclick="omScheduleShiftFilter='${k}';renderOMSchedule()">${k==='ALL'?'ทั้งหมด':k}</button>`).join('')}
+  </div>`;
+  let html=filterBar;
+  shifts.filter(sh=>omScheduleShiftFilter==='ALL'||omScheduleShiftFilter===sh.k).forEach(sh=>{
+    const items=omSchedule.filter(s=>s.shift===sh.k).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+    if(!items.length) return;
+    html+=`<div class="card" style="margin-bottom:14px">
+      <div style="font-family:var(--font-display);font-weight:600;font-size:13px;margin-bottom:8px">${sh.label} <span class="text-muted" style="font-weight:400;font-size:11px">(${items.filter(i=>i.enabled).length}/${items.length} ใช้งาน)</span></div>
+      <div class="table-wrap"><table style="font-size:12px">
+        <thead><tr><th>เวลา</th><th>หมวด</th><th>รายการตรวจ</th><th>มาตรฐาน</th><th>Form No.</th><th>ความถี่</th><th>สถานะ</th><th></th></tr></thead>
+        <tbody>${items.map(it=>`
+          <tr style="${it.enabled?'':'opacity:.45'}">
+            <td>${it.time||'-'}</td>
+            <td>${it.section||'-'}</td>
+            <td>${it.desc}${it.formCode?` <span class="text-muted" style="font-size:10px">→ ${omScheduleTplId(it.formCode)||''}</span>`:''}</td>
+            <td>${it.standard||'-'}</td>
+            <td>${it.formCode||'-'}</td>
+            <td>${it.freq==='daily'?'ทุกวัน':it.freq==='weekly'?'ทุกสัปดาห์':it.freq==='monthly'?'ทุกเดือน':it.freq}</td>
+            <td>${it.enabled?'<span style="color:var(--success)">✔ ใช้งาน</span>':'<span class="text-muted">✖ ปิดใช้งาน</span>'}</td>
+            <td style="white-space:nowrap">
+              <button class="btn btn-sm btn-outline" onclick="openOMScheduleModal('${it.id}')">✏</button>
+              <button class="btn btn-sm ${it.enabled?'btn-outline':'btn-primary'}" onclick="toggleOMScheduleItem('${it.id}')">${it.enabled?'ยกเลิก':'เปิดใช้'}</button>
+            </td>
+          </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+  });
+  wrap.innerHTML=html;
+}
+
+function toggleOMScheduleItem(id){
+  const it=omSchedule.find(s=>s.id===id);
+  if(!it)return;
+  it.enabled=!it.enabled;
+  DB.set('omSchedule',omSchedule);
+  renderOMSchedule();
+}
+
+function openOMScheduleModal(id){
+  const it=id?omSchedule.find(s=>s.id===id):null;
+  const shift=it?it.shift:'M';
+  const html=`
+    <div class="modal-overlay" id="omScheduleItemModal" style="display:flex">
+      <div class="modal" style="max-width:480px">
+        <div class="modal-header"><div class="modal-title">${it?'แก้ไขรายการเวร':'เพิ่มรายการเวร'}</div><button class="modal-close" onclick="document.getElementById('omScheduleItemModal').remove()">✕</button></div>
+        <div class="modal-body">
+          <input type="hidden" id="schm-id" value="${it?it.id:''}">
+          <div class="form-group"><label>กะ (Shift)</label>
+            <select class="form-control" id="schm-shift">
+              <option value="M" ${shift==='M'?'selected':''}>Morning (M1)</option>
+              <option value="A" ${shift==='A'?'selected':''}>Afternoon (A)</option>
+              <option value="N" ${shift==='N'?'selected':''}>Night (N)</option>
+            </select>
+          </div>
+          <div class="form-group"><label>หมวด/ระบบ</label><input class="form-control" id="schm-section" value="${it?it.section||'':''}" placeholder="เช่น MAIN MACHINE"></div>
+          <div class="form-group"><label>รายการตรวจ</label><input class="form-control" id="schm-desc" value="${it?(it.desc||'').replace(/"/g,'&quot;'):''}" placeholder="ชื่อรายการตรวจสอบ"></div>
+          <div class="form-row">
+            <div class="form-group"><label>มาตรฐาน/ค่าที่กำหนด</label><input class="form-control" id="schm-standard" value="${it?it.standard||'':''}" placeholder="เช่น 130-150 Psig"></div>
+            <div class="form-group"><label>เวลาดำเนินการ</label><input type="time" class="form-control" id="schm-time" value="${it?it.time||'':''}"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>ความถี่</label>
+              <select class="form-control" id="schm-freq">
+                <option value="daily" ${(!it||it.freq==='daily')?'selected':''}>ทุกวัน (Daily)</option>
+                <option value="weekly" ${it&&it.freq==='weekly'?'selected':''}>ทุกสัปดาห์ (Weekly)</option>
+                <option value="monthly" ${it&&it.freq==='monthly'?'selected':''}>ทุกเดือน (Monthly)</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Form No. (อ้างอิง Checklist)</label>
+              <select class="form-control" id="schm-formcode">
+                <option value="">-- ไม่อ้างอิง --</option>
+                ${omTemplates.map(t=>`<option value="${t.formCode}" ${it&&it.formCode===t.formCode?'selected':''}>${t.formCode} — ${t.name}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          ${it?`<button class="btn btn-outline" style="color:var(--danger)" onclick="deleteOMScheduleItem('${it.id}')">🗑 ลบ</button>`:''}
+          <button class="btn btn-outline" onclick="document.getElementById('omScheduleItemModal').remove()">ยกเลิก</button>
+          <button class="btn btn-primary" onclick="saveOMScheduleItem()">บันทึก</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('omScheduleItemModal')?.remove();
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function saveOMScheduleItem(){
+  const id=document.getElementById('schm-id').value;
+  const desc=document.getElementById('schm-desc').value.trim();
+  if(!desc){ alert('⚠ กรุณาระบุรายการตรวจครับ'); return; }
+  const data={
+    shift:document.getElementById('schm-shift').value,
+    section:document.getElementById('schm-section').value.trim(),
+    desc, standard:document.getElementById('schm-standard').value.trim(),
+    time:document.getElementById('schm-time').value,
+    freq:document.getElementById('schm-freq').value,
+    formCode:document.getElementById('schm-formcode').value,
+  };
+  if(id){
+    const it=omSchedule.find(s=>s.id===id);
+    Object.assign(it,data);
+  }else{
+    omSchedule.push({id:'sch-'+Date.now(), enabled:true, ...data});
+  }
+  DB.set('omSchedule',omSchedule);
+  document.getElementById('omScheduleItemModal')?.remove();
+  renderOMSchedule();
+}
+
+function deleteOMScheduleItem(id){
+  if(!confirm('ยืนยันลบรายการนี้? (ปกติแนะนำให้ใช้ปุ่ม "ยกเลิก" แทนการลบ)'))return;
+  omSchedule=omSchedule.filter(s=>s.id!==id);
+  DB.set('omSchedule',omSchedule);
+  document.getElementById('omScheduleItemModal')?.remove();
+  renderOMSchedule();
+}
+
 let omRecords = DB.get('omRecords', []);
 let omTabFilter = 'all';
 let omCurrentItems = [];
@@ -4524,6 +4917,11 @@ function populateOMTemplateSelect(){
   if(cur) sel.value=cur;
 }
 function openNewOM(assetId){
+  if(!omSchedule.some(s=>s.enabled)){
+    alert('⚠ ยังไม่ได้ตั้งค่า OM Setting (ตารางเวร M/A/N)\nกรุณาไปที่แท็บ "⚙ OM Setting" เพื่อกำหนดรายการตรวจก่อนจึงจะเริ่มทำ OM ได้ครับ');
+    filterOM('schedule', document.querySelector('#om-vtabs .tab:nth-child(7)'));
+    return;
+  }
   document.getElementById('om-record-id').value='';
   populateOMTemplateSelect();
   omCurrentItems=[];
@@ -4749,11 +5147,12 @@ function renderOM(){
   setTabBadge('tab-badge-om-evaluate',pendingCount);
 
   // Views visibility
-  const views=['om-main-view','om-evaluate-view','om-templates-view','om-history-view'];
+  const views=['om-main-view','om-evaluate-view','om-templates-view','om-history-view','om-schedule-view'];
   views.forEach(id=>document.getElementById(id).style.display='none');
   if(omTabFilter==='templates'){ document.getElementById('om-templates-view').style.display='block'; return; }
   if(omTabFilter==='history'){ document.getElementById('om-history-view').style.display='block'; populateOMHistorySelect(); return; }
   if(omTabFilter==='evaluate'){ document.getElementById('om-evaluate-view').style.display='block'; renderOMEvaluate(); return; }
+  if(omTabFilter==='schedule'){ document.getElementById('om-schedule-view').style.display='block'; renderOMSchedule(); return; }
   document.getElementById('om-main-view').style.display='block';
 
   destroyChart('avail');
