@@ -119,9 +119,9 @@ select.form-control option{background:var(--bg3)}
 .tabs{display:flex;gap:2px;background:var(--bg3);border-radius:var(--radius);padding:3px;margin-bottom:20px}
 .tab{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);transition:all .15s;font-weight:500}
 .tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4)}
-#wr-vtabs,#om-vtabs,#ppm-vtabs,#ma-vtabs{width:240px !important;gap:4px;padding:6px}
-#wr-vtabs .tab,#om-vtabs .tab,#ppm-vtabs .tab,#ma-vtabs .tab{padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--font-display);letter-spacing:.3px;border-radius:8px}
-#wr-vtabs .tab.active,#om-vtabs .tab.active,#ppm-vtabs .tab.active,#ma-vtabs .tab.active{border-left:3px solid var(--orange)}
+#wr-vtabs,#om-vtabs,#ppm-vtabs,#ma-vtabs,#inv-vtabs{width:240px !important;gap:4px;padding:6px}
+#wr-vtabs .tab,#om-vtabs .tab,#ppm-vtabs .tab,#ma-vtabs .tab,#inv-vtabs .tab{padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--font-display);letter-spacing:.3px;border-radius:8px}
+#wr-vtabs .tab.active,#om-vtabs .tab.active,#ppm-vtabs .tab.active,#ma-vtabs .tab.active,#inv-vtabs .tab.active{border-left:3px solid var(--orange)}
 /* ─── VIEWS ─── */
 .view{display:none}
 .view.active{display:block}
@@ -208,8 +208,8 @@ select.form-control option{background:var(--bg3)}
   .section-header{flex-direction:column;align-items:flex-start;gap:10px}
   /* แถบ tab แนวตั้ง (WR/OM) → พับเป็นแถบแนวนอนเลื่อนได้ ไม่กินพื้นที่จอมือถือ */
   .vtabs-layout{flex-direction:column}
-  #wr-vtabs,#om-vtabs,#ppm-vtabs,#ma-vtabs{width:100% !important;flex-direction:row !important;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;padding:6px}
-  #wr-vtabs .tab,#om-vtabs .tab,#ppm-vtabs .tab,#ma-vtabs .tab{white-space:nowrap;flex-shrink:0;padding:10px 14px;font-size:13px}
+  #wr-vtabs,#om-vtabs,#ppm-vtabs,#ma-vtabs,#inv-vtabs{width:100% !important;flex-direction:row !important;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;padding:6px}
+  #wr-vtabs .tab,#om-vtabs .tab,#ppm-vtabs .tab,#ma-vtabs .tab,#inv-vtabs .tab{white-space:nowrap;flex-shrink:0;padding:10px 14px;font-size:13px}
   .modal,.modal-lg{width:96vw !important;max-width:96vw;padding:16px;max-height:94vh}
   .grid-3,.grid-4,.kpi-grid{grid-template-columns:1fr 1fr !important}
   table{font-size:12px}
@@ -1542,45 +1542,171 @@ body.embedded #content {
     <!-- ══════════════ INVENTORY ══════════════ -->
     <div id="view-inventory" class="view">
       <div class="section-header">
-        <div><div class="section-title">📦 Inventory System</div><div class="section-sub">รับเข้า/จ่ายออก — ROP Calculation — มูลค่าคงเหลือ</div></div>
-        <div class="flex gap-8">
-          <button class="btn btn-success btn-sm" onclick="openModal('receiveModal')">+ รับเข้าคลัง</button>
-          <button class="btn btn-danger btn-sm" onclick="openModal('issueModal')">- จ่ายออกคลัง</button>
-          <button class="btn btn-secondary btn-sm" onclick="openModal('addPartModal')">+ เพิ่มรายการ</button>
+        <div><div class="section-title">📦 Inventory System</div><div class="section-sub">รับเข้า (FIFO) / เบิกจ่าย (WR-PM-MA) — ROP — มูลค่าคงเหลือ — Dead Stock</div></div>
+        <div class="flex gap-8 flex-wrap">
+          <button class="btn btn-success btn-sm" onclick="openInvReceiveModal()">📥 รับเข้าคลัง</button>
+          <button class="btn btn-danger btn-sm" onclick="openInvIssueModal()">📤 เบิกจ่าย</button>
+          <button class="btn btn-primary btn-sm" onclick="openInvPartModal(null)">+ เพิ่มรายการอะไหล่</button>
         </div>
       </div>
 
       <div class="kpi-grid">
         <div class="kpi blue"><div class="kpi-label">Total SKUs</div><div class="kpi-value ff-display text-blue" id="inv-skus">0</div></div>
-        <div class="kpi green"><div class="kpi-label">Total Value</div><div class="kpi-value ff-display" style="font-size:18px" id="inv-value">฿0</div></div>
-        <div class="kpi red"><div class="kpi-label">Below ROP</div><div class="kpi-value ff-display text-red" id="inv-rop">0</div></div>
-        <div class="kpi yellow"><div class="kpi-label">Pending PO</div><div class="kpi-value ff-display text-yellow" id="inv-po">0</div></div>
+        <div class="kpi green"><div class="kpi-label">Total Value คงเหลือ</div><div class="kpi-value ff-display" style="font-size:16px" id="inv-value">฿0</div></div>
+        <div class="kpi red"><div class="kpi-label">ต่ำกว่า ROP</div><div class="kpi-value ff-display text-red" id="inv-rop">0</div></div>
+        <div class="kpi yellow"><div class="kpi-label">Dead Stock (มูลค่า)</div><div class="kpi-value ff-display" style="font-size:16px" id="inv-deadvalue">฿0</div></div>
+        <div class="kpi teal"><div class="kpi-label">ความพร้อมจ่ายอะไหล่</div><div class="kpi-value ff-display text-teal" id="inv-availpct">—</div></div>
       </div>
 
-      <div class="tabs">
-        <div class="tab active" onclick="showInventoryTab('items',this)">รายการอะไหล่</div>
-        <div class="tab" onclick="showInventoryTab('transactions',this)">ประวัติรับ-จ่าย</div>
-        <div class="tab" onclick="showInventoryTab('rop',this)">ROP Analysis</div>
-      </div>
+      <div class="vtabs-layout" style="display:flex;gap:16px;align-items:flex-start">
+        <div class="tabs" id="inv-vtabs" style="flex-direction:column;width:240px;flex-shrink:0;margin-bottom:0">
+          <div class="tab active" onclick="filterInv('all',this)">📊 Overview</div>
+          <div class="tab" onclick="filterInv('list',this)">📋 Inventory List</div>
+          <div class="tab" onclick="filterInv('receive',this)">📥 รับเข้า (FIFO)</div>
+          <div class="tab" onclick="filterInv('issue',this)">📤 เบิกจ่าย</div>
+          <div class="tab" onclick="filterInv('rop',this)">🔄 ROP & คาดการณ์สั่งซื้อ<span class="tab-badge" id="tab-badge-inv-rop" style="display:none">0</span></div>
+          <div class="tab" onclick="filterInv('availability',this)">🎯 ประสิทธิภาพจ่ายอะไหล่</div>
+          <div class="tab" onclick="filterInv('valuesummary',this)">💰 สรุปมูลค่ารายเดือน</div>
+          <div class="tab" onclick="filterInv('deadstock',this)">🧊 Dead Stock</div>
+          <div class="tab" onclick="filterInv('history',this)">📖 Asset History_Inventory</div>
+          <div class="tab" onclick="filterInv('setting',this)">⚙ Inventory Setting</div>
+        </div>
+        <div style="flex:1;min-width:0">
 
-      <div id="inv-items">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Part No.</th><th>ชื่ออะไหล่</th><th>ประเภท</th><th>คลัง</th><th>คงเหลือ</th><th>หน่วย</th><th>ROP</th><th>EOQ</th><th>ราคาต่อหน่วย</th><th>มูลค่าคงเหลือ</th><th>สถานะ</th><th>Actions</th></tr></thead>
-            <tbody id="inv-table"></tbody>
-          </table>
+          <!-- Overview -->
+          <div id="inv-main-view">
+            <div class="grid-2 mb-16">
+              <div class="card"><div style="font-family:var(--font-display);font-size:13px;font-weight:600;margin-bottom:6px">มูลค่าคงคลัง — รับเข้า vs เบิกจ่าย รายเดือน (฿)</div><div class="chart-wrap" style="height:200px"><canvas id="chartInvValue"></canvas></div></div>
+              <div class="card"><div style="font-family:var(--font-display);font-size:13px;font-weight:600;margin-bottom:6px">มูลค่าคงเหลือแยกระบบ</div><div class="chart-wrap" style="height:200px"><canvas id="chartInvBySys"></canvas></div></div>
+            </div>
+            <div class="card">
+              <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:10px">🧾 ธุรกรรมล่าสุด</div>
+              <div id="inv-recent-tx"></div>
+            </div>
+          </div>
+
+          <!-- Inventory List -->
+          <div id="inv-list-view" style="display:none">
+            <div class="card-sm mb-12" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+              <div><label class="form-label" style="font-size:10px">ระบบ (Type)</label><select class="form-control" id="invf-sys" onchange="renderInventory()" style="width:120px">
+                <option value="">ทั้งหมด</option><option value="AC">AC</option><option value="BAS">BAS</option><option value="EL">EL</option><option value="EC">EC</option><option value="EE">EE</option><option value="FA">FA</option><option value="FP">FP</option><option value="SN">SN</option><option value="VN">VN</option><option value="WWT">WWT</option><option value="TR">TR</option><option value="GE">GE</option><option value="OTH">OTH</option>
+              </select></div>
+              <div><label class="form-label" style="font-size:10px">ใช้กับงาน (System)</label><select class="form-control" id="invf-usage" onchange="renderInventory()" style="width:130px">
+                <option value="">ทั้งหมด</option><option value="RM">RM — Repair</option><option value="PM">PM — Preventive</option><option value="MA">MA — Contract</option><option value="GEN">General</option>
+              </select></div>
+              <div><label class="form-label" style="font-size:10px">สถานะสต๊อก</label><select class="form-control" id="invf-status" onchange="renderInventory()" style="width:140px">
+                <option value="">ทั้งหมด</option><option value="below">⚠ ต่ำกว่า ROP</option><option value="ok">✅ เพียงพอ</option>
+              </select></div>
+              <button class="btn btn-secondary btn-sm" onclick="resetInvFilters()">🗑 ล้างตัวกรอง</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Part No.</th><th>System</th><th>Type</th><th>ชื่ออะไหล่</th><th>Brand</th><th>Model</th><th>คงเหลือ</th><th>หน่วย</th><th>@Cost</th><th>Total Cost</th><th>ROP</th><th>สถานะ</th><th>Actions</th></tr></thead>
+                <tbody id="inv-table"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- รับเข้า -->
+          <div id="inv-receive-view" style="display:none">
+            <div class="text-muted mb-12" style="font-size:12px">📥 ประวัติการรับเข้าคลัง — อ้างอิง PR/PO — บันทึกเป็น Lot แบบ FIFO</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>วันที่</th><th>Part No.</th><th>ชื่ออะไหล่</th><th>จำนวน</th><th>ต้นทุน/หน่วย</th><th>มูลค่ารวม</th><th>PR/PO Ref.</th><th>ผู้รับ</th><th>หมายเหตุ</th></tr></thead>
+                <tbody id="inv-receive-table"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- เบิกจ่าย -->
+          <div id="inv-issue-view" style="display:none">
+            <div class="text-muted mb-12" style="font-size:12px">📤 ประวัติการเบิกจ่าย — อ้างอิง WR No. / PM No. / MA No.</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>วันที่</th><th>Part No.</th><th>ชื่ออะไหล่</th><th>จำนวน</th><th>ต้นทุน (FIFO)</th><th>อ้างอิงประเภท</th><th>เลขที่อ้างอิง</th><th>Asset</th><th>ผู้เบิก</th></tr></thead>
+                <tbody id="inv-issue-table"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ROP & คาดการณ์สั่งซื้อ -->
+          <div id="inv-rop-view" style="display:none">
+            <div class="card mb-16"><div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:12px">คงเหลือ เทียบกับ ROP</div><div class="chart-wrap" style="height:220px"><canvas id="chartROP"></canvas></div></div>
+            <div class="card">
+              <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:4px">🔄 คาดการณ์การสั่งซื้อ</div>
+              <div class="text-muted mb-12" style="font-size:12px">คำนวณจากอัตราการใช้เฉลี่ยต่อเดือน + Lead Time ของแต่ละรายการ</div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Part No.</th><th>ชื่ออะไหล่</th><th>คงเหลือ</th><th>ใช้เฉลี่ย/เดือน</th><th>คงเหลือใช้ได้ (วัน)</th><th>Lead Time (วัน)</th><th>ควรสั่งซื้อภายใน</th><th>แนะนำจำนวนสั่งซื้อ</th></tr></thead>
+                  <tbody id="inv-forecast-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ประสิทธิภาพจ่ายอะไหล่ -->
+          <div id="inv-availability-view" style="display:none">
+            <div class="grid-3 mb-16">
+              <div class="kpi teal"><div class="kpi-label">Service Level รวม</div><div class="kpi-value ff-display text-teal" id="inv-svc-overall">—</div></div>
+              <div class="kpi green"><div class="kpi-label">เบิกสำเร็จ (มีของพร้อม)</div><div class="kpi-value ff-display text-green" id="inv-svc-success">0</div></div>
+              <div class="kpi red"><div class="kpi-label">เบิกไม่สำเร็จ (ของขาด)</div><div class="kpi-value ff-display text-red" id="inv-svc-fail">0</div></div>
+            </div>
+            <div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:10px">ความพร้อมจ่ายอะไหล่ ต่อรายการ (Top ที่ขาดบ่อย)</div>
+              <div class="table-wrap"><table style="font-size:12px"><thead><tr><th>Part No.</th><th>ชื่ออะไหล่</th><th>คำขอเบิกทั้งหมด</th><th>สำเร็จ</th><th>ของขาด</th><th>% พร้อมจ่าย</th></tr></thead><tbody id="inv-availability-table"></tbody></table></div>
+            </div>
+          </div>
+
+          <!-- สรุปมูลค่ารายเดือน -->
+          <div id="inv-valuesummary-view" style="display:none">
+            <div class="card-sm mb-12" style="display:flex;gap:10px;align-items:flex-end">
+              <div><label class="form-label" style="font-size:10px">เดือน/ปี</label><input type="month" class="form-control" id="invval-month" onchange="renderInvValueSummary()" style="width:160px"></div>
+            </div>
+            <div class="grid-4 mb-16" style="grid-template-columns:repeat(4,1fr)">
+              <div class="kpi blue"><div class="kpi-label">ยอดยกมา</div><div class="kpi-value ff-display text-blue" style="font-size:16px" id="invval-open">฿0</div></div>
+              <div class="kpi green"><div class="kpi-label">รับเข้าเดือนนี้</div><div class="kpi-value ff-display text-green" style="font-size:16px" id="invval-in">฿0</div></div>
+              <div class="kpi red"><div class="kpi-label">เบิกจ่ายเดือนนี้</div><div class="kpi-value ff-display text-red" style="font-size:16px" id="invval-out">฿0</div></div>
+              <div class="kpi purple"><div class="kpi-label">คงเหลือปลายเดือน</div><div class="kpi-value ff-display text-purple" style="font-size:16px" id="invval-close">฿0</div></div>
+            </div>
+            <div class="grid-2 mb-16">
+              <div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:10px">แยกตามอาคาร</div><div class="table-wrap"><table style="font-size:12px"><thead><tr><th>อาคาร</th><th>มูลค่าเบิกจ่าย (฿)</th></tr></thead><tbody id="invval-bld-table"></tbody></table></div></div>
+              <div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:10px">แยกตามระบบ</div><div class="table-wrap"><table style="font-size:12px"><thead><tr><th>ระบบ</th><th>มูลค่าเบิกจ่าย (฿)</th></tr></thead><tbody id="invval-sys-table"></tbody></table></div></div>
+            </div>
+            <div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:10px">แยกตาม WR / PM / MA</div><div class="table-wrap"><table style="font-size:12px"><thead><tr><th>ประเภทงาน</th><th>จำนวนครั้งเบิก</th><th>มูลค่าเบิกจ่าย (฿)</th></tr></thead><tbody id="invval-type-table"></tbody></table></div></div>
+          </div>
+
+          <!-- Dead Stock -->
+          <div id="inv-deadstock-view" style="display:none">
+            <div class="text-muted mb-12" style="font-size:12px">🧊 อะไหล่ที่ไม่มีการเคลื่อนไหว (ไม่มีรับเข้า/เบิกจ่าย) เกินระยะเวลาที่กำหนด</div>
+            <div class="grid-3 mb-12" id="deadstock-kpi"></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Part No.</th><th>ชื่ออะไหล่</th><th>คงเหลือ</th><th>มูลค่าคงเหลือ</th><th>เคลื่อนไหวล่าสุด</th><th>ไม่เคลื่อนไหวมาแล้ว</th><th>กลุ่มอายุ</th></tr></thead>
+                <tbody id="inv-deadstock-table"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Asset History_Inventory -->
+          <div id="inv-history-view" style="display:none">
+            <div class="card">
+              <div class="text-muted" style="font-size:12px;margin-bottom:12px">เลือก Asset เพื่อดูประวัติการเบิกใช้อะไหล่ทั้งหมด</div>
+              <select class="form-control" id="inv-hist-asset-select" onchange="renderInvAssetHistory(this.value)" style="max-width:320px;margin-bottom:16px"><option value="">-- เลือก Asset --</option></select>
+              <div id="inv-hist-content"></div>
+            </div>
+          </div>
+
+          <!-- Inventory Setting -->
+          <div id="inv-setting-view" style="display:none">
+            <div class="text-muted mb-12" style="font-size:12px">⚙ ตั้งค่า Min / Max / ROP / Lead Time รายการอะไหล่ทั้งหมด (แก้ไขแล้วบันทึกอัตโนมัติ)</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Part No.</th><th>ชื่ออะไหล่</th><th>คงเหลือปัจจุบัน</th><th>Min Stock</th><th>Max Stock</th><th>ROP</th><th>Lead Time (วัน)</th></tr></thead>
+                <tbody id="inv-setting-table"></tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
-      </div>
-      <div id="inv-transactions" style="display:none">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>วันที่</th><th>เวลา</th><th>Part No.</th><th>ชื่ออะไหล่</th><th>ประเภท</th><th>จำนวน</th><th>อ้างอิง</th><th>ผู้ดำเนินการ</th><th>หมายเหตุ</th></tr></thead>
-            <tbody id="inv-tx-table"></tbody>
-          </table>
-        </div>
-      </div>
-      <div id="inv-rop" style="display:none">
-        <div class="card mb-16"><div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:12px">ROP Analysis — วิเคราะห์จุดสั่งซื้อ</div><div class="chart-wrap" style="height:250px"><canvas id="chartROP"></canvas></div></div>
       </div>
     </div>
 
@@ -2393,27 +2519,43 @@ body.embedded #content {
 
 <!-- ADD PART MODAL -->
 <div class="modal-overlay" id="addPartModal">
-  <div class="modal">
+  <div class="modal modal-lg">
     <div class="modal-header">
-      <div class="modal-title">📦 เพิ่มรายการอะไหล่</div>
+      <div class="modal-title" id="part-modal-title">📦 เพิ่มรายการอะไหล่</div>
       <button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('addPartModal')">✕</button>
     </div>
+    <input type="hidden" id="part-id">
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Part No.</label><input class="form-control" id="part-no" placeholder="เช่น PRT-0001"></div>
-      <div class="form-group"><label class="form-label">ชื่ออะไหล่</label><input class="form-control" id="part-name" placeholder="ชื่ออะไหล่"></div>
+      <div class="form-group"><label class="form-label">Part No.</label><input class="form-control" id="part-no" placeholder="เว้นว่าง = สร้างอัตโนมัติ"></div>
+      <div class="form-group"><label class="form-label">ชื่ออะไหล่ *</label><input class="form-control" id="part-name" placeholder="ชื่ออะไหล่"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">ประเภท</label>
-        <select class="form-control" id="part-type"><option>อะไหล่เครื่องจักร</option><option>วัสดุสิ้นเปลือง</option><option>น้ำมัน/สารหล่อลื่น</option><option>อุปกรณ์ไฟฟ้า</option><option>อื่นๆ</option></select>
+      <div class="form-group"><label class="form-label">Brand</label><input class="form-control" id="part-brand" placeholder="ยี่ห้อ"></div>
+      <div class="form-group"><label class="form-label">Model</label><input class="form-control" id="part-model" placeholder="รุ่น"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">ระบบ (System/Type)</label>
+        <select class="form-control" id="part-sys">
+          <option value="">—</option><option value="AC">AC</option><option value="BAS">BAS</option><option value="EL">EL</option><option value="EC">EC</option><option value="EE">EE</option><option value="FA">FA</option><option value="FP">FP</option><option value="SN">SN</option><option value="VN">VN</option><option value="WWT">WWT</option><option value="TR">TR</option><option value="GE">GE</option><option value="OTH">OTH</option>
+        </select>
       </div>
-      <div class="form-group"><label class="form-label">หน่วย</label><input class="form-control" id="part-unit" placeholder="ชิ้น/แพ็ค/ลิตร"></div>
+      <div class="form-group"><label class="form-label">ใช้กับงานประเภท (RM/PM/MA)</label>
+        <select class="form-control" id="part-usage"><option value="GEN">General (ทุกประเภท)</option><option value="RM">RM — Repair Maintenance</option><option value="PM">PM — Preventive</option><option value="MA">MA — Contract</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">หน่วย</label><input class="form-control" id="part-unit" placeholder="ชิ้น/แพ็ค/ลิตร" value="ชิ้น"></div>
+      <div class="form-group"><label class="form-label">ตำแหน่งจัดเก็บ</label><input class="form-control" id="part-location" placeholder="เช่น คลังกลาง ชั้น 2 ช่อง A-12"></div>
     </div>
     <div class="form-row-3">
-      <div class="form-group"><label class="form-label">คงเหลือเริ่มต้น</label><input class="form-control" id="part-qty" type="number" placeholder="0" value="0"></div>
+      <div class="form-group"><label class="form-label">Min Stock</label><input class="form-control" id="part-min" type="number" placeholder="0" value="2"></div>
+      <div class="form-group"><label class="form-label">Max Stock</label><input class="form-control" id="part-max" type="number" placeholder="0" value="20"></div>
       <div class="form-group"><label class="form-label">ROP (จุดสั่งซื้อ)</label><input class="form-control" id="part-rop" type="number" placeholder="0" value="5"></div>
-      <div class="form-group"><label class="form-label">EOQ</label><input class="form-control" id="part-eoq" type="number" placeholder="0" value="10"></div>
     </div>
-    <div class="form-group"><label class="form-label">ราคาต่อหน่วย (฿)</label><input class="form-control" id="part-price" type="number" placeholder="0"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Lead Time สั่งซื้อ (วัน)</label><input class="form-control" id="part-leadtime" type="number" placeholder="0" value="7"></div>
+      <div class="form-group"><label class="form-label">ราคาต่อหน่วยเริ่มต้น (฿) — ถ้ายังไม่เคยรับเข้า</label><input class="form-control" id="part-price" type="number" placeholder="0"></div>
+    </div>
     <div class="flex gap-8 mt-16" style="justify-content:flex-end">
       <button class="btn btn-secondary" onclick="closeModal('addPartModal')">ยกเลิก</button>
       <button class="btn btn-primary" onclick="savePart()">💾 บันทึก</button>
@@ -2421,12 +2563,13 @@ body.embedded #content {
   </div>
 </div>
 
-<!-- RECEIVE MODAL -->
+<!-- RECEIVE MODAL (FIFO) -->
 <div class="modal-overlay" id="receiveModal">
   <div class="modal">
-    <div class="modal-header"><div class="modal-title">📥 รับอะไหล่เข้าคลัง</div><button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('receiveModal')">✕</button></div>
-    <div class="form-row"><div class="form-group"><label class="form-label">Part No.</label><select class="form-control" id="recv-part"><option value="">-- เลือกอะไหล่ --</option></select></div><div class="form-group"><label class="form-label">จำนวน</label><input class="form-control" id="recv-qty" type="number" min="1" value="1"></div></div>
-    <div class="form-row"><div class="form-group"><label class="form-label">อ้างอิงเอกสาร (PO/GR)</label><input class="form-control" id="recv-ref" placeholder="เลขที่ PO"></div><div class="form-group"><label class="form-label">ผู้รับ</label><input class="form-control" id="recv-person" placeholder="ชื่อผู้รับ"></div></div>
+    <div class="modal-header"><div class="modal-title">📥 รับอะไหล่เข้าคลัง (FIFO)</div><button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('receiveModal')">✕</button></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Part No. *</label><select class="form-control" id="recv-part"><option value="">-- เลือกอะไหล่ --</option></select></div><div class="form-group"><label class="form-label">จำนวน *</label><input class="form-control" id="recv-qty" type="number" min="1" value="1"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">ต้นทุนต่อหน่วย (฿) *</label><input class="form-control" id="recv-cost" type="number" min="0" placeholder="0"></div><div class="form-group"><label class="form-label">เลขที่ PR/PO *</label><input class="form-control" id="recv-ref" placeholder="เลขที่ PR/PO"></div></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">ผู้รับ</label><input class="form-control" id="recv-person" placeholder="ชื่อผู้รับ"></div><div class="form-group"><label class="form-label">วันที่รับ</label><input class="form-control" id="recv-date" type="date"></div></div>
     <div class="form-group"><label class="form-label">หมายเหตุ</label><input class="form-control" id="recv-note" placeholder="หมายเหตุ"></div>
     <div class="flex gap-8 mt-16" style="justify-content:flex-end"><button class="btn btn-secondary" onclick="closeModal('receiveModal')">ยกเลิก</button><button class="btn btn-success" onclick="saveReceive()">✅ ยืนยันรับเข้า</button></div>
   </div>
@@ -2435,9 +2578,15 @@ body.embedded #content {
 <!-- ISSUE MODAL -->
 <div class="modal-overlay" id="issueModal">
   <div class="modal">
-    <div class="modal-header"><div class="modal-title">📤 จ่ายอะไหล่ออกคลัง</div><button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('issueModal')">✕</button></div>
-    <div class="form-row"><div class="form-group"><label class="form-label">Part No.</label><select class="form-control" id="issue-part"><option value="">-- เลือกอะไหล่ --</option></select></div><div class="form-group"><label class="form-label">จำนวน</label><input class="form-control" id="issue-qty" type="number" min="1" value="1"></div></div>
-    <div class="form-row"><div class="form-group"><label class="form-label">อ้างอิง WR/PPM/MA</label><input class="form-control" id="issue-ref" placeholder="เลขที่ใบงาน"></div><div class="form-group"><label class="form-label">ผู้เบิก</label><input class="form-control" id="issue-person" placeholder="ชื่อผู้เบิก"></div></div>
+    <div class="modal-header"><div class="modal-title">📤 เบิกจ่ายอะไหล่ออกคลัง</div><button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('issueModal')">✕</button></div>
+    <div class="form-row"><div class="form-group"><label class="form-label">Part No. *</label><select class="form-control" id="issue-part" onchange="updateIssueStockHint()"><option value="">-- เลือกอะไหล่ --</option></select></div><div class="form-group"><label class="form-label">จำนวน *</label><input class="form-control" id="issue-qty" type="number" min="1" value="1"></div></div>
+    <div class="text-muted mb-8" style="font-size:11px" id="issue-stock-hint"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">อ้างอิงประเภท *</label><select class="form-control" id="issue-reftype" onchange="populateIssueRefSelect()"><option value="WR">WR — Work Request</option><option value="PM">PM — Preventive Maintenance</option><option value="MA">MA — MA Contract Visit</option><option value="OTHER">อื่นๆ</option></select></div>
+      <div class="form-group"><label class="form-label">เลขที่อ้างอิง *</label><select class="form-control" id="issue-refid"><option value="">-- เลือกเลขที่อ้างอิง --</option></select></div>
+    </div>
+    <div class="form-group" id="issue-refother-wrap" style="display:none"><label class="form-label">ระบุเลขที่อ้างอิง (อื่นๆ)</label><input class="form-control" id="issue-refother" placeholder="เช่น เบิกใช้ทั่วไป"></div>
+    <div class="form-group"><label class="form-label">ผู้เบิก</label><input class="form-control" id="issue-person" placeholder="ชื่อผู้เบิก"></div>
     <div class="flex gap-8 mt-16" style="justify-content:flex-end"><button class="btn btn-secondary" onclick="closeModal('issueModal')">ยกเลิก</button><button class="btn btn-danger" onclick="saveIssue()">📤 ยืนยันจ่ายออก</button></div>
   </div>
 </div>
@@ -2553,7 +2702,7 @@ const DB = {
   set: (k, v) => {
     localStorage.setItem('alm_'+k, JSON.stringify(v));
     // Mirror กลับไปให้ Asset Core (index.html หลัก) เห็นข้อมูลชุดเดียวกัน — sync 2 ทาง
-    const sync=['wr','assets','ppm','ma','maVisits','inv','contract','operation','omRecords','omTemplates','omSchedule','omShiftTimes','ppmTemplates'];
+    const sync=['wr','assets','ppm','ma','maVisits','inv','invtx','contract','operation','omRecords','omTemplates','omSchedule','omShiftTimes','ppmTemplates'];
     if(sync.includes(k)){ try{ localStorage.setItem('tko_v2_'+k, JSON.stringify(v)); }catch(e){} }
   },
 };
@@ -2740,13 +2889,19 @@ function seedData() {
 
   // Inventory seed
   const partNames = ['Filter Oil EFF-100','Bearing 6205 2RS','V-Belt B-70','Oil Seal 45×62','Contactor LC1-D25','Fuse 16A','Hydraulic Oil 46','Limit Switch OMRON','Terminal Block DIN','PLC Battery 3.6V'];
+  const partSys = ['AC','TR','AC','SN','EE','EE','AC','FP','EE','GE'];
+  const partBrand = ['Donaldson','SKF','Gates','NOK','Schneider','Mersen','Shell','Omron','Weidmuller','Panasonic'];
   for (let i = 0; i < 10; i++) {
     const qty = Math.floor(Math.random()*50)+2;
     const rop = Math.floor(Math.random()*10)+5;
+    const price = Math.floor(Math.random()*4900)+100;
     inventory.push({ id:`PRT-${String(i+1).padStart(4,'0')}`, name: partNames[i],
-      type: ['อะไหล่เครื่องจักร','น้ำมัน/สารหล่อลื่น','อุปกรณ์ไฟฟ้า','วัสดุสิ้นเปลือง'][Math.floor(Math.random()*4)],
+      sys: partSys[i], usageType: ['RM','PM','MA','GEN'][Math.floor(Math.random()*4)],
+      brand: partBrand[i], model: '',
       unit: ['ชิ้น','ลิตร','เส้น','แพ็ค'][Math.floor(Math.random()*4)],
-      qty, rop, eoq: rop*2, price: Math.floor(Math.random()*4900)+100
+      qty, rop, min: Math.max(rop-3,1), max: rop*3, leadTimeDays: [3,5,7,10,14][Math.floor(Math.random()*5)],
+      price, lots: [{qty, cost:price, date:new Date(2025,Math.floor(Math.random()*10),1).toISOString(), ref:'ยอดยกมาเริ่มต้น'}],
+      location:'คลังกลาง', createdDate:new Date(2025,0,1).toISOString()
     });
   }
   DB.set('inv', inventory);
@@ -7611,101 +7766,507 @@ function renderMARecentVisits(){
 }
 
 // ═══════════════════════════════════════════════════════════
-//  INVENTORY
+//  INVENTORY — Full Module (List → FIFO Receive/Issue → ROP → Availability → Value → Dead Stock)
 // ═══════════════════════════════════════════════════════════
-function renderInventory() {
-  const skus = inventory.length;
-  const totalVal = inventory.reduce((s,p)=>s+(p.qty||0)*(p.price||0),0);
-  const belowROP = inventory.filter(p=>p.qty<=p.rop).length;
-  document.getElementById('inv-skus').textContent = skus;
-  document.getElementById('inv-value').textContent = fmtCurrency(totalVal);
-  document.getElementById('inv-rop').textContent = belowROP;
-  document.getElementById('inv-po').textContent = belowROP;
+let invTabFilter='all';
 
-  const logs = DB.get('invtx', []);
-  document.getElementById('inv-table').innerHTML = inventory.map(p=>`<tr>
-    <td><span class="tag">${p.id}</span></td>
-    <td>${p.name}</td>
-    <td>${p.type}</td>
-    <td style="font-size:12px">คลังกลาง</td>
-    <td><span class="fw-700" style="color:${p.qty<=p.rop?'var(--red)':'var(--text)'}">${p.qty}</span></td>
-    <td class="text-muted">${p.unit}</td>
-    <td class="ff-mono text-yellow">${p.rop}</td>
-    <td class="ff-mono text-blue">${p.eoq}</td>
-    <td class="ff-mono">${fmtCurrency(p.price)}</td>
-    <td class="ff-mono text-green">${fmtCurrency(p.qty*p.price)}</td>
-    <td>${p.qty<=p.rop?'<span class="badge badge-red">⚠ ต้องสั่งซื้อ</span>':'<span class="badge badge-green">✅ เพียงพอ</span>'}</td>
-    <td><button class="btn btn-secondary btn-sm btn-icon" onclick="deleteInventory('${p.id}')">🗑</button></td>
-  </tr>`).join('');
+// ── FIFO lot helpers ──
+function ensureLots(item){
+  if(!Array.isArray(item.lots)){
+    item.lots = item.qty>0 ? [{qty:item.qty, cost:item.price||item.cost||0, date:item.createdDate||new Date().toISOString(), ref:'ยอดยกมาเริ่มต้น'}] : [];
+  }
+  return item.lots;
+}
+function addLot(item, qty, cost, date, ref){
+  ensureLots(item);
+  item.lots.push({qty, cost, date:new Date(date).toISOString(), ref});
+  item.qty=(item.qty||0)+qty;
+  item.price=getItemUnitCost(item);
+}
+function consumeFIFO(item, qty){
+  ensureLots(item);
+  let remaining=qty, totalCost=0;
+  while(remaining>0 && item.lots.length){
+    const lot=item.lots[0];
+    const take=Math.min(lot.qty, remaining);
+    totalCost+=take*lot.cost;
+    lot.qty-=take; remaining-=take;
+    if(lot.qty<=0) item.lots.shift();
+  }
+  const consumedQty=qty-remaining;
+  item.qty=Math.max(0,(item.qty||0)-consumedQty);
+  item.price=getItemUnitCost(item);
+  return {consumedCost:totalCost, avgCost:consumedQty?Math.round(totalCost/consumedQty*100)/100:0, consumedQty};
+}
+function getItemValue(item){
+  if(Array.isArray(item.lots)&&item.lots.length) return item.lots.reduce((s,l)=>s+l.qty*l.cost,0);
+  return (item.qty||0)*(item.price||item.cost||0);
+}
+function getItemUnitCost(item){
+  if(Array.isArray(item.lots)&&item.lots.length){
+    const q=item.lots.reduce((s,l)=>s+l.qty,0), v=item.lots.reduce((s,l)=>s+l.qty*l.cost,0);
+    return q?Math.round(v/q*100)/100:0;
+  }
+  return item.price||item.cost||0;
+}
+function getLastMovementDate(partId){
+  const txs=invTx.filter(t=>t.partId===partId && (t.type==='receive'||(t.type==='issue'&&t.fulfilled!==false)));
+  if(!txs.length) return null;
+  return txs.reduce((latest,t)=>{const d=new Date(t.date); return (!latest||d>latest)?d:latest;},null);
+}
+function resolveAssetFromRef(refType, refId){
+  if(refType==='WR') return workRequests.find(w=>w.id===refId)?.assetId||null;
+  if(refType==='PM') return ppmList.find(p=>p.id===refId)?.assetId||null;
+  if(refType==='MA') return maVisits.find(v=>v.id===refId)?.assetId||null;
+  return null;
+}
 
-  document.getElementById('inv-tx-table').innerHTML = logs.map(t=>`<tr>
-    <td style="font-size:12px">${fmtDate(t.date)}</td>
-    <td style="font-size:12px">${t.time}</td>
-    <td><span class="tag">${t.partId}</span></td>
-    <td>${t.partName}</td>
-    <td>${t.type==='receive'?'<span class="badge badge-green">รับเข้า</span>':'<span class="badge badge-red">จ่ายออก</span>'}</td>
-    <td class="fw-600">${t.type==='receive'?'+':'−'}${t.qty}</td>
-    <td style="font-size:12px">${t.ref}</td>
-    <td style="font-size:12px">${t.person}</td>
-    <td style="font-size:12px;color:var(--text3)">${t.note||'-'}</td>
-  </tr>`).join('');
+function filterInv(f,el){
+  invTabFilter=f;
+  document.querySelectorAll('#inv-vtabs .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderInventory();
+}
 
-  destroyChart('rop');
-  charts.rop = new Chart(document.getElementById('chartROP'), {
-    type:'bar',
-    data:{labels:inventory.map(p=>p.id),datasets:[{label:'คงเหลือ',data:inventory.map(p=>p.qty),backgroundColor:inventory.map(p=>p.qty<=p.rop?'#EF4444':'#22C55E'),borderRadius:4},{label:'ROP',data:inventory.map(p=>p.rop),type:'line',borderColor:'#EAB308',fill:false,pointRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E'}}},scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}
+function renderInventory(){
+  const skus=inventory.length;
+  const totalVal=inventory.reduce((s,p)=>s+getItemValue(p),0);
+  const belowROP=inventory.filter(p=>(p.qty||0)<=(p.rop||0));
+  const deadValue=inventory.reduce((s,p)=>{
+    const last=getLastMovementDate(p.id);
+    const months=last?(new Date()-last)/(30*86400000):999;
+    return months>=6?s+getItemValue(p):s;
+  },0);
+  const fulfilledIssues=invTx.filter(t=>t.type==='issue'&&t.fulfilled!==false).length;
+  const failedIssues=invTx.filter(t=>t.type==='issue'&&t.fulfilled===false).length;
+  const totalIssueReq=fulfilledIssues+failedIssues;
+  const availPct=totalIssueReq?Math.round(fulfilledIssues/totalIssueReq*1000)/10:null;
+
+  document.getElementById('inv-skus').textContent=skus;
+  document.getElementById('inv-value').textContent=fmtCurrency(totalVal);
+  document.getElementById('inv-rop').textContent=belowROP.length;
+  document.getElementById('inv-deadvalue').textContent=fmtCurrency(deadValue);
+  document.getElementById('inv-availpct').textContent=availPct!=null?availPct+'%':'—';
+  setTabBadge('tab-badge-inv-rop',belowROP.length);
+
+  const views=['inv-main-view','inv-list-view','inv-receive-view','inv-issue-view','inv-rop-view','inv-availability-view','inv-valuesummary-view','inv-deadstock-view','inv-history-view','inv-setting-view'];
+  views.forEach(id=>document.getElementById(id).style.display='none');
+  if(invTabFilter==='list'){ document.getElementById('inv-list-view').style.display='block'; renderInvList(); return; }
+  if(invTabFilter==='receive'){ document.getElementById('inv-receive-view').style.display='block'; renderInvReceiveTable(); return; }
+  if(invTabFilter==='issue'){ document.getElementById('inv-issue-view').style.display='block'; renderInvIssueTable(); return; }
+  if(invTabFilter==='rop'){ document.getElementById('inv-rop-view').style.display='block'; renderInvROP(); return; }
+  if(invTabFilter==='availability'){ document.getElementById('inv-availability-view').style.display='block'; renderInvAvailability(); return; }
+  if(invTabFilter==='valuesummary'){ document.getElementById('inv-valuesummary-view').style.display='block'; renderInvValueSummary(); return; }
+  if(invTabFilter==='deadstock'){ document.getElementById('inv-deadstock-view').style.display='block'; renderInvDeadStock(); return; }
+  if(invTabFilter==='history'){ document.getElementById('inv-history-view').style.display='block'; populateInvHistorySelect(); return; }
+  if(invTabFilter==='setting'){ document.getElementById('inv-setting-view').style.display='block'; renderInvSetting(); return; }
+
+  // Overview
+  document.getElementById('inv-main-view').style.display='block';
+  renderInvOverviewCharts();
+  renderInvRecentTx();
+}
+
+// ── Inventory List ──
+function resetInvFilters(){
+  ['invf-sys','invf-usage','invf-status'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderInventory();
+}
+function renderInvList(){
+  const sysF=document.getElementById('invf-sys')?.value;
+  const usageF=document.getElementById('invf-usage')?.value;
+  const statusF=document.getElementById('invf-status')?.value;
+  let list=inventory.filter(p=>{
+    if(sysF && p.sys!==sysF) return false;
+    if(usageF && (p.usageType||'GEN')!==usageF) return false;
+    const below=(p.qty||0)<=(p.rop||0);
+    if(statusF==='below' && !below) return false;
+    if(statusF==='ok' && below) return false;
+    return true;
   });
+  document.getElementById('inv-table').innerHTML=list.length?list.map(p=>{
+    const below=(p.qty||0)<=(p.rop||0);
+    return `<tr>
+      <td><span class="tag">${p.id}</span></td>
+      <td><span class="tag">${p.sys||'-'}</span></td>
+      <td>${p.usageType||'GEN'}</td>
+      <td>${p.name}</td>
+      <td style="font-size:12px">${p.brand||'-'}</td>
+      <td style="font-size:12px">${p.model||'-'}</td>
+      <td><span class="fw-700" style="color:${below?'var(--red)':'var(--text)'}">${p.qty||0}</span></td>
+      <td class="text-muted">${p.unit||'-'}</td>
+      <td class="ff-mono">${fmtCurrency(getItemUnitCost(p))}</td>
+      <td class="ff-mono text-green">${fmtCurrency(getItemValue(p))}</td>
+      <td class="ff-mono text-yellow">${p.rop||0}</td>
+      <td>${below?'<span class="badge badge-red">⚠ ต้องสั่งซื้อ</span>':'<span class="badge badge-green">✅ เพียงพอ</span>'}</td>
+      <td>
+        <div class="flex gap-8" style="flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="openInvPartModal('${p.id}')" title="แก้ไข">✏</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteInventory('${p.id}')">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีรายการอะไหล่</td></tr>';
+}
+function openInvPartModal(id){
+  const p=id?inventory.find(x=>x.id===id):null;
+  document.getElementById('part-id').value=p?p.id:'';
+  document.getElementById('part-modal-title').textContent=p?'✏ แก้ไขรายการอะไหล่':'📦 เพิ่มรายการอะไหล่';
+  document.getElementById('part-no').value=p?p.id:'';
+  document.getElementById('part-name').value=p?p.name||'':'';
+  document.getElementById('part-brand').value=p?p.brand||'':'';
+  document.getElementById('part-model').value=p?p.model||'':'';
+  document.getElementById('part-sys').value=p?p.sys||'':'';
+  document.getElementById('part-usage').value=p?p.usageType||'GEN':'GEN';
+  document.getElementById('part-unit').value=p?p.unit||'ชิ้น':'ชิ้น';
+  document.getElementById('part-location').value=p?p.location||'':'';
+  document.getElementById('part-min').value=p?p.min??2:2;
+  document.getElementById('part-max').value=p?p.max??20:20;
+  document.getElementById('part-rop').value=p?p.rop??5:5;
+  document.getElementById('part-leadtime').value=p?p.leadTimeDays??7:7;
+  document.getElementById('part-price').value=p?p.price||'':'';
+  openModal('addPartModal');
+}
+function savePart(){
+  const name=document.getElementById('part-name').value.trim();
+  if(!name){ alert('⚠ กรุณาระบุชื่ออะไหล่ครับ'); return; }
+  const id=document.getElementById('part-id').value;
+  const data={
+    name, brand:document.getElementById('part-brand').value.trim(), model:document.getElementById('part-model').value.trim(),
+    sys:document.getElementById('part-sys').value, usageType:document.getElementById('part-usage').value,
+    unit:document.getElementById('part-unit').value.trim()||'ชิ้น', location:document.getElementById('part-location').value.trim(),
+    min:parseInt(document.getElementById('part-min').value)||0, max:parseInt(document.getElementById('part-max').value)||0,
+    rop:parseInt(document.getElementById('part-rop').value)||0, leadTimeDays:parseInt(document.getElementById('part-leadtime').value)||7,
+  };
+  if(id){
+    const idx=inventory.findIndex(p=>p.id===id);
+    if(idx>=0) inventory[idx]={...inventory[idx],...data};
+  }else{
+    const newId=document.getElementById('part-no').value.trim()||`PRT-${String(inventory.length+1).padStart(4,'0')}`;
+    inventory.push({id:newId, qty:0, price:parseFloat(document.getElementById('part-price').value)||0, lots:[], createdDate:new Date().toISOString(), ...data});
+  }
+  DB.set('inv',inventory); closeModal('addPartModal'); renderInventory();
+}
+function deleteInventory(id){
+  if(!confirm(`ลบรายการ ${id}?`))return;
+  inventory=inventory.filter(p=>p.id!==id);
+  DB.set('inv',inventory); renderInventory();
 }
 
-function showInventoryTab(t, el) {
-  ['items','transactions','rop'].forEach(x=>{ const div=document.getElementById('inv-'+x); if(div) div.style.display='none'; });
-  document.getElementById('inv-'+t).style.display='block';
-  document.querySelectorAll('#view-inventory .tab').forEach(tb=>tb.classList.remove('active'));
-  el.classList.add('active');
-  if(t==='rop') { setTimeout(()=>{ destroyChart('rop'); renderInventory(); },100); }
+// ── รับเข้า (FIFO) ──
+function openInvReceiveModal(){
+  document.getElementById('recv-part').value='';
+  document.getElementById('recv-qty').value=1;
+  document.getElementById('recv-cost').value='';
+  document.getElementById('recv-ref').value='';
+  document.getElementById('recv-person').value='';
+  document.getElementById('recv-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('recv-note').value='';
+  openModal('receiveModal');
 }
-
-function savePart() {
-  const id = document.getElementById('part-no').value.trim() || `PRT-${String(inventory.length+1).padStart(4,'0')}`;
-  inventory.push({ id, name:document.getElementById('part-name').value, type:document.getElementById('part-type').value,
-    unit:document.getElementById('part-unit').value, qty:parseInt(document.getElementById('part-qty').value)||0,
-    rop:parseInt(document.getElementById('part-rop').value)||5, eoq:parseInt(document.getElementById('part-eoq').value)||10,
-    price:parseFloat(document.getElementById('part-price').value)||0 });
-  DB.set('inv', inventory); closeModal('addPartModal'); renderInventory();
-}
-
-function saveReceive() {
-  const partId = document.getElementById('recv-part').value;
-  const qty = parseInt(document.getElementById('recv-qty').value)||0;
-  const idx = inventory.findIndex(p=>p.id===partId);
-  if(idx<0){alert('กรุณาเลือกอะไหล่');return;}
-  inventory[idx].qty += qty;
-  const logs = DB.get('invtx',[]);
-  const now = new Date();
-  logs.unshift({partId, partName:inventory[idx].name, type:'receive', qty, ref:document.getElementById('recv-ref').value, person:document.getElementById('recv-person').value, note:document.getElementById('recv-note').value, date:now.toISOString(), time:now.toLocaleTimeString('th-TH')});
-  DB.set('inv',inventory); DB.set('invtx',logs);
+function saveReceive(){
+  const partId=document.getElementById('recv-part').value;
+  const qty=parseInt(document.getElementById('recv-qty').value)||0;
+  const cost=parseFloat(document.getElementById('recv-cost').value);
+  const ref=document.getElementById('recv-ref').value.trim();
+  const person=document.getElementById('recv-person').value.trim();
+  const date=document.getElementById('recv-date').value||new Date().toISOString().split('T')[0];
+  const note=document.getElementById('recv-note').value.trim();
+  if(!partId){ alert('⚠ กรุณาเลือกอะไหล่ครับ'); return; }
+  if(!qty||qty<1){ alert('⚠ กรุณาระบุจำนวนครับ'); return; }
+  if(isNaN(cost)||cost<0){ alert('⚠ กรุณาระบุต้นทุนต่อหน่วยครับ'); return; }
+  if(!ref){ alert('⚠ กรุณาระบุเลขที่ PR/PO ครับ'); return; }
+  const idx=inventory.findIndex(p=>p.id===partId); if(idx<0)return;
+  addLot(inventory[idx], qty, cost, date, ref);
+  invTx.unshift({id:'TX-'+Date.now(), date:new Date(date).toISOString(), type:'receive', partId, partName:inventory[idx].name, qty, unitCost:cost, totalCost:qty*cost, ref, person, note, fulfilled:true});
+  DB.set('inv',inventory); DB.set('invtx',invTx);
   closeModal('receiveModal'); renderInventory();
 }
-
-function saveIssue() {
-  const partId = document.getElementById('issue-part').value;
-  const qty = parseInt(document.getElementById('issue-qty').value)||0;
-  const idx = inventory.findIndex(p=>p.id===partId);
-  if(idx<0){alert('กรุณาเลือกอะไหล่');return;}
-  if(inventory[idx].qty<qty){alert('จำนวนในคลังไม่เพียงพอ');return;}
-  inventory[idx].qty -= qty;
-  const logs = DB.get('invtx',[]);
-  const now = new Date();
-  logs.unshift({partId, partName:inventory[idx].name, type:'issue', qty, ref:document.getElementById('issue-ref').value, person:document.getElementById('issue-person').value, note:'', date:now.toISOString(), time:now.toLocaleTimeString('th-TH')});
-  DB.set('inv',inventory); DB.set('invtx',logs);
-  closeModal('issueModal'); renderInventory();
+function renderInvReceiveTable(){
+  const list=invTx.filter(t=>t.type==='receive').sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  document.getElementById('inv-receive-table').innerHTML=list.length?list.map(t=>`
+    <tr>
+      <td style="font-size:12px">${fmtDate(t.date)}</td>
+      <td><span class="tag">${t.partId}</span></td>
+      <td>${t.partName}</td>
+      <td class="fw-600 text-green">+${t.qty}</td>
+      <td class="ff-mono">${fmtCurrency(t.unitCost)}</td>
+      <td class="ff-mono text-green">${fmtCurrency(t.totalCost)}</td>
+      <td style="font-size:12px">${t.ref}</td>
+      <td style="font-size:12px">${t.person||'-'}</td>
+      <td style="font-size:12px;color:var(--text3)">${t.note||'-'}</td>
+    </tr>`).join(''):'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีประวัติการรับเข้า</td></tr>';
 }
 
-function deleteInventory(id) {
-  if(!confirm(`ลบ ${id}?`))return;
-  inventory = inventory.filter(p=>p.id!==id);
-  DB.set('inv',inventory); renderInventory();
+// ── เบิกจ่าย ──
+function openInvIssueModal(){
+  document.getElementById('issue-part').value='';
+  document.getElementById('issue-qty').value=1;
+  document.getElementById('issue-reftype').value='WR';
+  document.getElementById('issue-person').value='';
+  document.getElementById('issue-refother').value='';
+  document.getElementById('issue-refother-wrap').style.display='none';
+  document.getElementById('issue-stock-hint').textContent='';
+  populateIssueRefSelect();
+  openModal('issueModal');
+}
+function updateIssueStockHint(){
+  const p=inventory.find(x=>x.id===document.getElementById('issue-part').value);
+  document.getElementById('issue-stock-hint').textContent=p?`คงเหลือปัจจุบัน: ${p.qty||0} ${p.unit||''}`:'';
+}
+function populateIssueRefSelect(){
+  const refType=document.getElementById('issue-reftype').value;
+  const sel=document.getElementById('issue-refid');
+  const otherWrap=document.getElementById('issue-refother-wrap');
+  if(refType==='OTHER'){
+    sel.style.display='none'; sel.innerHTML=''; otherWrap.style.display='block';
+    return;
+  }
+  sel.style.display=''; otherWrap.style.display='none';
+  if(refType==='WR'){
+    sel.innerHTML='<option value="">-- เลือก WR --</option>'+workRequests.map(w=>`<option value="${w.id}">${w.id} — ${(w.desc||'').substring(0,30)}</option>`).join('');
+  }else if(refType==='PM'){
+    sel.innerHTML='<option value="">-- เลือก PM --</option>'+ppmList.map(p=>`<option value="${p.id}">${p.id} — ${(p.name||'').substring(0,30)}</option>`).join('');
+  }else if(refType==='MA'){
+    sel.innerHTML='<option value="">-- เลือก MA Visit --</option>'+maVisits.map(v=>`<option value="${v.id}">${v.id} — ${v.assetId} (${v.vendor||''})</option>`).join('');
+  }
+}
+function saveIssue(){
+  const partId=document.getElementById('issue-part').value;
+  const qty=parseInt(document.getElementById('issue-qty').value)||0;
+  const refType=document.getElementById('issue-reftype').value;
+  const refId=refType==='OTHER'?document.getElementById('issue-refother').value.trim():document.getElementById('issue-refid').value;
+  const person=document.getElementById('issue-person').value.trim();
+  if(!partId){ alert('⚠ กรุณาเลือกอะไหล่ครับ'); return; }
+  if(!qty||qty<1){ alert('⚠ กรุณาระบุจำนวนครับ'); return; }
+  if(!refId){ alert('⚠ กรุณาระบุเลขที่อ้างอิงครับ'); return; }
+  const idx=inventory.findIndex(p=>p.id===partId); if(idx<0)return;
+  const item=inventory[idx];
+  const available=item.qty||0;
+  const now=new Date();
+  if(available<qty){
+    invTx.unshift({id:'TX-'+Date.now(), date:now.toISOString(), type:'issue', partId, partName:item.name, qty:0, requestedQty:qty, unitCost:0, totalCost:0, refType, ref:refId, assetId:resolveAssetFromRef(refType,refId), person, note:`ของไม่พอ (คงเหลือ ${available})`, fulfilled:false});
+    DB.set('invtx',invTx);
+    alert(`⚠ อะไหล่คงเหลือไม่เพียงพอ (คงเหลือ ${available} ${item.unit||''}) — ระบบบันทึกเป็นคำขอที่เบิกไม่สำเร็จ เพื่อใช้วิเคราะห์ความพร้อมอะไหล่ครับ`);
+    closeModal('issueModal'); renderInventory();
+    return;
+  }
+  const consumed=consumeFIFO(item,qty);
+  const assetId=resolveAssetFromRef(refType,refId);
+  const a=assetId?assets.find(x=>x.id===assetId):null;
+  invTx.unshift({id:'TX-'+Date.now(), date:now.toISOString(), type:'issue', partId, partName:item.name, qty, requestedQty:qty, unitCost:consumed.avgCost, totalCost:consumed.consumedCost, refType, ref:refId, assetId, building:a?.building||'', sys:a?.sys||item.sys||'', person, note:'', fulfilled:true});
+  DB.set('inv',inventory); DB.set('invtx',invTx);
+  closeModal('issueModal'); renderInventory();
+}
+function renderInvIssueTable(){
+  const list=invTx.filter(t=>t.type==='issue').sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  document.getElementById('inv-issue-table').innerHTML=list.length?list.map(t=>`
+    <tr>
+      <td style="font-size:12px">${fmtDate(t.date)}</td>
+      <td><span class="tag">${t.partId}</span></td>
+      <td>${t.partName}</td>
+      <td class="fw-600 ${t.fulfilled===false?'text-red':'text-red'}">${t.fulfilled===false?`✗ ขาด (ขอ ${t.requestedQty})`:'−'+t.qty}</td>
+      <td class="ff-mono">${t.fulfilled===false?'—':fmtCurrency(t.totalCost)}</td>
+      <td>${t.refType||'-'}</td>
+      <td style="font-size:12px">${t.ref||'-'}</td>
+      <td><span class="tag">${t.assetId||'-'}</span></td>
+      <td style="font-size:12px">${t.person||'-'}</td>
+    </tr>`).join(''):'<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีประวัติการเบิกจ่าย</td></tr>';
+}
+
+// ── ROP & คาดการณ์สั่งซื้อ ──
+function getAvgMonthlyUsage(partId){
+  const sixMonthsAgo=new Date(); sixMonthsAgo.setMonth(sixMonthsAgo.getMonth()-6);
+  const issues=invTx.filter(t=>t.partId===partId && t.type==='issue' && t.fulfilled!==false && new Date(t.date)>=sixMonthsAgo);
+  const totalQty=issues.reduce((s,t)=>s+(t.qty||0),0);
+  return Math.round(totalQty/6*10)/10;
+}
+function renderInvROP(){
+  destroyChart('rop');
+  charts.rop=new Chart(document.getElementById('chartROP'),{
+    type:'bar',
+    data:{labels:inventory.map(p=>p.id),datasets:[
+      {label:'คงเหลือ',data:inventory.map(p=>p.qty||0),backgroundColor:inventory.map(p=>(p.qty||0)<=(p.rop||0)?'#EF4444':'#22C55E'),borderRadius:4},
+      {label:'ROP',data:inventory.map(p=>p.rop||0),type:'line',borderColor:'#EAB308',fill:false,pointRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E'}}},scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}
+  });
+  const today=new Date();
+  document.getElementById('inv-forecast-table').innerHTML=inventory.length?inventory.map(p=>{
+    const avgUse=getAvgMonthlyUsage(p.id);
+    const daysLeft=avgUse>0?Math.round((p.qty||0)/(avgUse/30)):null;
+    const leadTime=p.leadTimeDays||7;
+    const orderBy=daysLeft!=null?new Date(today.getTime()+(daysLeft-leadTime)*86400000):null;
+    const needOrder=daysLeft!=null&&daysLeft<=leadTime;
+    const suggestQty=Math.max((p.max||0)-(p.qty||0),0);
+    return `<tr style="${needOrder?'background:rgba(239,68,68,.06)':''}">
+      <td><span class="tag">${p.id}</span></td>
+      <td>${p.name}</td>
+      <td class="ff-mono">${p.qty||0}</td>
+      <td class="ff-mono">${avgUse}</td>
+      <td class="ff-mono ${needOrder?'text-red fw-700':''}">${daysLeft!=null?daysLeft+' วัน':'—'}</td>
+      <td class="ff-mono">${leadTime}</td>
+      <td style="font-size:12px">${orderBy?(needOrder?`<span class="text-red fw-700">⚠ ${fmtDate(orderBy.toISOString())} (ควรสั่งแล้ว)</span>`:fmtDate(orderBy.toISOString())):'—'}</td>
+      <td class="ff-mono text-blue">${suggestQty||'-'}</td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีรายการอะไหล่</td></tr>';
+}
+
+// ── ประสิทธิภาพจ่ายอะไหล่ (Service Level) ──
+function renderInvAvailability(){
+  const fulfilled=invTx.filter(t=>t.type==='issue'&&t.fulfilled!==false);
+  const failed=invTx.filter(t=>t.type==='issue'&&t.fulfilled===false);
+  const total=fulfilled.length+failed.length;
+  document.getElementById('inv-svc-overall').textContent=total?Math.round(fulfilled.length/total*1000)/10+'%':'—';
+  document.getElementById('inv-svc-success').textContent=fulfilled.length;
+  document.getElementById('inv-svc-fail').textContent=failed.length;
+
+  const byPart={};
+  invTx.filter(t=>t.type==='issue').forEach(t=>{
+    if(!byPart[t.partId]) byPart[t.partId]={partId:t.partId,partName:t.partName,total:0,success:0,fail:0};
+    byPart[t.partId].total++;
+    if(t.fulfilled===false) byPart[t.partId].fail++; else byPart[t.partId].success++;
+  });
+  const rows=Object.values(byPart).filter(r=>r.fail>0).sort((a,b)=>b.fail-a.fail);
+  document.getElementById('inv-availability-table').innerHTML=rows.length?rows.map(r=>`
+    <tr><td><span class="tag">${r.partId}</span></td><td>${r.partName}</td><td>${r.total}</td><td class="text-green">${r.success}</td><td class="text-red fw-700">${r.fail}</td><td class="ff-mono">${Math.round(r.success/r.total*1000)/10}%</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีรายการที่ของขาด ✅</td></tr>';
+}
+
+// ── สรุปมูลค่ารายเดือน ──
+function renderInvValueSummary(){
+  const monthInput=document.getElementById('invval-month');
+  if(!monthInput.value) monthInput.value=new Date().toISOString().slice(0,7);
+  const [y,m]=monthInput.value.split('-').map(Number);
+  const monthStart=new Date(y,m-1,1), monthEnd=new Date(y,m,0,23,59,59);
+
+  const receivesInMonth=invTx.filter(t=>t.type==='receive'&&new Date(t.date)>=monthStart&&new Date(t.date)<=monthEnd);
+  const issuesInMonth=invTx.filter(t=>t.type==='issue'&&t.fulfilled!==false&&new Date(t.date)>=monthStart&&new Date(t.date)<=monthEnd);
+  const inVal=receivesInMonth.reduce((s,t)=>s+(t.totalCost||0),0);
+  const outVal=issuesInMonth.reduce((s,t)=>s+(t.totalCost||0),0);
+  const closeVal=inventory.reduce((s,p)=>s+getItemValue(p),0);
+  const openVal=closeVal-inVal+outVal;
+  document.getElementById('invval-open').textContent=fmtCurrency(Math.max(openVal,0));
+  document.getElementById('invval-in').textContent=fmtCurrency(inVal);
+  document.getElementById('invval-out').textContent=fmtCurrency(outVal);
+  document.getElementById('invval-close').textContent=fmtCurrency(closeVal);
+
+  const bldMap={}, sysMap={}, typeMap={};
+  issuesInMonth.forEach(t=>{
+    const bld=t.building||'ไม่ระบุ';
+    bldMap[bld]=(bldMap[bld]||0)+(t.totalCost||0);
+    const sys=t.sys||'อื่นๆ';
+    sysMap[sys]=(sysMap[sys]||0)+(t.totalCost||0);
+    const type=t.refType||'OTHER';
+    if(!typeMap[type]) typeMap[type]={count:0,value:0};
+    typeMap[type].count++; typeMap[type].value+=(t.totalCost||0);
+  });
+  document.getElementById('invval-bld-table').innerHTML=Object.keys(bldMap).length?Object.entries(bldMap).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td>${k}</td><td class="ff-mono">${fmtCurrency(v)}</td></tr>`).join(''):'<tr><td colspan="2" style="text-align:center;padding:12px;color:var(--text3)">ยังไม่มีข้อมูล</td></tr>';
+  document.getElementById('invval-sys-table').innerHTML=Object.keys(sysMap).length?Object.entries(sysMap).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td><span class="tag">${k}</span></td><td class="ff-mono">${fmtCurrency(v)}</td></tr>`).join(''):'<tr><td colspan="2" style="text-align:center;padding:12px;color:var(--text3)">ยังไม่มีข้อมูล</td></tr>';
+  const typeLabels={WR:'WR — Work Request',PM:'PM — Preventive',MA:'MA — Contract',OTHER:'อื่นๆ'};
+  document.getElementById('invval-type-table').innerHTML=Object.keys(typeMap).length?Object.entries(typeMap).sort((a,b)=>b[1].value-a[1].value).map(([k,v])=>`<tr><td>${typeLabels[k]||k}</td><td>${v.count}</td><td class="ff-mono">${fmtCurrency(v.value)}</td></tr>`).join(''):'<tr><td colspan="3" style="text-align:center;padding:12px;color:var(--text3)">ยังไม่มีข้อมูล</td></tr>';
+}
+
+// ── Dead Stock ──
+function renderInvDeadStock(){
+  const buckets=[6,12,18,24,30,36];
+  const today=new Date();
+  const rows=inventory.map(p=>{
+    const last=getLastMovementDate(p.id);
+    const months=last?Math.floor((today-last)/(30*86400000)):999;
+    return {p, last, months, value:getItemValue(p)};
+  }).filter(r=>r.months>=6).sort((a,b)=>b.months-a.months);
+
+  const kpiHtml=buckets.map(b=>{
+    const inBucket=rows.filter(r=>r.months>=b && r.months<b+6);
+    const val=inBucket.reduce((s,r)=>s+r.value,0);
+    return `<div class="kpi ${b>=24?'red':b>=12?'yellow':'blue'}"><div class="kpi-label">${b}+ เดือน</div><div class="kpi-value ff-display" style="font-size:15px">${inBucket.length} รายการ<br><span style="font-size:12px">${fmtCurrency(val)}</span></div></div>`;
+  }).join('');
+  document.getElementById('deadstock-kpi').innerHTML=kpiHtml;
+
+  document.getElementById('inv-deadstock-table').innerHTML=rows.length?rows.map(r=>{
+    const bucket=buckets.slice().reverse().find(b=>r.months>=b);
+    return `<tr>
+      <td><span class="tag">${r.p.id}</span></td>
+      <td>${r.p.name}</td>
+      <td class="ff-mono">${r.p.qty||0}</td>
+      <td class="ff-mono text-red">${fmtCurrency(r.value)}</td>
+      <td style="font-size:12px">${r.last?fmtDate(r.last.toISOString()):'ไม่เคยเคลื่อนไหว'}</td>
+      <td class="ff-mono">${r.months>=999?'ไม่ทราบ':r.months+' เดือน'}</td>
+      <td><span class="badge ${bucket>=24?'badge-red':bucket>=12?'badge-yellow':'badge-blue'}">${bucket}+ เดือน</span></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีอะไหล่ค้างสต๊อก ✅</td></tr>';
+}
+
+// ── Asset History_Inventory ──
+function populateInvHistorySelect(){
+  const sel=document.getElementById('inv-hist-asset-select'); if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">-- เลือก Asset --</option>'+assets.map(a=>`<option value="${a.id}">${a.id} — ${a.name||''}</option>`).join('');
+  if(cur){ sel.value=cur; renderInvAssetHistory(cur); }
+}
+function renderInvAssetHistory(assetId){
+  const el=document.getElementById('inv-hist-content'); if(!el)return;
+  if(!assetId){ el.innerHTML=''; return; }
+  const list=invTx.filter(t=>t.type==='issue'&&t.assetId===assetId&&t.fulfilled!==false).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  if(!list.length){ el.innerHTML='<div class="text-muted text-center" style="padding:24px">ยังไม่มีประวัติการเบิกใช้อะไหล่สำหรับ Asset นี้</div>'; return; }
+  const totalCost=list.reduce((s,t)=>s+(t.totalCost||0),0);
+  el.innerHTML=`
+    <div class="grid-2 mb-16">
+      <div class="kpi purple"><div class="kpi-label">มูลค่าอะไหล่ที่ใช้สะสม</div><div class="kpi-value ff-display text-purple" style="font-size:16px">${fmtCurrency(totalCost)}</div></div>
+      <div class="kpi blue"><div class="kpi-label">จำนวนครั้งที่เบิกใช้</div><div class="kpi-value ff-display text-blue">${list.length}</div></div>
+    </div>
+    <div class="table-wrap"><table style="font-size:12px">
+      <thead><tr><th>วันที่</th><th>Part No.</th><th>ชื่ออะไหล่</th><th>จำนวน</th><th>มูลค่า</th><th>อ้างอิง</th></tr></thead>
+      <tbody>${list.map(t=>`<tr><td>${fmtDate(t.date)}</td><td><span class="tag">${t.partId}</span></td><td>${t.partName}</td><td class="ff-mono">${t.qty}</td><td class="ff-mono">${fmtCurrency(t.totalCost)}</td><td style="font-size:11px">${t.refType} ${t.ref}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+}
+
+// ── Overview: charts + recent tx ──
+function renderInvOverviewCharts(){
+  destroyChart('invValue'); destroyChart('invBySys');
+  const months=Array.from({length:12},(_,i)=>{const d=new Date();d.setMonth(d.getMonth()-11+i);return d;});
+  const monthLabels=months.map(d=>d.toLocaleDateString('th-TH',{month:'2-digit',year:'2-digit'}));
+  const inByMonth=months.map(d=>invTx.filter(t=>t.type==='receive'&&new Date(t.date).getMonth()===d.getMonth()&&new Date(t.date).getFullYear()===d.getFullYear()).reduce((s,t)=>s+(t.totalCost||0),0));
+  const outByMonth=months.map(d=>invTx.filter(t=>t.type==='issue'&&t.fulfilled!==false&&new Date(t.date).getMonth()===d.getMonth()&&new Date(t.date).getFullYear()===d.getFullYear()).reduce((s,t)=>s+(t.totalCost||0),0));
+  charts.invValue=new Chart(document.getElementById('chartInvValue'),{
+    type:'bar',
+    data:{labels:monthLabels,datasets:[{label:'รับเข้า',data:inByMonth,backgroundColor:'#22C55E'},{label:'เบิกจ่าย',data:outByMonth,backgroundColor:'#EF4444'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E'}}},scales:{x:{ticks:{color:'#8B949E'}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}
+  });
+  const sysMap={};
+  inventory.forEach(p=>{ const sys=p.sys||'อื่นๆ'; sysMap[sys]=(sysMap[sys]||0)+getItemValue(p); });
+  charts.invBySys=new Chart(document.getElementById('chartInvBySys'),{
+    type:'doughnut',
+    data:{labels:Object.keys(sysMap).length?Object.keys(sysMap):['ยังไม่มีข้อมูล'],datasets:[{data:Object.values(sysMap).length?Object.values(sysMap):[1],backgroundColor:['#3B82F6','#22C55E','#EAB308','#EF4444','#A855F7','#14B8A6','#F97316','#8B949E']}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8B949E',font:{size:10}}}}}
+  });
+}
+function renderInvRecentTx(){
+  const el=document.getElementById('inv-recent-tx'); if(!el)return;
+  const list=[...invTx].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).slice(0,8);
+  el.innerHTML=list.length?`<div class="table-wrap"><table style="font-size:12px">
+    <thead><tr><th>วันที่</th><th>Part No.</th><th>ประเภท</th><th>จำนวน</th><th>มูลค่า</th><th>อ้างอิง</th></tr></thead>
+    <tbody>${list.map(t=>`<tr><td>${fmtDate(t.date)}</td><td><span class="tag">${t.partId}</span></td><td>${t.type==='receive'?'<span class="badge badge-green">รับเข้า</span>':t.fulfilled===false?'<span class="badge badge-red">เบิกไม่สำเร็จ</span>':'<span class="badge badge-orange">เบิกจ่าย</span>'}</td><td class="fw-600">${t.type==='receive'?'+':'−'}${t.qty}</td><td class="ff-mono">${fmtCurrency(t.totalCost)}</td><td style="font-size:11px">${t.ref||'-'}</td></tr>`).join('')}</tbody>
+  </table></div>`:'<div class="text-muted text-center" style="padding:24px;font-size:13px">ยังไม่มีธุรกรรม</div>';
+}
+
+// ── Inventory Setting (Min/Max/ROP/Lead Time) ──
+function renderInvSetting(){
+  document.getElementById('inv-setting-table').innerHTML=inventory.length?inventory.map(p=>`
+    <tr>
+      <td><span class="tag">${p.id}</span></td>
+      <td>${p.name}</td>
+      <td class="ff-mono">${p.qty||0}</td>
+      <td><input type="number" class="form-control" style="width:80px;font-size:12px" value="${p.min||0}" onchange="updateInvSetting('${p.id}','min',this.value)"></td>
+      <td><input type="number" class="form-control" style="width:80px;font-size:12px" value="${p.max||0}" onchange="updateInvSetting('${p.id}','max',this.value)"></td>
+      <td><input type="number" class="form-control" style="width:80px;font-size:12px" value="${p.rop||0}" onchange="updateInvSetting('${p.id}','rop',this.value)"></td>
+      <td><input type="number" class="form-control" style="width:80px;font-size:12px" value="${p.leadTimeDays||7}" onchange="updateInvSetting('${p.id}','leadTimeDays',this.value)"></td>
+    </tr>`).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีรายการอะไหล่</td></tr>';
+}
+function updateInvSetting(id,field,val){
+  const idx=inventory.findIndex(p=>p.id===id); if(idx<0)return;
+  inventory[idx][field]=parseInt(val)||0;
+  DB.set('inv',inventory);
 }
 
 // ═══════════════════════════════════════════════════════════
