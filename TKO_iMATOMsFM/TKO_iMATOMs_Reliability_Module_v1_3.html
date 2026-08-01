@@ -119,9 +119,9 @@ select.form-control option{background:var(--bg3)}
 .tabs{display:flex;gap:2px;background:var(--bg3);border-radius:var(--radius);padding:3px;margin-bottom:20px}
 .tab{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);transition:all .15s;font-weight:500}
 .tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4)}
-#wr-vtabs,#om-vtabs,#ppm-vtabs{width:240px !important;gap:4px;padding:6px}
-#wr-vtabs .tab,#om-vtabs .tab,#ppm-vtabs .tab{padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--font-display);letter-spacing:.3px;border-radius:8px}
-#wr-vtabs .tab.active,#om-vtabs .tab.active,#ppm-vtabs .tab.active{border-left:3px solid var(--orange)}
+#wr-vtabs,#om-vtabs,#ppm-vtabs,#ma-vtabs{width:240px !important;gap:4px;padding:6px}
+#wr-vtabs .tab,#om-vtabs .tab,#ppm-vtabs .tab,#ma-vtabs .tab{padding:12px 16px;font-size:14px;font-weight:600;font-family:var(--font-display);letter-spacing:.3px;border-radius:8px}
+#wr-vtabs .tab.active,#om-vtabs .tab.active,#ppm-vtabs .tab.active,#ma-vtabs .tab.active{border-left:3px solid var(--orange)}
 /* ─── VIEWS ─── */
 .view{display:none}
 .view.active{display:block}
@@ -208,8 +208,8 @@ select.form-control option{background:var(--bg3)}
   .section-header{flex-direction:column;align-items:flex-start;gap:10px}
   /* แถบ tab แนวตั้ง (WR/OM) → พับเป็นแถบแนวนอนเลื่อนได้ ไม่กินพื้นที่จอมือถือ */
   .vtabs-layout{flex-direction:column}
-  #wr-vtabs,#om-vtabs,#ppm-vtabs{width:100% !important;flex-direction:row !important;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;padding:6px}
-  #wr-vtabs .tab,#om-vtabs .tab,#ppm-vtabs .tab{white-space:nowrap;flex-shrink:0;padding:10px 14px;font-size:13px}
+  #wr-vtabs,#om-vtabs,#ppm-vtabs,#ma-vtabs{width:100% !important;flex-direction:row !important;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;padding:6px}
+  #wr-vtabs .tab,#om-vtabs .tab,#ppm-vtabs .tab,#ma-vtabs .tab{white-space:nowrap;flex-shrink:0;padding:10px 14px;font-size:13px}
   .modal,.modal-lg{width:96vw !important;max-width:96vw;padding:16px;max-height:94vh}
   .grid-3,.grid-4,.kpi-grid{grid-template-columns:1fr 1fr !important}
   table{font-size:12px}
@@ -1397,22 +1397,145 @@ body.embedded #content {
     <!-- ══════════════ MA CONTRACT ══════════════ -->
     <div id="view-contract" class="view">
       <div class="section-header">
-        <div><div class="section-title">📄 MA Contract System</div><div class="section-sub">ระบบสัญญาบริการ — แผนเดือน/ปี การตรวจสอบ</div></div>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addMAModal')">+ เพิ่มสัญญา MA</button>
+        <div><div class="section-title">📄 MA Contract System</div><div class="section-sub">สัญญาบริการ — วันเริ่ม/หมดสัญญา — ประสิทธิภาพผู้รับเหมา — ต่อสัญญา</div></div>
+        <div class="flex gap-8 flex-wrap">
+          <button class="btn btn-secondary btn-sm" onclick="openMAVisitModal(null)">🧾 บันทึกการเข้างาน</button>
+          <button class="btn btn-primary btn-sm" onclick="openMAContractModal(null)">+ เพิ่มสัญญา MA</button>
+        </div>
       </div>
 
       <div class="kpi-grid">
         <div class="kpi blue"><div class="kpi-label">Active Contracts</div><div class="kpi-value ff-display text-blue" id="ma-active">0</div></div>
-        <div class="kpi yellow"><div class="kpi-label">Expiring Soon</div><div class="kpi-value ff-display text-yellow" id="ma-expire">0</div></div>
+        <div class="kpi yellow"><div class="kpi-label">Expiring Soon (≤90d)</div><div class="kpi-value ff-display text-yellow" id="ma-expire">0</div></div>
         <div class="kpi red"><div class="kpi-label">Expired</div><div class="kpi-value ff-display text-red" id="ma-expired">0</div></div>
-        <div class="kpi orange"><div class="kpi-label">Total Value</div><div class="kpi-value ff-display" style="font-size:18px" id="ma-value">฿0</div></div>
+        <div class="kpi orange"><div class="kpi-label">Total Contract Value</div><div class="kpi-value ff-display" style="font-size:16px" id="ma-value">฿0</div></div>
+        <div class="kpi teal"><div class="kpi-label">คะแนนความพึงพอใจเฉลี่ย</div><div class="kpi-value ff-display text-teal" id="ma-avgscore">—</div></div>
       </div>
 
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Contract No.</th><th>Asset</th><th>Vendor</th><th>ประเภทสัญญา</th><th>วันเริ่ม</th><th>วันหมดอายุ</th><th>มูลค่า</th><th>ความถี่ PM</th><th>สถานะ</th><th>Actions</th></tr></thead>
-          <tbody id="ma-table"></tbody>
-        </table>
+      <div class="vtabs-layout" style="display:flex;gap:16px;align-items:flex-start">
+        <div class="tabs" id="ma-vtabs" style="flex-direction:column;width:240px;flex-shrink:0;margin-bottom:0">
+          <div class="tab active" onclick="filterMA('all',this)">📊 Overview</div>
+          <div class="tab" onclick="filterMA('register',this)">📋 Contract Register</div>
+          <div class="tab" onclick="filterMA('schedule',this)">📅 PM Schedule</div>
+          <div class="tab" onclick="filterMA('inprogress',this)">⚡ In Progress / Pending<span class="tab-badge" id="tab-badge-ma-inprogress" style="display:none">0</span></div>
+          <div class="tab" onclick="filterMA('closed',this)">✅ Closed</div>
+          <div class="tab" onclick="filterMA('evaluate',this)">🏅 Evaluate & Approve<span class="tab-badge" id="tab-badge-ma-evaluate" style="display:none">0</span></div>
+          <div class="tab" onclick="filterMA('performance',this)">📈 Performance / Scorecard</div>
+          <div class="tab" onclick="filterMA('renewal',this)">🔔 Renewal Tracking<span class="tab-badge" id="tab-badge-ma-renewal" style="display:none">0</span></div>
+          <div class="tab" onclick="filterMA('history',this)">📖 Asset History_MA</div>
+          <div class="tab" onclick="filterMA('cost',this)">💰 Cost Summary</div>
+        </div>
+        <div style="flex:1;min-width:0">
+
+          <!-- Overview -->
+          <div id="ma-main-view">
+            <div class="grid-2 mb-16">
+              <div class="card"><div style="font-family:var(--font-display);font-size:13px;font-weight:600;margin-bottom:6px">มูลค่าสัญญา MA รายเดือน (12 เดือนล่าสุด)</div><div class="chart-wrap" style="height:200px"><canvas id="chartMAValue"></canvas></div></div>
+              <div class="card"><div style="font-family:var(--font-display);font-size:13px;font-weight:600;margin-bottom:6px">คะแนนความพึงพอใจเฉลี่ยต่อ Vendor</div><div class="chart-wrap" style="height:200px"><canvas id="chartMAScore"></canvas></div></div>
+            </div>
+            <div class="card">
+              <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:10px">🧾 การเข้างานล่าสุด</div>
+              <div id="ma-recent-visits"></div>
+            </div>
+          </div>
+
+          <!-- Contract Register -->
+          <div id="ma-register-view" style="display:none">
+            <div class="card-sm mb-12" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+              <div><label class="form-label" style="font-size:10px">จากวันที่ (เริ่มสัญญา)</label><input type="date" class="form-control" id="maf-datefrom" onchange="renderMA()" style="width:140px"></div>
+              <div><label class="form-label" style="font-size:10px">ถึงวันที่ (เริ่มสัญญา)</label><input type="date" class="form-control" id="maf-dateto" onchange="renderMA()" style="width:140px"></div>
+              <div><label class="form-label" style="font-size:10px">Vendor</label><select class="form-control" id="maf-vendor" onchange="renderMA()" style="width:150px"><option value="">Vendor: ทั้งหมด</option></select></div>
+              <div><label class="form-label" style="font-size:10px">ประเภทสัญญา</label><select class="form-control" id="maf-type" onchange="renderMA()" style="width:130px">
+                <option value="">ทั้งหมด</option><option>Full Service</option><option>Parts Only</option><option>Labor Only</option><option>PM Only</option>
+              </select></div>
+              <div><label class="form-label" style="font-size:10px">สถานะ</label><select class="form-control" id="maf-status" onchange="renderMA()" style="width:130px">
+                <option value="">ทั้งหมด</option><option value="active">✅ Active</option><option value="expiring">⏰ ใกล้หมด</option><option value="expired">❌ หมดอายุ</option>
+              </select></div>
+              <button class="btn btn-secondary btn-sm" onclick="resetMAFilters()">🗑 ล้างตัวกรอง</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Contract No.</th><th>Vendor</th><th>Asset(s)</th><th>ประเภทสัญญา</th><th>วันเริ่ม</th><th>วันหมดอายุ</th><th>มูลค่า</th><th>ความถี่ PM</th><th>สถานะ</th><th>Actions</th></tr></thead>
+                <tbody id="ma-table"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- PM Schedule (ตามสัญญา) -->
+          <div id="ma-schedule-view" style="display:none">
+            <div class="text-muted mb-12" style="font-size:12px">📅 แผนการเข้าทำ PM ตามความถี่ที่ระบุในสัญญา — เทียบกับการเข้างานจริง</div>
+            <div id="ma-schedule-content"></div>
+          </div>
+
+          <!-- In Progress/Pending & Closed (การเข้างานตามสถานะ) -->
+          <div id="ma-visits-view" style="display:none">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Visit No.</th><th>Contract</th><th>Asset</th><th>Vendor</th><th>วันที่เข้างาน</th><th>ช่างผู้ปฏิบัติงาน</th><th>งานที่ทำ/พบปัญหา</th><th>ตรงเวลา</th><th>คะแนนเฉลี่ย</th><th>สถานะ</th><th>Actions</th></tr></thead>
+                <tbody id="ma-visits-table"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Evaluate & Approve -->
+          <div id="ma-evaluate-view" style="display:none">
+            <div id="ma-evaluate-list"></div>
+          </div>
+
+          <!-- Performance / Scorecard -->
+          <div id="ma-performance-view" style="display:none">
+            <div class="card mb-16">
+              <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:4px">📈 Performance / Scorecard ผู้รับเหมา</div>
+              <div class="text-muted mb-12" style="font-size:12px">ใช้ประกอบการตัดสินใจต่อสัญญาในอนาคต</div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Vendor</th><th>จำนวนครั้งเข้างาน</th><th>ตรงเวลา%</th><th>คะแนนตรงเวลา</th><th>คะแนนคุณภาพงาน</th><th>คะแนนการตอบสนอง</th><th>คะแนนความสะอาด</th><th>คะแนนเฉลี่ยรวม</th><th>ส่งกลับแก้ไข</th><th>ระดับ</th></tr></thead>
+                  <tbody id="ma-performance-table"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:10px">คะแนนเฉลี่ยรวมต่อ Vendor</div><div class="chart-wrap" style="height:240px"><canvas id="chartMAPerf"></canvas></div></div>
+          </div>
+
+          <!-- Renewal Tracking -->
+          <div id="ma-renewal-view" style="display:none">
+            <div class="text-muted mb-12" style="font-size:12px">🔔 สัญญาที่ใกล้หมดอายุภายใน 90 วัน พร้อมคะแนนย้อนหลังประกอบการตัดสินใจต่อ/ไม่ต่อสัญญา</div>
+            <div id="ma-renewal-list"></div>
+          </div>
+
+          <!-- Asset History_MA -->
+          <div id="ma-history-view" style="display:none">
+            <div class="card">
+              <div class="text-muted" style="font-size:12px;margin-bottom:12px">เลือก Asset เพื่อดูประวัติสัญญา/การเข้างาน MA ทั้งหมด</div>
+              <select class="form-control" id="ma-hist-asset-select" onchange="renderMAAssetHistory(this.value)" style="max-width:320px;margin-bottom:16px"><option value="">-- เลือก Asset --</option></select>
+              <div id="ma-hist-content"></div>
+            </div>
+          </div>
+
+          <!-- Cost Summary -->
+          <div id="ma-cost-view" style="display:none">
+            <div class="card mb-16">
+              <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:4px">💰 Cost Summary — มูลค่าสัญญา MA</div>
+              <div class="text-muted mb-12" style="font-size:12px">แยกตามระบบ/อาคาร</div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>ระบบ</th><th>จำนวนสัญญา</th><th>จำนวน Asset</th><th>มูลค่ารวม (฿)</th><th>สัดส่วน%</th></tr></thead>
+                  <tbody id="ma-cost-sys-table"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card">
+              <div style="font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:12px">แยกตามอาคาร</div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>อาคาร</th><th>จำนวนสัญญา</th><th>จำนวน Asset</th><th>มูลค่ารวม (฿)</th><th>สัดส่วน%</th></tr></thead>
+                  <tbody id="ma-cost-bld-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
 
@@ -2155,25 +2278,30 @@ body.embedded #content {
 </div>
 
 <!-- ADD MA CONTRACT MODAL -->
-<div class="modal-overlay" id="addMAModal">
-  <div class="modal">
+<div class="modal-overlay" id="maContractModal">
+  <div class="modal modal-lg">
     <div class="modal-header">
-      <div class="modal-title">📄 เพิ่มสัญญา MA</div>
-      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('addMAModal')">✕</button>
+      <div class="modal-title" id="ma-contract-modal-title">📄 เพิ่มสัญญา MA</div>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('maContractModal')">✕</button>
     </div>
+    <input type="hidden" id="ma-id">
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Asset ID</label><select class="form-control" id="ma-asset"><option value="">-- เลือก Asset --</option></select></div>
-      <div class="form-group"><label class="form-label">Vendor / ผู้ให้บริการ</label><input class="form-control" id="ma-vendor" placeholder="บริษัทผู้ให้บริการ"></div>
+      <div class="form-group"><label class="form-label">เลขที่สัญญา (Contract No.)</label><input class="form-control" id="ma-contractno" placeholder="เช่น CT-2026-001"></div>
+      <div class="form-group"><label class="form-label">Vendor / ผู้ให้บริการ *</label><input class="form-control" id="ma-vendor" placeholder="บริษัทผู้ให้บริการ"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Asset ที่อยู่ในสัญญานี้ *</label>
+      <select class="form-control" id="ma-asset-multi" multiple size="5"></select>
+      <div class="text-muted" style="font-size:11px;margin-top:4px">กด Ctrl (หรือ Cmd บน Mac) ค้างไว้เพื่อเลือกได้หลายเครื่อง</div>
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">ประเภทสัญญา</label>
         <select class="form-control" id="ma-type"><option>Full Service</option><option>Parts Only</option><option>Labor Only</option><option>PM Only</option></select>
       </div>
-      <div class="form-group"><label class="form-label">มูลค่าสัญญา (฿)</label><input class="form-control" id="ma-value-input" type="number" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">มูลค่าสัญญา (฿) *</label><input class="form-control" id="ma-value-input" type="number" placeholder="0"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">วันเริ่มสัญญา</label><input class="form-control" id="ma-start" type="date"></div>
-      <div class="form-group"><label class="form-label">วันหมดสัญญา</label><input class="form-control" id="ma-end" type="date"></div>
+      <div class="form-group"><label class="form-label">วันเริ่มสัญญา *</label><input class="form-control" id="ma-start" type="date"></div>
+      <div class="form-group"><label class="form-label">วันหมดสัญญา *</label><input class="form-control" id="ma-end" type="date"></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">ความถี่ PM ในสัญญา</label>
@@ -2181,9 +2309,84 @@ body.embedded #content {
       </div>
       <div class="form-group"><label class="form-label">เบอร์ติดต่อ Vendor</label><input class="form-control" id="ma-contact" placeholder="0xx-xxx-xxxx"></div>
     </div>
+    <div class="form-group"><label class="form-label">ขอบเขตงานตามสัญญา (Scope of Work)</label><textarea class="form-control" id="ma-scope" rows="2" placeholder="รายละเอียดขอบเขตงานบริการตามสัญญา"></textarea></div>
+
+    <div style="font-family:var(--font-display);font-size:13px;font-weight:600;margin:12px 0 8px">📎 แนบไฟล์/รูปสแกนสัญญา (ไม่บังคับ)</div>
+    <div class="card-sm mb-12" style="background:var(--bg3)">
+      <input type="file" id="ma-file-input" accept="image/*,.pdf" multiple style="display:none" onchange="handleMAFileUpload(event)">
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('ma-file-input').click()">📎 อัปโหลดไฟล์สัญญา</button>
+      <div id="ma-file-list" class="flex gap-8" style="flex-wrap:wrap;margin-top:10px"></div>
+    </div>
+
     <div class="flex gap-8 mt-16" style="justify-content:flex-end">
-      <button class="btn btn-secondary" onclick="closeModal('addMAModal')">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="saveMA()">💾 บันทึกสัญญา</button>
+      <button class="btn btn-secondary" onclick="closeModal('maContractModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveMAContract()">💾 บันทึกสัญญา</button>
+    </div>
+  </div>
+</div>
+
+<!-- MA VISIT MODAL (บันทึกการเข้างานของผู้รับเหมา) -->
+<div class="modal-overlay" id="maVisitModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title">🧾 บันทึกการเข้างาน MA</div>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('maVisitModal')">✕</button>
+    </div>
+    <input type="hidden" id="mav-id">
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">สัญญา (Contract) *</label><select class="form-control" id="mav-contract" onchange="loadMAContractAssets(this.value)"><option value="">-- เลือกสัญญา --</option></select></div>
+      <div class="form-group"><label class="form-label">Asset ที่เข้าดำเนินการ *</label><select class="form-control" id="mav-asset"><option value="">-- เลือก Asset --</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">วันที่นัดหมาย (ตามแผน)</label><input class="form-control" id="mav-scheduled" type="date"></div>
+      <div class="form-group"><label class="form-label">วันที่เข้างานจริง *</label><input class="form-control" id="mav-visitdate" type="date"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">ช่างผู้ปฏิบัติงาน (Vendor)</label><input class="form-control" id="mav-technician" placeholder="ชื่อช่าง/ทีมงาน"></div>
+      <div class="form-group"><label class="form-label">ผู้รับงาน/ผู้ควบคุมงาน (โรงพยาบาล)</label><input class="form-control" id="mav-person" placeholder="ชื่อผู้ดูแลฝั่งเรา"></div>
+    </div>
+    <div class="form-group"><label class="form-label">งานที่ทำ</label><textarea class="form-control" id="mav-workdone" rows="2" placeholder="รายละเอียดงานที่ผู้รับเหมาดำเนินการ"></textarea></div>
+    <div class="form-group"><label class="form-label">ปัญหาที่พบ / ข้อเสนอแนะ</label><textarea class="form-control" id="mav-findings" rows="2" placeholder="ปัญหาที่พบระหว่างเข้างาน (ถ้ามี)"></textarea></div>
+
+    <div style="font-family:var(--font-display);font-size:13px;font-weight:600;margin:12px 0 8px">📷 รูปหลักฐานการเข้างาน</div>
+    <div class="card-sm mb-12" style="background:var(--bg3)">
+      <input type="file" id="mav-photo-input" accept="image/*" capture="environment" multiple style="display:none" onchange="handleMAVisitPhotoUpload(event)">
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('mav-photo-input').click()">📷 แนบรูปถ่ายหน้างาน</button>
+      <div id="mav-photo-list" class="flex gap-8" style="flex-wrap:wrap;margin-top:10px"></div>
+    </div>
+
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('maVisitModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveMAVisit()">💾 บันทึกการเข้างาน</button>
+    </div>
+  </div>
+</div>
+
+<!-- MA EVALUATE / SCORE MODAL -->
+<div class="modal-overlay" id="maScoreModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🏅 ประเมินผลการเข้างาน MA</div>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="closeModal('maScoreModal')">✕</button>
+    </div>
+    <input type="hidden" id="mas-id">
+    <div class="text-muted mb-12" style="font-size:12px">ให้คะแนน 1 (แย่) – 5 (ดีเยี่ยม) แต่ละหัวข้อ</div>
+    <div class="form-group"><label class="form-label">⏱ ความตรงเวลา</label><select class="form-control" id="mas-punctuality">
+      <option value="5">5 — ตรงเวลาทุกครั้ง</option><option value="4">4 — ตรงเวลาเป็นส่วนใหญ่</option><option value="3" selected>3 — ปานกลาง</option><option value="2">2 — ล่าช้าบ่อย</option><option value="1">1 — ล่าช้ามาก</option>
+    </select></div>
+    <div class="form-group"><label class="form-label">🔧 คุณภาพงาน</label><select class="form-control" id="mas-quality">
+      <option value="5">5 — ดีเยี่ยม</option><option value="4">4 — ดี</option><option value="3" selected>3 — ปานกลาง</option><option value="2">2 — ต้องแก้ไข</option><option value="1">1 — แย่มาก</option>
+    </select></div>
+    <div class="form-group"><label class="form-label">📞 การตอบสนอง</label><select class="form-control" id="mas-response">
+      <option value="5">5 — รวดเร็วมาก</option><option value="4">4 — รวดเร็ว</option><option value="3" selected>3 — ปานกลาง</option><option value="2">2 — ช้า</option><option value="1">1 — ช้ามาก</option>
+    </select></div>
+    <div class="form-group"><label class="form-label">🧹 ความสะอาด/ความเรียบร้อยหน้างาน</label><select class="form-control" id="mas-cleanliness">
+      <option value="5">5 — ดีเยี่ยม</option><option value="4">4 — ดี</option><option value="3" selected>3 — ปานกลาง</option><option value="2">2 — ไม่เรียบร้อย</option><option value="1">1 — แย่มาก</option>
+    </select></div>
+    <div class="form-group"><label class="form-label">ความเห็นเพิ่มเติม</label><textarea class="form-control" id="mas-comment" rows="2" placeholder="ความเห็นของผู้ประเมิน (ไม่บังคับ)"></textarea></div>
+    <div class="flex gap-8 mt-16" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('maScoreModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="confirmApproveMA()">✅ อนุมัติพร้อมบันทึกคะแนน</button>
     </div>
   </div>
 </div>
@@ -2350,7 +2553,7 @@ const DB = {
   set: (k, v) => {
     localStorage.setItem('alm_'+k, JSON.stringify(v));
     // Mirror กลับไปให้ Asset Core (index.html หลัก) เห็นข้อมูลชุดเดียวกัน — sync 2 ทาง
-    const sync=['wr','assets','ppm','ma','inv','contract','operation','omRecords','omTemplates','omSchedule','omShiftTimes','ppmTemplates'];
+    const sync=['wr','assets','ppm','ma','maVisits','inv','contract','operation','omRecords','omTemplates','omSchedule','omShiftTimes','ppmTemplates'];
     if(sync.includes(k)){ try{ localStorage.setItem('tko_v2_'+k, JSON.stringify(v)); }catch(e){} }
   },
 };
@@ -2446,6 +2649,7 @@ let workRequests = DB.get('wr', []);
 let ppmList = DB.get('ppm', []);
 let ppmTemplates = DB.get('ppmTemplates', []);
 let maList = DB.get('ma', []);
+let maVisits = DB.get('maVisits', []);
 let inventory = DB.get('inv', []);
 let invTx = DB.get('invtx', []);
 let inspections = DB.get('inspections', []);
@@ -2600,12 +2804,18 @@ setInterval(updateClock, 1000); updateClock();
 //  POPULATE SELECTS
 // ═══════════════════════════════════════════════════════════
 function populateAssetSelects() {
-  ['wr-asset','ppm-asset','ma-asset','opt-asset','om-asset','lc-asset-select','reopt-asset','hist-asset-select'].forEach(id => {
+  ['wr-asset','ppm-asset','mav-asset','opt-asset','om-asset','lc-asset-select','reopt-asset','hist-asset-select'].forEach(id => {
     const el = document.getElementById(id); if(!el) return;
     const cur = el.value;
     el.innerHTML = `<option value="">-- เลือก Asset --</option>` + assets.map(a=>`<option value="${a.id}">${a.id} — ${a.name}</option>`).join('');
     if(cur) el.value = cur;
   });
+  const maMulti=document.getElementById('ma-asset-multi');
+  if(maMulti){
+    const curSel=Array.from(maMulti.selectedOptions).map(o=>o.value);
+    maMulti.innerHTML=assets.map(a=>`<option value="${a.id}">${a.id} — ${a.name}</option>`).join('');
+    curSel.forEach(v=>{const opt=Array.from(maMulti.options).find(o=>o.value===v);if(opt)opt.selected=true;});
+  }
 }
 function populatePartSelects() {
   ['recv-part','issue-part'].forEach(id => {
@@ -4060,8 +4270,8 @@ function renderAssetTCO(assetId, wrList, wrTotalCost){
   const asset = assets.find(a=>a.id===assetId);
   const pmDone = ppmList.filter(p=>p.assetId===assetId && p.status==='done');
   const pmTotalCost = pmDone.reduce((s,p)=>s+(p.cost||0),0);
-  const maRecords = maList.filter(m=>m.assetId===assetId);
-  const maTotalCost = maRecords.reduce((s,m)=>s+(m.value||0),0);
+  const maRecords = maList.filter(m=>maAssetIds(m).includes(assetId));
+  const maTotalCost = maRecords.reduce((s,m)=>{const ids=maAssetIds(m);return s+(ids.length?(m.value||0)/ids.length:0);},0);
   const grandTotal = wrTotalCost + pmTotalCost + maTotalCost;
 
   // Replace Cost: ใช้ replaceCost ถ้ามี ไม่งั้น fallback เป็น cost (ราคาซื้อ) ของ asset
@@ -4088,7 +4298,7 @@ function renderAssetTCO(assetId, wrList, wrTotalCost){
   const events=[];
   wrList.forEach(w=>events.push({date:w.date, type:'WR', typeLabel:'🔧 ซ่อม (WR)', badge:'badge-orange', desc:(w.desc||'—')+(w.locationDetail?` (📍 ${w.locationDetail})`:''), ref:w.id, cost:w.totalCost||0}));
   pmDone.forEach(p=>events.push({date:p.actualDate||p.planDate, type:'PM', typeLabel:'🛠 บำรุงรักษา (PM)', badge:'badge-yellow', desc:p.name||'—', ref:p.id, cost:p.cost||0}));
-  maRecords.forEach(m=>events.push({date:m.start, type:'MA', typeLabel:'📄 สัญญาบริการ (MA)', badge:'badge-blue', desc:`${m.vendor||'—'} (${m.type||'MA'})`, ref:m.id, cost:m.value||0}));
+  maRecords.forEach(m=>{const ids=maAssetIds(m);events.push({date:m.start, type:'MA', typeLabel:'📄 สัญญาบริการ (MA)', badge:'badge-blue', desc:`${m.vendor||'—'} (${m.type||'MA'})`, ref:m.id, cost:ids.length?(m.value||0)/ids.length:0});});
   events.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
 
   document.getElementById('hist-timeline-wrap').style.display='block';
@@ -6823,43 +7033,582 @@ function editAssetRelParams(assetId){
 }
 
 // ═══════════════════════════════════════════════════════════
-function renderMA() {
-  const active = maList.filter(m=>m.status==='active').length;
-  const expiring = maList.filter(m=>m.status==='expiring').length;
-  const expired = maList.filter(m=>m.status==='expired').length;
-  const totalVal = maList.reduce((s,m)=>s+(m.value||0),0);
-  document.getElementById('ma-active').textContent = active;
-  document.getElementById('ma-expire').textContent = expiring;
-  document.getElementById('ma-expired').textContent = expired;
-  document.getElementById('ma-value').textContent = fmtCurrency(totalVal);
+//  MA CONTRACT — Full Module (Contract → Visit → Evaluate → Scorecard → Renewal)
+// ═══════════════════════════════════════════════════════════
+let maTabFilter='all';
+let maFileList=[];
+let mavPhotoList=[];
 
-  document.getElementById('ma-table').innerHTML = maList.map(m=>`<tr>
-    <td><span class="tag">${m.id}</span></td>
-    <td><span class="tag">${m.assetId}</span></td>
-    <td>${m.vendor}</td>
-    <td><span class="badge badge-blue">${m.type}</span></td>
-    <td style="font-size:12px">${fmtDate(m.start)}</td>
-    <td style="font-size:12px;color:${m.status==='expired'?'var(--red)':m.status==='expiring'?'var(--yellow)':'inherit'}">${fmtDate(m.end)}</td>
-    <td class="ff-mono">${fmtCurrency(m.value)}</td>
-    <td>${m.pmFreq}</td>
-    <td>${m.status==='active'?'<span class="badge badge-green">✅ Active</span>':m.status==='expiring'?'<span class="badge badge-yellow">⏰ ใกล้หมด</span>':'<span class="badge badge-red">❌ หมดอายุ</span>'}</td>
-    <td><button class="btn btn-secondary btn-sm" onclick="renewMA('${m.id}')">ต่ออายุ</button></td>
-  </tr>`).join('');
+function computeMAStatus(m){
+  if(!m.end) return 'active';
+  const daysLeft=(new Date(m.end)-new Date())/86400000;
+  return daysLeft<0?'expired':daysLeft<=90?'expiring':'active';
+}
+function maAssetIds(m){ return Array.isArray(m.assetIds)?m.assetIds:(m.assetId?[m.assetId]:[]); }
+function computeVisitScore(v){
+  const vals=[v.ratingPunctuality,v.ratingQuality,v.ratingResponse,v.ratingCleanliness].map(Number).filter(n=>!isNaN(n));
+  return vals.length?Math.round(vals.reduce((s,n)=>s+n,0)/vals.length*10)/10:null;
 }
 
-function saveMA() {
-  const start = document.getElementById('ma-start').value;
-  const end = document.getElementById('ma-end').value;
-  const daysLeft = end ? (new Date(end)-new Date())/(24*3600*1000) : 999;
-  maList.push({ id:`MA-${String(maList.length+1).padStart(4,'0')}`,
-    assetId:document.getElementById('ma-asset').value, vendor:document.getElementById('ma-vendor').value,
-    type:document.getElementById('ma-type').value, value:parseFloat(document.getElementById('ma-value-input').value)||0,
-    start, end, pmFreq:document.getElementById('ma-pmfreq').value,
-    contact:document.getElementById('ma-contact').value,
-    status: daysLeft<0?'expired':daysLeft<90?'expiring':'active' });
-  DB.set('ma', maList); closeModal('addMAModal'); renderMA();
+function filterMA(f,el){
+  maTabFilter=f;
+  document.querySelectorAll('#ma-vtabs .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderMA();
 }
-function renewMA(id) { alert(`ต่ออายุสัญญา ${id} — Demo: เปิดฟอร์มต่ออายุ`); }
+
+function renderMA(){
+  maList.forEach(m=>{ m.status=computeMAStatus(m); });
+  DB.set('ma',maList);
+  const active=maList.filter(m=>m.status==='active').length;
+  const expiring=maList.filter(m=>m.status==='expiring').length;
+  const expired=maList.filter(m=>m.status==='expired').length;
+  const totalVal=maList.reduce((s,m)=>s+(m.value||0),0);
+  const scored=maVisits.filter(v=>v.status==='approved'&&computeVisitScore(v)!=null);
+  const avgScoreAll=scored.length?Math.round(scored.reduce((s,v)=>s+computeVisitScore(v),0)/scored.length*10)/10:null;
+  document.getElementById('ma-active').textContent=active;
+  document.getElementById('ma-expire').textContent=expiring;
+  document.getElementById('ma-expired').textContent=expired;
+  document.getElementById('ma-value').textContent=fmtCurrency(totalVal);
+  document.getElementById('ma-avgscore').textContent=avgScoreAll!=null?avgScoreAll+' / 5':'—';
+
+  const pendingCount=maVisits.filter(v=>v.status==='pending'||v.status==='rejected').length;
+  setTabBadge('tab-badge-ma-inprogress',pendingCount);
+  setTabBadge('tab-badge-ma-evaluate',maVisits.filter(v=>v.status==='pending').length);
+  setTabBadge('tab-badge-ma-renewal',maList.filter(m=>m.status==='expiring').length);
+
+  const views=['ma-main-view','ma-register-view','ma-schedule-view','ma-visits-view','ma-evaluate-view','ma-performance-view','ma-renewal-view','ma-history-view','ma-cost-view'];
+  views.forEach(id=>document.getElementById(id).style.display='none');
+  if(maTabFilter==='schedule'){ document.getElementById('ma-schedule-view').style.display='block'; renderMASchedule(); return; }
+  if(maTabFilter==='inprogress'||maTabFilter==='closed'){ document.getElementById('ma-visits-view').style.display='block'; renderMAVisitsTable(); return; }
+  if(maTabFilter==='evaluate'){ document.getElementById('ma-evaluate-view').style.display='block'; renderMAEvaluate(); return; }
+  if(maTabFilter==='performance'){ document.getElementById('ma-performance-view').style.display='block'; renderMAPerformance(); return; }
+  if(maTabFilter==='renewal'){ document.getElementById('ma-renewal-view').style.display='block'; renderMARenewal(); return; }
+  if(maTabFilter==='history'){ document.getElementById('ma-history-view').style.display='block'; populateMAHistorySelect(); return; }
+  if(maTabFilter==='cost'){ document.getElementById('ma-cost-view').style.display='block'; renderMACostSummary(); return; }
+  if(maTabFilter==='register'){ document.getElementById('ma-register-view').style.display='block'; renderMAContractTable(); return; }
+
+  // Overview
+  document.getElementById('ma-main-view').style.display='block';
+  renderMAOverviewCharts();
+  renderMARecentVisits();
+}
+
+// ── Contract Register ──
+function populateMAFilterOptions(){
+  const vSel=document.getElementById('maf-vendor'); if(!vSel)return;
+  const cur=vSel.value;
+  const vendors=[...new Set(maList.map(m=>m.vendor).filter(Boolean))];
+  vSel.innerHTML='<option value="">Vendor: ทั้งหมด</option>'+vendors.map(v=>`<option value="${v}" ${v===cur?'selected':''}>${v}</option>`).join('');
+}
+function applyMAFilters(list){
+  const df=document.getElementById('maf-datefrom')?.value;
+  const dt=document.getElementById('maf-dateto')?.value;
+  const vendor=document.getElementById('maf-vendor')?.value;
+  const type=document.getElementById('maf-type')?.value;
+  const status=document.getElementById('maf-status')?.value;
+  return list.filter(m=>{
+    if(df && m.start && new Date(m.start) < new Date(df)) return false;
+    if(dt && m.start && new Date(m.start) > new Date(dt+'T23:59:59')) return false;
+    if(vendor && m.vendor!==vendor) return false;
+    if(type && m.type!==type) return false;
+    if(status && m.status!==status) return false;
+    return true;
+  });
+}
+function resetMAFilters(){
+  ['maf-datefrom','maf-dateto','maf-vendor','maf-type','maf-status'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderMA();
+}
+function renderMAContractTable(){
+  populateMAFilterOptions();
+  let list=applyMAFilters(maList);
+  list=[...list].sort((a,b)=>new Date(b.start||0)-new Date(a.start||0));
+  document.getElementById('ma-table').innerHTML=list.length?list.map(m=>{
+    const ids=maAssetIds(m);
+    const assetLabel=ids.length>1?`${ids[0]} +${ids.length-1}`:(ids[0]||'—');
+    return `<tr>
+      <td><span class="tag">${m.id}</span>${m.contractNo?`<div class="text-muted" style="font-size:10px">${m.contractNo}</div>`:''}</td>
+      <td>${m.vendor||'-'}</td>
+      <td><span class="tag" title="${ids.join(', ')}">${assetLabel}</span></td>
+      <td><span class="badge badge-blue">${m.type}</span></td>
+      <td style="font-size:12px">${fmtDate(m.start)}</td>
+      <td style="font-size:12px;color:${m.status==='expired'?'var(--red)':m.status==='expiring'?'var(--yellow)':'inherit'}">${fmtDate(m.end)}</td>
+      <td class="ff-mono">${fmtCurrency(m.value)}</td>
+      <td>${m.pmFreq}</td>
+      <td>${m.status==='active'?'<span class="badge badge-green">✅ Active</span>':m.status==='expiring'?'<span class="badge badge-yellow">⏰ ใกล้หมด</span>':'<span class="badge badge-red">❌ หมดอายุ</span>'}</td>
+      <td>
+        <div class="flex gap-8" style="flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="openMAContractModal('${m.id}')" title="แก้ไข">✏</button>
+          <button class="btn btn-primary btn-sm" onclick="renewMAContract('${m.id}')">🔁 ต่ออายุ</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีสัญญา MA</td></tr>';
+}
+
+function openMAContractModal(id){
+  const m=id?maList.find(x=>x.id===id):null;
+  document.getElementById('ma-id').value=m?m.id:'';
+  document.getElementById('ma-contract-modal-title').textContent=m?'✏ แก้ไขสัญญา MA':'📄 เพิ่มสัญญา MA';
+  document.getElementById('ma-contractno').value=m?m.contractNo||'':'';
+  document.getElementById('ma-vendor').value=m?m.vendor||'':'';
+  document.getElementById('ma-type').value=m?m.type||'Full Service':'Full Service';
+  document.getElementById('ma-value-input').value=m?m.value||'':'';
+  document.getElementById('ma-start').value=m?m.start||'':'';
+  document.getElementById('ma-end').value=m?m.end||'':'';
+  document.getElementById('ma-pmfreq').value=m?m.pmFreq||'รายเดือน':'รายเดือน';
+  document.getElementById('ma-contact').value=m?m.contact||'':'';
+  document.getElementById('ma-scope').value=m?m.scopeNote||'':'';
+  maFileList=m?JSON.parse(JSON.stringify(m.files||[])):[];
+  renderMAFileList();
+  openModal('maContractModal');
+  setTimeout(()=>{
+    const sel=document.getElementById('ma-asset-multi');
+    if(sel && m){ const ids=maAssetIds(m); Array.from(sel.options).forEach(o=>{o.selected=ids.includes(o.value);}); }
+  },80);
+}
+function handleMAFileUpload(e){
+  const files=Array.from(e.target.files||[]);
+  files.forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{ maFileList.push({src:ev.target.result,name:f.name}); renderMAFileList(); };
+    reader.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+function removeMAFile(i){ maFileList.splice(i,1); renderMAFileList(); }
+function renderMAFileList(){
+  const wrap=document.getElementById('ma-file-list');
+  if(!wrap)return;
+  wrap.innerHTML=maFileList.map((f,i)=>`
+    <div style="position:relative;width:90px;height:90px">
+      ${f.src&&f.src.startsWith('data:image')?`<img src="${f.src}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="openImageLightbox('${f.src}')">`:`<div style="width:100%;height:100%;border-radius:6px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--bg4)">📄</div>`}
+      <button onclick="removeMAFile(${i})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;border:none;cursor:pointer;font-size:11px;line-height:1">✕</button>
+    </div>`).join('');
+}
+function saveMAContract(){
+  const vendor=document.getElementById('ma-vendor').value.trim();
+  const start=document.getElementById('ma-start').value;
+  const end=document.getElementById('ma-end').value;
+  const value=parseFloat(document.getElementById('ma-value-input').value)||0;
+  const assetIds=Array.from(document.getElementById('ma-asset-multi').selectedOptions).map(o=>o.value);
+  if(!vendor){ alert('⚠ กรุณาระบุ Vendor ครับ'); return; }
+  if(!assetIds.length){ alert('⚠ กรุณาเลือก Asset อย่างน้อย 1 เครื่องครับ'); return; }
+  if(!start||!end){ alert('⚠ กรุณาระบุวันเริ่ม-หมดสัญญาครับ'); return; }
+  const id=document.getElementById('ma-id').value;
+  const data={
+    contractNo:document.getElementById('ma-contractno').value.trim(),
+    vendor, assetIds, value, start, end,
+    type:document.getElementById('ma-type').value,
+    pmFreq:document.getElementById('ma-pmfreq').value,
+    contact:document.getElementById('ma-contact').value.trim(),
+    scopeNote:document.getElementById('ma-scope').value.trim(),
+    files:[...maFileList],
+  };
+  data.status=computeMAStatus(data);
+  if(id){
+    const idx=maList.findIndex(m=>m.id===id);
+    if(idx>=0) maList[idx]={...maList[idx],...data};
+  }else{
+    maList.push({id:`MA-${String(maList.length+1).padStart(4,'0')}`, ...data});
+  }
+  DB.set('ma',maList);
+  closeModal('maContractModal');
+  renderMA();
+}
+function renewMAContract(id){
+  const m=maList.find(x=>x.id===id); if(!m)return;
+  const newEnd=prompt('ต่ออายุสัญญา '+id+'\nระบุวันหมดสัญญาใหม่ (YYYY-MM-DD)',m.end||'');
+  if(!newEnd)return;
+  const newValue=prompt('มูลค่าสัญญาใหม่ (฿) — เว้นว่างถ้าไม่เปลี่ยน',m.value||'');
+  m.end=newEnd;
+  if(newValue) m.value=parseFloat(newValue)||m.value;
+  m.status=computeMAStatus(m);
+  DB.set('ma',maList);
+  renderMA();
+  alert('✅ ต่ออายุสัญญา '+id+' เรียบร้อยแล้วครับ');
+}
+
+// ── Visit logging ──
+function populateMAContractSelect(){
+  const sel=document.getElementById('mav-contract'); if(!sel)return;
+  sel.innerHTML='<option value="">-- เลือกสัญญา --</option>'+maList.map(m=>`<option value="${m.id}">${m.id}${m.contractNo?' — '+m.contractNo:''} (${m.vendor})</option>`).join('');
+}
+function loadMAContractAssets(contractId){
+  const sel=document.getElementById('mav-asset'); if(!sel)return;
+  const m=maList.find(x=>x.id===contractId);
+  const ids=m?maAssetIds(m):[];
+  sel.innerHTML='<option value="">-- เลือก Asset --</option>'+(ids.length?ids.map(aid=>{const a=assets.find(x=>x.id===aid);return `<option value="${aid}">${aid} — ${a?.name||''}</option>`;}).join(''):assets.map(a=>`<option value="${a.id}">${a.id} — ${a.name}</option>`).join(''));
+  if(m) document.getElementById('mav-technician').placeholder=m.vendor?`ช่างจาก ${m.vendor}`:'ชื่อช่าง/ทีมงาน';
+}
+function openMAVisitModal(id){
+  const v=id?maVisits.find(x=>x.id===id):null;
+  openModal('maVisitModal');
+  populateMAContractSelect();
+  document.getElementById('mav-id').value=v?v.id:'';
+  document.getElementById('mav-contract').value=v?v.contractId||'':'';
+  loadMAContractAssets(v?v.contractId:'');
+  document.getElementById('mav-asset').value=v?v.assetId||'':'';
+  document.getElementById('mav-scheduled').value=v?v.scheduledDate||'':'';
+  document.getElementById('mav-visitdate').value=v?v.visitDate||new Date().toISOString().split('T')[0]:new Date().toISOString().split('T')[0];
+  document.getElementById('mav-technician').value=v?v.technician||'':'';
+  document.getElementById('mav-person').value=v?v.person||'':'';
+  document.getElementById('mav-workdone').value=v?v.workDone||'':'';
+  document.getElementById('mav-findings').value=v?v.findings||'':'';
+  mavPhotoList=v?JSON.parse(JSON.stringify(v.photos||[])):[];
+  renderMAVisitPhotos();
+}
+function handleMAVisitPhotoUpload(e){
+  const files=Array.from(e.target.files||[]);
+  files.forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{ mavPhotoList.push({src:ev.target.result,name:f.name}); renderMAVisitPhotos(); };
+    reader.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+function removeMAVisitPhoto(i){ mavPhotoList.splice(i,1); renderMAVisitPhotos(); }
+function renderMAVisitPhotos(){
+  const wrap=document.getElementById('mav-photo-list');
+  if(!wrap)return;
+  wrap.innerHTML=mavPhotoList.map((im,i)=>`
+    <div style="position:relative;width:90px;height:90px">
+      <img src="${im.src}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="openImageLightbox('${im.src}')">
+      <button onclick="removeMAVisitPhoto(${i})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;border:none;cursor:pointer;font-size:11px;line-height:1">✕</button>
+    </div>`).join('');
+}
+function saveMAVisit(){
+  const contractId=document.getElementById('mav-contract').value;
+  const assetId=document.getElementById('mav-asset').value;
+  const visitDate=document.getElementById('mav-visitdate').value;
+  if(!contractId){ alert('⚠ กรุณาเลือกสัญญาก่อนครับ'); return; }
+  if(!assetId){ alert('⚠ กรุณาเลือก Asset ครับ'); return; }
+  if(!visitDate){ alert('⚠ กรุณาระบุวันที่เข้างานจริงครับ'); return; }
+  const m=maList.find(x=>x.id===contractId);
+  const id=document.getElementById('mav-id').value;
+  const data={
+    contractId, assetId, vendor:m?.vendor||'',
+    scheduledDate:document.getElementById('mav-scheduled').value,
+    visitDate,
+    technician:document.getElementById('mav-technician').value.trim(),
+    person:document.getElementById('mav-person').value.trim(),
+    workDone:document.getElementById('mav-workdone').value.trim(),
+    findings:document.getElementById('mav-findings').value.trim(),
+    photos:[...mavPhotoList],
+  };
+  if(id){
+    const idx=maVisits.findIndex(v=>v.id===id);
+    if(idx>=0){
+      maVisits[idx]={...maVisits[idx],...data};
+      if(maVisits[idx].status==='rejected'){
+        maVisits[idx].status='pending'; maVisits[idx].rejectReason=null;
+        maVisits[idx].reviewedBy=null; maVisits[idx].reviewedDate=null;
+      }
+    }
+  }else{
+    maVisits.unshift({id:'MAV-'+Date.now(), status:'pending', reviewedBy:null, reviewedDate:null, rejectReason:null, ...data});
+  }
+  DB.set('maVisits',maVisits);
+  closeModal('maVisitModal');
+  renderMA();
+}
+function editMAVisit(id){ openMAVisitModal(id); }
+
+// ── In Progress/Pending & Closed ──
+function renderMAVisitsTable(){
+  let list=maVisits;
+  if(maTabFilter==='inprogress') list=maVisits.filter(v=>v.status==='pending'||v.status==='rejected');
+  else if(maTabFilter==='closed') list=maVisits.filter(v=>v.status==='approved');
+  list=[...list].sort((a,b)=>new Date(b.visitDate||0)-new Date(a.visitDate||0));
+  const statusBadge={pending:'<span class="badge badge-yellow">⏳ รออนุมัติ</span>',approved:'<span class="badge badge-green">✅ อนุมัติแล้ว</span>',rejected:'<span class="badge badge-red">↩ ส่งกลับแก้ไข</span>'};
+  document.getElementById('ma-visits-table').innerHTML=list.length?list.map(v=>{
+    const onTime=v.scheduledDate?(new Date(v.visitDate)<=new Date(v.scheduledDate)?'<span class="text-green">✔ ตรงเวลา</span>':'<span class="text-red">⏰ ล่าช้า</span>'):'<span class="text-muted">—</span>';
+    const score=computeVisitScore(v);
+    return `<tr>
+      <td><span class="tag ff-mono">${v.id}</span>${v.status==='rejected'?`<div style="color:var(--red);font-size:10px;margin-top:2px" title="${v.rejectReason||''}">↩ ${(v.rejectReason||'').substring(0,25)}</div>`:''}</td>
+      <td><span class="tag">${v.contractId}</span></td>
+      <td><span class="tag">${v.assetId}</span></td>
+      <td style="font-size:12px">${v.vendor||'-'}</td>
+      <td style="font-size:12px">${fmtDate(v.visitDate)}</td>
+      <td style="font-size:12px">${v.technician||'-'}</td>
+      <td style="font-size:11px;max-width:220px">${(v.workDone||'').substring(0,60)}</td>
+      <td style="font-size:12px">${onTime}</td>
+      <td class="ff-mono">${score!=null?score+' / 5':'—'}</td>
+      <td>${statusBadge[v.status]||v.status}</td>
+      <td>
+        <div class="flex gap-8" style="flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="editMAVisit('${v.id}')" title="แก้ไข">✏</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีข้อมูลการเข้างาน — คลิก "🧾 บันทึกการเข้างาน"</td></tr>';
+}
+
+// ── Evaluate & Approve + Score ──
+function renderMAEvaluate(){
+  const list=maVisits.filter(v=>v.status==='pending'||v.status==='approved')
+    .sort((a,b)=>new Date(b.visitDate||0)-new Date(a.visitDate||0));
+  document.getElementById('ma-evaluate-list').innerHTML=list.length?list.map(v=>{
+    const approved=v.status==='approved';
+    const score=computeVisitScore(v);
+    const statusColor=approved?'var(--green)':'var(--yellow)';
+    return `<div class="card-sm mb-12" style="border-left:3px solid ${statusColor}">
+      <div class="flex justify-between flex-center mb-10" style="flex-wrap:wrap">
+        <div class="flex gap-8 flex-center flex-wrap">
+          <span class="tag ff-mono">${v.id}</span>
+          <span class="tag">${v.assetId}</span>
+          <span class="fw-600" style="font-size:13px">${v.vendor||'-'}</span>
+          ${score!=null?`<span class="badge badge-teal">⭐ ${score}/5</span>`:''}
+        </div>
+        <div class="flex gap-8 flex-center" style="flex-wrap:wrap">
+          <span style="font-size:11px;color:${statusColor};white-space:nowrap">${approved?`✅ อนุมัติโดย ${v.reviewedBy}`:'⏳ รออนุมัติ'}</span>
+          ${!approved?`<button class="btn btn-secondary btn-sm" onclick="rejectMAVisit('${v.id}')">↩ ส่งกลับแก้ไข</button>`:''}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
+        <div><div class="text-muted" style="font-size:10px">ช่างผู้ปฏิบัติงาน</div><span style="font-size:12px">${v.technician||'-'}</span></div>
+        <div><div class="text-muted" style="font-size:10px">วันที่เข้างาน</div><span style="font-size:12px">${fmtDate(v.visitDate)}</span></div>
+        <div><div class="text-muted" style="font-size:10px">งานที่ทำ</div><span style="font-size:12px">${(v.workDone||'-').substring(0,40)}</span></div>
+        <div><div class="text-muted" style="font-size:10px">ปัญหาที่พบ</div><span style="font-size:12px">${(v.findings||'-').substring(0,40)}</span></div>
+      </div>
+      <div class="flex gap-8">
+        ${!approved?`<button class="btn btn-success btn-sm" onclick="openMAScoreModal('${v.id}')">✅ ประเมิน & อนุมัติ</button>`:''}
+      </div>
+    </div>`;
+  }).join(''):'<div class="text-muted text-center" style="padding:32px;font-size:13px">ยังไม่มีการเข้างานที่รอประเมิน</div>';
+}
+function openMAScoreModal(id){
+  const v=maVisits.find(x=>x.id===id); if(!v)return;
+  document.getElementById('mas-id').value=id;
+  document.getElementById('mas-punctuality').value=v.ratingPunctuality||3;
+  document.getElementById('mas-quality').value=v.ratingQuality||3;
+  document.getElementById('mas-response').value=v.ratingResponse||3;
+  document.getElementById('mas-cleanliness').value=v.ratingCleanliness||3;
+  document.getElementById('mas-comment').value=v.comment||'';
+  openModal('maScoreModal');
+}
+function confirmApproveMA(){
+  const id=document.getElementById('mas-id').value;
+  const idx=maVisits.findIndex(v=>v.id===id); if(idx<0)return;
+  maVisits[idx].ratingPunctuality=parseInt(document.getElementById('mas-punctuality').value);
+  maVisits[idx].ratingQuality=parseInt(document.getElementById('mas-quality').value);
+  maVisits[idx].ratingResponse=parseInt(document.getElementById('mas-response').value);
+  maVisits[idx].ratingCleanliness=parseInt(document.getElementById('mas-cleanliness').value);
+  maVisits[idx].comment=document.getElementById('mas-comment').value.trim();
+  maVisits[idx].status='approved';
+  maVisits[idx].reviewedBy=currentUser?.name||'วิศวกรไซต์';
+  maVisits[idx].reviewedDate=new Date().toISOString();
+  DB.set('maVisits',maVisits);
+  closeModal('maScoreModal');
+  renderMA();
+}
+function rejectMAVisit(id){
+  const reason=prompt('ระบุเหตุผลที่ส่งกลับแก้ไข:');
+  if(!reason)return;
+  const idx=maVisits.findIndex(v=>v.id===id); if(idx<0)return;
+  maVisits[idx].status='rejected';
+  maVisits[idx].rejectReason=reason;
+  maVisits[idx].reviewedBy=null; maVisits[idx].reviewedDate=null;
+  DB.set('maVisits',maVisits);
+  renderMA();
+}
+
+// ── Performance / Scorecard ──
+function renderMAPerformance(){
+  const vendors=[...new Set(maVisits.map(v=>v.vendor).filter(Boolean))];
+  const rows=vendors.map(vendor=>{
+    const visits=maVisits.filter(v=>v.vendor===vendor);
+    const evaluated=visits.filter(v=>v.status==='approved');
+    const onTimeCount=visits.filter(v=>v.scheduledDate&&new Date(v.visitDate)<=new Date(v.scheduledDate)).length;
+    const withSchedule=visits.filter(v=>v.scheduledDate).length;
+    const onTimePct=withSchedule?Math.round(onTimeCount/withSchedule*1000)/10:null;
+    const avg=arr=>arr.length?Math.round(arr.reduce((s,n)=>s+n,0)/arr.length*10)/10:null;
+    const avgPunc=avg(evaluated.map(v=>v.ratingPunctuality).filter(Boolean));
+    const avgQual=avg(evaluated.map(v=>v.ratingQuality).filter(Boolean));
+    const avgResp=avg(evaluated.map(v=>v.ratingResponse).filter(Boolean));
+    const avgClean=avg(evaluated.map(v=>v.ratingCleanliness).filter(Boolean));
+    const avgOverall=avg(evaluated.map(v=>computeVisitScore(v)).filter(n=>n!=null));
+    const reworkCount=visits.filter(v=>v.status==='rejected'||v.rejectReason).length;
+    const grade=avgOverall==null?'—':avgOverall>=4.5?'<span class="badge badge-green">🟢 ดีเยี่ยม</span>':avgOverall>=3.5?'<span class="badge badge-blue">🔵 ดี</span>':avgOverall>=2.5?'<span class="badge badge-yellow">🟡 ปานกลาง</span>':'<span class="badge badge-red">🔴 ควรพิจารณา</span>';
+    return {vendor,count:visits.length,onTimePct,avgPunc,avgQual,avgResp,avgClean,avgOverall,reworkCount,grade};
+  }).sort((a,b)=>(b.avgOverall||0)-(a.avgOverall||0));
+  document.getElementById('ma-performance-table').innerHTML=rows.length?rows.map(r=>`
+    <tr>
+      <td class="fw-600">${r.vendor}</td>
+      <td>${r.count}</td>
+      <td class="ff-mono">${r.onTimePct!=null?r.onTimePct+'%':'—'}</td>
+      <td class="ff-mono">${r.avgPunc??'—'}</td>
+      <td class="ff-mono">${r.avgQual??'—'}</td>
+      <td class="ff-mono">${r.avgResp??'—'}</td>
+      <td class="ff-mono">${r.avgClean??'—'}</td>
+      <td class="ff-mono fw-700 text-teal">${r.avgOverall??'—'}</td>
+      <td class="ff-mono text-red">${r.reworkCount}</td>
+      <td>${r.grade}</td>
+    </tr>`).join(''):'<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีข้อมูลการประเมิน</td></tr>';
+
+  destroyChart('maPerf');
+  charts.maPerf=new Chart(document.getElementById('chartMAPerf'),{
+    type:'bar',
+    data:{labels:rows.map(r=>r.vendor),datasets:[{label:'คะแนนเฉลี่ยรวม',data:rows.map(r=>r.avgOverall||0),backgroundColor:rows.map(r=>(r.avgOverall||0)>=4?'#22C55E':(r.avgOverall||0)>=3?'#EAB308':'#EF4444')}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E'}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'},min:0,max:5}}}
+  });
+}
+
+// ── Renewal Tracking ──
+function renderMARenewal(){
+  const list=maList.filter(m=>m.status==='expiring'||m.status==='expired').sort((a,b)=>new Date(a.end||0)-new Date(b.end||0));
+  document.getElementById('ma-renewal-list').innerHTML=list.length?list.map(m=>{
+    const visits=maVisits.filter(v=>v.contractId===m.id&&v.status==='approved');
+    const avg=visits.length?Math.round(visits.reduce((s,v)=>s+(computeVisitScore(v)||0),0)/visits.length*10)/10:null;
+    const daysLeft=Math.round((new Date(m.end)-new Date())/86400000);
+    const recommend=avg==null?'ยังไม่มีข้อมูลประเมิน':avg>=4?'✅ แนะนำต่อสัญญา':avg>=3?'🟡 ควรทบทวนก่อนต่อ':'🔴 ไม่แนะนำต่อสัญญา — ควรพิจารณา Vendor รายอื่น';
+    return `<div class="card-sm mb-10" style="border-left:3px solid ${m.status==='expired'?'var(--red)':'var(--yellow)'}">
+      <div class="flex justify-between flex-center mb-8" style="flex-wrap:wrap">
+        <div class="flex gap-8 flex-center flex-wrap">
+          <span class="tag">${m.id}</span><span class="fw-600">${m.vendor}</span>
+          ${m.status==='expired'?'<span class="badge badge-red">❌ หมดอายุแล้ว</span>':`<span class="badge badge-yellow">⏰ เหลือ ${daysLeft} วัน</span>`}
+        </div>
+        <span class="ff-mono text-purple">${fmtCurrency(m.value)}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+        <div><div class="text-muted" style="font-size:10px">หมดสัญญา</div><span style="font-size:12px">${fmtDate(m.end)}</span></div>
+        <div><div class="text-muted" style="font-size:10px">คะแนนเฉลี่ยย้อนหลัง</div><span style="font-size:12px" class="fw-700">${avg??'—'}</span></div>
+        <div><div class="text-muted" style="font-size:10px">จำนวนครั้งเข้างาน</div><span style="font-size:12px">${visits.length}</span></div>
+      </div>
+      <div class="text-muted mb-8" style="font-size:12px">คำแนะนำ: <b>${recommend}</b></div>
+      <button class="btn btn-primary btn-sm" onclick="renewMAContract('${m.id}')">🔁 ต่อสัญญา</button>
+    </div>`;
+  }).join(''):'<div class="text-muted text-center" style="padding:32px;font-size:13px">ไม่มีสัญญาที่ใกล้หมดอายุ ✅</div>';
+}
+
+// ── Asset History_MA ──
+function populateMAHistorySelect(){
+  const sel=document.getElementById('ma-hist-asset-select'); if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">-- เลือก Asset --</option>'+assets.map(a=>`<option value="${a.id}">${a.id} — ${a.name||''}</option>`).join('');
+  if(cur){ sel.value=cur; renderMAAssetHistory(cur); }
+}
+function renderMAAssetHistory(assetId){
+  const el=document.getElementById('ma-hist-content'); if(!el)return;
+  if(!assetId){ el.innerHTML=''; return; }
+  const contracts=maList.filter(m=>maAssetIds(m).includes(assetId));
+  const visits=maVisits.filter(v=>v.assetId===assetId).sort((a,b)=>new Date(b.visitDate||0)-new Date(a.visitDate||0));
+  if(!contracts.length&&!visits.length){ el.innerHTML='<div class="text-muted text-center" style="padding:24px">ยังไม่มีประวัติ MA สำหรับ Asset นี้</div>'; return; }
+  const evaluated=visits.filter(v=>v.status==='approved');
+  const avgScore=evaluated.length?Math.round(evaluated.reduce((s,v)=>s+(computeVisitScore(v)||0),0)/evaluated.length*10)/10:null;
+  el.innerHTML=`
+    <div class="grid-3 mb-16">
+      <div class="kpi blue"><div class="kpi-label">จำนวนสัญญา</div><div class="kpi-value ff-display text-blue">${contracts.length}</div></div>
+      <div class="kpi teal"><div class="kpi-label">คะแนนเฉลี่ย</div><div class="kpi-value ff-display text-teal">${avgScore??'—'}</div></div>
+      <div class="kpi purple"><div class="kpi-label">จำนวนครั้งเข้างาน</div><div class="kpi-value ff-display text-purple">${visits.length}</div></div>
+    </div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">สัญญาที่เกี่ยวข้อง</div>
+    <div class="table-wrap mb-16"><table style="font-size:12px">
+      <thead><tr><th>Contract</th><th>Vendor</th><th>วันเริ่ม</th><th>วันหมด</th><th>มูลค่า</th><th>สถานะ</th></tr></thead>
+      <tbody>${contracts.map(m=>`<tr><td><span class="tag">${m.id}</span></td><td>${m.vendor}</td><td>${fmtDate(m.start)}</td><td>${fmtDate(m.end)}</td><td class="ff-mono">${fmtCurrency(m.value)}</td><td>${m.status}</td></tr>`).join('')}</tbody>
+    </table></div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">ประวัติการเข้างาน</div>
+    <div class="table-wrap"><table style="font-size:12px">
+      <thead><tr><th>Visit No.</th><th>วันที่</th><th>ช่าง</th><th>งานที่ทำ</th><th>คะแนน</th><th>สถานะ</th></tr></thead>
+      <tbody>${visits.length?visits.map(v=>`<tr><td><span class="tag ff-mono">${v.id}</span></td><td>${fmtDate(v.visitDate)}</td><td>${v.technician||'-'}</td><td>${(v.workDone||'-').substring(0,40)}</td><td class="ff-mono">${computeVisitScore(v)??'—'}</td><td>${v.status}</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีการเข้างาน</td></tr>'}</tbody>
+    </table></div>`;
+}
+
+// ── Cost Summary ──
+function renderMACostSummary(){
+  const sysMap={}, bldMap={};
+  maList.forEach(m=>{
+    const ids=maAssetIds(m);
+    const perAssetValue=ids.length?m.value/ids.length:0;
+    ids.forEach(aid=>{
+      const a=assets.find(x=>x.id===aid);
+      const sys=a?.sys||'อื่นๆ', bld=a?.building||'ไม่ระบุ';
+      if(!sysMap[sys]) sysMap[sys]={sys,contracts:new Set(),assetCount:0,value:0};
+      sysMap[sys].contracts.add(m.id); sysMap[sys].assetCount++; sysMap[sys].value+=perAssetValue;
+      if(!bldMap[bld]) bldMap[bld]={bld,contracts:new Set(),assetCount:0,value:0};
+      bldMap[bld].contracts.add(m.id); bldMap[bld].assetCount++; bldMap[bld].value+=perAssetValue;
+    });
+  });
+  const totalVal=maList.reduce((s,m)=>s+(m.value||0),0)||1;
+  const sysRows=Object.values(sysMap).sort((a,b)=>b.value-a.value);
+  const bldRows=Object.values(bldMap).sort((a,b)=>b.value-a.value);
+  document.getElementById('ma-cost-sys-table').innerHTML=sysRows.length?sysRows.map(r=>`
+    <tr><td><span class="tag">${r.sys}</span></td><td>${r.contracts.size}</td><td>${r.assetCount}</td><td class="ff-mono">${fmtCurrency(r.value)}</td><td>${Math.round(r.value/totalVal*1000)/10}%</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูล</td></tr>';
+  document.getElementById('ma-cost-bld-table').innerHTML=bldRows.length?bldRows.map(r=>`
+    <tr><td>${r.bld}</td><td>${r.contracts.size}</td><td>${r.assetCount}</td><td class="ff-mono">${fmtCurrency(r.value)}</td><td>${Math.round(r.value/totalVal*1000)/10}%</td></tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูล</td></tr>';
+}
+
+// ── PM Schedule (ตามสัญญา) ──
+function maFreqToMonths(freq){
+  if(freq==='รายเดือน') return 1;
+  if(freq==='ราย 3 เดือน') return 3;
+  if(freq==='ราย 6 เดือน') return 6;
+  if(freq==='รายปี') return 12;
+  return 1;
+}
+function renderMASchedule(){
+  const wrap=document.getElementById('ma-schedule-content');
+  if(!wrap)return;
+  const activeContracts=maList.filter(m=>m.status!=='expired');
+  if(!activeContracts.length){ wrap.innerHTML='<div class="text-muted text-center" style="padding:32px;font-size:13px">ยังไม่มีสัญญาที่ใช้งานอยู่</div>'; return; }
+  const today=new Date();
+  wrap.innerHTML=activeContracts.map(m=>{
+    const months=maFreqToMonths(m.pmFreq);
+    const start=new Date(m.start), end=new Date(m.end);
+    const dueDates=[];
+    let d=new Date(start);
+    while(d<=end && dueDates.length<24){ dueDates.push(new Date(d)); d.setMonth(d.getMonth()+months); }
+    const contractVisits=maVisits.filter(v=>v.contractId===m.id);
+    const rows=dueDates.map(dd=>{
+      const near=contractVisits.find(v=>Math.abs(new Date(v.visitDate)-dd)<=15*86400000);
+      const overdue=!near && dd<today;
+      const statusCell=near?'<span style="color:var(--green)">✔ ทำแล้ว ('+fmtDate(near.visitDate)+')</span>':overdue?'<span style="color:var(--red)">⏰ เกินกำหนด</span>':'<span class="text-muted">⏳ ยังไม่ถึงกำหนด</span>';
+      return `<tr><td>${fmtDate(dd.toISOString())}</td><td>${statusCell}</td></tr>`;
+    }).join('');
+    return `<div class="card-sm mb-12">
+      <div class="flex justify-between flex-center mb-8" style="flex-wrap:wrap">
+        <div><span class="tag">${m.id}</span> <span class="fw-600">${m.vendor}</span></div>
+        <span class="text-muted" style="font-size:11px">ความถี่: ${m.pmFreq} — Asset: ${maAssetIds(m).join(', ')}</span>
+      </div>
+      <div class="table-wrap"><table style="font-size:12px"><thead><tr><th>วันครบกำหนด</th><th>สถานะ</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </div>`;
+  }).join('');
+}
+
+// ── Overview: charts + recent visits ──
+function renderMAOverviewCharts(){
+  destroyChart('maValue'); destroyChart('maScore');
+  const months=Array.from({length:12},(_,i)=>{const d=new Date();d.setMonth(d.getMonth()-11+i);return d;});
+  const monthLabels=months.map(d=>d.toLocaleDateString('th-TH',{month:'2-digit',year:'2-digit'}));
+  const valueByMonth=months.map(d=>{
+    return maList.filter(m=>m.start && new Date(m.start).getMonth()===d.getMonth() && new Date(m.start).getFullYear()===d.getFullYear())
+      .reduce((s,m)=>s+(m.value||0),0);
+  });
+  charts.maValue=new Chart(document.getElementById('chartMAValue'),{
+    type:'bar',
+    data:{labels:monthLabels,datasets:[{label:'มูลค่าสัญญาใหม่ (฿)',data:valueByMonth,backgroundColor:'#3B82F6'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E'}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}
+  });
+  const vendors=[...new Set(maVisits.map(v=>v.vendor).filter(Boolean))];
+  const scoreByVendor=vendors.map(vendor=>{
+    const evaluated=maVisits.filter(v=>v.vendor===vendor&&v.status==='approved');
+    return evaluated.length?Math.round(evaluated.reduce((s,v)=>s+(computeVisitScore(v)||0),0)/evaluated.length*10)/10:0;
+  });
+  charts.maScore=new Chart(document.getElementById('chartMAScore'),{
+    type:'bar',
+    data:{labels:vendors.length?vendors:['ยังไม่มีข้อมูล'],datasets:[{label:'คะแนนเฉลี่ย',data:scoreByVendor.length?scoreByVendor:[0],backgroundColor:scoreByVendor.map(s=>s>=4?'#22C55E':s>=3?'#EAB308':'#EF4444')}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E'}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'},min:0,max:5}}}
+  });
+}
+function renderMARecentVisits(){
+  const el=document.getElementById('ma-recent-visits'); if(!el)return;
+  const list=[...maVisits].sort((a,b)=>new Date(b.visitDate||0)-new Date(a.visitDate||0)).slice(0,8);
+  el.innerHTML=list.length?`<div class="table-wrap"><table style="font-size:12px">
+    <thead><tr><th>Visit No.</th><th>Asset</th><th>Vendor</th><th>วันที่</th><th>คะแนน</th><th>สถานะ</th></tr></thead>
+    <tbody>${list.map(v=>`<tr><td><span class="tag ff-mono">${v.id}</span></td><td>${v.assetId}</td><td>${v.vendor||'-'}</td><td>${fmtDate(v.visitDate)}</td><td class="ff-mono">${computeVisitScore(v)??'—'}</td><td>${v.status==='approved'?'<span class="badge badge-green">✅</span>':v.status==='rejected'?'<span class="badge badge-red">↩</span>':'<span class="badge badge-yellow">⏳</span>'}</td></tr>`).join('')}</tbody>
+  </table></div>`:'<div class="text-muted text-center" style="padding:24px;font-size:13px">ยังไม่มีการเข้างาน</div>';
+}
 
 // ═══════════════════════════════════════════════════════════
 //  INVENTORY
@@ -7176,6 +7925,7 @@ assets = DB.get('assets', []).map(normalizeAsset);
 workRequests = DB.get('wr', []);
 ppmList = DB.get('ppm', []);
 maList = DB.get('ma', []);
+maVisits = DB.get('maVisits', []);
 inventory = DB.get('inv', []);
 inspections = DB.get('inspections', []);
 
