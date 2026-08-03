@@ -804,9 +804,17 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       <div id="aiq-list"></div>
     </div>
     <div id="view-ncr" class="view">
-      <div class="sh"><div><div class="st">🔬 NCR / CAR / PAR</div><div class="ss">Non-Conformance · Corrective · Preventive Action</div></div><button class="btn btn-primary" onclick="openModal('m-ncr')">+ เพิ่ม NCR</button></div>
-      <div class="grid-3 mb16"><div class="card" style="text-align:center"><div style="font-size:26px">🔴</div><div class="kl mt8">NCR เปิดอยู่</div><div class="kv ffd tr" id="ncr-op">0</div></div><div class="card" style="text-align:center"><div style="font-size:26px">🟡</div><div class="kl mt8">CAR รอดำเนินการ</div><div class="kv ffd ty" id="car-pd">0</div></div><div class="card" style="text-align:center"><div style="font-size:26px">🟢</div><div class="kl mt8">PAR Done</div><div class="kv ffd tg" id="par-dn">0</div></div></div>
-      <div class="table-wrap"><table><thead><tr><th>NCR ID</th><th>Type</th><th>หัวข้อ</th><th>ผู้พบ</th><th>วันที่</th><th>ระดับ</th><th>Deadline</th><th>สถานะ</th></tr></thead><tbody id="ncr-tbody"><tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีข้อมูล NCR</td></tr></tbody></table></div>
+      <div class="sh"><div><div class="st">🔬 NCR / CAR / PAR</div><div class="ss">Non-Conformance · Corrective · Preventive Action · Root Cause Analysis</div></div><button class="btn btn-primary" onclick="openNCRModal()">＋ เพิ่ม NCR/CAR/PAR</button></div>
+      <div class="kpi-grid"><div class="kpi blue"><div class="kl">📋 ทั้งหมด</div><div class="kv ffd" id="ncr-cnt-total">0</div></div><div class="kpi red"><div class="kl">🔴 Open</div><div class="kv ffd" id="ncr-cnt-open">0</div></div><div class="kpi yellow"><div class="kl">🟡 In Progress</div><div class="kv ffd" id="ncr-cnt-inprogress">0</div></div><div class="kpi green"><div class="kl">🟢 Closed</div><div class="kv ffd" id="ncr-cnt-closed">0</div></div></div>
+      <div class="card mb16" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+        <div><label class="form-label" style="font-size:10px">ประเภท</label><select class="form-control" id="ncrf-type" onchange="renderNCR()" style="width:130px"><option value="">ทั้งหมด</option><option value="NCR">NCR</option><option value="CAR">CAR</option><option value="PAR">PAR</option></select></div>
+        <div><label class="form-label" style="font-size:10px">ระดับ</label><select class="form-control" id="ncrf-level" onchange="renderNCR()" style="width:140px"><option value="">ทั้งหมด</option><option value="Major">Major</option><option value="Minor">Minor</option><option value="Observation">Observation</option></select></div>
+        <div><label class="form-label" style="font-size:10px">สถานะ</label><select class="form-control" id="ncrf-status" onchange="renderNCR()" style="width:140px"><option value="">ทั้งหมด</option><option value="open">🔴 Open</option><option value="inprogress">🟡 In Progress</option><option value="closed">🟢 Closed</option></select></div>
+        <div><label class="form-label" style="font-size:10px">วันที่พบ ตั้งแต่</label><input type="date" class="form-control" id="ncrf-datefrom" onchange="renderNCR()" style="width:150px"></div>
+        <div><label class="form-label" style="font-size:10px">ถึงวันที่</label><input type="date" class="form-control" id="ncrf-dateto" onchange="renderNCR()" style="width:150px"></div>
+        <button class="btn btn-secondary btn-sm" onclick="resetNCRFilters()">🗑 ล้างตัวกรอง</button>
+      </div>
+      <div id="ncr-list"></div>
     </div>
     <div id="view-fmea" class="view">
       <div class="sh"><div><div class="st">⚠ FMEA Risk Analysis</div><div class="ss">Failure Mode · RPN · Risk Priority</div></div><button class="btn btn-primary">+ เพิ่ม FMEA</button></div>
@@ -1524,12 +1532,95 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 <div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-inv')">ยกเลิก</button><button class="btn btn-primary" onclick="saveInv()">💾 บันทึก</button></div>
 </div></div>
 
-<div class="modal-overlay" id="m-ncr"><div class="modal"><div class="mhd"><div class="mttl">🔬 เพิ่ม NCR</div><button class="mclose" onclick="closeModal('m-ncr')">✕</button></div>
-<div class="form-row"><div class="form-group"><label class="form-label">ประเภท</label><select class="form-control" id="ncri-tp"><option value="NCR">NCR</option><option value="CAR">CAR</option><option value="PAR">PAR</option></select></div><div class="form-group"><label class="form-label">ระดับ</label><select class="form-control" id="ncri-lv"><option>Major</option><option>Minor</option><option>Observation</option></select></div></div>
-<div class="form-group"><label class="form-label">หัวข้อ *</label><input class="form-control" id="ncri-tt" placeholder="สรุปสั้น ๆ"></div>
-<div class="form-group"><label class="form-label">รายละเอียด</label><textarea class="form-control" id="ncri-dt" placeholder="Root Cause..."></textarea></div>
-<div class="form-row"><div class="form-group"><label class="form-label">ผู้พบ</label><input class="form-control" id="ncri-fb" placeholder="ชื่อ"></div><div class="form-group"><label class="form-label">Deadline</label><input class="form-control" type="date" id="ncri-dl"></div></div>
-<div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-ncr')">ยกเลิก</button><button class="btn btn-primary" onclick="saveNCR()">💾 บันทึก</button></div>
+<div class="modal-overlay" id="m-ncr"><div class="modal modal-lg"><div class="mhd"><div class="mttl" id="ncr-modal-title">🔬 NCR/CAR/PAR — Corrective & Root Cause Analysis</div><button class="mclose" onclick="closeModal('m-ncr')">✕</button></div>
+<input type="hidden" id="ncr-id">
+
+<div class="card mb16" style="background:var(--yellow-dim);border-color:rgba(234,179,8,.3)">
+  <div class="form-row-3">
+    <div class="form-group" style="margin:0"><label class="form-label">ประเภท *</label><select class="form-control" id="ncr-type"><option value="NCR">NCR — Non-Conformance</option><option value="CAR">CAR — Corrective Action</option><option value="PAR">PAR — Preventive Action</option></select></div>
+    <div class="form-group" style="margin:0"><label class="form-label">ระดับ</label><select class="form-control" id="ncr-level"><option value="Major">Major</option><option value="Minor">Minor</option><option value="Observation">Observation</option></select></div>
+    <div class="form-group" style="margin:0"><label class="form-label">สถานะ</label><select class="form-control" id="ncr-status"><option value="open">🔴 Open</option><option value="inprogress">🟡 In Progress</option><option value="closed">🟢 Closed</option></select></div>
+  </div>
+  <div class="form-group"><label class="form-label">หัวข้อ / Description *</label><input type="text" class="form-control" id="ncr-title" placeholder="สรุปปัญหาหรือเหตุการณ์สั้น ๆ..."></div>
+  <div class="form-row-3">
+    <div class="form-group" style="margin:0"><label class="form-label">วันที่พบ</label><input type="date" class="form-control" id="ncr-date"></div>
+    <div class="form-group" style="margin:0"><label class="form-label">ผู้พบ / Issued by</label><input type="text" class="form-control" id="ncr-foundby" placeholder="ชื่อผู้พบ / ผู้จัดทำ"></div>
+    <div class="form-group" style="margin:0"><label class="form-label">Deadline</label><input type="date" class="form-control" id="ncr-due"></div>
+  </div>
+  <div class="form-row-3">
+    <div class="form-group" style="margin:0"><label class="form-label">System</label><input type="text" class="form-control" id="ncr-system" placeholder="AC / EE / BAS..."></div>
+    <div class="form-group" style="margin:0"><label class="form-label">Location</label><input type="text" class="form-control" id="ncr-location" placeholder="อาคาร / Zone..."></div>
+    <div class="form-group" style="margin:0"><label class="form-label">BU / หน่วยงาน</label><input type="text" class="form-control" id="ncr-bu" list="ncr-bu-list" placeholder="เช่น อาคาร A"><datalist id="ncr-bu-list"></datalist></div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Left Column -->
+  <div>
+    <div class="form-sec" style="color:var(--yellow)">1. Issue Problem / รายละเอียดของปัญหา</div>
+    <textarea class="form-control" id="ncr-issue" rows="4" style="margin-bottom:10px" placeholder="อธิบายปัญหาโดยละเอียด อ้างอิงตัวเลข/วันที่/ค่าผิดปกติ..."></textarea>
+
+    <div class="form-sec" style="color:var(--blue)">2. How to process / วิธีดำเนินการแก้ไขเบื้องต้น</div>
+    <textarea class="form-control" id="ncr-process" rows="3" style="margin-bottom:10px" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
+
+    <div class="form-sec" style="color:var(--purple)">3. Root Cause Analysis (5M1E)</div>
+    <div class="grid-2" style="margin-bottom:10px">
+      <div class="form-group" style="margin:0"><label class="form-label" style="color:#f59e0b">👷 MAN</label><textarea class="form-control" id="ncr-man" rows="2" placeholder="สาเหตุจากบุคลากร..."></textarea></div>
+      <div class="form-group" style="margin:0"><label class="form-label" style="color:#00c2d1">⚙️ MACHINE</label><textarea class="form-control" id="ncr-machine" rows="2" placeholder="สาเหตุจากเครื่องจักร..."></textarea></div>
+      <div class="form-group" style="margin:0"><label class="form-label" style="color:#a855f7">📋 METHOD</label><textarea class="form-control" id="ncr-method" rows="2" placeholder="สาเหตุจากวิธีการ..."></textarea></div>
+      <div class="form-group" style="margin:0"><label class="form-label" style="color:#10b981">📦 MATERIAL</label><textarea class="form-control" id="ncr-material" rows="2" placeholder="สาเหตุจากวัสดุ..."></textarea></div>
+      <div class="form-group" style="margin:0"><label class="form-label" style="color:#ec4899">🌿 ENV</label><textarea class="form-control" id="ncr-env" rows="2" placeholder="สาเหตุจากสภาพแวดล้อม..."></textarea></div>
+      <div class="form-group" style="margin:0"><label class="form-label" style="color:#f97316">📊 MEASUREMENT</label><textarea class="form-control" id="ncr-measure" rows="2" placeholder="สาเหตุจากการวัด..."></textarea></div>
+    </div>
+
+    <div class="form-sec">4. Scope & Limitations / ขอบเขตและข้อจำกัด</div>
+    <textarea class="form-control" id="ncr-scope" rows="2" style="margin-bottom:10px" placeholder="1. ...&#10;2. ..."></textarea>
+
+    <div class="form-sec" style="color:var(--green)">5. Responsible Person / ผู้รับผิดชอบ</div>
+    <div class="grid-2" style="margin-bottom:10px">
+      <div class="form-group" style="margin:0"><label class="form-label">Management/Operation</label><input type="text" class="form-control" id="ncr-mgmt" placeholder="ชื่อ..."></div>
+      <div class="form-group" style="margin:0"><label class="form-label">Specialist/Consultant</label><input type="text" class="form-control" id="ncr-spec" placeholder="ชื่อ..."></div>
+      <div class="form-group" style="margin:0"><label class="form-label">Project/Site</label><input type="text" class="form-control" id="ncr-project" placeholder="ชื่อ..."></div>
+      <div class="form-group" style="margin:0"><label class="form-label">Support Team / Supervisor</label><input type="text" class="form-control" id="ncr-support" placeholder="ชื่อ..."></div>
+      <div class="form-group" style="margin:0"><label class="form-label">Technician</label><input type="text" class="form-control" id="ncr-tech" placeholder="ชื่อทีม..."></div>
+    </div>
+  </div>
+
+  <!-- Right Column -->
+  <div>
+    <div class="form-sec" style="color:var(--green)">6. Improve / Troubleshooting Plan</div>
+    <div id="ncr-improve-rows" style="margin-bottom:8px"></div>
+    <button type="button" onclick="addNCRImproveRow()" class="btn btn-secondary btn-sm" style="margin-bottom:12px">＋ เพิ่มแผนงาน</button>
+
+    <div class="form-sec" style="color:var(--blue)">📷 รูป BEFORE / AFTER</div>
+    <div class="grid-2" style="margin-bottom:10px">
+      <div>
+        <label class="form-label">BEFORE (ก่อน) — 2 รูป</label>
+        <div class="flex g8" style="flex-wrap:wrap;margin-bottom:6px" id="ncr-before-thumbs"></div>
+        <label class="btn btn-secondary btn-sm" style="display:inline-flex;cursor:pointer">📷 ก่อนแก้ไข<input type="file" accept="image/*" multiple style="display:none" onchange="ncrPhotoAdd(event,'before')"></label>
+        <span class="tm" style="font-size:11px;margin-left:6px" id="ncr-before-count">0/2</span>
+      </div>
+      <div>
+        <label class="form-label">AFTER (หลัง) — 2 รูป</label>
+        <div class="flex g8" style="flex-wrap:wrap;margin-bottom:6px" id="ncr-after-thumbs"></div>
+        <label class="btn btn-secondary btn-sm" style="display:inline-flex;cursor:pointer">📷 หลังแก้ไข<input type="file" accept="image/*" multiple style="display:none" onchange="ncrPhotoAdd(event,'after')"></label>
+        <span class="tm" style="font-size:11px;margin-left:6px" id="ncr-after-count">0/2</span>
+      </div>
+    </div>
+
+    <div class="form-sec" style="color:var(--purple)">7. Operation Controlling / การควบคุมกระบวนการ</div>
+    <div id="ncr-control-rows" style="margin-bottom:8px"></div>
+    <button type="button" onclick="addNCRControlRow()" class="btn btn-secondary btn-sm" style="margin-bottom:12px">＋ เพิ่มการควบคุม</button>
+
+    <div class="form-row-3">
+      <div class="form-group" style="margin:0"><label class="form-label">ISSUE BY</label><input type="text" class="form-control" id="ncr-sign-issue" placeholder="ชื่อ..."></div>
+      <div class="form-group" style="margin:0"><label class="form-label">CHECK BY</label><input type="text" class="form-control" id="ncr-sign-check" placeholder="ชื่อ..."></div>
+      <div class="form-group" style="margin:0"><label class="form-label">APPROVE BY</label><input type="text" class="form-control" id="ncr-sign-approve" placeholder="ชื่อ..."></div>
+    </div>
+  </div>
+</div>
+
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-ncr')">ยกเลิก</button><button class="btn btn-secondary" onclick="exportNCRForm()">📄 Export PDF View</button><button class="btn btn-primary" onclick="saveNCR()">💾 Save NCR/CAR/PAR</button></div>
 </div></div>
 
 <div class="modal-overlay" id="m-inc"><div class="modal"><div class="mhd"><div class="mttl">🚨 รายงาน Incident</div><button class="mclose" onclick="closeModal('m-inc')">✕</button></div>
@@ -3074,7 +3165,7 @@ const META={
   floorplan:{t:'🏢 Building Critical Status',b:'TKO iMATOMs › แผนผังชั้น'},
 };
 const accMap={assets:'s1',lifecycle:'s1',qrcode:'s1',inspection:'s1',valuation:'s1',workrequest:'s1',ppm:'s1',operation:'s1',contract:'s1',inventory:'s1',inspection:'s2',ncr:'s2',fmea:'s2',audit:'s2',budget:'s3',costanalysis:'s3',valuation:'s3',energy:'s4',carbon:'s4',waste:'s4',esgkpi:'s4',training:'s5',competency:'s5',certification:'s5',knowledgebase:'s5',incident:'s6',hazard:'s6',permit:'s6',safetystat:'s6'};
-const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,operation:renderOp,inspection:renderAnnualInspection,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
+const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
   // คืนค่า floor ก่อน render
   const sel=document.getElementById('fp-floor');
   if(sel){const saved=localStorage.getItem('fp_last_floor')||'l1';if(sel.querySelector(`option[value="${saved}"]`))sel.value=saved;}
@@ -3534,13 +3625,306 @@ function issueInv(id){const q=parseInt(prompt('จำนวนที่เบิ
 function rcvInv(id){const q=parseInt(prompt('จำนวนที่รับเข้า:','1'))||1;INV=DB.get('inv',[]);const i=INV.findIndex(x=>x.id===id);if(i<0)return;INV[i].qty+=q;DB.set('inv',INV);renderInv();showToast('📥 รับเข้าแล้ว');}
 function delInv(id){if(!confirm('ลบ?'))return;INV=INV.filter(i=>i.id!==id);DB.set('inv',INV);renderInv();}
 
-// ══ NCR ══
+// ══ NCR / CAR / PAR — Corrective & Root Cause Analysis ══
+let ncrBeforePhotos=[];
+let ncrAfterPhotos=[];
+let ncrImproveRows=[];
+let ncrControlRows=[];
+let ncrEditId=null;
+
+function populateNCRBuildingOptions(){
+  const dl=document.getElementById('ncr-bu-list');
+  if(!dl)return;
+  assets=DB.get('assets',[]);
+  const buildings=[...new Set(assets.map(a=>a.building).filter(Boolean))];
+  dl.innerHTML=buildings.map(b=>`<option value="${b}">`).join('');
+}
+function escNCR(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function ncrPhotoAdd(e,type){
+  const files=Array.from(e.target.files||[]);
+  const arr=type==='before'?ncrBeforePhotos:ncrAfterPhotos;
+  const max=2,remaining=max-arr.length;
+  if(files.length>remaining) alert('⚠ สูงสุด '+max+' รูป');
+  files.slice(0,remaining).forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{ arr.push({src:ev.target.result,name:f.name}); renderNCRThumbs(type); };
+    reader.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+function removeNCRPhoto(type,i){
+  const arr=type==='before'?ncrBeforePhotos:ncrAfterPhotos;
+  arr.splice(i,1); renderNCRThumbs(type);
+}
+function renderNCRThumbs(type){
+  const wrap=document.getElementById('ncr-'+type+'-thumbs');
+  const cnt=document.getElementById('ncr-'+type+'-count');
+  const arr=type==='before'?ncrBeforePhotos:ncrAfterPhotos;
+  if(cnt) cnt.textContent=arr.length+'/2';
+  if(!wrap)return;
+  const color=type==='before'?'var(--red)':'var(--green)';
+  wrap.innerHTML=arr.map((im,i)=>`
+    <div style="position:relative;width:76px;height:76px">
+      <img src="${im.src}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;border:2px solid ${color};cursor:pointer" onclick="window.open('${im.src}','_blank')">
+      <button type="button" onclick="removeNCRPhoto('${type}',${i})" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:none;cursor:pointer;font-size:11px;line-height:1">✕</button>
+    </div>`).join('');
+}
+
+function addNCRImproveRow(){ ncrImproveRows.push({problem:'',category:'MACHINE',solution:'',resp:''}); renderNCRImproveRows(); }
+function removeNCRImproveRow(i){ ncrImproveRows.splice(i,1); renderNCRImproveRows(); }
+function renderNCRImproveRows(){
+  const cont=document.getElementById('ncr-improve-rows');
+  if(!cont)return;
+  const cats=['MACHINE','MAN','METHOD','MATERIAL','ENV'];
+  cont.innerHTML=ncrImproveRows.map((r,i)=>`
+    <div style="display:grid;grid-template-columns:1fr auto auto auto auto;gap:5px;margin-bottom:5px;align-items:center">
+      <input type="text" class="form-control" style="padding:5px 8px;font-size:12px" placeholder="Problem..." value="${escNCR(r.problem)}" onchange="ncrImproveRows[${i}].problem=this.value">
+      <select class="form-control" style="padding:5px 8px;font-size:11px;width:110px" onchange="ncrImproveRows[${i}].category=this.value">${cats.map(c=>`<option value="${c}" ${r.category===c?'selected':''}>${c}</option>`).join('')}</select>
+      <input type="text" class="form-control" style="padding:5px 8px;font-size:12px;width:120px" placeholder="Solution..." value="${escNCR(r.solution)}" onchange="ncrImproveRows[${i}].solution=this.value">
+      <input type="text" class="form-control" style="padding:5px 8px;font-size:12px;width:90px" placeholder="Resp." value="${escNCR(r.resp)}" onchange="ncrImproveRows[${i}].resp=this.value">
+      <button type="button" onclick="removeNCRImproveRow(${i})" style="padding:4px 8px;background:var(--red-dim);border:1px solid var(--red-dim);border-radius:6px;color:var(--red);cursor:pointer;font-size:12px">✕</button>
+    </div>`).join('')||'<div class="tm" style="font-size:11px;padding:6px 0">กด ＋ เพิ่มแผนงาน</div>';
+}
+function addNCRControlRow(){ ncrControlRows.push({problem:'',action:'',resp:''}); renderNCRControlRows(); }
+function removeNCRControlRow(i){ ncrControlRows.splice(i,1); renderNCRControlRows(); }
+function renderNCRControlRows(){
+  const cont=document.getElementById('ncr-control-rows');
+  if(!cont)return;
+  cont.innerHTML=ncrControlRows.map((r,i)=>`
+    <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:5px;margin-bottom:5px;align-items:center">
+      <input type="text" class="form-control" style="padding:5px 8px;font-size:12px" placeholder="Problem..." value="${escNCR(r.problem)}" onchange="ncrControlRows[${i}].problem=this.value">
+      <input type="text" class="form-control" style="padding:5px 8px;font-size:12px" placeholder="Action/Criteria..." value="${escNCR(r.action)}" onchange="ncrControlRows[${i}].action=this.value">
+      <input type="text" class="form-control" style="padding:5px 8px;font-size:12px;width:90px" placeholder="Resp." value="${escNCR(r.resp)}" onchange="ncrControlRows[${i}].resp=this.value">
+      <button type="button" onclick="removeNCRControlRow(${i})" style="padding:4px 8px;background:var(--red-dim);border:1px solid var(--red-dim);border-radius:6px;color:var(--red);cursor:pointer;font-size:12px">✕</button>
+    </div>`).join('')||'<div class="tm" style="font-size:11px;padding:6px 0">กด ＋ เพิ่มการควบคุม</div>';
+}
+
+function openNCRModal(id){
+  ncrEditId=id||null;
+  ncrBeforePhotos=[]; ncrAfterPhotos=[];
+  ncrImproveRows=id?[]:[{problem:'',category:'MACHINE',solution:'',resp:''},{problem:'',category:'MAN',solution:'',resp:''}];
+  ncrControlRows=id?[]:[{problem:'',action:'',resp:''}];
+  populateNCRBuildingOptions();
+  document.getElementById('ncr-id').value='';
+  ['ncr-title','ncr-foundby','ncr-due','ncr-system','ncr-location','ncr-bu','ncr-issue','ncr-process',
+   'ncr-man','ncr-machine','ncr-method','ncr-material','ncr-env','ncr-measure','ncr-scope',
+   'ncr-mgmt','ncr-spec','ncr-project','ncr-support','ncr-tech',
+   'ncr-sign-issue','ncr-sign-check','ncr-sign-approve'].forEach(x=>{
+    const el=document.getElementById(x); if(el) el.value='';
+  });
+  document.getElementById('ncr-type').value='NCR';
+  document.getElementById('ncr-level').value='Major';
+  document.getElementById('ncr-status').value='open';
+  document.getElementById('ncr-date').value=new Date().toISOString().slice(0,10);
+  renderNCRThumbs('before'); renderNCRThumbs('after');
+  renderNCRImproveRows(); renderNCRControlRows();
+
+  if(id){
+    NCR=DB.get('ncr',[]);
+    const item=NCR.find(x=>x.id===id);
+    if(item){
+      document.getElementById('ncr-id').value=item.id;
+      document.getElementById('ncr-type').value=item.type||'NCR';
+      document.getElementById('ncr-level').value=item.level||'Major';
+      document.getElementById('ncr-status').value=item.status||'open';
+      document.getElementById('ncr-title').value=item.title||'';
+      document.getElementById('ncr-date').value=item.date||'';
+      document.getElementById('ncr-foundby').value=item.foundBy||'';
+      document.getElementById('ncr-due').value=item.due||'';
+      document.getElementById('ncr-system').value=item.system||'';
+      document.getElementById('ncr-location').value=item.location||'';
+      document.getElementById('ncr-bu').value=item.bu||'';
+      document.getElementById('ncr-issue').value=item.issue||'';
+      document.getElementById('ncr-process').value=item.process||'';
+      const rc=item.rootCause||{};
+      document.getElementById('ncr-man').value=rc.man||'';
+      document.getElementById('ncr-machine').value=rc.machine||'';
+      document.getElementById('ncr-method').value=rc.method||'';
+      document.getElementById('ncr-material').value=rc.material||'';
+      document.getElementById('ncr-env').value=rc.env||'';
+      document.getElementById('ncr-measure').value=rc.measure||'';
+      document.getElementById('ncr-scope').value=item.scope||'';
+      const rp=item.responsible||{};
+      document.getElementById('ncr-mgmt').value=rp.mgmt||'';
+      document.getElementById('ncr-spec').value=rp.spec||'';
+      document.getElementById('ncr-project').value=rp.project||'';
+      document.getElementById('ncr-support').value=rp.support||'';
+      document.getElementById('ncr-tech').value=rp.tech||'';
+      ncrImproveRows=(item.improveRows||[]).slice();
+      ncrControlRows=(item.controlRows||[]).slice();
+      ncrBeforePhotos=(item.photos&&item.photos.before)||[];
+      ncrAfterPhotos=(item.photos&&item.photos.after)||[];
+      const so=item.signoff||{};
+      document.getElementById('ncr-sign-issue').value=so.issue||'';
+      document.getElementById('ncr-sign-check').value=so.check||'';
+      document.getElementById('ncr-sign-approve').value=so.approve||'';
+      renderNCRThumbs('before'); renderNCRThumbs('after');
+      renderNCRImproveRows(); renderNCRControlRows();
+    }
+  }
+  document.getElementById('ncr-modal-title').textContent=id?'✏️ แก้ไข NCR/CAR/PAR':'🔬 NCR/CAR/PAR — Corrective & Root Cause Analysis';
+  openModal('m-ncr');
+}
+
 function saveNCR(){
-  const tt=document.getElementById('ncri-tt').value.trim();if(!tt){alert('กรุณากรอกหัวข้อ');return;}
-  NCR=DB.get('ncr',[]);const id=`NCR-${String(NCR.length+1).padStart(4,'0')}`;
-  NCR.push({id,type:document.getElementById('ncri-tp').value,level:document.getElementById('ncri-lv').value,title:tt,detail:document.getElementById('ncri-dt').value,foundBy:document.getElementById('ncri-fb').value,due:document.getElementById('ncri-dl').value,status:'open',date:new Date().toISOString()});
-  DB.set('ncr',NCR);closeModal('m-ncr');showToast('🔬 บันทึก NCR แล้ว');
-  document.getElementById('ncr-op').textContent=NCR.filter(n=>n.status==='open'&&n.type==='NCR').length;
+  const title=document.getElementById('ncr-title').value.trim();
+  if(!title){ alert('กรุณากรอกหัวข้อ / Description'); return; }
+  NCR=DB.get('ncr',[]);
+  const existingId=document.getElementById('ncr-id').value||ncrEditId;
+  const item={
+    id: existingId||`NCR-${String(NCR.length+1).padStart(4,'0')}`,
+    type:document.getElementById('ncr-type').value,
+    level:document.getElementById('ncr-level').value,
+    status:document.getElementById('ncr-status').value,
+    title, date:document.getElementById('ncr-date').value,
+    foundBy:document.getElementById('ncr-foundby').value.trim(),
+    due:document.getElementById('ncr-due').value,
+    system:document.getElementById('ncr-system').value.trim(),
+    location:document.getElementById('ncr-location').value.trim(),
+    bu:document.getElementById('ncr-bu').value.trim(),
+    issue:document.getElementById('ncr-issue').value.trim(),
+    process:document.getElementById('ncr-process').value.trim(),
+    rootCause:{
+      man:document.getElementById('ncr-man').value.trim(),
+      machine:document.getElementById('ncr-machine').value.trim(),
+      method:document.getElementById('ncr-method').value.trim(),
+      material:document.getElementById('ncr-material').value.trim(),
+      env:document.getElementById('ncr-env').value.trim(),
+      measure:document.getElementById('ncr-measure').value.trim(),
+    },
+    scope:document.getElementById('ncr-scope').value.trim(),
+    responsible:{
+      mgmt:document.getElementById('ncr-mgmt').value.trim(),
+      spec:document.getElementById('ncr-spec').value.trim(),
+      project:document.getElementById('ncr-project').value.trim(),
+      support:document.getElementById('ncr-support').value.trim(),
+      tech:document.getElementById('ncr-tech').value.trim(),
+    },
+    improveRows: ncrImproveRows.slice(),
+    controlRows: ncrControlRows.slice(),
+    photos:{before:[...ncrBeforePhotos], after:[...ncrAfterPhotos]},
+    signoff:{
+      issue:document.getElementById('ncr-sign-issue').value.trim(),
+      check:document.getElementById('ncr-sign-check').value.trim(),
+      approve:document.getElementById('ncr-sign-approve').value.trim(),
+    },
+    updatedDate:new Date().toISOString(),
+  };
+  if(existingId){
+    const idx=NCR.findIndex(x=>x.id===existingId);
+    if(idx>=0) NCR[idx]={...NCR[idx],...item}; else NCR.push(item);
+  } else {
+    item.createdDate=new Date().toISOString();
+    NCR.push(item);
+  }
+  DB.set('ncr',NCR);
+  closeModal('m-ncr');
+  ncrEditId=null;
+  showToast('🔬 บันทึก '+item.type+' แล้ว');
+  renderNCR();
+}
+
+function deleteNCR(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  NCR=DB.get('ncr',[]).filter(x=>x.id!==id);
+  DB.set('ncr',NCR);
+  showToast('🗑️ ลบแล้ว');
+  renderNCR();
+}
+
+function resetNCRFilters(){
+  ['ncrf-type','ncrf-level','ncrf-status','ncrf-datefrom','ncrf-dateto'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  renderNCR();
+}
+function applyNCRFilters(list){
+  const tp=document.getElementById('ncrf-type')?.value;
+  const lv=document.getElementById('ncrf-level')?.value;
+  const st=document.getElementById('ncrf-status')?.value;
+  const df=document.getElementById('ncrf-datefrom')?.value;
+  const dt=document.getElementById('ncrf-dateto')?.value;
+  return list.filter(x=>{
+    if(tp && x.type!==tp) return false;
+    if(lv && x.level!==lv) return false;
+    if(st && x.status!==st) return false;
+    if(df && x.date && new Date(x.date)<new Date(df)) return false;
+    if(dt && x.date && new Date(x.date)>new Date(dt+'T23:59:59')) return false;
+    return true;
+  });
+}
+
+function exportNCRForm(){
+  const title=document.getElementById('ncr-title').value.trim()||'(ยังไม่กรอก)';
+  const type=document.getElementById('ncr-type').value;
+  const rows=ncrImproveRows.map(r=>r.problem?`<tr><td>${escNCR(r.problem)}</td><td>${r.category}</td><td>${escNCR(r.solution)}</td><td>${escNCR(r.resp)}</td></tr>`:'').join('');
+  const rc=[['👷 MAN','ncr-man'],['⚙️ MACHINE','ncr-machine'],['📋 METHOD','ncr-method'],['📦 MATERIAL','ncr-material'],['🌿 ENV','ncr-env'],['📊 MEASUREMENT','ncr-measure']].map(r=>{
+    const v=document.getElementById(r[1]).value;
+    return v?`<tr><td style="width:120px">${r[0]}</td><td>${escNCR(v)}</td></tr>`:'';
+  }).join('');
+  const html=`<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:12px;padding:20px}h2{color:#1a3a6b;border-bottom:2px solid #1a3a6b;padding-bottom:6px}table{width:100%;border-collapse:collapse;margin-bottom:12px}td,th{border:1px solid #ccc;padding:5px 8px;vertical-align:top;font-size:11px}.hdr{background:#1a3a6b;color:#fff;font-weight:700}.section{font-weight:700;color:#1a3a6b;font-size:12px;margin:10px 0 4px}</style></head><body>
+    <h2>${type} — Corrective & Root Cause Analysis</h2>
+    <table><tr><td colspan="3"><b>Description:</b> ${escNCR(title)}</td></tr>
+    <tr><td><b>Date:</b> ${document.getElementById('ncr-date').value}</td>
+    <td><b>Found by:</b> ${escNCR(document.getElementById('ncr-foundby').value)}</td>
+    <td><b>System:</b> ${escNCR(document.getElementById('ncr-system').value)} / <b>Location:</b> ${escNCR(document.getElementById('ncr-location').value)}</td></tr></table>
+    <div class="section">Issue Problem</div><p>${escNCR(document.getElementById('ncr-issue').value)}</p>
+    <div class="section">Root Cause (5M1E)</div>
+    <table><tr><th class="hdr">Category</th><th class="hdr">Root Cause</th></tr>${rc}</table>
+    <div class="section">Improve / Troubleshooting Plan</div>
+    <table><tr><th class="hdr">Problem</th><th class="hdr">Category</th><th class="hdr">Solution</th><th class="hdr">Resp.</th></tr>${rows}</table>
+    <div style="margin-top:20px;display:flex;justify-content:space-around">
+    <div>ISSUE BY: ${escNCR(document.getElementById('ncr-sign-issue').value)} Date: ______</div>
+    <div>CHECK BY: ${escNCR(document.getElementById('ncr-sign-check').value)} Date: ______</div>
+    <div>APPROVE BY: ${escNCR(document.getElementById('ncr-sign-approve').value)} Date: ______</div></div>
+    </body></html>`;
+  const win=window.open('','_blank');
+  if(win){ win.document.write(html); win.document.close(); win.print(); }
+}
+
+function renderNCR(){
+  NCR=DB.get('ncr',[]);
+  const filtered=applyNCRFilters(NCR);
+  const cnt={open:0,inprogress:0,closed:0};
+  NCR.forEach(x=>{ if(cnt[x.status]!==undefined) cnt[x.status]++; });
+  const elT=document.getElementById('ncr-cnt-total'); if(elT) elT.textContent=NCR.length;
+  const elO=document.getElementById('ncr-cnt-open'); if(elO) elO.textContent=cnt.open;
+  const elP=document.getElementById('ncr-cnt-inprogress'); if(elP) elP.textContent=cnt.inprogress;
+  const elC=document.getElementById('ncr-cnt-closed'); if(elC) elC.textContent=cnt.closed;
+
+  const wrap=document.getElementById('ncr-list');
+  if(!wrap)return;
+  if(!filtered.length){
+    wrap.innerHTML='<div class="tm" style="text-align:center;padding:40px">ยังไม่มีข้อมูล · กด ＋ เพิ่ม NCR/CAR/PAR</div>';
+    return;
+  }
+  const statusMap={open:['red','🔴 Open'],inprogress:['yellow','🟡 In Progress'],closed:['green','🟢 Closed']};
+  const typeColor={NCR:'red',CAR:'orange',PAR:'purple'};
+  wrap.innerHTML=filtered.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).map(d=>{
+    const s=statusMap[d.status]||statusMap.open;
+    const tc=typeColor[d.type]||'blue';
+    return `<div class="card mb12" style="border-left:3px solid var(--${s[0]})">
+      <div class="flex" style="justify-content:space-between;align-items:flex-start">
+        <div style="flex:1;min-width:0">
+          <div class="flex g8" style="align-items:center;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:11px;color:var(--text3)">${d.id}</span>
+            <span class="badge badge-${tc}">${d.type}</span>
+            <span class="badge badge-gray">${d.level||''}</span>
+            <span class="badge badge-${s[0]}">${s[1]}</span>
+          </div>
+          <div class="ffd fw6" style="font-size:14px">${escNCR(d.title)}</div>
+          <div class="tm" style="font-size:11px;margin-top:2px">📅 ${d.date||''}${d.foundBy?` · 👤 ${escNCR(d.foundBy)}`:''}${d.due?` · ⏰ Due: ${d.due}`:''}${d.bu?` · ${escNCR(d.bu)}`:''}</div>
+        </div>
+        <div class="flex g8">
+          <button class="btn btn-secondary btn-sm" onclick="openNCRModal('${d.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteNCR('${d.id}')">🗑</button>
+        </div>
+      </div>
+      ${d.issue?`<div style="font-size:12px;margin:8px 0;padding:8px 10px;background:var(--bg3);border-radius:8px;border-left:3px solid var(--${s[0]})">🔎 ${escNCR(d.issue)}</div>`:''}
+      ${(d.improveRows&&d.improveRows.filter(r=>r.problem).length)?`<div style="font-size:11px;color:var(--green)">💡 แผนงานแก้ไข: ${d.improveRows.filter(r=>r.problem).length} รายการ</div>`:''}
+    </div>`;
+  }).join('');
 }
 
 // ══ INCIDENT ══
