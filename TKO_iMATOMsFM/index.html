@@ -829,10 +829,16 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       <div id="fmea-list"></div>
     </div>
     <div id="view-audit" class="view">
-      <div class="sh"><div><div class="st">📋 Audit & Compliance</div><div class="ss">ISO 9001 / 14001 · OSHA · Audit Schedule</div></div></div>
-      <div class="grid-3"><div class="card"><div style="font-size:22px;mb8">📅</div><div class="fw6 mb12 mt8">Audit Schedule 2026</div><div class="mr"><span class="tm">Q1</span><span class="badge badge-green">✅ Done</span></div><div class="mr"><span class="tm">Q2</span><span class="badge badge-yellow">⏳ May</span></div><div class="mr"><span class="tm">Q3</span><span class="badge badge-gray">📅 Jul</span></div><div class="mr"><span class="tm">Q4</span><span class="badge badge-gray">📅 Oct</span></div></div>
-      <div class="card"><div style="font-size:22px">🏅</div><div class="fw6 mb12 mt8">Standards</div><div class="mr"><span class="tm">ISO 9001:2015</span><span class="badge badge-green">Active</span></div><div class="mr"><span class="tm">ISO 14001:2015</span><span class="badge badge-green">Active</span></div><div class="mr"><span class="tm">ISO 45001</span><span class="badge badge-yellow">In Progress</span></div></div>
-      <div class="card" style="text-align:center"><div style="font-size:22px;margin-top:8px">📊</div><div class="fw6 mb12 mt8">Last Audit Score</div><div class="ffd" style="font-size:48px;font-weight:700;color:var(--green)">87%</div><div style="font-size:11px;color:var(--text3)">Q1 2026 Internal Audit</div></div></div>
+      <div class="sh"><div><div class="st">📋 Audit & Compliance</div><div class="ss">Audit Plan ตามมาตรฐาน ISO / JCI / HA / WELL / LEED รายอาคาร</div></div><button class="btn btn-primary" onclick="openAuditModal()">＋ เพิ่มแผน Audit</button></div>
+      <div class="kpi-grid"><div class="kpi blue"><div class="kl">📋 แผน Audit ทั้งหมด</div><div class="kv ffd" id="audit-cnt-total">0</div></div><div class="kpi green"><div class="kl">✅ เสร็จสิ้น</div><div class="kv ffd" id="audit-cnt-done">0</div></div><div class="kpi yellow"><div class="kl">⏳ ใกล้ถึงกำหนด (90 วัน)</div><div class="kv ffd" id="audit-cnt-due">0</div></div><div class="kpi purple"><div class="kl">📊 คะแนนเฉลี่ย</div><div class="kv ffd" id="audit-cnt-score">—</div></div></div>
+      <div class="card mb16" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+        <div><label class="form-label" style="font-size:10px">อาคาร / BU</label><select class="form-control" id="auditf-building" onchange="renderAudit()" style="width:170px"><option value="">ทั้งหมด</option></select></div>
+        <div><label class="form-label" style="font-size:10px">มาตรฐาน</label><select class="form-control" id="auditf-standard" onchange="renderAudit()" style="width:180px"><option value="">ทั้งหมด</option></select></div>
+        <div><label class="form-label" style="font-size:10px">สถานะ</label><select class="form-control" id="auditf-status" onchange="renderAudit()" style="width:150px"><option value="">ทั้งหมด</option><option value="planned">📅 วางแผนไว้</option><option value="inprogress">🟡 กำลังตรวจ</option><option value="completed">✅ เสร็จสิ้น</option></select></div>
+        <div><label class="form-label" style="font-size:10px">ปี</label><select class="form-control" id="auditf-year" onchange="renderAudit()" style="width:110px"><option value="">ทั้งหมด</option></select></div>
+        <button class="btn btn-secondary btn-sm" onclick="resetAuditFilters()">🗑 ล้างตัวกรอง</button>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>อาคาร / BU</th><th>มาตรฐาน</th><th>ประเภท Audit</th><th>วันที่วางแผน</th><th>ผู้ตรวจ</th><th>ความคืบหน้า</th><th>คะแนน</th><th>สถานะ</th><th>Actions</th></tr></thead><tbody id="audit-tbody"></tbody></table></div>
     </div>
 
     <!-- COST VIEWS -->
@@ -1701,6 +1707,36 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 </div>
 
 <div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-sop')">ยกเลิก</button><button class="btn btn-secondary" onclick="exportSOPForm()">📄 Export PDF View</button><button class="btn btn-primary" onclick="saveSOP()">💾 Save SOP</button></div>
+</div></div>
+
+<div class="modal-overlay" id="m-audit"><div class="modal modal-lg"><div class="mhd"><div class="mttl" id="audit-modal-title">📋 Audit Plan — ISO / JCI / HA / WELL / LEED</div><button class="mclose" onclick="closeModal('m-audit')">✕</button></div>
+<input type="hidden" id="audit-id">
+
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">อาคาร / BU *</label><input type="text" class="form-control" id="audit-building" list="audit-building-list" placeholder="เช่น อาคาร A"><datalist id="audit-building-list"></datalist></div>
+  <div class="form-group"><label class="form-label">มาตรฐาน *</label><select class="form-control" id="audit-standard" onchange="loadAuditChecklist()"><option value="">— เลือกมาตรฐาน —</option></select></div>
+  <div class="form-group"><label class="form-label">ประเภท Audit</label><select class="form-control" id="audit-type"><option value="Internal">Internal Audit</option><option value="External">External Audit</option><option value="Certification">Certification Audit</option><option value="Surveillance">Surveillance Audit</option><option value="Recertification">Re-certification Audit</option></select></div>
+</div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">รอบ / ปี</label><input type="text" class="form-control" id="audit-cycle" placeholder="เช่น 2026 Q2"></div>
+  <div class="form-group"><label class="form-label">วันที่วางแผน</label><input type="date" class="form-control" id="audit-date"></div>
+  <div class="form-group"><label class="form-label">ผู้ตรวจ / Auditor</label><input type="text" class="form-control" id="audit-auditor" placeholder="ชื่อผู้ตรวจ / หน่วยงาน"></div>
+</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">สถานะ</label><select class="form-control" id="audit-status"><option value="planned">📅 วางแผนไว้</option><option value="inprogress">🟡 กำลังตรวจ</option><option value="completed">✅ เสร็จสิ้น</option></select></div>
+  <div class="form-group"><label class="form-label">หมายเหตุทั่วไป</label><input type="text" class="form-control" id="audit-note" placeholder="หมายเหตุเพิ่มเติม..."></div>
+</div>
+
+<div class="card" id="audit-score-display" style="text-align:center;margin-bottom:14px;display:none"></div>
+
+<div class="form-sec">📝 หัวข้อที่ต้องตรวจสอบ (Checklist)</div>
+<div id="audit-checklist-empty" class="tm" style="font-size:12px;padding:12px 0">— เลือกมาตรฐานด้านบนเพื่อโหลดหัวข้อตรวจสอบ —</div>
+<div class="table-wrap" id="audit-checklist-wrap" style="display:none">
+  <table style="font-size:12px"><thead><tr><th style="width:28px">#</th><th>หัวข้อตรวจสอบ</th><th style="width:130px">ผลการตรวจ</th><th>ข้อสังเกต / Finding</th><th>Corrective Action</th></tr></thead>
+  <tbody id="audit-checklist-rows"></tbody></table>
+</div>
+
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-audit')">ยกเลิก</button><button class="btn btn-secondary" onclick="exportAuditForm()">📄 Export PDF View</button><button class="btn btn-primary" onclick="saveAudit()">💾 Save Audit Plan</button></div>
 </div></div>
 
 <div class="modal-overlay" id="m-inc"><div class="modal"><div class="mhd"><div class="mttl">🚨 รายงาน Incident</div><button class="mclose" onclick="closeModal('m-inc')">✕</button></div>
@@ -3245,7 +3281,7 @@ const META={
   floorplan:{t:'🏢 Building Critical Status',b:'TKO iMATOMs › แผนผังชั้น'},
 };
 const accMap={assets:'s1',lifecycle:'s1',qrcode:'s1',inspection:'s1',valuation:'s1',workrequest:'s1',ppm:'s1',operation:'s1',contract:'s1',inventory:'s1',inspection:'s2',ncr:'s2',fmea:'s2',audit:'s2',budget:'s3',costanalysis:'s3',valuation:'s3',energy:'s4',carbon:'s4',waste:'s4',esgkpi:'s4',training:'s5',competency:'s5',certification:'s5',knowledgebase:'s5',incident:'s6',hazard:'s6',permit:'s6',safetystat:'s6'};
-const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
+const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,audit:renderAudit,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
   // คืนค่า floor ก่อน render
   const sel=document.getElementById('fp-floor');
   if(sel){const saved=localStorage.getItem('fp_last_floor')||'l1';if(sel.querySelector(`option[value="${saved}"]`))sel.value=saved;}
@@ -4349,6 +4385,298 @@ function exportSOPForm(){
     </body></html>`;
   const win=window.open('','_blank');
   if(win){ win.document.write(html); win.document.close(); win.print(); }
+}
+
+// ══ AUDIT & COMPLIANCE — Standards Library + Audit Plan ══
+const STANDARDS_LIB = {
+  ISO9001:{ name:'ISO 9001:2015', fullName:'Quality Management System (ระบบบริหารคุณภาพ)', group:'ISO', topics:[
+    'บริบทองค์กร (Context of the Organization)','ภาวะผู้นำและความมุ่งมั่น (Leadership & Commitment)','การวางแผน — ความเสี่ยงและโอกาส (Risk & Opportunity)',
+    'ทรัพยากรสนับสนุน (Resources, Competence, Awareness)','การควบคุมเอกสารสารสนเทศ (Documented Information)','การควบคุมการปฏิบัติงาน (Operational Control)',
+    'การติดตามตรวจวัดและวิเคราะห์ผล (Monitoring & Measurement)','การตรวจประเมินภายใน (Internal Audit)','การทบทวนโดยฝ่ายบริหาร (Management Review)','การปรับปรุงอย่างต่อเนื่อง (Continual Improvement)'
+  ]},
+  ISO14001:{ name:'ISO 14001:2015', fullName:'Environmental Management System (ระบบการจัดการสิ่งแวดล้อม)', group:'ISO', topics:[
+    'บริบทองค์กรด้านสิ่งแวดล้อม','นโยบายสิ่งแวดล้อม (Environmental Policy)','ประเด็นปัญหาสิ่งแวดล้อม (Environmental Aspects)',
+    'ข้อกำหนดทางกฎหมายที่เกี่ยวข้อง (Compliance Obligations)','วัตถุประสงค์และเป้าหมายสิ่งแวดล้อม','การควบคุมการปฏิบัติงาน',
+    'การเตรียมความพร้อมและตอบโต้ภาวะฉุกเฉิน','การติดตามตรวจวัดผลการดำเนินงาน','การตรวจประเมินภายใน','การทบทวนโดยฝ่ายบริหาร'
+  ]},
+  ISO45001:{ name:'ISO 45001:2018', fullName:'Occupational Health & Safety Management (แทนที่ OHSAS 18001)', group:'ISO', topics:[
+    'บริบทองค์กรด้านอาชีวอนามัยความปลอดภัย','การมีส่วนร่วมและปรึกษาหารือของลูกจ้าง','การชี้บ่งอันตรายและประเมินความเสี่ยง (Hazard ID & Risk Assessment)',
+    'ข้อกำหนดทางกฎหมายด้านความปลอดภัย','วัตถุประสงค์ด้าน OH&S และแผนงาน','การควบคุมการปฏิบัติงานที่มีความเสี่ยงสูง',
+    'การเตรียมพร้อมและตอบโต้ภาวะฉุกเฉิน','การสอบสวนอุบัติเหตุ/เหตุการณ์ผิดปกติ (Incident Investigation)','การตรวจประเมินภายใน','การทบทวนโดยฝ่ายบริหาร'
+  ]},
+  ISO50001:{ name:'ISO 50001:2018', fullName:'Energy Management System (ระบบการจัดการพลังงาน)', group:'ISO', topics:[
+    'บริบทองค์กรด้านพลังงาน','นโยบายพลังงาน (Energy Policy)','การทบทวนด้านพลังงาน (Energy Review)','เส้นฐานพลังงาน (Energy Baseline)',
+    'ดัชนีชี้วัดสมรรถนะพลังงาน (EnPIs)','วัตถุประสงค์และแผนปฏิบัติการด้านพลังงาน','การออกแบบและจัดซื้อจัดจ้างที่คำนึงถึงพลังงาน',
+    'การติดตามตรวจวัดและวิเคราะห์การใช้พลังงาน','การตรวจประเมินภายใน','การทบทวนโดยฝ่ายบริหาร'
+  ]},
+  ISO27001:{ name:'ISO 27001:2022', fullName:'Information Security Management System (แนะนำเพิ่มเติม)', group:'ISO', topics:[
+    'นโยบายความมั่นคงปลอดภัยสารสนเทศ','การประเมินความเสี่ยงด้านสารสนเทศ','การควบคุมการเข้าถึงระบบ (Access Control)',
+    'การบริหารจัดการทรัพย์สินสารสนเทศ (Asset Management)','ความปลอดภัยทางกายภาพและสภาพแวดล้อม','การจัดการเหตุการณ์ด้านความปลอดภัย (Incident Management)',
+    'การสำรองข้อมูลและแผนความต่อเนื่องทางธุรกิจ (BCP)','การตรวจประเมินภายใน'
+  ]},
+  JCI:{ name:'JCI', fullName:'Joint Commission International — Hospital Accreditation', group:'Healthcare', topics:[
+    'เป้าหมายความปลอดภัยผู้ป่วยสากล (IPSG)','การเข้าถึงและความต่อเนื่องของการดูแล (ACC)','สิทธิผู้ป่วยและครอบครัว (PFR)','การประเมินผู้ป่วย (AOP)',
+    'การดูแลผู้ป่วย (COP)','การดูแลผู้ป่วยผ่าตัดและวิสัญญี (ASC)','การจัดการและใช้ยา (MMU)','การให้ความรู้ผู้ป่วยและครอบครัว (PFE)',
+    'การพัฒนาคุณภาพและความปลอดภัยผู้ป่วย (QPS)','การป้องกันและควบคุมการติดเชื้อ (PCI)','การกำกับดูแลและภาวะผู้นำ (GLD)',
+    'การจัดการสิ่งอำนวยความสะดวกและความปลอดภัย (FMS)','คุณสมบัติบุคลากรทางการแพทย์ (SQE)','การจัดการข้อมูลสารสนเทศ (MOI)'
+  ]},
+  HA:{ name:'HA', fullName:'Hospital Accreditation (สถาบันรับรองคุณภาพสถานพยาบาล ประเทศไทย)', group:'Healthcare', topics:[
+    'การนำองค์กรและการกำกับดูแล','กลยุทธ์และการวางแผน','การมุ่งเน้นผู้ป่วยและผู้รับบริการ','การวัด วิเคราะห์ และจัดการความรู้',
+    'การมุ่งเน้นทรัพยากรบุคคล','กระบวนการดูแลผู้ป่วย (Patient Care Process)','การป้องกันและควบคุมการติดเชื้อ',
+    'สิ่งแวดล้อมและความปลอดภัย (Environment & Safety)','ระบบเวชระเบียน','ผลลัพธ์การดำเนินงานทางคลินิก (Clinical Outcomes)'
+  ]},
+  WELL:{ name:'WELL', fullName:'WELL Building Standard', group:'Building & ESG', topics:[
+    'อากาศ (Air)','น้ำ (Water)','โภชนาการ (Nourishment)','แสงสว่าง (Light)','การเคลื่อนไหว (Movement)',
+    'สภาวะน่าสบายทางความร้อน (Thermal Comfort)','เสียง (Sound)','วัสดุ (Materials)','จิตใจ (Mind)','ชุมชน (Community)'
+  ]},
+  LEED:{ name:'LEED', fullName:'Leadership in Energy & Environmental Design', group:'Building & ESG', topics:[
+    'ที่ตั้งและการคมนาคม (Location & Transportation)','ผังบริเวณที่ยั่งยืน (Sustainable Sites)','ประสิทธิภาพการใช้น้ำ (Water Efficiency)',
+    'พลังงานและบรรยากาศ (Energy & Atmosphere)','วัสดุและทรัพยากร (Materials & Resources)','คุณภาพสิ่งแวดล้อมภายในอาคาร (Indoor Environmental Quality)',
+    'นวัตกรรม (Innovation)','ลำดับความสำคัญระดับภูมิภาค (Regional Priority)'
+  ]},
+};
+let AUDIT=[];
+let auditChecklistRows=[];
+let auditEditId=null;
+
+function populateAuditStandardSelect(){
+  const groups={ISO:[],Healthcare:[],'Building & ESG':[]};
+  Object.keys(STANDARDS_LIB).forEach(code=>{ const s=STANDARDS_LIB[code]; (groups[s.group]=groups[s.group]||[]).push(code); });
+  const optHtml=Object.keys(groups).map(g=>`<optgroup label="${g}">${groups[g].map(code=>`<option value="${code}">${STANDARDS_LIB[code].name} — ${STANDARDS_LIB[code].fullName}</option>`).join('')}</optgroup>`).join('');
+  const sel=document.getElementById('audit-standard'); if(sel) sel.innerHTML='<option value="">— เลือกมาตรฐาน —</option>'+optHtml;
+  const fsel=document.getElementById('auditf-standard'); if(fsel){ const cur=fsel.value; fsel.innerHTML='<option value="">ทั้งหมด</option>'+optHtml; if(cur) fsel.value=cur; }
+}
+function populateAuditBuildingOptions(){
+  const dl=document.getElementById('audit-building-list');
+  if(!dl)return;
+  assets=DB.get('assets',[]);
+  const buildings=[...new Set(assets.map(a=>a.building).filter(Boolean))];
+  dl.innerHTML=buildings.map(b=>`<option value="${b}">`).join('');
+}
+function escAudit(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function loadAuditChecklist(){
+  const code=document.getElementById('audit-standard').value;
+  if(!code){ auditChecklistRows=[]; renderAuditChecklistRows(); return; }
+  const std=STANDARDS_LIB[code];
+  auditChecklistRows=std.topics.map(t=>({topic:t,result:'',finding:'',action:''}));
+  renderAuditChecklistRows();
+}
+function updateAuditChecklistField(i,field,val){
+  auditChecklistRows[i][field]=val;
+  if(field==='result') updateAuditScoreDisplay();
+}
+function calcAuditScore(){
+  const scored=auditChecklistRows.filter(r=>r.result&&r.result!=='na');
+  if(!scored.length) return null;
+  const pts={pass:1,partial:0.5,fail:0};
+  const sum=scored.reduce((s,r)=>s+(pts[r.result]??0),0);
+  return Math.round(sum/scored.length*100);
+}
+function updateAuditScoreDisplay(){
+  const box=document.getElementById('audit-score-display');
+  if(!box)return;
+  const score=calcAuditScore();
+  if(score===null){ box.style.display='none'; return; }
+  const color=score>=90?'green':score>=70?'yellow':'red';
+  box.style.display='block';
+  box.innerHTML=`<div class="kl">คะแนนรวม (Overall Compliance Score)</div><div class="ffd fw7" style="font-size:32px;color:var(--${color})">${score}%</div>`;
+}
+function renderAuditChecklistRows(){
+  const wrap=document.getElementById('audit-checklist-wrap');
+  const empty=document.getElementById('audit-checklist-empty');
+  const tbody=document.getElementById('audit-checklist-rows');
+  if(!tbody)return;
+  if(!auditChecklistRows.length){
+    if(wrap) wrap.style.display='none';
+    if(empty) empty.style.display='block';
+    document.getElementById('audit-score-display').style.display='none';
+    return;
+  }
+  if(wrap) wrap.style.display='block';
+  if(empty) empty.style.display='none';
+  tbody.innerHTML=auditChecklistRows.map((r,i)=>`
+    <tr>
+      <td style="text-align:center">${i+1}</td>
+      <td>${escAudit(r.topic)}</td>
+      <td><select class="form-control" style="padding:4px 6px;font-size:11px" onchange="updateAuditChecklistField(${i},'result',this.value)">
+        <option value="" ${!r.result?'selected':''}>— เลือก —</option>
+        <option value="pass" ${r.result==='pass'?'selected':''}>✅ ผ่าน</option>
+        <option value="partial" ${r.result==='partial'?'selected':''}>🟡 บางส่วน</option>
+        <option value="fail" ${r.result==='fail'?'selected':''}>❌ ไม่ผ่าน</option>
+        <option value="na" ${r.result==='na'?'selected':''}>N/A</option>
+      </select></td>
+      <td><input type="text" class="form-control" style="padding:4px 6px;font-size:11px" value="${escAudit(r.finding)}" onchange="updateAuditChecklistField(${i},'finding',this.value)" placeholder="ข้อสังเกต..."></td>
+      <td><input type="text" class="form-control" style="padding:4px 6px;font-size:11px" value="${escAudit(r.action)}" onchange="updateAuditChecklistField(${i},'action',this.value)" placeholder="แนวทางแก้ไข..."></td>
+    </tr>`).join('');
+  updateAuditScoreDisplay();
+}
+
+function openAuditModal(id){
+  auditEditId=id||null;
+  auditChecklistRows=[];
+  populateAuditStandardSelect();
+  populateAuditBuildingOptions();
+  document.getElementById('audit-id').value='';
+  ['audit-building','audit-cycle','audit-date','audit-auditor','audit-note'].forEach(x=>{ const el=document.getElementById(x); if(el) el.value=''; });
+  document.getElementById('audit-standard').value='';
+  document.getElementById('audit-type').value='Internal';
+  document.getElementById('audit-status').value='planned';
+  renderAuditChecklistRows();
+
+  if(id){
+    AUDIT=DB.get('audit',[]);
+    const item=AUDIT.find(x=>x.id===id);
+    if(item){
+      document.getElementById('audit-id').value=item.id;
+      document.getElementById('audit-building').value=item.building||'';
+      document.getElementById('audit-standard').value=item.standard||'';
+      document.getElementById('audit-type').value=item.type||'Internal';
+      document.getElementById('audit-cycle').value=item.cycle||'';
+      document.getElementById('audit-date').value=item.date||'';
+      document.getElementById('audit-auditor').value=item.auditor||'';
+      document.getElementById('audit-status').value=item.status||'planned';
+      document.getElementById('audit-note').value=item.note||'';
+      auditChecklistRows=(item.checklist||[]).slice();
+      renderAuditChecklistRows();
+    }
+  }
+  document.getElementById('audit-modal-title').textContent=id?'✏️ แก้ไข Audit Plan':'📋 Audit Plan — ISO / JCI / HA / WELL / LEED';
+  openModal('m-audit');
+}
+
+function saveAudit(){
+  const building=document.getElementById('audit-building').value.trim();
+  const standard=document.getElementById('audit-standard').value;
+  if(!building||!standard){ alert('กรุณาเลือกอาคาร/BU และมาตรฐาน'); return; }
+  AUDIT=DB.get('audit',[]);
+  const existingId=document.getElementById('audit-id').value||auditEditId;
+  const item={
+    id: existingId||`AUD-${String(AUDIT.length+1).padStart(4,'0')}`,
+    building, standard, type:document.getElementById('audit-type').value,
+    cycle:document.getElementById('audit-cycle').value.trim(),
+    date:document.getElementById('audit-date').value,
+    auditor:document.getElementById('audit-auditor').value.trim(),
+    status:document.getElementById('audit-status').value,
+    note:document.getElementById('audit-note').value.trim(),
+    checklist: auditChecklistRows.slice(),
+    score: calcAuditScore(),
+    updatedDate:new Date().toISOString(),
+  };
+  if(existingId){
+    const idx=AUDIT.findIndex(x=>x.id===existingId);
+    if(idx>=0) AUDIT[idx]={...AUDIT[idx],...item}; else AUDIT.push(item);
+  } else {
+    item.createdDate=new Date().toISOString();
+    AUDIT.push(item);
+  }
+  DB.set('audit',AUDIT);
+  closeModal('m-audit');
+  auditEditId=null;
+  showToast('📋 บันทึกแผน Audit แล้ว');
+  renderAudit();
+}
+
+function deleteAudit(id){
+  if(!confirm('ลบแผน Audit นี้?'))return;
+  AUDIT=DB.get('audit',[]).filter(x=>x.id!==id);
+  DB.set('audit',AUDIT);
+  showToast('🗑️ ลบแล้ว');
+  renderAudit();
+}
+
+function resetAuditFilters(){
+  ['auditf-building','auditf-standard','auditf-status','auditf-year'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  renderAudit();
+}
+function applyAuditFilters(list){
+  const bld=document.getElementById('auditf-building')?.value;
+  const std=document.getElementById('auditf-standard')?.value;
+  const st=document.getElementById('auditf-status')?.value;
+  const yr=document.getElementById('auditf-year')?.value;
+  return list.filter(x=>{
+    if(bld && x.building!==bld) return false;
+    if(std && x.standard!==std) return false;
+    if(st && x.status!==st) return false;
+    if(yr && (!x.date||!x.date.startsWith(yr))) return false;
+    return true;
+  });
+}
+function populateAuditFilterOptions(){
+  const bSel=document.getElementById('auditf-building');
+  if(bSel){
+    const cur=bSel.value;
+    const buildings=[...new Set(AUDIT.map(x=>x.building).filter(Boolean))];
+    bSel.innerHTML='<option value="">ทั้งหมด</option>'+buildings.map(b=>`<option value="${b}" ${b===cur?'selected':''}>${b}</option>`).join('');
+    if(cur) bSel.value=cur;
+  }
+  const ySel=document.getElementById('auditf-year');
+  if(ySel){
+    const cur=ySel.value;
+    const years=[...new Set(AUDIT.map(x=>x.date&&x.date.slice(0,4)).filter(Boolean))].sort().reverse();
+    ySel.innerHTML='<option value="">ทั้งหมด</option>'+years.map(y=>`<option value="${y}" ${y===cur?'selected':''}>${y}</option>`).join('');
+    if(cur) ySel.value=cur;
+  }
+}
+
+function exportAuditForm(){
+  const code=document.getElementById('audit-standard').value;
+  const std=STANDARDS_LIB[code];
+  const building=document.getElementById('audit-building').value.trim();
+  const score=calcAuditScore();
+  const rows=auditChecklistRows.map((r,i)=>{
+    const rlabel={pass:'✅ ผ่าน',partial:'🟡 บางส่วน',fail:'❌ ไม่ผ่าน',na:'N/A'}[r.result]||'—';
+    return `<tr><td style="width:28px;text-align:center">${i+1}</td><td>${escAudit(r.topic)}</td><td>${rlabel}</td><td>${escAudit(r.finding)}</td><td>${escAudit(r.action)}</td></tr>`;
+  }).join('');
+  const html=`<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:12px;padding:20px}h2{color:#1a3a6b;border-bottom:2px solid #1a3a6b;padding-bottom:6px}table{width:100%;border-collapse:collapse;margin-bottom:12px}td,th{border:1px solid #ccc;padding:5px 8px;vertical-align:top;font-size:11px}.hdr{background:#1a3a6b;color:#fff;font-weight:700}</style></head><body>
+    <h2>Audit Plan — ${std?std.name+' ('+std.fullName+')':'-'}</h2>
+    <table><tr><td><b>อาคาร/BU:</b> ${escAudit(building)}</td><td><b>ประเภท:</b> ${document.getElementById('audit-type').value}</td><td><b>วันที่:</b> ${document.getElementById('audit-date').value}</td><td><b>ผู้ตรวจ:</b> ${escAudit(document.getElementById('audit-auditor').value)}</td></tr></table>
+    <p><b>คะแนนรวม:</b> ${score!==null?score+'%':'-'}</p>
+    <table><tr><th class="hdr">#</th><th class="hdr">หัวข้อตรวจสอบ</th><th class="hdr">ผลการตรวจ</th><th class="hdr">ข้อสังเกต</th><th class="hdr">Corrective Action</th></tr>${rows}</table>
+    </body></html>`;
+  const win=window.open('','_blank');
+  if(win){ win.document.write(html); win.document.close(); win.print(); }
+}
+
+function renderAudit(){
+  AUDIT=DB.get('audit',[]);
+  populateAuditStandardSelect();
+  populateAuditFilterOptions();
+  const filtered=applyAuditFilters(AUDIT);
+  const now=new Date(); const in90=new Date(now.getTime()+90*86400000);
+  const done=AUDIT.filter(x=>x.status==='completed').length;
+  const due=AUDIT.filter(x=>x.status!=='completed'&&x.date&&new Date(x.date)>=now&&new Date(x.date)<=in90).length;
+  const scored=AUDIT.filter(x=>x.score!=null);
+  const avgScore=scored.length?Math.round(scored.reduce((s,x)=>s+x.score,0)/scored.length):null;
+  const elT=document.getElementById('audit-cnt-total'); if(elT) elT.textContent=AUDIT.length;
+  const elD=document.getElementById('audit-cnt-done'); if(elD) elD.textContent=done;
+  const elU=document.getElementById('audit-cnt-due'); if(elU) elU.textContent=due;
+  const elS=document.getElementById('audit-cnt-score'); if(elS) elS.textContent=avgScore!==null?avgScore+'%':'—';
+
+  const tbody=document.getElementById('audit-tbody');
+  if(!tbody)return;
+  if(!filtered.length){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีแผน Audit · กด ＋ เพิ่มแผน Audit</td></tr>';
+    return;
+  }
+  const statusMap={planned:['blue','📅 วางแผนไว้'],inprogress:['yellow','🟡 กำลังตรวจ'],completed:['green','✅ เสร็จสิ้น']};
+  tbody.innerHTML=filtered.slice().sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).map(d=>{
+    const std=STANDARDS_LIB[d.standard];
+    const s=statusMap[d.status]||statusMap.planned;
+    const scoredItems=(d.checklist||[]).filter(r=>r.result&&r.result!=='na').length;
+    const totalItems=(d.checklist||[]).length;
+    return `<tr>
+      <td>${escAudit(d.building)}</td>
+      <td><span class="badge badge-purple">${std?std.name:d.standard}</span></td>
+      <td>${d.type||''}</td>
+      <td>${d.date||'-'}</td>
+      <td>${escAudit(d.auditor)||'-'}</td>
+      <td>${totalItems?`${scoredItems}/${totalItems} หัวข้อ`:'-'}</td>
+      <td>${d.score!=null?`<b style="color:var(--${d.score>=90?'green':d.score>=70?'yellow':'red'})">${d.score}%</b>`:'-'}</td>
+      <td><span class="badge badge-${s[0]}">${s[1]}</span></td>
+      <td><div class="flex g8"><button class="btn btn-secondary btn-sm" onclick="openAuditModal('${d.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteAudit('${d.id}')">🗑</button></div></td>
+    </tr>`;
+  }).join('');
 }
 
 // ══ INCIDENT ══
