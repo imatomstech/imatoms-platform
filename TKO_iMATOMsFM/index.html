@@ -787,9 +787,21 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 
     <!-- QUALITY VIEWS -->
     <div id="view-inspection" class="view">
-      <div class="sh"><div><div class="st">🔍 Annual Inspection</div><div class="ss">ตรวจสอบประจำปี · ใบรับรอง · วันหมดอายุ</div></div><button class="btn btn-primary" onclick="openModal('m-insp')">+ เพิ่ม</button></div>
-      <div class="kpi-grid"><div class="kpi green"><div class="kl">ผ่าน</div><div class="kv ffd" id="isp-p">0</div></div><div class="kpi yellow"><div class="kl">ใกล้หมดอายุ</div><div class="kv ffd" id="isp-s">0</div></div><div class="kpi red"><div class="kl">หมดอายุ</div><div class="kv ffd" id="isp-e">0</div></div><div class="kpi blue"><div class="kl">รอตรวจ</div><div class="kv ffd" id="isp-pn">0</div></div></div>
-      <div class="table-wrap"><table><thead><tr><th>Asset</th><th>ประเภท</th><th>หน่วยงาน</th><th>วันตรวจ</th><th>หมดอายุ</th><th>ใบรับรอง</th><th>สถานะ</th><th>Action</th></tr></thead><tbody id="isp-tbody"><tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีข้อมูล</td></tr></tbody></table></div>
+      <div class="sh"><div><div class="st">🔍 Annual Inspection</div><div class="ss">Inspection & Visit Site · สำรวจหน่วยงาน · BU Site Survey</div></div><button class="btn btn-primary" onclick="openAIQModal()">＋ New Inspection</button></div>
+      <div class="kpi-grid"><div class="kpi blue"><div class="kl">📋 ทั้งหมด</div><div class="kv ffd" id="aiq-cnt-total">0</div></div><div class="kpi red"><div class="kl">🚨 Emergency</div><div class="kv ffd" id="aiq-cnt-emergency">0</div></div><div class="kpi yellow"><div class="kl">⚠️ Urgently</div><div class="kv ffd" id="aiq-cnt-urgently">0</div></div><div class="kpi green"><div class="kl">✅ Normal</div><div class="kv ffd" id="aiq-cnt-normal">0</div></div></div>
+      <div class="card mb16" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+        <div><label class="form-label" style="font-size:10px">วันที่สำรวจ ตั้งแต่</label><input type="date" class="form-control" id="aiqf-datefrom" onchange="renderAnnualInspection()" style="width:150px"></div>
+        <div><label class="form-label" style="font-size:10px">ถึงวันที่</label><input type="date" class="form-control" id="aiqf-dateto" onchange="renderAnnualInspection()" style="width:150px"></div>
+        <div><label class="form-label" style="font-size:10px">หน่วยงาน / BU</label><select class="form-control" id="aiqf-bu" onchange="renderAnnualInspection()" style="width:160px"><option value="">ทั้งหมด</option></select></div>
+        <div><label class="form-label" style="font-size:10px">Criteria</label><select class="form-control" id="aiqf-criteria" onchange="renderAnnualInspection()" style="width:140px">
+          <option value="">ทั้งหมด</option><option value="Emergency">🚨 Emergency</option><option value="Urgently">⚠️ Urgently</option><option value="Normal">✅ Normal</option>
+        </select></div>
+        <div><label class="form-label" style="font-size:10px">Mode การสำรวจ</label><select class="form-control" id="aiqf-mode" onchange="renderAnnualInspection()" style="width:160px">
+          <option value="">ทั้งหมด</option><option value="Reliability">🔧 Reliability</option><option value="Risk Assessment">⚠️ Risk Assessment</option><option value="Cost Efficiency">💰 Cost Efficiency</option><option value="ESG">🌍 ESG</option><option value="Environmental">🌿 Environmental</option><option value="Skill staff">👷 Skill staff</option>
+        </select></div>
+        <button class="btn btn-secondary btn-sm" onclick="resetAIQFilters()">🗑 ล้างตัวกรอง</button>
+      </div>
+      <div id="aiq-list"></div>
     </div>
     <div id="view-ncr" class="view">
       <div class="sh"><div><div class="st">🔬 NCR / CAR / PAR</div><div class="ss">Non-Conformance · Corrective · Preventive Action</div></div><button class="btn btn-primary" onclick="openModal('m-ncr')">+ เพิ่ม NCR</button></div>
@@ -1536,11 +1548,100 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 <div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-ptw')">ยกเลิก</button><button class="btn btn-danger" onclick="savePTW()">📝 ออกใบอนุญาต</button></div>
 </div></div>
 
-<div class="modal-overlay" id="m-insp"><div class="modal"><div class="mhd"><div class="mttl">🔍 เพิ่มการตรวจสอบ</div><button class="mclose" onclick="closeModal('m-insp')">✕</button></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Asset</label><select class="form-control" id="ispi-as"><option value="">-- เลือก --</option></select></div><div class="form-group"><label class="form-label">ประเภทการตรวจ</label><input class="form-control" id="ispi-tp" placeholder="Pressure Vessel / Lift / Fire"></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">หน่วยงานตรวจ</label><input class="form-control" id="ispi-by" placeholder="กรมโรงงาน / TUV"></div><div class="form-group"><label class="form-label">เลขที่ใบรับรอง</label><input class="form-control" id="ispi-ct" placeholder="CERT-XXXX"></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">วันตรวจ</label><input class="form-control" type="date" id="ispi-dt"></div><div class="form-group"><label class="form-label">หมดอายุ</label><input class="form-control" type="date" id="ispi-ex"></div></div>
-<div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-insp')">ยกเลิก</button><button class="btn btn-primary" onclick="saveInsp()">💾 บันทึก</button></div>
+<div class="modal-overlay" id="m-insp"><div class="modal modal-lg"><div class="mhd"><div class="mttl" id="aiq-modal-title">🔍 New Inspection & Visit Site</div><button class="mclose" onclick="closeModal('m-insp')">✕</button></div>
+<input type="hidden" id="aiq-id">
+
+<div class="form-sec">📅 ข้อมูลการสำรวจ</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">วันที่สำรวจ *</label><input type="date" class="form-control" id="aiq-date"></div>
+  <div class="form-group"><label class="form-label">เวลาที่สำรวจ</label><input type="time" class="form-control" id="aiq-time"></div>
+</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">หน่วยงาน / BU *</label><input type="text" class="form-control" id="aiq-bu" list="aiq-bu-list" placeholder="เช่น อาคาร A, ฝ่ายวิศวกรรม..."><datalist id="aiq-bu-list"></datalist></div>
+  <div class="form-group"><label class="form-label">Mode การสำรวจ *</label>
+    <select class="form-control" id="aiq-mode">
+      <option value="Reliability">🔧 Reliability</option>
+      <option value="Risk Assessment">⚠️ Risk Assessment</option>
+      <option value="Cost Efficiency">💰 Cost Efficiency</option>
+      <option value="ESG">🌍 ESG</option>
+      <option value="Environmental">🌿 Environmental</option>
+      <option value="Skill staff">👷 Skill staff</option>
+    </select>
+  </div>
+</div>
+
+<div class="form-sec">📍 Location</div>
+<div class="form-group"><label class="form-label">สถานที่ / Location *</label><input type="text" class="form-control" id="aiq-location" placeholder="เช่น อาคาร B, Plant 3, ห้อง Server..."></div>
+<div class="form-group">
+  <label class="form-label">Google Maps Link (URL)</label>
+  <div class="flex g8">
+    <input type="url" class="form-control" id="aiq-map-url" placeholder="https://maps.google.com/..." style="flex:1">
+    <button type="button" class="btn btn-secondary btn-sm" onclick="openAIQMapUrl()">🗺️ เปิดแผนที่</button>
+  </div>
+</div>
+
+<div class="form-sec">📷 Place Photo (สถานที่)</div>
+<div class="flex g8" style="flex-wrap:wrap;margin-bottom:8px" id="aiq-place-thumbs"></div>
+<label class="btn btn-secondary btn-sm" style="display:inline-flex;cursor:pointer">
+  📸 ถ่ายรูปสถานที่
+  <input type="file" accept="image/*" multiple style="display:none" onchange="handleAIQPhotoUpload(event,'place')">
+</label>
+<span class="tm" style="font-size:11px;margin-left:8px" id="aiq-place-count">0/3</span>
+
+<div class="form-sec" style="margin-top:14px">⚙️ System & Sub-System</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">System</label>
+    <select class="form-control" id="aiq-sys" onchange="updateAIQSubSys()">
+      <option value="">— เลือกระบบ —</option>
+      <option value="AC">AC — Air Conditioning</option><option value="EE">EE — Electrical</option><option value="EL">EL — Elevator</option><option value="FA">FA — Fire Alarm</option><option value="FP">FP — Fire Protection</option><option value="BAS">BAS — Building Auto</option><option value="SN">SN — Sanitary</option><option value="TR">TR — Transportation</option><option value="WWT">WWT — Waste Water</option><option value="GE">GE — Generator/UPS</option><option value="CV">CV — Civil</option><option value="IT">IT — IT/Network</option><option value="SG">SG — Security</option><option value="PL">PL — Pool/Landscape</option><option value="LT">LT — Lighting</option>
+    </select>
+  </div>
+  <div class="form-group"><label class="form-label">Sub-System</label>
+    <select class="form-control" id="aiq-subsys"><option value="">— เลือก Sub-System —</option></select>
+  </div>
+</div>
+<div style="margin-bottom:8px">
+  <label class="form-label">📷 รูป Sub-System (สูงสุด 3 รูป)</label>
+  <div class="flex g8" style="flex-wrap:wrap;margin-bottom:8px" id="aiq-sub-thumbs"></div>
+  <label class="btn btn-secondary btn-sm" style="display:inline-flex;cursor:pointer">
+    📷 ถ่ายรูป Sub-System
+    <input type="file" accept="image/*" multiple style="display:none" onchange="handleAIQPhotoUpload(event,'sub')">
+  </label>
+  <span class="tm" style="font-size:11px;margin-left:8px" id="aiq-sub-count">0/3</span>
+</div>
+
+<div class="form-sec">🔎 Issue Analysis</div>
+<div class="form-group"><label class="form-label">Issue / ปัญหาที่พบ *</label><textarea class="form-control" id="aiq-issue" rows="2" placeholder="อธิบายปัญหา/ความผิดปกติที่พบ..."></textarea></div>
+<div class="form-group"><label class="form-label">Risk / Effect (ความเสี่ยงและผลกระทบ)</label><textarea class="form-control" id="aiq-risk" rows="2" placeholder="ผลกระทบที่อาจเกิดขึ้น / ความเสี่ยง..."></textarea></div>
+<div class="tm mb8" style="font-size:11px">💡 Solution / แนวทางแก้ไข</div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">Solution 1</label><input type="text" class="form-control" id="aiq-sol1" placeholder="แนวทางที่ 1..."></div>
+  <div class="form-group"><label class="form-label">Solution 2</label><input type="text" class="form-control" id="aiq-sol2" placeholder="แนวทางที่ 2..."></div>
+  <div class="form-group"><label class="form-label">Solution 3</label><input type="text" class="form-control" id="aiq-sol3" placeholder="แนวทางที่ 3..."></div>
+</div>
+<div class="form-group"><label class="form-label">Solution 4</label><input type="text" class="form-control" id="aiq-sol4" placeholder="แนวทางที่ 4..."></div>
+
+<div class="form-row">
+  <div class="form-group"><label class="form-label">Action by (ผู้รับผิดชอบ)</label><input type="text" class="form-control" id="aiq-actionby" placeholder="ชื่อ / ทีม..."></div>
+  <div class="form-group"><label class="form-label">Follow up when (วันติดตาม)</label><input type="date" class="form-control" id="aiq-followup"></div>
+</div>
+
+<div class="form-group">
+  <label class="form-label" style="color:var(--yellow)">🏷️ Summarize Criteria Issue *</label>
+  <div class="flex g8" style="flex-wrap:wrap">
+    <label style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;cursor:pointer;border:1px solid var(--red-dim);background:var(--red-dim);font-size:12px;color:var(--red)">
+      <input type="radio" name="aiq-criteria" value="Emergency"> 🚨 Emergency
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;cursor:pointer;border:1px solid var(--yellow-dim);background:var(--yellow-dim);font-size:12px;color:var(--yellow)">
+      <input type="radio" name="aiq-criteria" value="Urgently"> ⚠️ Urgently
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;cursor:pointer;border:1px solid var(--green-dim);background:var(--green-dim);font-size:12px;color:var(--green)">
+      <input type="radio" name="aiq-criteria" value="Normal" checked> ✅ Normal
+    </label>
+  </div>
+</div>
+
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-insp')">ยกเลิก</button><button class="btn btn-primary" onclick="saveAIQ()">💾 Save Inspection</button></div>
 </div></div>
 
 <div class="modal-overlay" id="m-modacc"><div class="modal"><div class="mhd"><div class="mttl">🔑 Module Access</div><button class="mclose" onclick="closeModal('m-modacc')">✕</button></div>
@@ -2973,7 +3074,7 @@ const META={
   floorplan:{t:'🏢 Building Critical Status',b:'TKO iMATOMs › แผนผังชั้น'},
 };
 const accMap={assets:'s1',lifecycle:'s1',qrcode:'s1',inspection:'s1',valuation:'s1',workrequest:'s1',ppm:'s1',operation:'s1',contract:'s1',inventory:'s1',inspection:'s2',ncr:'s2',fmea:'s2',audit:'s2',budget:'s3',costanalysis:'s3',valuation:'s3',energy:'s4',carbon:'s4',waste:'s4',esgkpi:'s4',training:'s5',competency:'s5',certification:'s5',knowledgebase:'s5',incident:'s6',hazard:'s6',permit:'s6',safetystat:'s6'};
-const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,operation:renderOp,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
+const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,operation:renderOp,inspection:renderAnnualInspection,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
   // คืนค่า floor ก่อน render
   const sel=document.getElementById('fp-floor');
   if(sel){const saved=localStorage.getItem('fp_last_floor')||'l1';if(sel.querySelector(`option[value="${saved}"]`))sel.value=saved;}
@@ -3459,14 +3560,231 @@ function savePTW(){
   DB.set('ptw',PTW);closeModal('m-ptw');showToast('📝 ออกใบอนุญาตแล้ว รออนุมัติ');
 }
 
-// ══ INSPECTION ══
-function saveInsp(){
-  const tp=document.getElementById('ispi-tp').value.trim();if(!tp){alert('กรุณากรอกประเภท');return;}
-  INSP=DB.get('inspections',[]);const id=`INSP-${String(INSP.length+1).padStart(4,'0')}`;
-  const ex=document.getElementById('ispi-ex').value;const now=new Date();
-  const dl=ex?Math.round((new Date(ex)-now)/86400000):null;
-  INSP.push({id,assetId:document.getElementById('ispi-as').value,type:tp,by:document.getElementById('ispi-by').value,cert:document.getElementById('ispi-ct').value,date:document.getElementById('ispi-dt').value,expire:ex,status:dl==null?'pending':dl<0?'expired':dl<90?'expiring':'valid'});
-  DB.set('inspections',INSP);closeModal('m-insp');showToast('🔍 บันทึกแล้ว');
+// ══ ANNUAL INSPECTION & VISIT SITE ══
+let AIQ=DB.get('aiq',[]);
+let aiqPlacePhotos=[];
+let aiqSubPhotos=[];
+let aiqEditId=null;
+const AIQ_SYS_SUB={AC:['Chiller Plant','AHU','FCU','Cooling Tower','Pump System','VRV/VRF System','Fresh Air Unit','Exhaust Fan'],EE:['MDB','Distribution Board','Transformer','Capacitor Bank','ATS/STS','Solar PV','Inverter','LV Panel'],EL:['Passenger Lift','Service Lift','Escalator','Dumbwaiter','Car Lift'],FA:['FACP','Smoke Detector','Heat Detector','Sprinkler','Pull Station','Alarm Bell'],FP:['Fire Pump','Jockey Pump','Sprinkler Valve','Fire Cabinet','Portable Extinguisher','FM200/Gas'],BAS:['Controller','DDC','Sensor','Gateway','BACnet Panel','SCADA'],SN:['Water Pump','Pressure Tank','Water Meter','Sump Pump','Sewage Pump','Grease Trap'],TR:['Conveyor','Loading Dock','Turntable'],WWT:['STP','Aeration Tank','Clarifier','Chemical Dosing','UV System'],GE:['Generator','ATS','UPS','Battery Bank','Charger'],CV:['Structure','Roof','Waterproof','Facade','Road','Parking'],IT:['Server','Switch','Router','Firewall','Access Point','CCTV Recorder','NAS'],SG:['CCTV Camera','Access Control','Guard Tour','Intercom','Boom Gate'],PL:['Pool Pump','Filter System','Chemical System','Landscaping','Irrigation'],LT:['Emergency Light','Exit Sign','Street Light','Flood Light','Panel Board']};
+
+function populateAIQBuildingOptions(){
+  const dl=document.getElementById('aiq-bu-list');
+  if(!dl)return;
+  assets=DB.get('assets',[]);
+  const buildings=[...new Set(assets.map(a=>a.building).filter(Boolean))];
+  dl.innerHTML=buildings.map(b=>`<option value="${b}">`).join('');
+}
+function updateAIQSubSys(){
+  const sys=document.getElementById('aiq-sys')?.value||'';
+  const sub=document.getElementById('aiq-subsys');
+  if(!sub)return;
+  const opts=AIQ_SYS_SUB[sys]||[];
+  sub.innerHTML='<option value="">— เลือก Sub-System —</option>'+opts.map(o=>`<option value="${o}">${o}</option>`).join('');
+}
+function openAIQMapUrl(){
+  const url=(document.getElementById('aiq-map-url').value||'').trim();
+  window.open(url||'https://maps.google.com','_blank');
+}
+function handleAIQPhotoUpload(e,type){
+  const files=Array.from(e.target.files||[]);
+  const arr=type==='place'?aiqPlacePhotos:aiqSubPhotos;
+  const max=3,remaining=max-arr.length;
+  if(files.length>remaining) alert('⚠ สูงสุด '+max+' รูป');
+  files.slice(0,remaining).forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{ arr.push({src:ev.target.result,name:f.name}); renderAIQPhotos(type); };
+    reader.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+function removeAIQPhoto(type,i){
+  const arr=type==='place'?aiqPlacePhotos:aiqSubPhotos;
+  arr.splice(i,1); renderAIQPhotos(type);
+}
+function renderAIQPhotos(type){
+  const wrap=document.getElementById('aiq-'+type+'-thumbs');
+  const cnt=document.getElementById('aiq-'+type+'-count');
+  const arr=type==='place'?aiqPlacePhotos:aiqSubPhotos;
+  if(cnt) cnt.textContent=arr.length+'/3';
+  if(!wrap)return;
+  wrap.innerHTML=arr.map((im,i)=>`
+    <div style="position:relative;width:76px;height:76px">
+      <img src="${im.src}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="window.open('${im.src}','_blank')">
+      <button type="button" onclick="removeAIQPhoto('${type}',${i})" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:none;cursor:pointer;font-size:11px;line-height:1">✕</button>
+    </div>`).join('');
+}
+function openAIQModal(id){
+  aiqEditId=id||null;
+  aiqPlacePhotos=[]; aiqSubPhotos=[];
+  populateAIQBuildingOptions();
+  document.getElementById('aiq-id').value='';
+  const now=new Date();
+  document.getElementById('aiq-date').value=now.toISOString().slice(0,10);
+  document.getElementById('aiq-time').value=now.toTimeString().slice(0,5);
+  ['aiq-bu','aiq-location','aiq-map-url','aiq-issue','aiq-risk','aiq-sol1','aiq-sol2','aiq-sol3','aiq-sol4','aiq-actionby','aiq-followup'].forEach(x=>{
+    const el=document.getElementById(x); if(el) el.value='';
+  });
+  document.getElementById('aiq-sys').value='';
+  document.getElementById('aiq-mode').value='Reliability';
+  updateAIQSubSys();
+  const normalRadio=document.querySelector('input[name="aiq-criteria"][value="Normal"]');
+  if(normalRadio) normalRadio.checked=true;
+  renderAIQPhotos('place'); renderAIQPhotos('sub');
+
+  if(id){
+    AIQ=DB.get('aiq',[]);
+    const item=AIQ.find(x=>x.id===id);
+    if(item){
+      document.getElementById('aiq-id').value=item.id;
+      document.getElementById('aiq-date').value=item.date||'';
+      document.getElementById('aiq-time').value=item.time||'';
+      document.getElementById('aiq-bu').value=item.bu||'';
+      document.getElementById('aiq-mode').value=item.mode||'Reliability';
+      document.getElementById('aiq-location').value=item.location||'';
+      document.getElementById('aiq-map-url').value=item.mapUrl||'';
+      document.getElementById('aiq-sys').value=item.sys||'';
+      updateAIQSubSys();
+      document.getElementById('aiq-subsys').value=item.subsys||'';
+      document.getElementById('aiq-issue').value=item.issue||'';
+      document.getElementById('aiq-risk').value=item.risk||'';
+      document.getElementById('aiq-sol1').value=item.sol1||'';
+      document.getElementById('aiq-sol2').value=item.sol2||'';
+      document.getElementById('aiq-sol3').value=item.sol3||'';
+      document.getElementById('aiq-sol4').value=item.sol4||'';
+      document.getElementById('aiq-actionby').value=item.actionBy||'';
+      document.getElementById('aiq-followup').value=item.followup||'';
+      aiqPlacePhotos=(item.photos&&item.photos.place)||[];
+      aiqSubPhotos=(item.photos&&item.photos.sub)||[];
+      const r=document.querySelector('input[name="aiq-criteria"][value="'+item.criteria+'"]');
+      if(r) r.checked=true;
+      renderAIQPhotos('place'); renderAIQPhotos('sub');
+    }
+  }
+  document.getElementById('aiq-modal-title').textContent=id?'✏️ แก้ไขการสำรวจ':'🔍 New Inspection & Visit Site';
+  openModal('m-insp');
+}
+function saveAIQ(){
+  const date=document.getElementById('aiq-date').value;
+  const bu=document.getElementById('aiq-bu').value.trim();
+  const loc=document.getElementById('aiq-location').value.trim();
+  const issue=document.getElementById('aiq-issue').value.trim();
+  if(!date||!bu||!loc||!issue){ alert('⚠ กรุณากรอกข้อมูลที่จำเป็น (วันที่ / หน่วยงาน BU / Location / Issue)'); return; }
+  const crit=document.querySelector('input[name="aiq-criteria"]:checked');
+  AIQ=DB.get('aiq',[]);
+  const existingId=document.getElementById('aiq-id').value||aiqEditId;
+  const item={
+    id: existingId||('AIQ-'+Date.now()),
+    date, time:document.getElementById('aiq-time').value,
+    bu, mode:document.getElementById('aiq-mode').value,
+    location:loc, mapUrl:document.getElementById('aiq-map-url').value.trim(),
+    sys:document.getElementById('aiq-sys').value, subsys:document.getElementById('aiq-subsys').value,
+    issue, risk:document.getElementById('aiq-risk').value.trim(),
+    sol1:document.getElementById('aiq-sol1').value.trim(), sol2:document.getElementById('aiq-sol2').value.trim(),
+    sol3:document.getElementById('aiq-sol3').value.trim(), sol4:document.getElementById('aiq-sol4').value.trim(),
+    actionBy:document.getElementById('aiq-actionby').value.trim(), followup:document.getElementById('aiq-followup').value,
+    criteria: crit?crit.value:'Normal',
+    photos:{place:[...aiqPlacePhotos], sub:[...aiqSubPhotos]},
+    updatedDate:new Date().toISOString(),
+  };
+  if(existingId){
+    const idx=AIQ.findIndex(x=>x.id===existingId);
+    if(idx>=0) AIQ[idx]={...AIQ[idx],...item}; else AIQ.push(item);
+  } else {
+    item.createdDate=new Date().toISOString();
+    AIQ.push(item);
+  }
+  DB.set('aiq',AIQ);
+  closeModal('m-insp');
+  aiqEditId=null;
+  showToast('🔍 บันทึกการสำรวจแล้ว');
+  renderAnnualInspection();
+}
+function deleteAIQ(id){
+  if(!confirm('ลบรายการสำรวจนี้?'))return;
+  AIQ=DB.get('aiq',[]).filter(x=>x.id!==id);
+  DB.set('aiq',AIQ);
+  showToast('🗑️ ลบแล้ว');
+  renderAnnualInspection();
+}
+function resetAIQFilters(){
+  ['aiqf-datefrom','aiqf-dateto','aiqf-bu','aiqf-criteria','aiqf-mode'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  renderAnnualInspection();
+}
+function applyAIQFilters(list){
+  const df=document.getElementById('aiqf-datefrom')?.value;
+  const dt=document.getElementById('aiqf-dateto')?.value;
+  const bu=document.getElementById('aiqf-bu')?.value;
+  const crit=document.getElementById('aiqf-criteria')?.value;
+  const mode=document.getElementById('aiqf-mode')?.value;
+  return list.filter(x=>{
+    if(df && x.date && new Date(x.date)<new Date(df)) return false;
+    if(dt && x.date && new Date(x.date)>new Date(dt+'T23:59:59')) return false;
+    if(bu && x.bu!==bu) return false;
+    if(crit && x.criteria!==crit) return false;
+    if(mode && x.mode!==mode) return false;
+    return true;
+  });
+}
+function populateAIQFilterBU(){
+  const sel=document.getElementById('aiqf-bu');
+  if(!sel)return;
+  const cur=sel.value;
+  const buildings=[...new Set(AIQ.map(x=>x.bu).filter(Boolean))];
+  sel.innerHTML='<option value="">ทั้งหมด</option>'+buildings.map(b=>`<option value="${b}" ${b===cur?'selected':''}>${b}</option>`).join('');
+  if(cur) sel.value=cur;
+}
+function escAIQ(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function renderAnnualInspection(){
+  AIQ=DB.get('aiq',[]);
+  populateAIQFilterBU();
+  const filtered=applyAIQFilters(AIQ);
+  const cnt={Emergency:0,Urgently:0,Normal:0};
+  AIQ.forEach(x=>{ if(cnt[x.criteria]!==undefined) cnt[x.criteria]++; });
+  const elT=document.getElementById('aiq-cnt-total'); if(elT) elT.textContent=AIQ.length;
+  const elE=document.getElementById('aiq-cnt-emergency'); if(elE) elE.textContent=cnt.Emergency;
+  const elU=document.getElementById('aiq-cnt-urgently'); if(elU) elU.textContent=cnt.Urgently;
+  const elN=document.getElementById('aiq-cnt-normal'); if(elN) elN.textContent=cnt.Normal;
+
+  const wrap=document.getElementById('aiq-list');
+  if(!wrap)return;
+  if(!filtered.length){
+    wrap.innerHTML='<div class="tm" style="text-align:center;padding:40px">ยังไม่มีการสำรวจ · กด ＋ New Inspection</div>';
+    return;
+  }
+  const critMap={Emergency:['red','🚨'],Urgently:['yellow','⚠️'],Normal:['green','✅']};
+  wrap.innerHTML=filtered.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).map(d=>{
+    const c=critMap[d.criteria]||critMap.Normal;
+    const solutions=[d.sol1,d.sol2,d.sol3,d.sol4].filter(Boolean);
+    const allPhotos=[...((d.photos&&d.photos.place)||[]),...((d.photos&&d.photos.sub)||[])];
+    const thumbs=allPhotos.slice(0,4).map(im=>`<img src="${im.src}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="window.open('${im.src}','_blank')">`).join('');
+    return `<div class="card mb12" style="border-left:3px solid var(--${c[0]})">
+      <div class="flex" style="justify-content:space-between;align-items:flex-start">
+        <div style="flex:1;min-width:0">
+          <div class="flex g8" style="align-items:center;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:11px;color:var(--text3)">${d.id}</span>
+            <span class="badge badge-${c[0]}">${c[1]} ${d.criteria}</span>
+            <span class="badge badge-blue">${d.mode||''}</span>
+            ${d.bu?`<span class="badge badge-gray">${escAIQ(d.bu)}</span>`:''}
+          </div>
+          <div class="ffd fw6" style="font-size:14px">📍 ${escAIQ(d.location)}</div>
+          <div class="tm" style="font-size:11px;margin-top:2px">📅 ${d.date||''} ${d.time||''}${d.sys?` · ⚙ ${d.sys}`:''}${d.subsys?` > ${d.subsys}`:''}</div>
+        </div>
+        <div class="flex g8">
+          <button class="btn btn-secondary btn-sm" onclick="openAIQModal('${d.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteAIQ('${d.id}')">🗑</button>
+        </div>
+      </div>
+      ${d.issue?`<div style="font-size:12px;margin:8px 0;padding:8px 10px;background:var(--bg3);border-radius:8px;border-left:3px solid var(--${c[0]})">🔎 ${escAIQ(d.issue)}</div>`:''}
+      ${d.risk?`<div style="font-size:11px;color:var(--yellow);margin-bottom:6px">⚠ Risk: ${escAIQ(d.risk)}</div>`:''}
+      ${solutions.length?`<div style="font-size:11px;color:var(--green);margin-bottom:6px">💡 Solution: ${solutions.map((s,i)=>(i+1)+'. '+escAIQ(s)).join(' / ')}</div>`:''}
+      <div class="flex" style="justify-content:space-between;flex-wrap:wrap;gap:6px;align-items:center">
+        <div class="tm" style="font-size:11px">${d.actionBy?`👤 ${escAIQ(d.actionBy)} · `:''}${d.followup?`📅 Follow: ${d.followup}`:''}</div>
+        ${allPhotos.length?`<div class="flex g8">${thumbs}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ══ ADMIN ══
