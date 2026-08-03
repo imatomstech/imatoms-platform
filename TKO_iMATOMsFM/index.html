@@ -817,9 +817,16 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       <div id="ncr-list"></div>
     </div>
     <div id="view-fmea" class="view">
-      <div class="sh"><div><div class="st">⚠ FMEA Risk Analysis</div><div class="ss">Failure Mode · RPN · Risk Priority</div></div><button class="btn btn-primary">+ เพิ่ม FMEA</button></div>
-      <div class="alr alr-i mb16">FMEA: RPN = Severity × Occurrence × Detection · RPN &gt;100 ต้องดำเนินการทันที</div>
-      <div class="table-wrap"><table><thead><tr><th>Asset</th><th>Component</th><th>Failure Mode</th><th>Effect</th><th>S</th><th>O</th><th>D</th><th>RPN</th><th>Action</th><th>สถานะ</th></tr></thead><tbody><tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีข้อมูล FMEA</td></tr></tbody></table></div>
+      <div class="sh"><div><div class="st">⚠ FMEA Risk Analysis</div><div class="ss">Failure Mode & Effect Analysis · RPN = Severity × Occurrence × Detection</div></div><button class="btn btn-primary" onclick="openFMEAModal()">＋ เพิ่ม FMEA</button></div>
+      <div class="alr alr-i mb16">📐 RPN = S × O × D (1-10 แต่ละตัว) · 🔴 RPN ≥100 วิกฤต ต้องดำเนินการทันที · 🟠 50-99 สูง · 🟡 20-49 ปานกลาง · 🟢 &lt;20 ต่ำ</div>
+      <div class="kpi-grid"><div class="kpi blue"><div class="kl">📋 ทั้งหมด</div><div class="kv ffd" id="fmea-cnt-total">0</div></div><div class="kpi red"><div class="kl">🔴 วิกฤต (RPN≥100)</div><div class="kv ffd" id="fmea-cnt-critical">0</div></div><div class="kpi yellow"><div class="kl">🟡 รอดำเนินการ</div><div class="kv ffd" id="fmea-cnt-open">0</div></div><div class="kpi purple"><div class="kl">📄 SOP สร้างแล้ว</div><div class="kv ffd" id="fmea-cnt-sop">0</div></div></div>
+      <div class="card mb16" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+        <div><label class="form-label" style="font-size:10px">Asset</label><select class="form-control" id="fmeaf-asset" onchange="renderFMEA()" style="width:180px"><option value="">ทั้งหมด</option></select></div>
+        <div><label class="form-label" style="font-size:10px">ระดับความเสี่ยง</label><select class="form-control" id="fmeaf-risk" onchange="renderFMEA()" style="width:150px"><option value="">ทั้งหมด</option><option value="critical">🔴 วิกฤต (≥100)</option><option value="high">🟠 สูง (50-99)</option><option value="medium">🟡 ปานกลาง (20-49)</option><option value="low">🟢 ต่ำ (&lt;20)</option></select></div>
+        <div><label class="form-label" style="font-size:10px">สถานะ</label><select class="form-control" id="fmeaf-status" onchange="renderFMEA()" style="width:150px"><option value="">ทั้งหมด</option><option value="open">🔴 Open</option><option value="inprogress">🟡 In Progress</option><option value="closed">🟢 Closed</option></select></div>
+        <button class="btn btn-secondary btn-sm" onclick="resetFMEAFilters()">🗑 ล้างตัวกรอง</button>
+      </div>
+      <div id="fmea-list"></div>
     </div>
     <div id="view-audit" class="view">
       <div class="sh"><div><div class="st">📋 Audit & Compliance</div><div class="ss">ISO 9001 / 14001 · OSHA · Audit Schedule</div></div></div>
@@ -1621,6 +1628,79 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 </div>
 
 <div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-ncr')">ยกเลิก</button><button class="btn btn-secondary" onclick="exportNCRForm()">📄 Export PDF View</button><button class="btn btn-primary" onclick="saveNCR()">💾 Save NCR/CAR/PAR</button></div>
+</div></div>
+
+<div class="modal-overlay" id="m-fmea"><div class="modal modal-lg"><div class="mhd"><div class="mttl" id="fmea-modal-title">⚠ FMEA — Failure Mode & Effect Analysis</div><button class="mclose" onclick="closeModal('m-fmea')">✕</button></div>
+<input type="hidden" id="fmea-id">
+
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">Asset</label><select class="form-control" id="fmea-asset"><option value="">-- เลือก --</option></select></div>
+  <div class="form-group"><label class="form-label">Component / ส่วนประกอบ</label><input type="text" class="form-control" id="fmea-component" placeholder="เช่น Compressor, Bearing..."></div>
+  <div class="form-group"><label class="form-label">Function / หน้าที่การทำงาน</label><input type="text" class="form-control" id="fmea-function" placeholder="หน้าที่การทำงานของส่วนประกอบนี้"></div>
+</div>
+
+<div class="form-sec" style="color:var(--red)">1. Failure Mode & Effect</div>
+<div class="form-group"><label class="form-label">Failure Mode / รูปแบบความเสียหาย *</label><textarea class="form-control" id="fmea-failuremode" rows="2" placeholder="อธิบายลักษณะความเสียหายที่อาจเกิดขึ้น..."></textarea></div>
+<div class="form-group"><label class="form-label">Effect(s) of Failure / ผลกระทบที่เกิดขึ้น</label><textarea class="form-control" id="fmea-effect" rows="2" placeholder="ผลกระทบต่อระบบ / ผู้ใช้งาน / ความปลอดภัย..."></textarea></div>
+<div class="form-group"><label class="form-label">Severity (S) ความรุนแรง 1-10</label><input type="number" class="form-control" id="fmea-severity" min="1" max="10" value="5" oninput="updateFMEARPN()" style="width:100px"><div class="tm" style="font-size:10px;margin-top:3px">1 = ไม่รุนแรง · 10 = อันตรายร้ายแรง/หยุดระบบทั้งหมด</div></div>
+
+<div class="form-sec" style="color:var(--orange)">2. Causes & Current Controls</div>
+<div class="form-group"><label class="form-label">Causes / Mechanism of Failure / สาเหตุความเสียหาย</label><textarea class="form-control" id="fmea-causes" rows="2" placeholder="สาเหตุที่ทำให้เกิดความเสียหาย..."></textarea></div>
+<div class="form-group"><label class="form-label">Current Controls / มาตรการควบคุมปัจจุบัน</label><textarea class="form-control" id="fmea-controls" rows="2" placeholder="มาตรการ/การตรวจสอบที่มีอยู่ในปัจจุบัน..."></textarea></div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">Occurrence (O) โอกาสเกิด 1-10</label><input type="number" class="form-control" id="fmea-occurrence" min="1" max="10" value="5" oninput="updateFMEARPN()"><div class="tm" style="font-size:10px;margin-top:3px">1 = แทบไม่เกิด · 10 = เกิดบ่อยมาก</div></div>
+  <div class="form-group"><label class="form-label">Detection (D) ความยากในการตรวจจับ 1-10</label><input type="number" class="form-control" id="fmea-detection" min="1" max="10" value="5" oninput="updateFMEARPN()"><div class="tm" style="font-size:10px;margin-top:3px">1 = ตรวจจับได้ง่ายมาก · 10 = ตรวจจับไม่ได้เลย</div></div>
+</div>
+<div class="card" id="fmea-rpn-display" style="text-align:center;margin-bottom:14px"></div>
+
+<div class="form-sec" style="color:var(--green)">3. Recommended Action / มาตรการแก้ไข</div>
+<div class="form-group"><label class="form-label">Recommended Action</label><textarea class="form-control" id="fmea-action" rows="2" placeholder="มาตรการที่แนะนำเพื่อลดความเสี่ยง..."></textarea></div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">ผู้รับผิดชอบ</label><input type="text" class="form-control" id="fmea-responsible" placeholder="ชื่อ..."></div>
+  <div class="form-group"><label class="form-label">Target Date</label><input type="date" class="form-control" id="fmea-targetdate"></div>
+  <div class="form-group"><label class="form-label">สถานะ</label><select class="form-control" id="fmea-status"><option value="open">🔴 Open</option><option value="inprogress">🟡 In Progress</option><option value="closed">🟢 Closed</option></select></div>
+</div>
+
+<div class="form-sec" style="color:var(--purple)">4. Re-Evaluation (หลังดำเนินการแก้ไข)</div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">Revised S</label><input type="number" class="form-control" id="fmea-revseverity" min="1" max="10" placeholder="-" oninput="updateFMEARPN()"></div>
+  <div class="form-group"><label class="form-label">Revised O</label><input type="number" class="form-control" id="fmea-revoccurrence" min="1" max="10" placeholder="-" oninput="updateFMEARPN()"></div>
+  <div class="form-group"><label class="form-label">Revised D</label><input type="number" class="form-control" id="fmea-revdetection" min="1" max="10" placeholder="-" oninput="updateFMEARPN()"></div>
+</div>
+<div class="card" id="fmea-revrpn-display" style="text-align:center;margin-bottom:8px"></div>
+
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-fmea')">ยกเลิก</button><button class="btn btn-purple" onclick="saveFMEAThenSOP()">📄 บันทึก + สร้าง SOP</button><button class="btn btn-primary" onclick="saveFMEA()">💾 Save FMEA</button></div>
+</div></div>
+
+<!-- SOP GENERATED FROM FMEA -->
+<div class="modal-overlay" id="m-sop"><div class="modal modal-lg"><div class="mhd"><div class="mttl" id="sop-modal-title">📄 Standard Operating Procedure (SOP)</div><button class="mclose" onclick="closeModal('m-sop')">✕</button></div>
+<input type="hidden" id="sop-id"><input type="hidden" id="sop-fmea-id">
+<div class="card mb16" id="sop-fmea-ref" style="background:var(--purple-dim);border-color:rgba(168,85,247,.3);font-size:12px"></div>
+
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">SOP Title *</label><input type="text" class="form-control" id="sop-title" placeholder="ชื่อขั้นตอนการปฏิบัติงาน"></div>
+  <div class="form-group"><label class="form-label">SOP Code</label><input type="text" class="form-control" id="sop-code" placeholder="เว้นว่าง = สร้างอัตโนมัติ"></div>
+  <div class="form-group"><label class="form-label">ความถี่การปฏิบัติงาน</label><input type="text" class="form-control" id="sop-frequency" placeholder="เช่น รายวัน / รายเดือน / ทุกครั้งที่พบ..."></div>
+</div>
+<div class="form-group"><label class="form-label">Objective / วัตถุประสงค์</label><textarea class="form-control" id="sop-objective" rows="2" placeholder="วัตถุประสงค์ของ SOP นี้..."></textarea></div>
+<div class="form-group"><label class="form-label">Scope / ขอบเขต</label><textarea class="form-control" id="sop-scope" rows="2" placeholder="ขอบเขตการใช้งาน SOP..."></textarea></div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">PPE ที่ต้องใช้</label><input type="text" class="form-control" id="sop-ppe" placeholder="เช่น ถุงมือ, แว่นตานิรภัย, หูฟังลดเสียง..."></div>
+  <div class="form-group"><label class="form-label">เครื่องมือ/วัสดุที่ใช้</label><input type="text" class="form-control" id="sop-tools" placeholder="เช่น ประแจ, มัลติมิเตอร์..."></div>
+</div>
+
+<div class="form-sec" style="color:var(--blue)">ขั้นตอนการปฏิบัติงาน (Step-by-step Procedure)</div>
+<div id="sop-steps-rows" style="margin-bottom:8px"></div>
+<button type="button" onclick="addSOPStepRow()" class="btn btn-secondary btn-sm" style="margin-bottom:12px">＋ เพิ่มขั้นตอน</button>
+
+<div class="form-group"><label class="form-label">มาตรฐานอ้างอิง / Reference</label><input type="text" class="form-control" id="sop-reference" placeholder="เช่น ISO 9001, มาตรฐานโรงงาน..."></div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">Prepared by</label><input type="text" class="form-control" id="sop-prepared" placeholder="ชื่อ..."></div>
+  <div class="form-group"><label class="form-label">Reviewed by</label><input type="text" class="form-control" id="sop-reviewed" placeholder="ชื่อ..."></div>
+  <div class="form-group"><label class="form-label">Approved by</label><input type="text" class="form-control" id="sop-approved" placeholder="ชื่อ..."></div>
+</div>
+
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-sop')">ยกเลิก</button><button class="btn btn-secondary" onclick="exportSOPForm()">📄 Export PDF View</button><button class="btn btn-primary" onclick="saveSOP()">💾 Save SOP</button></div>
 </div></div>
 
 <div class="modal-overlay" id="m-inc"><div class="modal"><div class="mhd"><div class="mttl">🚨 รายงาน Incident</div><button class="mclose" onclick="closeModal('m-inc')">✕</button></div>
@@ -3165,7 +3245,7 @@ const META={
   floorplan:{t:'🏢 Building Critical Status',b:'TKO iMATOMs › แผนผังชั้น'},
 };
 const accMap={assets:'s1',lifecycle:'s1',qrcode:'s1',inspection:'s1',valuation:'s1',workrequest:'s1',ppm:'s1',operation:'s1',contract:'s1',inventory:'s1',inspection:'s2',ncr:'s2',fmea:'s2',audit:'s2',budget:'s3',costanalysis:'s3',valuation:'s3',energy:'s4',carbon:'s4',waste:'s4',esgkpi:'s4',training:'s5',competency:'s5',certification:'s5',knowledgebase:'s5',incident:'s6',hazard:'s6',permit:'s6',safetystat:'s6'};
-const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
+const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
   // คืนค่า floor ก่อน render
   const sel=document.getElementById('fp-floor');
   if(sel){const saved=localStorage.getItem('fp_last_floor')||'l1';if(sel.querySelector(`option[value="${saved}"]`))sel.value=saved;}
@@ -3211,7 +3291,7 @@ function loadAll(){
 }
 function popSelects(){
   const opts=bFilter(assets).map(a=>`<option value="${a.id}">${a.id} — ${a.name}</option>`).join('');
-  ['wri-as','pmi-as','mai-as','ispi-as'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='<option value="">-- เลือก --</option>'+opts;});
+  ['wri-as','pmi-as','mai-as','ispi-as','fmea-asset'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='<option value="">-- เลือก --</option>'+opts;});
 }
 
 // ══ DASHBOARD ══
@@ -3925,6 +4005,350 @@ function renderNCR(){
       ${(d.improveRows&&d.improveRows.filter(r=>r.problem).length)?`<div style="font-size:11px;color:var(--green)">💡 แผนงานแก้ไข: ${d.improveRows.filter(r=>r.problem).length} รายการ</div>`:''}
     </div>`;
   }).join('');
+}
+
+// ══ FMEA — Failure Mode & Effect Analysis ══
+let FMEA=[];
+let SOP=[];
+let fmeaEditId=null;
+let sopStepRows=[];
+let sopEditId=null;
+
+function rpnLevel(rpn){
+  if(rpn>=100) return {key:'critical',color:'red',label:'🔴 วิกฤต'};
+  if(rpn>=50) return {key:'high',color:'orange',label:'🟠 สูง'};
+  if(rpn>=20) return {key:'medium',color:'yellow',label:'🟡 ปานกลาง'};
+  return {key:'low',color:'green',label:'🟢 ต่ำ'};
+}
+function escFMEA(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function updateFMEARPN(){
+  const s=parseInt(document.getElementById('fmea-severity').value)||0;
+  const o=parseInt(document.getElementById('fmea-occurrence').value)||0;
+  const d=parseInt(document.getElementById('fmea-detection').value)||0;
+  const rpn=s*o*d;
+  const lv=rpnLevel(rpn);
+  document.getElementById('fmea-rpn-display').innerHTML=`<div class="kl">RPN = S(${s}) × O(${o}) × D(${d})</div><div class="ffd fw7" style="font-size:32px;color:var(--${lv.color})">${rpn}</div><div style="font-size:12px;color:var(--${lv.color})">${lv.label}</div>`;
+
+  const rs=parseInt(document.getElementById('fmea-revseverity').value)||0;
+  const ro=parseInt(document.getElementById('fmea-revoccurrence').value)||0;
+  const rd=parseInt(document.getElementById('fmea-revdetection').value)||0;
+  const revBox=document.getElementById('fmea-revrpn-display');
+  if(rs&&ro&&rd){
+    const revRpn=rs*ro*rd;
+    const rlv=rpnLevel(revRpn);
+    revBox.innerHTML=`<div class="kl">Revised RPN = S(${rs}) × O(${ro}) × D(${rd})</div><div class="ffd fw7" style="font-size:26px;color:var(--${rlv.color})">${revRpn}</div><div style="font-size:12px;color:var(--${rlv.color})">${rlv.label}</div>`;
+  } else {
+    revBox.innerHTML='<div class="tm" style="font-size:11px">กรอกค่า S/O/D ใหม่หลังดำเนินการแก้ไข เพื่อประเมินความเสี่ยงซ้ำ</div>';
+  }
+}
+
+function openFMEAModal(id){
+  fmeaEditId=id||null;
+  document.getElementById('fmea-id').value='';
+  ['fmea-component','fmea-function','fmea-failuremode','fmea-effect','fmea-causes','fmea-controls','fmea-action','fmea-responsible','fmea-targetdate'].forEach(x=>{
+    const el=document.getElementById(x); if(el) el.value='';
+  });
+  document.getElementById('fmea-severity').value=5;
+  document.getElementById('fmea-occurrence').value=5;
+  document.getElementById('fmea-detection').value=5;
+  document.getElementById('fmea-revseverity').value='';
+  document.getElementById('fmea-revoccurrence').value='';
+  document.getElementById('fmea-revdetection').value='';
+  document.getElementById('fmea-status').value='open';
+  document.getElementById('fmea-asset').value='';
+
+  if(id){
+    FMEA=DB.get('fmea',[]);
+    const item=FMEA.find(x=>x.id===id);
+    if(item){
+      document.getElementById('fmea-id').value=item.id;
+      document.getElementById('fmea-asset').value=item.assetId||'';
+      document.getElementById('fmea-component').value=item.component||'';
+      document.getElementById('fmea-function').value=item.func||'';
+      document.getElementById('fmea-failuremode').value=item.failureMode||'';
+      document.getElementById('fmea-effect').value=item.effect||'';
+      document.getElementById('fmea-severity').value=item.severity||5;
+      document.getElementById('fmea-causes').value=item.causes||'';
+      document.getElementById('fmea-controls').value=item.controls||'';
+      document.getElementById('fmea-occurrence').value=item.occurrence||5;
+      document.getElementById('fmea-detection').value=item.detection||5;
+      document.getElementById('fmea-action').value=item.action||'';
+      document.getElementById('fmea-responsible').value=item.responsible||'';
+      document.getElementById('fmea-targetdate').value=item.targetDate||'';
+      document.getElementById('fmea-status').value=item.status||'open';
+      document.getElementById('fmea-revseverity').value=item.revSeverity||'';
+      document.getElementById('fmea-revoccurrence').value=item.revOccurrence||'';
+      document.getElementById('fmea-revdetection').value=item.revDetection||'';
+    }
+  }
+  updateFMEARPN();
+  document.getElementById('fmea-modal-title').textContent=id?'✏️ แก้ไข FMEA':'⚠ FMEA — Failure Mode & Effect Analysis';
+  openModal('m-fmea');
+}
+
+function buildFMEAItem(existingId){
+  const s=parseInt(document.getElementById('fmea-severity').value)||1;
+  const o=parseInt(document.getElementById('fmea-occurrence').value)||1;
+  const d=parseInt(document.getElementById('fmea-detection').value)||1;
+  const rs=parseInt(document.getElementById('fmea-revseverity').value)||null;
+  const ro=parseInt(document.getElementById('fmea-revoccurrence').value)||null;
+  const rd=parseInt(document.getElementById('fmea-revdetection').value)||null;
+  return {
+    id: existingId||`FMEA-${String(FMEA.length+1).padStart(4,'0')}`,
+    assetId:document.getElementById('fmea-asset').value,
+    component:document.getElementById('fmea-component').value.trim(),
+    func:document.getElementById('fmea-function').value.trim(),
+    failureMode:document.getElementById('fmea-failuremode').value.trim(),
+    effect:document.getElementById('fmea-effect').value.trim(),
+    severity:s, causes:document.getElementById('fmea-causes').value.trim(),
+    controls:document.getElementById('fmea-controls').value.trim(),
+    occurrence:o, detection:d, rpn:s*o*d,
+    action:document.getElementById('fmea-action').value.trim(),
+    responsible:document.getElementById('fmea-responsible').value.trim(),
+    targetDate:document.getElementById('fmea-targetdate').value,
+    status:document.getElementById('fmea-status').value,
+    revSeverity:rs, revOccurrence:ro, revDetection:rd,
+    revRpn:(rs&&ro&&rd)?rs*ro*rd:null,
+    updatedDate:new Date().toISOString(),
+  };
+}
+
+function saveFMEA(){
+  const fm=document.getElementById('fmea-failuremode').value.trim();
+  if(!fm){ alert('กรุณากรอก Failure Mode'); return; }
+  FMEA=DB.get('fmea',[]);
+  const existingId=document.getElementById('fmea-id').value||fmeaEditId;
+  const item=buildFMEAItem(existingId);
+  if(existingId){
+    const idx=FMEA.findIndex(x=>x.id===existingId);
+    if(idx>=0) FMEA[idx]={...FMEA[idx],...item}; else FMEA.push(item);
+  } else {
+    item.createdDate=new Date().toISOString();
+    FMEA.push(item);
+  }
+  DB.set('fmea',FMEA);
+  closeModal('m-fmea');
+  fmeaEditId=null;
+  showToast('⚠ บันทึก FMEA แล้ว');
+  renderFMEA();
+  return item;
+}
+
+function saveFMEAThenSOP(){
+  const fm=document.getElementById('fmea-failuremode').value.trim();
+  if(!fm){ alert('กรุณากรอก Failure Mode'); return; }
+  const item=saveFMEA();
+  if(item) setTimeout(()=>openSOPModal(null,item.id),200);
+}
+
+function deleteFMEA(id){
+  if(!confirm('ลบรายการ FMEA นี้?'))return;
+  FMEA=DB.get('fmea',[]).filter(x=>x.id!==id);
+  SOP=DB.get('sop',[]).filter(x=>x.fmeaId!==id);
+  DB.set('fmea',FMEA); DB.set('sop',SOP);
+  showToast('🗑️ ลบแล้ว');
+  renderFMEA();
+}
+
+function resetFMEAFilters(){
+  ['fmeaf-asset','fmeaf-risk','fmeaf-status'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  renderFMEA();
+}
+function applyFMEAFilters(list){
+  const as=document.getElementById('fmeaf-asset')?.value;
+  const rk=document.getElementById('fmeaf-risk')?.value;
+  const st=document.getElementById('fmeaf-status')?.value;
+  return list.filter(x=>{
+    if(as && x.assetId!==as) return false;
+    if(rk && rpnLevel(x.rpn).key!==rk) return false;
+    if(st && x.status!==st) return false;
+    return true;
+  });
+}
+function populateFMEAAssetFilter(){
+  const sel=document.getElementById('fmeaf-asset');
+  if(!sel)return;
+  const cur=sel.value;
+  assets=DB.get('assets',[]);
+  sel.innerHTML='<option value="">ทั้งหมด</option>'+assets.map(a=>`<option value="${a.id}" ${a.id===cur?'selected':''}>${a.id} — ${a.name}</option>`).join('');
+  if(cur) sel.value=cur;
+}
+
+function renderFMEA(){
+  FMEA=DB.get('fmea',[]);
+  SOP=DB.get('sop',[]);
+  populateFMEAAssetFilter();
+  const filtered=applyFMEAFilters(FMEA);
+  const critical=FMEA.filter(x=>rpnLevel(x.rpn).key==='critical').length;
+  const open=FMEA.filter(x=>x.status!=='closed').length;
+  const sopCount=FMEA.filter(x=>SOP.some(s=>s.fmeaId===x.id)).length;
+  const elT=document.getElementById('fmea-cnt-total'); if(elT) elT.textContent=FMEA.length;
+  const elC=document.getElementById('fmea-cnt-critical'); if(elC) elC.textContent=critical;
+  const elO=document.getElementById('fmea-cnt-open'); if(elO) elO.textContent=open;
+  const elS=document.getElementById('fmea-cnt-sop'); if(elS) elS.textContent=sopCount;
+
+  const wrap=document.getElementById('fmea-list');
+  if(!wrap)return;
+  if(!filtered.length){
+    wrap.innerHTML='<div class="tm" style="text-align:center;padding:40px">ยังไม่มีข้อมูล FMEA · กด ＋ เพิ่ม FMEA</div>';
+    return;
+  }
+  const statusMap={open:['red','🔴 Open'],inprogress:['yellow','🟡 In Progress'],closed:['green','🟢 Closed']};
+  assets=DB.get('assets',[]);
+  wrap.innerHTML=filtered.slice().sort((a,b)=>(b.rpn||0)-(a.rpn||0)).map(d=>{
+    const lv=rpnLevel(d.rpn);
+    const s=statusMap[d.status]||statusMap.open;
+    const asset=assets.find(a=>a.id===d.assetId);
+    const linkedSop=SOP.find(x=>x.fmeaId===d.id);
+    return `<div class="card mb12" style="border-left:3px solid var(--${lv.color})">
+      <div class="flex" style="justify-content:space-between;align-items:flex-start">
+        <div style="flex:1;min-width:0">
+          <div class="flex g8" style="align-items:center;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:11px;color:var(--text3)">${d.id}</span>
+            <span class="badge badge-${lv.color}">${lv.label} · RPN ${d.rpn}</span>
+            <span class="badge badge-${s[0]}">${s[1]}</span>
+            ${linkedSop?`<span class="badge badge-purple">📄 SOP: ${linkedSop.code||linkedSop.id}</span>`:''}
+          </div>
+          <div class="ffd fw6" style="font-size:14px">${asset?`${asset.id} — ${escFMEA(asset.name)}`:''}${d.component?` · ${escFMEA(d.component)}`:''}</div>
+          <div class="tm" style="font-size:11px;margin-top:2px">${d.func?`🔧 ${escFMEA(d.func)}`:''}</div>
+        </div>
+        <div class="flex g8">
+          <button class="btn btn-purple btn-sm" onclick="openSOPModal(${linkedSop?`'${linkedSop.id}'`:'null'},'${d.id}')" title="สร้าง/ดู SOP">📄 SOP</button>
+          <button class="btn btn-secondary btn-sm" onclick="openFMEAModal('${d.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteFMEA('${d.id}')">🗑</button>
+        </div>
+      </div>
+      ${d.failureMode?`<div style="font-size:12px;margin:8px 0;padding:8px 10px;background:var(--bg3);border-radius:8px;border-left:3px solid var(--${lv.color})"><b>Failure Mode:</b> ${escFMEA(d.failureMode)}</div>`:''}
+      ${d.effect?`<div style="font-size:11px;color:var(--text2);margin-bottom:4px"><b>Effect:</b> ${escFMEA(d.effect)}</div>`:''}
+      <div style="font-size:11px;color:var(--text3)">S:${d.severity} · O:${d.occurrence} · D:${d.detection}${d.revRpn?` &nbsp;→&nbsp; Revised RPN: ${d.revRpn} (${rpnLevel(d.revRpn).label})`:''}</div>
+      ${d.action?`<div style="font-size:11px;color:var(--green);margin-top:4px">✅ Action: ${escFMEA(d.action)}${d.responsible?` (${escFMEA(d.responsible)})`:''}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── SOP (Standard Operating Procedure) — generated from FMEA ──
+function addSOPStepRow(){ sopStepRows.push({action:'',responsible:'',control:''}); renderSOPStepRows(); }
+function removeSOPStepRow(i){ sopStepRows.splice(i,1); renderSOPStepRows(); }
+function renderSOPStepRows(){
+  const cont=document.getElementById('sop-steps-rows');
+  if(!cont)return;
+  cont.innerHTML=sopStepRows.map((r,i)=>`
+    <div style="display:grid;grid-template-columns:24px 1fr 110px 1fr auto;gap:5px;margin-bottom:5px;align-items:center">
+      <div class="tm" style="font-size:12px;text-align:center">${i+1}</div>
+      <input type="text" class="form-control" style="padding:5px 8px;font-size:12px" placeholder="ขั้นตอนการปฏิบัติงาน..." value="${escFMEA(r.action)}" onchange="sopStepRows[${i}].action=this.value">
+      <input type="text" class="form-control" style="padding:5px 8px;font-size:12px" placeholder="ผู้รับผิดชอบ" value="${escFMEA(r.responsible)}" onchange="sopStepRows[${i}].responsible=this.value">
+      <input type="text" class="form-control" style="padding:5px 8px;font-size:12px" placeholder="จุดควบคุม/เกณฑ์ยอมรับ..." value="${escFMEA(r.control)}" onchange="sopStepRows[${i}].control=this.value">
+      <button type="button" onclick="removeSOPStepRow(${i})" style="padding:4px 8px;background:var(--red-dim);border:1px solid var(--red-dim);border-radius:6px;color:var(--red);cursor:pointer;font-size:12px">✕</button>
+    </div>`).join('')||'<div class="tm" style="font-size:11px;padding:6px 0">กด ＋ เพิ่มขั้นตอน</div>';
+}
+
+function openSOPModal(sopId,fmeaId){
+  sopEditId=sopId||null;
+  sopStepRows=[];
+  document.getElementById('sop-id').value='';
+  document.getElementById('sop-fmea-id').value=fmeaId||'';
+  ['sop-title','sop-code','sop-frequency','sop-objective','sop-scope','sop-ppe','sop-tools','sop-reference','sop-prepared','sop-reviewed','sop-approved'].forEach(x=>{
+    const el=document.getElementById(x); if(el) el.value='';
+  });
+
+  FMEA=DB.get('fmea',[]);
+  const fm=FMEA.find(x=>x.id===fmeaId);
+  assets=DB.get('assets',[]);
+  const asset=fm?assets.find(a=>a.id===fm.assetId):null;
+  const refBox=document.getElementById('sop-fmea-ref');
+  if(fm){
+    refBox.innerHTML=`🔗 สร้างจาก FMEA <b>${fm.id}</b> — ${asset?`${asset.id} ${escFMEA(asset.name)}`:''} ${fm.component?`· ${escFMEA(fm.component)}`:''}<br><b>Failure Mode:</b> ${escFMEA(fm.failureMode)} &nbsp; <b>RPN:</b> ${fm.rpn} (${rpnLevel(fm.rpn).label})`;
+  } else { refBox.innerHTML=''; }
+
+  if(sopId){
+    SOP=DB.get('sop',[]);
+    const item=SOP.find(x=>x.id===sopId);
+    if(item){
+      document.getElementById('sop-id').value=item.id;
+      document.getElementById('sop-fmea-id').value=item.fmeaId||fmeaId||'';
+      document.getElementById('sop-title').value=item.title||'';
+      document.getElementById('sop-code').value=item.code||'';
+      document.getElementById('sop-frequency').value=item.frequency||'';
+      document.getElementById('sop-objective').value=item.objective||'';
+      document.getElementById('sop-scope').value=item.scope||'';
+      document.getElementById('sop-ppe').value=item.ppe||'';
+      document.getElementById('sop-tools').value=item.tools||'';
+      document.getElementById('sop-reference').value=item.reference||'';
+      document.getElementById('sop-prepared').value=(item.signoff&&item.signoff.prepared)||'';
+      document.getElementById('sop-reviewed').value=(item.signoff&&item.signoff.reviewed)||'';
+      document.getElementById('sop-approved').value=(item.signoff&&item.signoff.approved)||'';
+      sopStepRows=(item.steps||[]).slice();
+    }
+  } else if(fm){
+    // Pre-fill จาก FMEA — Current Controls + Recommended Action กลายเป็นขั้นตอนเริ่มต้น
+    document.getElementById('sop-title').value=`วิธีปฏิบัติงานป้องกัน: ${fm.failureMode||fm.component||''}`.slice(0,120);
+    document.getElementById('sop-objective').value=`เพื่อป้องกัน/ควบคุมความเสี่ยงจาก Failure Mode: ${fm.failureMode||''}`;
+    if(fm.controls) sopStepRows.push({action:fm.controls,responsible:'',control:'ตรวจสอบตามรอบที่กำหนด'});
+    if(fm.action) sopStepRows.push({action:fm.action,responsible:fm.responsible||'',control:''});
+  }
+  if(!sopStepRows.length) sopStepRows.push({action:'',responsible:'',control:''});
+  renderSOPStepRows();
+  document.getElementById('sop-modal-title').textContent=sopId?'✏️ แก้ไข SOP':'📄 สร้าง SOP จาก FMEA';
+  openModal('m-sop');
+}
+
+function saveSOP(){
+  const title=document.getElementById('sop-title').value.trim();
+  if(!title){ alert('กรุณากรอก SOP Title'); return; }
+  SOP=DB.get('sop',[]);
+  const existingId=document.getElementById('sop-id').value||sopEditId;
+  const item={
+    id: existingId||`SOP-${String(SOP.length+1).padStart(4,'0')}`,
+    fmeaId: document.getElementById('sop-fmea-id').value||null,
+    title, code:document.getElementById('sop-code').value.trim()||`SOP-${String(SOP.length+1).padStart(4,'0')}`,
+    frequency:document.getElementById('sop-frequency').value.trim(),
+    objective:document.getElementById('sop-objective').value.trim(),
+    scope:document.getElementById('sop-scope').value.trim(),
+    ppe:document.getElementById('sop-ppe').value.trim(),
+    tools:document.getElementById('sop-tools').value.trim(),
+    reference:document.getElementById('sop-reference').value.trim(),
+    steps: sopStepRows.filter(r=>r.action).slice(),
+    signoff:{
+      prepared:document.getElementById('sop-prepared').value.trim(),
+      reviewed:document.getElementById('sop-reviewed').value.trim(),
+      approved:document.getElementById('sop-approved').value.trim(),
+    },
+    updatedDate:new Date().toISOString(),
+  };
+  if(existingId){
+    const idx=SOP.findIndex(x=>x.id===existingId);
+    if(idx>=0) SOP[idx]={...SOP[idx],...item}; else SOP.push(item);
+  } else {
+    item.createdDate=new Date().toISOString();
+    SOP.push(item);
+  }
+  DB.set('sop',SOP);
+  closeModal('m-sop');
+  sopEditId=null;
+  showToast('📄 บันทึก SOP แล้ว');
+  renderFMEA();
+}
+
+function exportSOPForm(){
+  const title=document.getElementById('sop-title').value.trim()||'(ยังไม่กรอก)';
+  const code=document.getElementById('sop-code').value.trim()||'-';
+  const stepsHtml=sopStepRows.filter(r=>r.action).map((r,i)=>`<tr><td style="width:30px;text-align:center">${i+1}</td><td>${escFMEA(r.action)}</td><td>${escFMEA(r.responsible)}</td><td>${escFMEA(r.control)}</td></tr>`).join('');
+  const html=`<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:12px;padding:20px}h2{color:#1a3a6b;border-bottom:2px solid #1a3a6b;padding-bottom:6px}table{width:100%;border-collapse:collapse;margin-bottom:12px}td,th{border:1px solid #ccc;padding:5px 8px;vertical-align:top;font-size:11px}.hdr{background:#1a3a6b;color:#fff;font-weight:700}.section{font-weight:700;color:#1a3a6b;font-size:12px;margin:10px 0 4px}</style></head><body>
+    <h2>Standard Operating Procedure — ${escFMEA(title)}</h2>
+    <table><tr><td><b>SOP Code:</b> ${escFMEA(code)}</td><td><b>ความถี่:</b> ${escFMEA(document.getElementById('sop-frequency').value)}</td><td><b>Reference:</b> ${escFMEA(document.getElementById('sop-reference').value)}</td></tr></table>
+    <div class="section">Objective</div><p>${escFMEA(document.getElementById('sop-objective').value)}</p>
+    <div class="section">Scope</div><p>${escFMEA(document.getElementById('sop-scope').value)}</p>
+    <table><tr><td><b>PPE:</b> ${escFMEA(document.getElementById('sop-ppe').value)}</td><td><b>เครื่องมือ/วัสดุ:</b> ${escFMEA(document.getElementById('sop-tools').value)}</td></tr></table>
+    <div class="section">Step-by-step Procedure</div>
+    <table><tr><th class="hdr">#</th><th class="hdr">ขั้นตอนการปฏิบัติงาน</th><th class="hdr">ผู้รับผิดชอบ</th><th class="hdr">จุดควบคุม/เกณฑ์ยอมรับ</th></tr>${stepsHtml}</table>
+    <div style="margin-top:20px;display:flex;justify-content:space-around">
+    <div>Prepared by: ${escFMEA(document.getElementById('sop-prepared').value)} Date: ______</div>
+    <div>Reviewed by: ${escFMEA(document.getElementById('sop-reviewed').value)} Date: ______</div>
+    <div>Approved by: ${escFMEA(document.getElementById('sop-approved').value)} Date: ______</div></div>
+    </body></html>`;
+  const win=window.open('','_blank');
+  if(win){ win.document.write(html); win.document.close(); win.print(); }
 }
 
 // ══ INCIDENT ══
