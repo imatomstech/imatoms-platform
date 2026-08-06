@@ -545,37 +545,51 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
   </div>
 
   <!-- ANALYSIS SYSTEM -->
+  <div id="sb-wrap-analysis">
   <div class="sb-sec" style="margin-top:4px">Analysis System</div>
   <div class="no" id="nav-ai" onclick="showView('ai')"><span style="font-size:14px">🤖</span> AI Analytics <span style="margin-left:auto;background:var(--orange);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px">NEW</span></div>
+  </div>
 
   <!-- INTELLIGENCE SYSTEM -->
+  <div id="sb-wrap-intelligence">
   <div class="sb-sec" style="margin-top:4px">Intelligence System</div>
   <div class="no" id="nav-integrations" onclick="showView('integrations')"><span style="font-size:14px">🔌</span> Integrations</div>
+  </div>
 
   <!-- ALERT & WARNING SYSTEM -->
+  <div id="sb-wrap-alert">
   <div class="sb-sec" style="margin-top:4px">Alert &amp; Warning System</div>
   <div class="no" id="nav-notifications" onclick="showView('notifications')"><span style="font-size:14px">🔔</span> Notifications <span class="ni-badge" id="sb-notif-count" style="display:none">0</span></div>
+  </div>
 
   <!-- ADMIN ONLY SECTIONS -->
   <div id="sb-admin-sections" style="display:none">
 
   <!-- DATABASE -->
+  <div id="sb-wrap-database">
   <div class="sb-sec" style="margin-top:4px">Database</div>
   <div class="no" id="nav-db-assets" onclick="showView('db-assets')"><span style="font-size:14px">🗃</span> Asset List & Spec</div>
   <div class="no" id="nav-db-floorplan" onclick="showView('db-floorplan')"><span style="font-size:14px">🗂</span> Building Critical Status Layout</div>
   <div class="no" id="nav-db-custom" onclick="showView('db-custom')"><span style="font-size:14px">📋</span> Custom Data Tables</div>
+  </div>
 
   <!-- CONFIGURATION -->
+  <div id="sb-wrap-config">
   <div class="sb-sec" style="margin-top:4px">Configuration</div>
   <div class="no" id="nav-config" onclick="showView('config')"><span style="font-size:14px">🔧</span> API & System Config</div>
+  </div>
 
   <!-- CLOUD -->
+  <div id="sb-wrap-cloud">
   <div class="sb-sec" style="margin-top:4px">Cloud</div>
   <div class="no" id="nav-cloud" onclick="showView('cloud')"><span style="font-size:14px">☁</span> Free Server Deploy</div>
+  </div>
 
   <!-- AUTHORIZE SYSTEM -->
+  <div id="sb-wrap-authorize">
   <div class="sb-sec" style="margin-top:4px">Authorize System</div>
   <div class="no" id="nav-adminmgmt" onclick="showView('adminmgmt')" style="display:none"><span style="font-size:14px">👥</span> Admin Management <span class="ni-badge" id="nb-admin" style="display:none">0</span></div>
+  </div>
 
   </div><!-- /sb-admin-sections -->
 
@@ -2187,6 +2201,44 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     </div>
 
     <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+
+    <!-- Sidebar Menu Visibility Section 2: System/Admin Categories (สำหรับซ่อนตอนนำเสนอลูกค้า) -->
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">🙈 ซ่อนหมวดระบบ (สำหรับนำเสนอลูกค้า)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--text)">🤖 Analysis System</span>
+          <input type="checkbox" id="navtog-analysis" onchange="toggleNavVis('analysis',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--text)">🔌 Intelligence System</span>
+          <input type="checkbox" id="navtog-intelligence" onchange="toggleNavVis('intelligence',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--text)">🔔 Alert & Warning System</span>
+          <input type="checkbox" id="navtog-alert" onchange="toggleNavVis('alert',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--text)">🗃 Database</span>
+          <input type="checkbox" id="navtog-database" onchange="toggleNavVis('database',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--text)">🔧 Configuration</span>
+          <input type="checkbox" id="navtog-config" onchange="toggleNavVis('config',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--text)">☁ Cloud</span>
+          <input type="checkbox" id="navtog-cloud" onchange="toggleNavVis('cloud',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;gap:8px;user-select:none">
+          <span style="font-size:12px;font-weight:600;color:var(--text)">👥 Authorize System</span>
+          <input type="checkbox" id="navtog-authorize" onchange="toggleNavVis('authorize',this.checked)" checked style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0">
+        </label>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:8px">💡 ใช้สำหรับซ่อนหมวดระบบที่ไม่ต้องการให้ลูกค้าเห็นตอนนำเสนองาน (Database/Configuration/Cloud/Authorize System จะแสดงเฉพาะ Admin อยู่แล้ว)</div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
     <div class="flex g8" style="justify-content:flex-end">
       <button class="btn btn-primary wf" style="justify-content:center" onclick="closeModal('m-settings')">✅ บันทึกการตั้งค่า</button>
     </div>
@@ -2505,6 +2557,13 @@ const NAV_VIS_ITEMS=[
   {key:'s4',       targets:['sb-wrap-s4']},
   {key:'s5',       targets:['sb-wrap-s5']},
   {key:'s6',       targets:['sb-wrap-s6']},
+  {key:'analysis',    targets:['sb-wrap-analysis']},
+  {key:'intelligence',targets:['sb-wrap-intelligence']},
+  {key:'alert',        targets:['sb-wrap-alert']},
+  {key:'database',    targets:['sb-wrap-database']},
+  {key:'config',      targets:['sb-wrap-config']},
+  {key:'cloud',        targets:['sb-wrap-cloud']},
+  {key:'authorize',    targets:['sb-wrap-authorize']},
 ];
 function toggleNavVis(key,show){
   const vis=DB.get('navVis',{});
