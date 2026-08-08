@@ -113,6 +113,13 @@ span,div,p,label,button,a,select,option,li,td,th,input,small{
 .acc-hd.open .arr{transform:rotate(90deg);opacity:1}
 .acc-bd{max-height:0;overflow:hidden;transition:max-height .28s ease}
 .acc-bd.open{max-height:700px}
+.sub-acc-hd{display:flex;align-items:center;gap:6px;padding:6px 10px 4px 22px;cursor:pointer;user-select:none}
+.sub-acc-hd:hover{background:rgba(255,255,255,.03)}
+.sub-acc-hd .sal{flex:1;font-size:9px;font-weight:700;letter-spacing:1px;color:var(--orange);text-transform:uppercase;font-family:var(--font-display)}
+.sub-acc-hd .sarr{font-size:8px;color:var(--orange);transition:transform .2s;flex-shrink:0;opacity:.7}
+.sub-acc-hd.open .sarr{transform:rotate(90deg);opacity:1}
+.sub-acc-bd{max-height:0;overflow:hidden;transition:max-height .25s ease}
+.sub-acc-bd.open{max-height:500px}
 .ni{display:flex;align-items:center;gap:8px;padding:7px 10px 7px 22px;cursor:pointer;font-size:12px;font-family:var(--font-display);letter-spacing:.2px;color:var(--text3);transition:all .12s;border-left:2px solid transparent}
 .ni:hover{background:rgba(255,255,255,.03);color:var(--text2)}
 .ni.active{background:rgba(249,115,22,.08);color:var(--nc,var(--orange));border-left-color:var(--nc,var(--orange))}
@@ -474,19 +481,23 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     <div class="acc-hd" id="ah-s1" onclick="toggleAcc('s1')"><span class="ai">🔧</span><span class="al">Reliability</span><span class="arr">▶</span></div>
     <div class="acc-bd" id="ab-s1">
       <!-- Asset Life-Cycle Management -->
-      <div style="padding:5px 10px 2px 22px;font-size:9px;font-weight:700;letter-spacing:1px;color:var(--orange);text-transform:uppercase;font-family:var(--font-display)">Asset Life-Cycle Management</div>
+      <div class="sub-acc-hd" id="ah-s1-alc" onclick="toggleAcc('s1-alc')"><span class="sal">Asset Life-Cycle Management</span><span class="sarr">▶</span></div>
+      <div class="sub-acc-bd" id="ab-s1-alc">
       <div class="ni" style="--nc:var(--orange)" id="nav-valuation" onclick="openReliabilityView('valuation')"><span class="ni-dot"></span>Overview Value Add</div>
       <div class="ni" style="--nc:var(--orange)" id="nav-lifecycle" onclick="openReliabilityView('lifecycle')"><span class="ni-dot"></span>Lifecycle Tracker</div>
       <div class="ni" style="--nc:var(--orange)" id="nav-qrcode" onclick="openReliabilityView('qrcode')"><span class="ni-dot"></span>QR Code Assets</div>
       <div class="ni" style="--nc:var(--orange)" id="nav-inspection" onclick="openReliabilityView('inspection')"><span class="ni-dot"></span>Annual Review</div>
       <div class="ni" style="--nc:var(--orange)" id="nav-assets" onclick="openReliabilityView('assets')"><span class="ni-dot"></span>Asset ID & Register</div>
+      </div>
       <!-- Facility Management -->
-      <div style="padding:5px 10px 2px 22px;font-size:9px;font-weight:700;letter-spacing:1px;color:var(--orange);text-transform:uppercase;font-family:var(--font-display)">Facility Management</div>
+      <div class="sub-acc-hd" id="ah-s1-fm" onclick="toggleAcc('s1-fm')"><span class="sal">Facility Management</span><span class="sarr">▶</span></div>
+      <div class="sub-acc-bd" id="ab-s1-fm">
       <div class="ni" style="--nc:var(--orange)" id="nav-workrequest" onclick="openReliabilityView('workrequest')"><span class="ni-dot"></span>Work Request (WR)<span class="ni-badge" id="nb-wr" style="display:none">0</span></div>
       <div class="ni" style="--nc:var(--orange)" id="nav-operation" onclick="openReliabilityView('operation')"><span class="ni-dot"></span>Operation (OPT)</div>
       <div class="ni" style="--nc:var(--orange)" id="nav-ppm" onclick="openReliabilityView('ppm')"><span class="ni-dot"></span>Preventive Maint. (PPM)</div>
       <div class="ni" style="--nc:var(--orange)" id="nav-contract" onclick="openReliabilityView('contract')"><span class="ni-dot"></span>MA Contract</div>
       <div class="ni" style="--nc:var(--orange)" id="nav-inventory" onclick="openReliabilityView('inventory')"><span class="ni-dot"></span>Inventory</div>
+      </div>
     </div>
   </div>
 
