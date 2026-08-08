@@ -2154,9 +2154,11 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       </div>
     </div>
 
+    <div id="settings-navvis-wrap" style="display:none">
+
     <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
 
-    <!-- Sidebar Menu Visibility Section -->
+    <!-- Sidebar Menu Visibility Section (Admin only) -->
     <div>
       <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">👁 Sidebar Menu Visibility / จัดการเมนูที่แสดง</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -2237,6 +2239,8 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       </div>
       <div style="font-size:10px;color:var(--text3);margin-top:8px">💡 ใช้สำหรับซ่อนหมวดระบบที่ไม่ต้องการให้ลูกค้าเห็นตอนนำเสนองาน (Database/Configuration/Cloud/Authorize System จะแสดงเฉพาะ Admin อยู่แล้ว)</div>
     </div>
+
+    </div><!-- /settings-navvis-wrap (Admin only) -->
 
     <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
     <div class="flex g8" style="justify-content:flex-end">
@@ -5455,6 +5459,11 @@ function reloadFrame(){ openFrameTab(); }
 // ══ MODAL ══
 function openModal(id){
   document.getElementById(id).classList.add('open');
+  // Settings: ส่วน Sidebar Menu Visibility ให้เห็นเฉพาะ Admin
+  if(id==='m-settings'){
+    const navvisWrap=document.getElementById('settings-navvis-wrap');
+    if(navvisWrap) navvisWrap.style.display=(CU?.role==='admin')?'':'none';
+  }
   // Auto-generate Asset ID เมื่อเปิด modal เพิ่ม Asset ใหม่
   if(id==='m-asset'){
     setTimeout(()=>{
