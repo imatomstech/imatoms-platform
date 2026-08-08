@@ -631,9 +631,9 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
           </div>
         </div>
       </div>
-      <button class="btn btn-secondary btn-sm" onclick="showView('ai')">🤖 AI</button>
-      
-      <button class="btn btn-primary btn-sm" onclick="openModal('m-asset')">+ Asset</button>
+      <button class="btn btn-secondary btn-sm" id="tb-ai-btn" onclick="showView('ai')">🤖 AI</button>
+
+      <button class="btn btn-primary btn-sm" id="tb-addasset-btn" onclick="openModal('m-asset')">+ Asset</button>
     </div>
   </div>
 
@@ -643,7 +643,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
     <div id="view-dashboard" class="view active">
       <div class="sh">
         <div><div class="st">📊 iMATOMs 6-Strategy Dashboard</div><div class="ss">TKO v3.0 · iMATOMs Platform · 6-Strategy · 2026</div></div>
-        <div class="flex g8"><button class="btn btn-secondary btn-sm" onclick="refreshDash()">↻ Refresh</button><button class="btn btn-primary btn-sm" onclick="showView('ai')">🤖 AI Insight</button></div>
+        <div class="flex g8"><button class="btn btn-secondary btn-sm" onclick="refreshDash()">↻ Refresh</button><button class="btn btn-primary btn-sm" id="dash-ai-btn" onclick="showView('ai')">🤖 AI Insight</button></div>
       </div>
       <div class="kpi-grid">
         <div class="kpi orange"><div class="kl">Total Assets</div><div class="kv ffd" id="kpi-tot">0</div><div class="ks">สินทรัพย์ทั้งหมด</div><div class="ki">🏭</div></div>
@@ -2561,10 +2561,10 @@ const NAV_VIS_ITEMS=[
   {key:'s4',       targets:['sb-wrap-s4']},
   {key:'s5',       targets:['sb-wrap-s5']},
   {key:'s6',       targets:['sb-wrap-s6']},
-  {key:'analysis',    targets:['sb-wrap-analysis']},
+  {key:'analysis',    targets:['sb-wrap-analysis','tb-ai-btn','dash-ai-btn']},
   {key:'intelligence',targets:['sb-wrap-intelligence']},
-  {key:'alert',        targets:['sb-wrap-alert']},
-  {key:'database',    targets:['sb-wrap-database']},
+  {key:'alert',        targets:['sb-wrap-alert','notif-btn']},
+  {key:'database',    targets:['sb-wrap-database','tb-addasset-btn']},
   {key:'config',      targets:['sb-wrap-config']},
   {key:'cloud',        targets:['sb-wrap-cloud']},
   {key:'authorize',    targets:['sb-wrap-authorize']},
