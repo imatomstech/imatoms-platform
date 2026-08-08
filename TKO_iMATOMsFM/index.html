@@ -2617,6 +2617,11 @@ function applySidebarSpeed(){
   if(sb) sb.style.transition=tr;
   if(main) main.style.transition=trM;
   if(peek) peek.style.transition=`all ${dur}`;
+  // "Off" = ปักหมุด sidebar ให้อยู่นิ่งตลอด ไม่ auto-hide เวลาเลื่อนเมาส์ออก
+  if(typeof _sbPinned!=='undefined'){
+    _sbPinned = (s==='0');
+    if(_sbPinned && typeof showSidebar==='function') showSidebar();
+  }
   // Update UI highlight
   ['off','fast','normal','slow'].forEach(k=>{
     const el=document.getElementById('spd-'+k);
