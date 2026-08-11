@@ -10084,7 +10084,7 @@ async function renderAdm(){
   const users=serverUsers.map(u=>({
     id:u.id, name:u.full_name||u.username, username:u.username, email:u.email,
     role:u.role||'viewer', businessGroup:u.business_group||'', company:u.company||'',
-    status:u.is_active?'approved':'pending', regDate:u.created_at,
+    status:(u.username==='admin'||u.role==='admin')?'approved':(u.is_active?'approved':'pending'), regDate:u.created_at,
     position:'', building:'', location:'', stakeholder:u.business_group||'',
   }));
 
