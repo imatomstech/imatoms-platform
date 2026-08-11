@@ -1452,14 +1452,18 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 
     <!-- ACADEMY VIEWS -->
     <div id="view-training" class="view">
-      <div class="sh"><div><div class="st">🎓 Training Calendar</div><div class="ss">แผนอบรม · ชั่วโมงอบรม</div></div><button class="btn btn-purple">+ หลักสูตร</button></div>
-      <div class="kpi-grid"><div class="kpi purple"><div class="kl">หลักสูตรปีนี้</div><div class="kv ffd">24</div></div><div class="kpi green"><div class="kl">ดำเนินการแล้ว</div><div class="kv ffd">9</div></div><div class="kpi blue"><div class="kl">ผู้เข้าอบรมรวม</div><div class="kv ffd">286</div></div><div class="kpi yellow"><div class="kl">ชม.เฉลี่ย/คน</div><div class="kv ffd">42h</div></div></div>
-      <div class="table-wrap"><table><thead><tr><th>Code</th><th>หลักสูตร</th><th>Strategy</th><th>วันที่</th><th>วิทยากร</th><th>ผู้เข้า</th><th>ชั่วโมง</th><th>สถานะ</th></tr></thead><tbody>
-        <tr><td><span class="tag">TR-001</span></td><td>Electrical Safety (LV)</td><td><span class="badge badge-red">Safety</span></td><td>15 ม.ค.2026</td><td>อ.วิชัย</td><td>24</td><td>6h</td><td><span class="badge badge-green">✅ Done</span></td></tr>
-        <tr><td><span class="tag">TR-002</span></td><td>iMATOMs v3.0 Platform</td><td><span class="badge badge-orange">Reliability</span></td><td>22 ม.ค.2026</td><td>Mr.Kittanan Onsee</td><td>18</td><td>8h</td><td><span class="badge badge-green">✅ Done</span></td></tr>
-        <tr><td><span class="tag">TR-003</span></td><td>ISO 14001 Awareness</td><td><span class="badge badge-teal">ESG</span></td><td>5 ก.พ.2026</td><td>Consultant</td><td>32</td><td>4h</td><td><span class="badge badge-yellow">⏳ Upcoming</span></td></tr>
-        <tr><td><span class="tag">TR-004</span></td><td>FMEA Workshop</td><td><span class="badge badge-blue">Quality</span></td><td>12 ก.พ.2026</td><td>อ.สมชาย</td><td>20</td><td>6h</td><td><span class="badge badge-yellow">⏳ Upcoming</span></td></tr>
-      </tbody></table></div>
+      <div class="sh"><div><div class="st">🎓 Training Calendar</div><div class="ss">แผนอบรม · ชั่วโมงอบรม</div></div><div class="flex g8"><button class="btn btn-secondary btn-sm" onclick="importTrainingExcel()">📥 Import</button><button class="btn btn-secondary btn-sm" onclick="exportTrainingExcel()">📤 Export</button><button class="btn btn-purple" onclick="openTrainingModal()">+ หลักสูตร</button></div></div>
+      <div class="kpi-grid">
+        <div class="kpi purple"><div class="kl">หลักสูตรปีนี้</div><div class="kv ffd" id="tr-kpi-year">0</div></div>
+        <div class="kpi green"><div class="kl">ดำเนินการแล้ว</div><div class="kv ffd" id="tr-kpi-done">0</div></div>
+        <div class="kpi blue"><div class="kl">ผู้เข้าอบรมรวม</div><div class="kv ffd" id="tr-kpi-participants">0</div></div>
+        <div class="kpi yellow"><div class="kl">ชม.เฉลี่ย/คน</div><div class="kv ffd" id="tr-kpi-avghours">0h</div></div>
+      </div>
+      <div class="fb"><input class="si" id="tr-search" placeholder="🔍 ค้นหาหลักสูตร วิทยากร..." style="max-width:300px" oninput="renderTraining()">
+        <select class="form-control" style="width:150px" id="tr-f-strategy" onchange="renderTraining()"><option value="">ทุก Strategy</option><option value="Reliability">Reliability</option><option value="Quality">Quality</option><option value="Cost">Cost</option><option value="ESG">ESG</option><option value="Academy">Academy</option><option value="Safety">Safety</option></select>
+        <select class="form-control" style="width:150px" id="tr-f-status" onchange="renderTraining()"><option value="">ทุกสถานะ</option><option value="planned">📅 Planned</option><option value="upcoming">⏳ Upcoming</option><option value="done">✅ Done</option><option value="cancelled">❌ Cancelled</option></select>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Code</th><th>หลักสูตร</th><th>Strategy</th><th>วันที่</th><th>วิทยากร</th><th>ผู้เข้า</th><th>ชั่วโมง</th><th>สถานะ</th><th>Action</th></tr></thead><tbody id="tr-tbody"></tbody></table></div>
     </div>
     <div id="view-competency" class="view">
       <div class="sh"><div><div class="st">🧠 Competency Matrix</div><div class="ss">ทักษะ · Gap Analysis</div></div><div class="flex g8"><button class="btn btn-secondary btn-sm" onclick="openCompSkillsModal()">⚙ จัดการทักษะ</button><button class="btn btn-secondary btn-sm" onclick="exportCompetencyExcel()">📊 Export</button><button class="btn btn-purple" onclick="openCompetencyModal()">+ พนักงาน</button></div></div>
@@ -2210,6 +2214,33 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 <div class="flex g8" style="justify-content:flex-end;margin-top:8px">
   <button class="btn btn-secondary" onclick="closeModal('m-certification')">ยกเลิก</button>
   <button class="btn btn-primary" onclick="saveCertification()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-training"><div class="modal">
+<div class="mhd"><div class="mttl" id="tr-modal-title">🎓 เพิ่ม/แก้ไข หลักสูตรอบรม</div><button class="mclose" onclick="closeModal('m-training')">✕</button></div>
+<input type="hidden" id="tr-id">
+<div class="form-row">
+  <div class="form-group"><label class="form-label">ชื่อหลักสูตร *</label><input class="form-control" id="tr-name" placeholder="เช่น Electrical Safety (LV)"></div>
+  <div class="form-group"><label class="form-label">Strategy *</label><select class="form-control" id="tr-strategy">
+    <option value="Reliability">Reliability</option><option value="Quality">Quality</option><option value="Cost">Cost</option><option value="ESG">ESG</option><option value="Academy" selected>Academy</option><option value="Safety">Safety</option>
+  </select></div>
+</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">วันที่ *</label><input type="date" class="form-control" id="tr-date"></div>
+  <div class="form-group"><label class="form-label">วิทยากร</label><input class="form-control" id="tr-instructor" placeholder="ชื่อวิทยากร"></div>
+</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">จำนวนผู้เข้าอบรม</label><input type="number" min="0" class="form-control" id="tr-participants" placeholder="0"></div>
+  <div class="form-group"><label class="form-label">จำนวนชั่วโมง</label><input type="number" min="0" step="0.5" class="form-control" id="tr-hours" placeholder="0"></div>
+</div>
+<div class="form-group"><label class="form-label">สถานะ</label><select class="form-control" id="tr-status">
+  <option value="planned">📅 Planned</option><option value="upcoming">⏳ Upcoming</option><option value="done">✅ Done</option><option value="cancelled">❌ Cancelled</option>
+</select></div>
+<div class="form-group"><label class="form-label">หมายเหตุ</label><input class="form-control" id="tr-notes" placeholder="หมายเหตุ"></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-training')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveTrainingCourse()">💾 บันทึก</button>
 </div>
 </div></div>
 
@@ -7669,7 +7700,7 @@ const META={
   floorplan:{t:'🏢 Building Critical Status',b:'TKO iMATOMs › แผนผังชั้น'},
 };
 const accMap={assets:'s1',lifecycle:'s1',qrcode:'s1',inspection:'s1',valuation:'s1',workrequest:'s1',ppm:'s1',operation:'s1',contract:'s1',inventory:'s1',inspection:'s2',ncr:'s2',fmea:'s2',audit:'s2',budget:'s3',costanalysis:'s3',valuation:'s3',energy:'s4',carbon:'s4',waste:'s4',esgkpi:'s4',training:'s5',competency:'s5',certification:'s5',knowledgebase:'s5',exam:'s5',incident:'s6',hazard:'s6',permit:'s6',safetystat:'s6',ai:'s7',integrations:'s8',notifications:'s9','db-assets':'s10','db-floorplan':'s10','db-custom':'s10',config:'s11',cloud:'s12',adminmgmt:'s13'};
-const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,carbon:renderCarbon,waste:renderWaste,esgkpi:renderEsgKpi,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,audit:renderAudit,modules:renderModules,notifications:renderNotifCenter,exam:renderExam,competency:renderCompetency,certification:renderCertification,knowledgebase:renderKnowledgeBase,floorplan:()=>{
+const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,carbon:renderCarbon,waste:renderWaste,esgkpi:renderEsgKpi,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,audit:renderAudit,modules:renderModules,notifications:renderNotifCenter,exam:renderExam,competency:renderCompetency,certification:renderCertification,knowledgebase:renderKnowledgeBase,training:renderTraining,floorplan:()=>{
   // คืนค่า floor ก่อน render
   const sel=document.getElementById('fp-floor');
   if(sel){const saved=localStorage.getItem('fp_last_floor')||'l1';if(sel.querySelector(`option[value="${saved}"]`))sel.value=saved;}
@@ -11711,6 +11742,151 @@ function importCertificationExcel(){
         DB.set('certifications',list);
         showToast('📥 Import สำเร็จ '+added+' รายการ');
         renderCertification();
+      }catch(err){showToast('❌ อ่านไฟล์ไม่ได้: '+err.message);}
+    };
+    reader.readAsArrayBuffer(f);
+  };
+  inp.click();
+}
+
+// ── Training Calendar ──
+const TR_CATS={
+  Reliability:{c:'badge-orange'},Quality:{c:'badge-blue'},Cost:{c:'badge-purple'},
+  ESG:{c:'badge-teal'},Academy:{c:'badge-green'},Safety:{c:'badge-red'}
+};
+const TR_STATUS={
+  planned:{c:'blue',l:'📅 Planned'},upcoming:{c:'yellow',l:'⏳ Upcoming'},
+  done:{c:'green',l:'✅ Done'},cancelled:{c:'red',l:'❌ Cancelled'}
+};
+function openTrainingModal(id){
+  document.getElementById('tr-id').value=id||'';
+  document.getElementById('tr-modal-title').textContent=id?'✏ แก้ไข หลักสูตรอบรม':'🎓 เพิ่ม หลักสูตรอบรม';
+  document.getElementById('tr-name').value='';document.getElementById('tr-strategy').value='Academy';
+  document.getElementById('tr-date').value='';document.getElementById('tr-instructor').value='';
+  document.getElementById('tr-participants').value='';document.getElementById('tr-hours').value='';
+  document.getElementById('tr-status').value='planned';document.getElementById('tr-notes').value='';
+  if(id){
+    const item=DB.get('trainingCourses',[]).find(x=>x.id===id);
+    if(item){
+      document.getElementById('tr-name').value=item.courseName||'';
+      document.getElementById('tr-strategy').value=item.strategy||'Academy';
+      document.getElementById('tr-date').value=item.date||'';
+      document.getElementById('tr-instructor').value=item.instructor||'';
+      document.getElementById('tr-participants').value=item.participantCount||'';
+      document.getElementById('tr-hours').value=item.hours||'';
+      document.getElementById('tr-status').value=item.status||'planned';
+      document.getElementById('tr-notes').value=item.notes||'';
+    }
+  }
+  openModal('m-training');
+}
+function saveTrainingCourse(){
+  const name=document.getElementById('tr-name').value.trim();
+  const date=document.getElementById('tr-date').value;
+  if(!name){showToast('⚠ กรุณาระบุชื่อหลักสูตร');return;}
+  if(!date){showToast('⚠ กรุณาระบุวันที่');return;}
+  const id=document.getElementById('tr-id').value;
+  const list=DB.get('trainingCourses',[]);
+  const rec={
+    id:id||('TR-'+(list.length?Math.max(...list.map(x=>parseInt((x.id||'TR-0').split('-')[1])||0))+1:1)),
+    courseName:name,
+    strategy:document.getElementById('tr-strategy').value,
+    date:date,
+    instructor:document.getElementById('tr-instructor').value.trim(),
+    participantCount:parseInt(document.getElementById('tr-participants').value)||0,
+    hours:parseFloat(document.getElementById('tr-hours').value)||0,
+    status:document.getElementById('tr-status').value,
+    notes:document.getElementById('tr-notes').value.trim()
+  };
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('trainingCourses',list);
+  showToast('💾 บันทึกหลักสูตรสำเร็จ');
+  closeModal('m-training');
+  renderTraining();
+}
+function deleteTrainingCourse(id){
+  if(!confirm('ลบหลักสูตรนี้?'))return;
+  DB.set('trainingCourses',DB.get('trainingCourses',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderTraining();
+}
+function renderTraining(){
+  const all=DB.get('trainingCourses',[]);
+  const q=(document.getElementById('tr-search')?.value||'').toLowerCase().trim();
+  const fStrategy=document.getElementById('tr-f-strategy')?.value||'';
+  const fStatus=document.getElementById('tr-f-status')?.value||'';
+  let list=all.slice();
+  if(q)list=list.filter(x=>(x.courseName||'').toLowerCase().includes(q)||(x.instructor||'').toLowerCase().includes(q));
+  if(fStrategy)list=list.filter(x=>x.strategy===fStrategy);
+  if(fStatus)list=list.filter(x=>x.status===fStatus);
+  list.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const tbody=document.getElementById('tr-tbody');
+  if(tbody)tbody.innerHTML=list.length?list.map(x=>{
+    const st=TR_STATUS[x.status]||TR_STATUS.planned;
+    const cat=TR_CATS[x.strategy]||{c:'badge-blue'};
+    return `<tr>
+      <td><span class="tag">${escWW(x.id)}</span></td><td>${escWW(x.courseName)}</td>
+      <td><span class="badge ${cat.c}">${escWW(x.strategy)}</span></td>
+      <td>${x.date||'—'}</td><td>${escWW(x.instructor)||'—'}</td>
+      <td>${x.participantCount||0}</td><td>${x.hours||0}h</td>
+      <td><span class="badge badge-${st.c}">${st.l}</span></td>
+      <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openTrainingModal('${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteTrainingCourse('${x.id}')">🗑</button></div></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="9" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูลหลักสูตร</td></tr>';
+
+  const g=id=>document.getElementById(id);
+  const thisYear=new Date().getFullYear();
+  const yearList=all.filter(x=>x.date&&new Date(x.date).getFullYear()===thisYear);
+  const doneList=all.filter(x=>x.status==='done'||(x.date&&x.date<_todayISO()));
+  const totalParticipants=all.reduce((s,x)=>s+(x.participantCount||0),0);
+  const totalPersonHours=all.reduce((s,x)=>s+(x.hours||0)*(x.participantCount||0),0);
+  if(g('tr-kpi-year'))g('tr-kpi-year').textContent=yearList.length;
+  if(g('tr-kpi-done'))g('tr-kpi-done').textContent=doneList.length;
+  if(g('tr-kpi-participants'))g('tr-kpi-participants').textContent=totalParticipants;
+  if(g('tr-kpi-avghours'))g('tr-kpi-avghours').textContent=(totalParticipants?(totalPersonHours/totalParticipants).toFixed(1):'0')+'h';
+}
+function _todayISO(){return new Date().toISOString().split('T')[0];}
+function exportTrainingExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const list=DB.get('trainingCourses',[]);
+  const data=[['Code','หลักสูตร','Strategy','วันที่','วิทยากร','ผู้เข้า','ชั่วโมง','สถานะ','หมายเหตุ'],
+    ...list.map(x=>[x.id,x.courseName,x.strategy,x.date||'',x.instructor||'',x.participantCount||0,x.hours||0,(TR_STATUS[x.status]||TR_STATUS.planned).l,x.notes||''])];
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:18}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'TrainingCalendar');
+  XLSX.writeFile(wb,'TKO_TrainingCalendar_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
+}
+function importTrainingExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX...');return;}
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        if(!ws){showToast('❌ ไม่พบ sheet ในไฟล์');return;}
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+        if(!rows.length){showToast('⚠ ไม่พบข้อมูลในไฟล์');return;}
+        const g=(r,...keys)=>{for(const k of keys){if(r[k]!==undefined&&r[k]!=='')return String(r[k]).trim();}return '';};
+        const list=DB.get('trainingCourses',[]);
+        let added=0;
+        let seq=list.length?Math.max(...list.map(x=>parseInt((x.id||'TR-0').split('-')[1])||0)):0;
+        rows.forEach(r=>{
+          const name=g(r,'หลักสูตร','courseName','Course');
+          if(!name)return;
+          seq++;added++;
+          list.push({id:'TR-'+seq,courseName:name,strategy:g(r,'Strategy','strategy')||'Academy',
+            date:g(r,'วันที่','date'),instructor:g(r,'วิทยากร','instructor'),
+            participantCount:parseInt(g(r,'ผู้เข้า','participantCount'))||0,
+            hours:parseFloat(g(r,'ชั่วโมง','hours'))||0,
+            status:g(r,'สถานะ','status')||'planned',notes:g(r,'หมายเหตุ','notes')});
+        });
+        DB.set('trainingCourses',list);
+        showToast('📥 Import สำเร็จ '+added+' รายการ');
+        renderTraining();
       }catch(err){showToast('❌ อ่านไฟล์ไม่ได้: '+err.message);}
     };
     reader.readAsArrayBuffer(f);
