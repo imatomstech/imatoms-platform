@@ -527,10 +527,10 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
   <div id="sb-wrap-s4" style="--ac:var(--teal)">
     <div class="acc-hd" id="ah-s4" onclick="toggleAcc('s4')"><span class="ai">🌱</span><span class="al">ESG</span><span class="arr">▶</span></div>
     <div class="acc-bd" id="ab-s4">
+      <div class="ni" style="--nc:var(--teal)" id="nav-esgkpi" onclick="showView('esgkpi')"><span class="ni-dot"></span>ESG KPI Report</div>
       <div class="ni" style="--nc:var(--teal)" id="nav-energy" onclick="showView('energy')"><span class="ni-dot"></span>Energy Monitor</div>
       <div class="ni" style="--nc:var(--teal)" id="nav-carbon" onclick="showView('carbon')"><span class="ni-dot"></span>Carbon Footprint</div>
       <div class="ni" style="--nc:var(--teal)" id="nav-waste" onclick="showView('waste')"><span class="ni-dot"></span>Waste Management</div>
-      <div class="ni" style="--nc:var(--teal)" id="nav-esgkpi" onclick="showView('esgkpi')"><span class="ni-dot"></span>ESG KPI Report</div>
     </div>
   </div>
 
@@ -1370,8 +1370,83 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       </div>
     </div>
     <div id="view-esgkpi" class="view">
-      <div class="sh"><div><div class="st">📊 ESG KPI Report</div><div class="ss">Environmental · Social · Governance</div></div><button class="btn btn-teal">📤 Export</button></div>
-      <div class="grid-3"><div class="card"><div style="font-size:20px;margin-bottom:8px">🌍</div><div class="ffd fw7 tt mb12" style="font-size:15px">Environmental</div><div class="mr"><span class="tm">Energy Intensity</span><span class="fw6">142 kWh/m²</span></div><div class="mr"><span class="tm">Carbon Intensity</span><span class="fw6">0.85 kgCO₂/m²</span></div><div class="mr"><span class="tm">Water Usage</span><span class="fw6">8,400 m³/mo</span></div><div class="mr"><span class="tm">Waste Recycled</span><span class="fw6 tg">68%</span></div></div><div class="card"><div style="font-size:20px;margin-bottom:8px">🤝</div><div class="ffd fw7 tb mb12" style="font-size:15px">Social</div><div class="mr"><span class="tm">Training Hrs/Person</span><span class="fw6">42h</span></div><div class="mr"><span class="tm">Safety Incidents</span><span class="fw6 tg">0 LTI</span></div><div class="mr"><span class="tm">Employee Satisfaction</span><span class="fw6 ty">4.2/5</span></div></div><div class="card"><div style="font-size:20px;margin-bottom:8px">⚖</div><div class="ffd fw7 tp mb12" style="font-size:15px">Governance</div><div class="mr"><span class="tm">Audit Compliance</span><span class="fw6 tg">87%</span></div><div class="mr"><span class="tm">Policy Compliance</span><span class="fw6">96%</span></div><div class="mr"><span class="tm">Vendor Eval</span><span class="fw6">Monthly</span></div></div></div>
+      <div class="sh"><div><div class="st">📊 ESG KPI Report</div><div class="ss">Environmental · Social · Governance</div></div><button class="btn btn-teal" onclick="exportEsgKpiExcel()">📤 Export</button></div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="flex fca jb mb12"><div style="font-size:20px">🌍</div><button class="btn btn-secondary btn-xs" onclick="openEsgSettingsModal()">⚙ ตั้งค่าเป้าหมาย/พื้นที่</button></div>
+          <div class="ffd fw7 tt mb12" style="font-size:15px">Environmental</div>
+          <div class="mr"><span class="tm">Energy Intensity</span><span class="fw6" id="esk-energy-val">— kWh/m²</span></div>
+          <div class="mr" style="margin-bottom:8px"><span class="tm" style="font-size:10px">เป้าหมาย: <span id="esk-energy-target">—</span></span><span id="esk-energy-badge"></span></div>
+          <div class="mr"><span class="tm">Carbon Intensity</span><span class="fw6" id="esk-carbon-val">— kgCO₂/m²</span></div>
+          <div class="mr" style="margin-bottom:8px"><span class="tm" style="font-size:10px">เป้าหมาย: <span id="esk-carbon-target">—</span></span><span id="esk-carbon-badge"></span></div>
+          <div class="mr"><span class="tm">Water Usage</span><span class="fw6" id="esk-water-val">— m³/mo</span></div>
+          <div class="mr" style="margin-bottom:8px"><span class="tm" style="font-size:10px">เป้าหมาย: <span id="esk-water-target">—</span></span><span id="esk-water-badge"></span></div>
+          <div class="mr"><span class="tm">Waste Recycled</span><span class="fw6" id="esk-waste-val">—%</span></div>
+          <div class="mr"><span class="tm" style="font-size:10px">เป้าหมาย: <span id="esk-waste-target">—</span></span><span id="esk-waste-badge"></span></div>
+        </div>
+        <div class="card">
+          <div style="font-size:20px;margin-bottom:8px">🤝</div><div class="ffd fw7 tb mb12" style="font-size:15px">Social</div>
+          <div class="mr"><span class="tm">กิจกรรม CSR ปีนี้</span><span class="fw6" id="esk-soc-count">0</span></div>
+          <div class="mr"><span class="tm">ผู้เข้าร่วม (พนักงาน)</span><span class="fw6" id="esk-soc-participants">0</span></div>
+          <div class="mr"><span class="tm">ผู้รับประโยชน์</span><span class="fw6" id="esk-soc-beneficiaries">0</span></div>
+          <div class="mr"><span class="tm">ชั่วโมง CSR รวม</span><span class="fw6" id="esk-soc-hours">0h</span></div>
+          <div class="mr"><span class="tm">Training Hrs/Person</span><span class="fw6">42h</span></div>
+          <div class="mr"><span class="tm">Safety Incidents</span><span class="fw6 tg">0 LTI</span></div>
+        </div>
+        <div class="card">
+          <div style="font-size:20px;margin-bottom:8px">⚖</div><div class="ffd fw7 tp mb12" style="font-size:15px">Governance</div>
+          <div class="mr"><span class="tm">Overall Governance Score</span><span class="fw6" id="esk-gov-score">—%</span></div>
+          <div class="mr"><span class="tm">หลักการที่ครบถ้วน 100%</span><span class="fw6" id="esk-gov-full">0/8</span></div>
+          <div class="mr"><span class="tm">ประเมินล่าสุด</span><span class="fw6" id="esk-gov-lastdate" style="font-size:12px">—</span></div>
+        </div>
+      </div>
+
+      <div class="tabs" id="esgkpi-main-tabs" style="margin-top:16px">
+        <div class="tab active" onclick="esgKpiTab('social',this)">🤝 Social — CSR / Community Engagement</div>
+        <div class="tab" onclick="esgKpiTab('gov',this)">⚖ Governance — CG Code Self-Assessment</div>
+      </div>
+
+      <!-- ═══ SOCIAL CSR ═══ -->
+      <div id="esgkpi-pane-social" class="energy-pane">
+        <div class="card mb16">
+          <div class="flex fca jb mb12" style="flex-wrap:wrap">
+            <div class="ffd fw7" style="font-size:14px">🤝 CSR / Community Engagement Activities</div>
+            <div class="flex g8">
+              <button class="btn btn-secondary btn-sm" onclick="exportSocialExcel()">📤 Export</button>
+              <button class="btn btn-primary btn-sm" onclick="openSocialModal()">+ เพิ่มกิจกรรม</button>
+            </div>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi teal"><div class="kl">กิจกรรมปีนี้</div><div class="kv ffd" id="soc-kpi-count" style="font-size:18px">0</div></div>
+            <div class="kpi blue"><div class="kl">ผู้เข้าร่วม (พนักงาน)</div><div class="kv ffd" id="soc-kpi-participants" style="font-size:18px">0</div></div>
+            <div class="kpi green"><div class="kl">ผู้รับประโยชน์</div><div class="kv ffd" id="soc-kpi-beneficiaries" style="font-size:18px">0</div></div>
+            <div class="kpi purple"><div class="kl">ชั่วโมงรวม</div><div class="kv ffd" id="soc-kpi-hours" style="font-size:18px">0h</div></div>
+          </div>
+          <div id="soc-grid" class="grid-3" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <!-- ═══ GOVERNANCE ═══ -->
+      <div id="esgkpi-pane-gov" class="energy-pane" style="display:none">
+        <div class="card mb16">
+          <div class="flex fca jb mb12" style="flex-wrap:wrap">
+            <div class="ffd fw7" style="font-size:14px">⚖ CG Code Self-Assessment (ปรับใช้กับงาน Facility Management)</div>
+            <div class="flex g8">
+              <button class="btn btn-secondary btn-sm" onclick="exportGovExcel()">📤 Export</button>
+              <button class="btn btn-primary btn-sm" onclick="openGovModal()">+ เพิ่มรายการประเมิน</button>
+            </div>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi teal"><div class="kl">Overall Governance Score</div><div class="kv ffd" id="gov-kpi-score" style="font-size:18px">0%</div></div>
+            <div class="kpi green"><div class="kl">หลักการครบถ้วน 100%</div><div class="kv ffd" id="gov-kpi-full" style="font-size:18px">0/8</div></div>
+            <div class="kpi blue"><div class="kl">จำนวนรายการประเมิน</div><div class="kv ffd" id="gov-kpi-items" style="font-size:18px">0</div></div>
+            <div class="kpi yellow"><div class="kl">ประเมินล่าสุด</div><div class="kv ffd" id="gov-kpi-lastdate" style="font-size:14px">—</div></div>
+          </div>
+          <div class="chart-wrap"><canvas id="chGovPrinciple"></canvas></div>
+        </div>
+        <div id="gov-principles-wrap"></div>
+      </div>
     </div>
 
     <!-- ACADEMY VIEWS -->
@@ -2764,6 +2839,87 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 <div class="flex g8" style="justify-content:flex-end;margin-top:8px">
   <button class="btn btn-secondary" onclick="closeModal('m-wasterec')">ยกเลิก</button>
   <button class="btn btn-primary" onclick="saveWasteRec()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<!-- ═══ ESG KPI REPORT MODULE MODALS ═══ -->
+<div class="modal-overlay" id="m-esg-settings"><div class="modal">
+<div class="mhd"><div class="mttl">⚙ ตั้งค่าเป้าหมาย ESG KPI &amp; พื้นที่อาคาร</div><button class="mclose" onclick="closeModal('m-esg-settings')">✕</button></div>
+<div class="form-group"><label class="form-label">พื้นที่อาคารรวม (m²) *</label><input type="number" class="form-control" id="esk-set-floorarea" step="1" placeholder="0"></div>
+<div class="form-sec">🎯 เป้าหมาย KPI</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">Energy Intensity เป้าหมาย (kWh/m²/ปี)</label><input type="number" class="form-control" id="esk-set-energy" step="0.01"></div>
+  <div class="form-group"><label class="form-label">Carbon Intensity เป้าหมาย (kgCO₂/m²/ปี)</label><input type="number" class="form-control" id="esk-set-carbon" step="0.01"></div>
+</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">Water Usage เป้าหมาย (m³/mo)</label><input type="number" class="form-control" id="esk-set-water" step="0.01"></div>
+  <div class="form-group"><label class="form-label">Waste Recycled เป้าหมาย (%)</label><input type="number" class="form-control" id="esk-set-waste" step="0.1"></div>
+</div>
+<div class="alr alr-i mb16" style="font-size:11px">หมายเหตุ: Energy/Carbon/Water ยิ่งต่ำกว่าเป้าหมายยิ่งดี · Waste Recycled ยิ่งสูงกว่าเป้าหมายยิ่งดี</div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-esg-settings')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveEsgSettings()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-social"><div class="modal modal-lg">
+<div class="mhd"><div class="mttl" id="soc-modal-title">🤝 บันทึกกิจกรรม CSR / Community Engagement</div><button class="mclose" onclick="closeModal('m-social')">✕</button></div>
+<input type="hidden" id="soc-id">
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">วันที่ *</label><input type="date" class="form-control" id="soc-date"></div>
+  <div class="form-group"><label class="form-label">เวลา</label><input type="time" class="form-control" id="soc-time"></div>
+  <div class="form-group"><label class="form-label">ประเภทกิจกรรม *</label>
+    <select class="form-control" id="soc-type">
+      <option value="community">กิจกรรมชุมชน (Community)</option>
+      <option value="charity">การกุศล (Charity/Donation)</option>
+      <option value="environment">สิ่งแวดล้อม (Environmental Volunteer)</option>
+      <option value="education">การศึกษา (Education)</option>
+      <option value="health">สุขภาพ (Health)</option>
+      <option value="other">อื่นๆ</option>
+    </select>
+  </div>
+</div>
+<div class="form-group"><label class="form-label">ชื่อกิจกรรม *</label><input type="text" class="form-control" id="soc-title" placeholder="เช่น ปลูกป่าชายเลนร่วมกับชุมชน"></div>
+<div class="form-group"><label class="form-label">สถานที่</label><input type="text" class="form-control" id="soc-location" placeholder="สถานที่จัดกิจกรรม"></div>
+<div class="form-group"><label class="form-label">รายละเอียด</label><textarea class="form-control" id="soc-desc" rows="2"></textarea></div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">ผู้เข้าร่วม (พนักงาน)</label><input type="number" class="form-control" id="soc-participants" step="1" placeholder="0"></div>
+  <div class="form-group"><label class="form-label">ผู้รับประโยชน์ (คน)</label><input type="number" class="form-control" id="soc-beneficiaries" step="1" placeholder="0"></div>
+  <div class="form-group"><label class="form-label">ชั่วโมงที่ใช้</label><input type="number" class="form-control" id="soc-hours" step="0.5" placeholder="0"></div>
+</div>
+<div class="form-group"><label class="form-label">งบประมาณที่ใช้ (฿) — ถ้ามี</label><input type="number" class="form-control" id="soc-budget" step="0.01" placeholder="0"></div>
+<div class="form-group"><label class="form-label">ภาพถ่ายกิจกรรม (สูงสุด 4 รูป)</label><input type="file" accept="image/*" class="form-control" id="soc-photo-input" onchange="handleSocialPhoto(event)"></div>
+<div id="soc-photo-thumb" class="flex g8" style="margin:8px 0;flex-wrap:wrap"></div>
+<div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-control" id="soc-notes" rows="2"></textarea></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-social')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveSocialActivity()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-governance"><div class="modal modal-lg">
+<div class="mhd"><div class="mttl" id="gov-modal-title">⚖ เพิ่ม/แก้ไขรายการประเมิน CG Code</div><button class="mclose" onclick="closeModal('m-governance')">✕</button></div>
+<input type="hidden" id="gov-id">
+<div class="form-group"><label class="form-label">หลักการ (Principle) *</label><select class="form-control" id="gov-principle" onchange="govPrincipleChanged()"></select></div>
+<div class="form-group"><label class="form-label">รายการประเมิน (Checklist Item) *</label><input type="text" class="form-control" id="gov-item" placeholder="เช่น มีการทบทวนนโยบายบริหารจัดการอาคารประจำปี"></div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">ระดับคะแนน *</label>
+    <select class="form-control" id="gov-score">
+      <option value="ไม่มี">ไม่มี (0%)</option>
+      <option value="บางส่วน">บางส่วน (50%)</option>
+      <option value="ครบถ้วน">ครบถ้วน (100%)</option>
+    </select>
+  </div>
+  <div class="form-group"><label class="form-label">ผู้รับผิดชอบ</label><input type="text" class="form-control" id="gov-responsible"></div>
+</div>
+<div class="form-group"><label class="form-label">หลักฐาน/หมายเหตุ (Evidence)</label><textarea class="form-control" id="gov-evidence" rows="2" placeholder="เช่น อ้างอิงเอกสาร/ลิงก์โมดูลที่เกี่ยวข้องในระบบ"></textarea></div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">แผนการดำเนินการ (Action Plan)</label><input type="text" class="form-control" id="gov-actionplan"></div>
+  <div class="form-group"><label class="form-label">วันที่เป้าหมาย</label><input type="date" class="form-control" id="gov-targetdate"></div>
+</div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-governance')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveGovAssessment()">💾 บันทึก</button>
 </div>
 </div></div>
 
@@ -4261,7 +4417,7 @@ const META={
   floorplan:{t:'🏢 Building Critical Status',b:'TKO iMATOMs › แผนผังชั้น'},
 };
 const accMap={assets:'s1',lifecycle:'s1',qrcode:'s1',inspection:'s1',valuation:'s1',workrequest:'s1',ppm:'s1',operation:'s1',contract:'s1',inventory:'s1',inspection:'s2',ncr:'s2',fmea:'s2',audit:'s2',budget:'s3',costanalysis:'s3',valuation:'s3',energy:'s4',carbon:'s4',waste:'s4',esgkpi:'s4',training:'s5',competency:'s5',certification:'s5',knowledgebase:'s5',incident:'s6',hazard:'s6',permit:'s6',safetystat:'s6',ai:'s7',integrations:'s8',notifications:'s9','db-assets':'s10','db-floorplan':'s10','db-custom':'s10',config:'s11',cloud:'s12',adminmgmt:'s13'};
-const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,carbon:renderCarbon,waste:renderWaste,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,audit:renderAudit,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
+const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,carbon:renderCarbon,waste:renderWaste,esgkpi:renderEsgKpi,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,audit:renderAudit,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
   // คืนค่า floor ก่อน render
   const sel=document.getElementById('fp-floor');
   if(sel){const saved=localStorage.getItem('fp_last_floor')||'l1';if(sel.querySelector(`option[value="${saved}"]`))sel.value=saved;}
@@ -7725,6 +7881,413 @@ function importWasteExcel(){
     reader.readAsArrayBuffer(f);
   };
   inp.click();
+}
+
+// ══════════════════════════════════════════════════════════════
+// ══ ESG KPI REPORT — Environmental (real data) / Social CSR / Governance CG Code ══
+// ══════════════════════════════════════════════════════════════
+function esgKpiTab(tab,el){
+  document.querySelectorAll('#esgkpi-main-tabs .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  ['social','gov'].forEach(k=>{const p=document.getElementById('esgkpi-pane-'+k);if(p)p.style.display=(k===tab?'block':'none');});
+}
+function renderEsgKpi(){
+  renderEnvironmentalKpi();
+  renderSocialActivities();
+  renderGovernance();
+}
+
+// ── Environmental KPI (real data + targets) ──
+function esgDefaultTargets(){return {energyIntensity:150,carbonIntensity:1.0,waterUsage:500,wasteRecycled:50};}
+function openEsgSettingsModal(){
+  const floorArea=DB.get('esgTotalFloorArea',0);
+  const t=DB.get('esgKpiTargets',esgDefaultTargets());
+  document.getElementById('esk-set-floorarea').value=floorArea||'';
+  document.getElementById('esk-set-energy').value=t.energyIntensity;
+  document.getElementById('esk-set-carbon').value=t.carbonIntensity;
+  document.getElementById('esk-set-water').value=t.waterUsage;
+  document.getElementById('esk-set-waste').value=t.wasteRecycled;
+  openModal('m-esg-settings');
+}
+function saveEsgSettings(){
+  const floorArea=parseFloat(document.getElementById('esk-set-floorarea').value)||0;
+  DB.set('esgTotalFloorArea',floorArea);
+  const targets={
+    energyIntensity:parseFloat(document.getElementById('esk-set-energy').value)||0,
+    carbonIntensity:parseFloat(document.getElementById('esk-set-carbon').value)||0,
+    waterUsage:parseFloat(document.getElementById('esk-set-water').value)||0,
+    wasteRecycled:parseFloat(document.getElementById('esk-set-waste').value)||0
+  };
+  DB.set('esgKpiTargets',targets);
+  showToast('💾 บันทึกการตั้งค่า ESG KPI สำเร็จ');
+  closeModal('m-esg-settings');
+  renderEnvironmentalKpi();
+}
+function esgKpiBadge(good){
+  return good?'<span class="badge badge-green">✅ เป็นไปตามเป้าหมาย</span>':'<span class="badge badge-red">⚠ ยังไม่ถึงเป้าหมาย</span>';
+}
+function renderEnvironmentalKpi(){
+  const floorArea=DB.get('esgTotalFloorArea',0);
+  const targets=DB.get('esgKpiTargets',esgDefaultTargets());
+  const curYr=String(new Date().getFullYear());
+
+  // Energy Intensity (kWh/m²/ปี) — จาก Energy Monitor: elecReadingBuilding ปีปัจจุบัน
+  const elecYear=computeConsumptionSummary('elec','B').thisYear;
+  const energyIntensity=floorArea>0?Math.round((elecYear/floorArea)*100)/100:null;
+
+  // Carbon Intensity (kgCO2/m²/ปี) — จาก Carbon Footprint: Scope1+2+3 ปีปัจจุบัน (ตัน→kg)
+  const s1=DB.get('carbonScope1',[]).filter(x=>(x.period||'').startsWith(curYr)).reduce((s,x)=>s+(x.total||0),0);
+  const s2=DB.get('carbonScope2',[]).filter(x=>(x.period||'').startsWith(curYr)).reduce((s,x)=>s+(x.total||0),0);
+  const s3=DB.get('carbonScope3',[]).filter(x=>(x.period||'').startsWith(curYr)).reduce((s,x)=>s+(x.total||0),0);
+  const carbonTotalKg=s1+s2+s3; // x.total เก็บเป็น kgCO2e อยู่แล้ว
+  const carbonIntensity=floorArea>0?Math.round((carbonTotalKg/floorArea)*100)/100:null;
+
+  // Water Usage (m³/mo) — เฉลี่ยรายเดือนจาก waterReadingBuilding ปีปัจจุบัน
+  const waterYear=computeConsumptionSummary('water','B').thisYear;
+  const waterUsage=Math.round((waterYear/12)*100)/100;
+
+  // Waste Recycled (%) — จาก wasteRecord ปีปัจจุบัน (mirror ตรรกะ Diversion Rate)
+  const wasteYear=DB.get('wasteRecord',[]).filter(x=>(x.date||'').startsWith(curYr));
+  const wRecycle=wasteYear.filter(x=>x.category==='recycle').reduce((s,x)=>s+(x.weightKg||0),0);
+  const wTotal=wasteYear.reduce((s,x)=>s+(x.weightKg||0),0);
+  const wasteRecycled=wTotal>0?Math.round((wRecycle/wTotal*100)*10)/10:null;
+
+  const g=id=>document.getElementById(id);
+  if(g('esk-energy-val'))g('esk-energy-val').textContent=(energyIntensity===null?'—':energyIntensity.toLocaleString())+' kWh/m²';
+  if(g('esk-energy-target'))g('esk-energy-target').textContent=targets.energyIntensity+' kWh/m²';
+  if(g('esk-energy-badge'))g('esk-energy-badge').innerHTML=energyIntensity===null?'':esgKpiBadge(energyIntensity<=targets.energyIntensity);
+
+  if(g('esk-carbon-val'))g('esk-carbon-val').textContent=(carbonIntensity===null?'—':carbonIntensity.toLocaleString())+' kgCO₂/m²';
+  if(g('esk-carbon-target'))g('esk-carbon-target').textContent=targets.carbonIntensity+' kgCO₂/m²';
+  if(g('esk-carbon-badge'))g('esk-carbon-badge').innerHTML=carbonIntensity===null?'':esgKpiBadge(carbonIntensity<=targets.carbonIntensity);
+
+  if(g('esk-water-val'))g('esk-water-val').textContent=waterUsage.toLocaleString()+' m³/mo';
+  if(g('esk-water-target'))g('esk-water-target').textContent=targets.waterUsage+' m³/mo';
+  if(g('esk-water-badge'))g('esk-water-badge').innerHTML=esgKpiBadge(waterUsage<=targets.waterUsage);
+
+  if(g('esk-waste-val'))g('esk-waste-val').textContent=(wasteRecycled===null?'—':wasteRecycled)+'%';
+  if(g('esk-waste-target'))g('esk-waste-target').textContent=targets.wasteRecycled+'%';
+  if(g('esk-waste-badge'))g('esk-waste-badge').innerHTML=wasteRecycled===null?'':esgKpiBadge(wasteRecycled>=targets.wasteRecycled);
+
+  // Social & Governance quick-summary ในการ์ดบนสุด
+  const socList=DB.get('socialActivities',[]).filter(x=>(x.date||'').startsWith(curYr));
+  if(g('esk-soc-count'))g('esk-soc-count').textContent=socList.length;
+  if(g('esk-soc-participants'))g('esk-soc-participants').textContent=socList.reduce((s,x)=>s+(x.participants||0),0).toLocaleString();
+  if(g('esk-soc-beneficiaries'))g('esk-soc-beneficiaries').textContent=socList.reduce((s,x)=>s+(x.beneficiaries||0),0).toLocaleString();
+  if(g('esk-soc-hours'))g('esk-soc-hours').textContent=socList.reduce((s,x)=>s+(x.hours||0),0).toLocaleString()+'h';
+
+  const govAll=DB.get('governanceAssessment',[]);
+  const govScoreVal=govOverallScore(govAll);
+  if(g('esk-gov-score'))g('esk-gov-score').textContent=govAll.length?govScoreVal+'%':'—%';
+  if(g('esk-gov-full'))g('esk-gov-full').textContent=govFullPrincipleCount(govAll)+'/8';
+  const lastUpd=govAll.map(x=>x.updatedDate||'').filter(Boolean).sort().pop();
+  if(g('esk-gov-lastdate'))g('esk-gov-lastdate').textContent=lastUpd||'—';
+}
+function exportEsgKpiExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const wb=XLSX.utils.book_new();
+  const soc=DB.get('socialActivities',[]);
+  const socData=[['วันที่','เวลา','ชื่อกิจกรรม','ประเภท','สถานที่','ผู้เข้าร่วม','ผู้รับประโยชน์','ชั่วโมง','งบประมาณ(฿)','หมายเหตุ'],
+    ...soc.map(x=>[x.date,x.time||'',x.title||'',SOCIAL_TYPES[x.type]?.l||x.type,x.location||'',x.participants||0,x.beneficiaries||0,x.hours||0,x.budget||0,x.notes||''])];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(socData),'Social_CSR');
+  const gov=DB.get('governanceAssessment',[]);
+  const govData=[['หลักการ','ชื่อหลักการ','รายการประเมิน','คะแนน','ผู้รับผิดชอบ','หลักฐาน/หมายเหตุ','แผนการดำเนินการ','วันที่เป้าหมาย','ปรับปรุงล่าสุด'],
+    ...gov.map(x=>[x.principle,x.principleTitle||'',x.item||'',x.score||'',x.responsiblePerson||'',x.evidence||'',x.actionPlan||'',x.targetDate||'',x.updatedDate||''])];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(govData),'Governance_CGCode');
+  XLSX.writeFile(wb,'TKO_ESG_KPI_Report_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
+}
+
+// ── Social — CSR / Community Engagement ──
+const SOCIAL_TYPES={
+  community:{l:'กิจกรรมชุมชน (Community)',c:'badge-teal'},
+  charity:{l:'การกุศล (Charity/Donation)',c:'badge-purple'},
+  environment:{l:'สิ่งแวดล้อม (Environmental Volunteer)',c:'badge-green'},
+  education:{l:'การศึกษา (Education)',c:'badge-blue'},
+  health:{l:'สุขภาพ (Health)',c:'badge-red'},
+  other:{l:'อื่นๆ',c:'badge-gray'}
+};
+let _socialPhotos=[];
+function handleSocialPhoto(e){
+  const f=e.target.files[0];if(!f)return;
+  if(_socialPhotos.length>=4){showToast('⚠ อัปโหลดได้สูงสุด 4 รูป');e.target.value='';return;}
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    _socialPhotos.push(ev.target.result);
+    renderSocialPhotoThumbs();
+  };
+  reader.readAsDataURL(f);
+  e.target.value='';
+}
+function removeSocialPhoto(idx){
+  _socialPhotos.splice(idx,1);
+  renderSocialPhotoThumbs();
+}
+function renderSocialPhotoThumbs(){
+  const wrap=document.getElementById('soc-photo-thumb');
+  if(!wrap)return;
+  wrap.innerHTML=_socialPhotos.map((p,i)=>`<div style="position:relative"><img src="${p}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"><button type="button" onclick="removeSocialPhoto(${i})" style="position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:11px">✕</button></div>`).join('');
+}
+function openSocialModal(id){
+  document.getElementById('soc-id').value=id||'';
+  document.getElementById('soc-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('soc-time').value='';
+  document.getElementById('soc-type').value='community';
+  document.getElementById('soc-title').value='';
+  document.getElementById('soc-location').value='';
+  document.getElementById('soc-desc').value='';
+  document.getElementById('soc-participants').value='';
+  document.getElementById('soc-beneficiaries').value='';
+  document.getElementById('soc-hours').value='';
+  document.getElementById('soc-budget').value='';
+  document.getElementById('soc-notes').value='';
+  document.getElementById('soc-photo-input').value='';
+  _socialPhotos=[];
+  if(id){
+    const item=DB.get('socialActivities',[]).find(x=>x.id===id);
+    if(item){
+      document.getElementById('soc-date').value=item.date||'';
+      document.getElementById('soc-time').value=item.time||'';
+      document.getElementById('soc-type').value=item.type||'community';
+      document.getElementById('soc-title').value=item.title||'';
+      document.getElementById('soc-location').value=item.location||'';
+      document.getElementById('soc-desc').value=item.description||'';
+      document.getElementById('soc-participants').value=item.participants??'';
+      document.getElementById('soc-beneficiaries').value=item.beneficiaries??'';
+      document.getElementById('soc-hours').value=item.hours??'';
+      document.getElementById('soc-budget').value=item.budget??'';
+      document.getElementById('soc-notes').value=item.notes||'';
+      _socialPhotos=Array.isArray(item.photos)?item.photos.slice():[];
+    }
+  }
+  renderSocialPhotoThumbs();
+  openModal('m-social');
+}
+function saveSocialActivity(){
+  const date=document.getElementById('soc-date').value;
+  const title=document.getElementById('soc-title').value.trim();
+  if(!date){showToast('⚠ กรุณาระบุวันที่');return;}
+  if(!title){showToast('⚠ กรุณาระบุชื่อกิจกรรม');return;}
+  const id=document.getElementById('soc-id').value;
+  const list=DB.get('socialActivities',[]);
+  const rec={
+    id:id||'SOC-'+Date.now(),date,time:document.getElementById('soc-time').value,
+    title,type:document.getElementById('soc-type').value,
+    location:document.getElementById('soc-location').value.trim(),
+    description:document.getElementById('soc-desc').value.trim(),
+    participants:parseInt(document.getElementById('soc-participants').value)||0,
+    beneficiaries:parseInt(document.getElementById('soc-beneficiaries').value)||0,
+    hours:parseFloat(document.getElementById('soc-hours').value)||0,
+    budget:parseFloat(document.getElementById('soc-budget').value)||0,
+    photos:_socialPhotos.slice(),
+    notes:document.getElementById('soc-notes').value.trim()
+  };
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('socialActivities',list);
+  showToast('💾 บันทึกกิจกรรม CSR สำเร็จ');
+  closeModal('m-social');
+  renderSocialActivities();
+}
+function deleteSocialActivity(id){
+  if(!confirm('ลบกิจกรรมนี้?'))return;
+  DB.set('socialActivities',DB.get('socialActivities',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderSocialActivities();
+}
+function renderSocialActivities(){
+  const curYr=String(new Date().getFullYear());
+  const all=DB.get('socialActivities',[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const yearList=all.filter(x=>(x.date||'').startsWith(curYr));
+  const g=id=>document.getElementById(id);
+  if(g('soc-kpi-count'))g('soc-kpi-count').textContent=yearList.length;
+  if(g('soc-kpi-participants'))g('soc-kpi-participants').textContent=yearList.reduce((s,x)=>s+(x.participants||0),0).toLocaleString();
+  if(g('soc-kpi-beneficiaries'))g('soc-kpi-beneficiaries').textContent=yearList.reduce((s,x)=>s+(x.beneficiaries||0),0).toLocaleString();
+  if(g('soc-kpi-hours'))g('soc-kpi-hours').textContent=yearList.reduce((s,x)=>s+(x.hours||0),0).toLocaleString()+'h';
+
+  const grid=g('soc-grid');
+  if(grid)grid.innerHTML=all.length?all.map(x=>{
+    const t=SOCIAL_TYPES[x.type]||SOCIAL_TYPES.other;
+    const thumb=(x.photos&&x.photos[0])?`<img src="${x.photos[0]}" style="width:100%;height:110px;object-fit:cover;border-radius:8px 8px 0 0;cursor:pointer" onclick="window.open('${x.photos[0]}','_blank')">`:`<div style="width:100%;height:110px;border-radius:8px 8px 0 0;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:28px">🤝</div>`;
+    return `<div class="card" style="padding:0;overflow:hidden">
+      ${thumb}
+      <div style="padding:12px">
+        <div class="flex fca jb mb4"><span class="badge ${t.c}" style="font-size:10px">${t.l}</span><span style="font-size:11px;color:var(--text3)">${x.date||''}</span></div>
+        <div class="fw6 mb4" style="font-size:13px">${escWW(x.title)}</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:8px">📍 ${escWW(x.location)||'—'}</div>
+        <div class="flex g8" style="font-size:11px;color:var(--text2);flex-wrap:wrap">
+          <span>👥 ${x.participants||0} พนักงาน</span><span>🤲 ${x.beneficiaries||0} ผู้รับประโยชน์</span><span>⏱ ${x.hours||0}h</span>
+        </div>
+        <div class="flex g6 mt8"><button class="btn btn-secondary btn-xs" onclick="openSocialModal('${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteSocialActivity('${x.id}')">🗑</button></div>
+      </div>
+    </div>`;
+  }).join(''):'<div class="tm" style="padding:16px;text-align:center;grid-column:1/-1">ยังไม่มีกิจกรรม CSR — เพิ่มกิจกรรมแรกได้เลย</div>';
+}
+function exportSocialExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const list=DB.get('socialActivities',[]);
+  const data=[['วันที่','เวลา','ชื่อกิจกรรม','ประเภท','สถานที่','รายละเอียด','ผู้เข้าร่วม','ผู้รับประโยชน์','ชั่วโมง','งบประมาณ(฿)','หมายเหตุ'],
+    ...list.map(x=>[x.date,x.time||'',x.title||'',(SOCIAL_TYPES[x.type]||SOCIAL_TYPES.other).l,x.location||'',x.description||'',x.participants||0,x.beneficiaries||0,x.hours||0,x.budget||0,x.notes||''])];
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:18}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Social_CSR');
+  XLSX.writeFile(wb,'TKO_Social_CSR_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
+}
+function exportGovExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const list=DB.get('governanceAssessment',[]);
+  const data=[['หลักการ','ชื่อหลักการ','รายการประเมิน','คะแนน','ผู้รับผิดชอบ','หลักฐาน/หมายเหตุ','แผนการดำเนินการ','วันที่เป้าหมาย','ปรับปรุงล่าสุด'],
+    ...list.map(x=>[x.principle,x.principleTitle||'',x.item||'',x.score||'',x.responsiblePerson||'',x.evidence||'',x.actionPlan||'',x.targetDate||'',x.updatedDate||''])];
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:20}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Governance_CGCode');
+  XLSX.writeFile(wb,'TKO_Governance_CGCode_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
+}
+
+// ── Governance — CG Code 2017 Self-Assessment (ปรับใช้กับ Facility Management) ──
+const GOV_PRINCIPLES=[
+  {id:1,title:'บทบาทผู้นำที่ชัดเจนของคณะกรรมการ/ผู้บริหาร',items:['มีการกำหนดโครงสร้างองค์กรและสายการบังคับบัญชาที่ชัดเจน','มีการทบทวนนโยบายบริหารจัดการอาคารประจำปี']},
+  {id:2,title:'กำหนดวัตถุประสงค์เพื่อสร้างคุณค่าอย่างยั่งยืน',items:['เชื่อมโยงกับเป้าหมาย ESG ที่บันทึกในระบบ (Energy/Carbon/Waste Target)']},
+  {id:3,title:'เสริมสร้างประสิทธิภาพของคณะกรรมการ/ทีมบริหาร',items:['มีการประชุมทบทวนผลงานสม่ำเสมอ','มีการประเมินผลผู้บริหาร/หัวหน้างานประจำปี']},
+  {id:4,title:'บริหารงานและบุคลากรอย่างมีประสิทธิผล',items:['มีแผนพัฒนาบุคลากร เชื่อมกับ Training Calendar/Competency Matrix']},
+  {id:5,title:'ส่งเสริมนวัตกรรมและดำเนินธุรกิจอย่างมีความรับผิดชอบ',items:['มีโครงการนวัตกรรม เชื่อมกับ CAPEX Technology & Digital Innovation category']},
+  {id:6,title:'เสริมสร้างการบริหารความเสี่ยงและการควบคุมภายในที่มีประสิทธิผล',items:['เชื่อมกับ FMEA Risk Analysis และ Audit & Compliance module ที่มีอยู่แล้ว']},
+  {id:7,title:'รักษาความน่าเชื่อถือทางการเงินและการเปิดเผยข้อมูล',items:['เชื่อมกับ Budget Planning/Cost Analysis และความโปร่งใสของข้อมูลงบประมาณ']},
+  {id:8,title:'สนับสนุนการมีส่วนร่วมและการสื่อสารกับผู้มีส่วนได้เสีย',items:['เชื่อมกับ Social CSR activities และช่องทางรับเรื่องร้องเรียน']}
+];
+const GOV_SCORE_MAP={'ไม่มี':0,'บางส่วน':50,'ครบถ้วน':100};
+function govPrincipleChanged(){
+  // reserved for future auto-suggest — no-op for now
+}
+function govOverallScore(list){
+  if(!list||!list.length)return 0;
+  const total=list.reduce((s,x)=>s+(GOV_SCORE_MAP[x.score]??0),0);
+  return Math.round((total/list.length)*10)/10;
+}
+function govFullPrincipleCount(list){
+  let cnt=0;
+  GOV_PRINCIPLES.forEach(p=>{
+    const items=list.filter(x=>x.principle===p.id);
+    if(items.length&&items.every(x=>x.score==='ครบถ้วน'))cnt++;
+  });
+  return cnt;
+}
+function openGovModal(id){
+  const sel=document.getElementById('gov-principle');
+  sel.innerHTML=GOV_PRINCIPLES.map(p=>`<option value="${p.id}">หลักการที่ ${p.id}: ${escWW(p.title)}</option>`).join('');
+  document.getElementById('gov-id').value=id||'';
+  document.getElementById('gov-item').value='';
+  document.getElementById('gov-score').value='บางส่วน';
+  document.getElementById('gov-responsible').value='';
+  document.getElementById('gov-evidence').value='';
+  document.getElementById('gov-actionplan').value='';
+  document.getElementById('gov-targetdate').value='';
+  if(id){
+    const item=DB.get('governanceAssessment',[]).find(x=>x.id===id);
+    if(item){
+      sel.value=item.principle;
+      document.getElementById('gov-item').value=item.item||'';
+      document.getElementById('gov-score').value=item.score||'บางส่วน';
+      document.getElementById('gov-responsible').value=item.responsiblePerson||'';
+      document.getElementById('gov-evidence').value=item.evidence||'';
+      document.getElementById('gov-actionplan').value=item.actionPlan||'';
+      document.getElementById('gov-targetdate').value=item.targetDate||'';
+    }
+  }
+  openModal('m-governance');
+}
+function saveGovAssessment(){
+  const item=document.getElementById('gov-item').value.trim();
+  if(!item){showToast('⚠ กรุณาระบุรายการประเมิน');return;}
+  const id=document.getElementById('gov-id').value;
+  const principle=parseInt(document.getElementById('gov-principle').value);
+  const pObj=GOV_PRINCIPLES.find(p=>p.id===principle);
+  const list=DB.get('governanceAssessment',[]);
+  const rec={
+    id:id||'GOV-'+Date.now(),principle,principleTitle:pObj?pObj.title:'',item,
+    score:document.getElementById('gov-score').value,
+    evidence:document.getElementById('gov-evidence').value.trim(),
+    responsiblePerson:document.getElementById('gov-responsible').value.trim(),
+    actionPlan:document.getElementById('gov-actionplan').value.trim(),
+    targetDate:document.getElementById('gov-targetdate').value,
+    updatedDate:new Date().toISOString().slice(0,10)
+  };
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('governanceAssessment',list);
+  showToast('💾 บันทึกรายการประเมินสำเร็จ');
+  closeModal('m-governance');
+  renderGovernance();
+}
+function deleteGovAssessment(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  DB.set('governanceAssessment',DB.get('governanceAssessment',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderGovernance();
+}
+function renderGovernance(){
+  const all=DB.get('governanceAssessment',[]);
+  const g=id=>document.getElementById(id);
+  const overall=govOverallScore(all);
+  if(g('gov-kpi-score'))g('gov-kpi-score').textContent=overall+'%';
+  if(g('gov-kpi-full'))g('gov-kpi-full').textContent=govFullPrincipleCount(all)+'/8';
+  if(g('gov-kpi-items'))g('gov-kpi-items').textContent=all.length;
+  const lastUpd=all.map(x=>x.updatedDate||'').filter(Boolean).sort().pop();
+  if(g('gov-kpi-lastdate'))g('gov-kpi-lastdate').textContent=lastUpd||'—';
+
+  const principleScores=GOV_PRINCIPLES.map(p=>{
+    const items=all.filter(x=>x.principle===p.id);
+    return items.length?govOverallScore(items):0;
+  });
+  dChart('chGovPrinciple');
+  const chGovCfg={
+    type:'bar',
+    data:{
+      labels:GOV_PRINCIPLES.map(p=>'หลักการ '+p.id),
+      datasets:[{label:'คะแนนเฉลี่ย (%)',data:principleScores,backgroundColor:'rgba(168,85,247,.75)',borderRadius:4}]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#8B949E',font:{size:9}}},
+        y:{min:0,max:100,ticks:{color:'#8B949E'},grid:{color:'#21262D'}}
+      }
+    }
+  };
+  charts.chGovPrinciple=new Chart(document.getElementById('chGovPrinciple'),chGovCfg);
+
+  const wrap=document.getElementById('gov-principles-wrap');
+  if(wrap)wrap.innerHTML=GOV_PRINCIPLES.map(p=>{
+    const items=all.filter(x=>x.principle===p.id).sort((a,b)=>(b.updatedDate||'').localeCompare(a.updatedDate||''));
+    const pScore=items.length?govOverallScore(items):0;
+    const rows=items.length?items.map(x=>`<tr>
+        <td style="font-size:12px">${escWW(x.item)}</td>
+        <td><span class="badge ${x.score==='ครบถ้วน'?'badge-green':x.score==='บางส่วน'?'badge-yellow':'badge-red'}">${x.score} (${GOV_SCORE_MAP[x.score]}%)</span></td>
+        <td style="font-size:12px">${escWW(x.responsiblePerson)||'—'}</td>
+        <td style="font-size:12px">${escWW(x.evidence)||'—'}</td>
+        <td style="font-size:12px">${x.targetDate||'—'}</td>
+        <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openGovModal('${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteGovAssessment('${x.id}')">🗑</button></div></td>
+      </tr>`).join(''):'<tr><td colspan="6" style="text-align:center;padding:12px;color:var(--text3)">ยังไม่มีรายการประเมินในหลักการนี้</td></tr>';
+    return `<div class="card mb16">
+      <div class="flex fca jb mb12" style="cursor:pointer" onclick="toggleGovPrinciple(${p.id})">
+        <div><span class="badge badge-purple" style="font-size:10px">หลักการที่ ${p.id}</span> <span class="fw6" style="font-size:13px">${escWW(p.title)}</span></div>
+        <div class="flex fca g8"><span class="badge ${pScore>=100?'badge-green':pScore>=50?'badge-yellow':'badge-gray'}">${pScore}%</span><span id="gov-arr-${p.id}">▼</span></div>
+      </div>
+      <div id="gov-body-${p.id}">
+        <div class="table-wrap"><table><thead><tr><th>รายการประเมิน</th><th>คะแนน</th><th>ผู้รับผิดชอบ</th><th>หลักฐาน/หมายเหตุ</th><th>เป้าหมาย</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleGovPrinciple(pid){
+  const body=document.getElementById('gov-body-'+pid);
+  const arr=document.getElementById('gov-arr-'+pid);
+  if(!body)return;
+  const hidden=body.style.display==='none';
+  body.style.display=hidden?'':'none';
+  if(arr)arr.textContent=hidden?'▼':'▶';
 }
 
 function renderEnergy(){
