@@ -1129,9 +1129,138 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       </div>
     </div>
     <div id="view-carbon" class="view">
-      <div class="sh"><div><div class="st">🌱 Carbon Footprint</div><div class="ss">CO₂ · Scope 1/2/3 · Net Zero 2050</div></div></div>
-      <div class="kpi-grid"><div class="kpi teal"><div class="kl">tCO₂e YTD</div><div class="kv ffd">284.6</div></div><div class="kpi green"><div class="kl">Scope 1</div><div class="kv ffd">42.1</div></div><div class="kpi blue"><div class="kl">Scope 2</div><div class="kv ffd">198.4</div></div><div class="kpi yellow"><div class="kl">Scope 3</div><div class="kv ffd">44.1</div></div></div>
-      <div class="card mt16"><div class="ffd fw6 mb12" style="font-size:14px">Net Zero Roadmap 2050</div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px"><div style="background:var(--bg3);border-radius:var(--radius);padding:10px;text-align:center"><div style="font-size:10px;color:var(--text3)">2026</div><div class="ffd fw7 ty" style="font-size:18px">Baseline</div></div><div style="background:var(--bg3);border-radius:var(--radius);padding:10px;text-align:center"><div style="font-size:10px;color:var(--text3)">2030</div><div class="ffd fw7 to" style="font-size:18px">-30%</div></div><div style="background:var(--bg3);border-radius:var(--radius);padding:10px;text-align:center"><div style="font-size:10px;color:var(--text3)">2035</div><div class="ffd fw7 tb" style="font-size:18px">-55%</div></div><div style="background:var(--bg3);border-radius:var(--radius);padding:10px;text-align:center"><div style="font-size:10px;color:var(--text3)">2040</div><div class="ffd fw7 tp" style="font-size:18px">-80%</div></div><div style="background:var(--teal-dim);border:1px solid rgba(20,184,166,.3);border-radius:var(--radius);padding:10px;text-align:center"><div style="font-size:10px;color:var(--teal)">2050</div><div class="ffd fw7 tt" style="font-size:18px">Net Zero</div></div></div></div>
+      <div class="sh"><div><div class="st">🌱 Carbon Footprint</div><div class="ss">GHG Protocol · Scope 1/2/3 · Carbon Credit · Net Zero</div></div></div>
+      <div class="alr alr-i mb16">ℹ️ <strong>GHG Protocol:</strong> Scope 1 = การปล่อยก๊าซเรือนกระจกทางตรงที่องค์กรควบคุม (Direct) · Scope 2 = ทางอ้อมจากพลังงานที่ซื้อ เช่น ไฟฟ้า/ไอน้ำ (Indirect Energy) · Scope 3 = ทางอ้อมอื่นๆ ในห่วงโซ่คุณค่า (Other Value Chain Indirect)</div>
+
+      <div class="tabs" id="carbon-main-tabs">
+        <div class="tab active" onclick="carbonMainTab('s1',this)">🔥 Scope 1</div>
+        <div class="tab" onclick="carbonMainTab('s2',this)">⚡ Scope 2</div>
+        <div class="tab" onclick="carbonMainTab('s3',this)">🔗 Scope 3</div>
+        <div class="tab" onclick="carbonMainTab('overview',this)">📊 ภาพรวม Carbon Credit</div>
+      </div>
+
+      <!-- ═══ SCOPE 1 — DIRECT EMISSIONS ═══ -->
+      <div id="carbon-pane-s1">
+        <div class="card mb16">
+          <div class="flex fca jb mb12" style="flex-wrap:wrap">
+            <div class="ffd fw7" style="font-size:14px">🔥 Scope 1 — การปล่อยก๊าซเรือนกระจกทางตรง (Direct Emissions)</div>
+            <div class="flex g8">
+              <button class="btn btn-secondary btn-sm" onclick="importCarbonExcel('s1')">📥 Import</button>
+              <button class="btn btn-secondary btn-sm" onclick="exportCarbonExcel('s1')">📤 Export</button>
+              <button class="btn btn-primary btn-sm" onclick="openCarbonModal('s1')">+ บันทึกข้อมูล</button>
+            </div>
+          </div>
+          <div class="ss mb12">⚠ ค่า Emission Factor ที่แสดงเป็น <strong>ค่าเริ่มต้นโดยประมาณ (Indicative Default)</strong> เท่านั้น ไม่ใช่ค่ามาตรฐานที่ผ่านการรับรอง กรุณาตรวจสอบและปรับปรุงตามตารางค่าสัมประสิทธิ์การปล่อยก๊าซเรือนกระจกล่าสุดจาก TGO/พพ. ก่อนใช้งานรายงานอย่างเป็นทางการ</div>
+          <div class="kpi-grid">
+            <div class="kpi teal"><div class="kl">Scope 1 รวมปีนี้ (tCO₂e)</div><div class="kv ffd" id="c1-total-year" style="font-size:18px">0</div></div>
+            <div class="kpi blue"><div class="kl">จำนวนรายการ</div><div class="kv ffd" id="c1-count" style="font-size:18px">0</div></div>
+            <div class="kpi yellow"><div class="kl">บันทึกล่าสุด</div><div class="kv ffd" id="c1-lastdate" style="font-size:14px">—</div></div>
+          </div>
+          <div class="chart-wrap"><canvas id="chCarbon1"></canvas></div>
+          <div class="table-wrap mt16"><table><thead><tr><th>เดือน/ปี</th><th>ประเภท</th><th>Activity Data</th><th>Emission Factor</th><th>Total (kgCO₂e)</th><th>หมายเหตุ</th><th>Action</th></tr></thead><tbody id="c1-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ═══ SCOPE 2 — INDIRECT ENERGY EMISSIONS ═══ -->
+      <div id="carbon-pane-s2" style="display:none">
+        <div class="card mb16">
+          <div class="flex fca jb mb12" style="flex-wrap:wrap">
+            <div class="ffd fw7" style="font-size:14px">⚡ Scope 2 — การปล่อยก๊าซเรือนกระจกทางอ้อมจากพลังงานที่ซื้อ (Indirect Energy Emissions)</div>
+            <div class="flex g8">
+              <button class="btn btn-secondary btn-sm" onclick="importCarbonExcel('s2')">📥 Import</button>
+              <button class="btn btn-secondary btn-sm" onclick="exportCarbonExcel('s2')">📤 Export</button>
+              <button class="btn btn-primary btn-sm" onclick="openCarbonModal('s2')">+ บันทึกข้อมูล</button>
+            </div>
+          </div>
+          <div class="ss mb12">⚠ Grid Emission Factor เริ่มต้น <strong>0.4999 kgCO₂e/kWh</strong> เป็นค่าประมาณอ้างอิงเบื้องต้นของโครงข่ายไฟฟ้าไทย ค่านี้เปลี่ยนแปลงทุกปีตามประกาศของ TGO กรุณาตรวจสอบและปรับปรุงเป็นค่าล่าสุดก่อนใช้รายงานอย่างเป็นทางการ</div>
+          <div class="kpi-grid">
+            <div class="kpi teal"><div class="kl">Scope 2 รวมปีนี้ (tCO₂e)</div><div class="kv ffd" id="c2-total-year" style="font-size:18px">0</div></div>
+            <div class="kpi blue"><div class="kl">kWh รวมปีนี้</div><div class="kv ffd" id="c2-kwh-year" style="font-size:18px">0</div></div>
+            <div class="kpi green"><div class="kl">Solar Offset รวมปีนี้ (kWh)</div><div class="kv ffd" id="c2-renew-year" style="font-size:18px">0</div></div>
+            <div class="kpi yellow"><div class="kl">บันทึกล่าสุด</div><div class="kv ffd" id="c2-lastdate" style="font-size:14px">—</div></div>
+          </div>
+          <div class="chart-wrap"><canvas id="chCarbon2"></canvas></div>
+          <div class="table-wrap mt16"><table><thead><tr><th>เดือน/ปี</th><th>kWh</th><th>Grid Factor</th><th>Solar Offset (kWh)</th><th>Total (kgCO₂e)</th><th>หมายเหตุ</th><th>Action</th></tr></thead><tbody id="c2-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ═══ SCOPE 3 — OTHER INDIRECT EMISSIONS ═══ -->
+      <div id="carbon-pane-s3" style="display:none">
+        <div class="card mb16">
+          <div class="flex fca jb mb12" style="flex-wrap:wrap">
+            <div class="ffd fw7" style="font-size:14px">🔗 Scope 3 — การปล่อยก๊าซเรือนกระจกทางอ้อมอื่นๆ (Other Indirect / Value Chain Emissions)</div>
+            <div class="flex g8">
+              <button class="btn btn-secondary btn-sm" onclick="importCarbonExcel('s3')">📥 Import</button>
+              <button class="btn btn-secondary btn-sm" onclick="exportCarbonExcel('s3')">📤 Export</button>
+              <button class="btn btn-primary btn-sm" onclick="openCarbonModal('s3')">+ บันทึกข้อมูล</button>
+            </div>
+          </div>
+          <div class="ss mb12">⚠ ต้องระบุ Emission Factor เอง โปรดอ้างอิงจากฐานข้อมูลที่เชื่อถือได้ (เช่น TGO, DEFRA, Ecoinvent) ตามประเภทกิจกรรม — ไม่มีค่าเริ่มต้นตายตัวเนื่องจากความหลากหลายของกิจกรรม Scope 3</div>
+          <div class="kpi-grid">
+            <div class="kpi teal"><div class="kl">Scope 3 รวมปีนี้ (tCO₂e)</div><div class="kv ffd" id="c3-total-year" style="font-size:18px">0</div></div>
+            <div class="kpi blue"><div class="kl">จำนวนรายการ</div><div class="kv ffd" id="c3-count" style="font-size:18px">0</div></div>
+            <div class="kpi yellow"><div class="kl">บันทึกล่าสุด</div><div class="kv ffd" id="c3-lastdate" style="font-size:14px">—</div></div>
+          </div>
+          <div class="grid-2 mt16">
+            <div class="card"><div class="ffd fw6 mb12" style="font-size:13px">แนวโน้มรายเดือน</div><div class="chart-wrap"><canvas id="chCarbon3"></canvas></div></div>
+            <div class="card"><div class="ffd fw6 mb12" style="font-size:13px">สัดส่วนตามหมวด (15 Categories)</div><div class="chart-wrap"><canvas id="chCarbon3Cat"></canvas></div></div>
+          </div>
+          <div class="table-wrap mt16"><table><thead><tr><th>เดือน/ปี</th><th>หมวด</th><th>รายละเอียด</th><th>ปริมาณ</th><th>Factor</th><th>Total (kgCO₂e)</th><th>Action</th></tr></thead><tbody id="c3-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ═══ OVERVIEW & CARBON CREDIT ═══ -->
+      <div id="carbon-pane-overview" style="display:none">
+        <div class="card mb16">
+          <div class="flex fca jb mb12" style="flex-wrap:wrap">
+            <div class="ffd fw7" style="font-size:14px">📊 ภาพรวม Carbon Footprint</div>
+            <div class="flex g8">
+              <select class="form-control" id="cov-year" style="width:110px" onchange="renderCarbonOverview()"></select>
+              <button class="btn btn-secondary btn-sm" onclick="exportCarbonAllExcel()">📤 Export ทั้งหมด</button>
+            </div>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi red"><div class="kl">Scope 1 (tCO₂e)</div><div class="kv ffd" id="cov-s1" style="font-size:18px">0</div></div>
+            <div class="kpi blue"><div class="kl">Scope 2 (tCO₂e)</div><div class="kv ffd" id="cov-s2" style="font-size:18px">0</div></div>
+            <div class="kpi purple"><div class="kl">Scope 3 (tCO₂e)</div><div class="kv ffd" id="cov-s3" style="font-size:18px">0</div></div>
+            <div class="kpi teal"><div class="kl">Grand Total (tCO₂e)</div><div class="kv ffd" id="cov-total" style="font-size:18px">0</div></div>
+          </div>
+          <div class="chart-wrap mt16"><canvas id="chCarbonOverview"></canvas></div>
+        </div>
+
+        <div class="card mb16">
+          <div class="flex fca jb mb12" style="flex-wrap:wrap">
+            <div class="ffd fw7" style="font-size:14px">🌳 Carbon Credit Tracking</div>
+            <div class="flex g8">
+              <button class="btn btn-secondary btn-sm" onclick="importCarbonExcel('credit')">📥 Import</button>
+              <button class="btn btn-secondary btn-sm" onclick="exportCarbonExcel('credit')">📤 Export</button>
+              <button class="btn btn-primary btn-sm" onclick="openCreditModal()">+ บันทึก Carbon Credit</button>
+            </div>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi green"><div class="kl">Carbon Credit ถือครอง (tCO₂e)</div><div class="kv ffd" id="cov-credit-held" style="font-size:18px">0</div></div>
+            <div class="kpi teal"><div class="kl">Net Emissions หลังหักชดเชย (tCO₂e)</div><div class="kv ffd" id="cov-net" style="font-size:18px">0</div></div>
+          </div>
+          <div class="table-wrap mt16"><table><thead><tr><th>วันที่</th><th>แหล่งที่มา</th><th>ปริมาณ (tCO₂e)</th><th>มูลค่า (฿)</th><th>สถานะ</th><th>หมายเหตุ</th><th>Action</th></tr></thead><tbody id="credit-tbody"></tbody></table></div>
+        </div>
+
+        <div class="card mb16">
+          <div class="ffd fw7 mb12" style="font-size:14px">🎯 เป้าหมายลดการปล่อยก๊าซเรือนกระจก (Reduction Target vs Benchmark)</div>
+          <div class="form-row-3">
+            <div class="form-group"><label class="form-label">ปีฐาน (Baseline Year)</label><input type="number" class="form-control" id="ctgt-baseyear" placeholder="2026"></div>
+            <div class="form-group"><label class="form-label">ปริมาณปล่อยปีฐาน (tCO₂e)</label><input type="number" class="form-control" id="ctgt-basetotal" placeholder="0" step="0.01"></div>
+            <div class="form-group"><label class="form-label">ปีเป้าหมาย (Target Year)</label><input type="number" class="form-control" id="ctgt-targetyear" placeholder="2050"></div>
+          </div>
+          <div class="form-group" style="max-width:260px"><label class="form-label">เป้าหมายลด (%)</label><input type="number" class="form-control" id="ctgt-pct" placeholder="0" step="0.1"></div>
+          <button class="btn btn-primary btn-sm" onclick="saveCarbonTarget()">💾 บันทึกเป้าหมาย</button>
+          <div class="mt16">
+            <div class="flex jb" style="font-size:11px;color:var(--text3);margin-bottom:4px"><span>ความคืบหน้าเทียบเส้นทางเป้าหมาย (Baseline → Target)</span><span id="ctgt-prog-pct">—</span></div>
+            <div style="background:var(--bg3);border-radius:8px;height:14px;overflow:hidden"><div id="ctgt-prog-bar" style="height:100%;background:var(--teal);width:0%;transition:width .3s"></div></div>
+            <div class="ss mt6" id="ctgt-prog-detail"></div>
+          </div>
+          <div class="ss mt16" style="line-height:1.6">🇹🇭 ประเทศไทยตั้งเป้าหมาย Carbon Neutrality (ความเป็นกลางทางคาร์บอน) ภายในปี ค.ศ. 2050 และ Net Zero GHG Emissions ภายในปี ค.ศ. 2065 ตามที่ประกาศในเวที COP26 และแผนพลังงานชาติที่กระทรวงพลังงานมีส่วนร่วมขับเคลื่อน (ผู้ใช้งานควรอ้างอิงตัวเลขเป้าหมายและ emission factor ล่าสุดจากกรมพัฒนาพลังงานทดแทนและอนุรักษ์พลังงาน (พพ.) และองค์การบริหารจัดการก๊าซเรือนกระจก (TGO) เพื่อความถูกต้อง)</div>
+        </div>
+      </div>
     </div>
     <div id="view-waste" class="view">
       <div class="sh"><div><div class="st">♻ Waste Management</div><div class="ss">ของเสีย · Recycle · Zero Waste</div></div><button class="btn btn-teal">+ บันทึก</button></div>
@@ -2349,6 +2478,107 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 <div class="flex g8" style="justify-content:flex-end;margin-top:8px">
   <button class="btn btn-secondary" onclick="closeModal('m-chiller')">ยกเลิก</button>
   <button class="btn btn-primary" onclick="saveChiller()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<!-- ═══ CARBON FOOTPRINT MODALS ═══ -->
+<div class="modal-overlay" id="m-carbon1"><div class="modal modal-lg">
+<div class="mhd"><div class="mttl" id="c1-modal-title">🔥 บันทึกข้อมูล Scope 1 — Direct Emissions</div><button class="mclose" onclick="closeModal('m-carbon1')">✕</button></div>
+<input type="hidden" id="c1-id">
+<div class="form-row">
+  <div class="form-group"><label class="form-label">เดือน/ปี *</label><input type="month" class="form-control" id="c1-period"></div>
+  <div class="form-group"><label class="form-label">ประเภทกิจกรรม *</label>
+    <select class="form-control" id="c1-category" onchange="applyC1Default()">
+      <option value="">-- เลือกประเภท --</option>
+      <option value="diesel_genset">เชื้อเพลิงเครื่องกำเนิดไฟฟ้าสำรอง (Diesel Generator)</option>
+      <option value="vehicle_fuel">เชื้อเพลิงยานพาหนะบริษัท (Company Vehicle Fuel)</option>
+      <option value="refrigerant">สารทำความเย็นรั่วไหล (Refrigerant Leakage - HVAC/Chiller)</option>
+      <option value="lpg">แก๊สหุงต้ม LPG</option>
+      <option value="other">อื่นๆ</option>
+    </select>
+  </div>
+</div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">ปริมาณการใช้ (Activity Data) *</label><input type="number" class="form-control" id="c1-qty" step="0.01" placeholder="0" oninput="calcC1Total()"></div>
+  <div class="form-group"><label class="form-label">หน่วย</label><input type="text" class="form-control" id="c1-unit" placeholder="ลิตร / กิโลกรัม"></div>
+  <div class="form-group"><label class="form-label">Emission Factor (kgCO₂e/หน่วย) *<span style="color:var(--text3);font-weight:400"> (ค่าเริ่มต้นโดยประมาณ แก้ไขได้)</span></label><input type="number" class="form-control" id="c1-factor" step="0.0001" placeholder="0" oninput="calcC1Total()"></div>
+</div>
+<div class="form-group"><label class="form-label">Total Emissions (kgCO₂e)</label><input type="text" class="form-control" id="c1-total" readonly style="background:var(--bg3);font-weight:700"></div>
+<div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-control" id="c1-notes" rows="2"></textarea></div>
+<div class="ss">⚠ ตัวเลข Emission Factor เป็นค่าเริ่มต้นเพื่ออ้างอิงเบื้องต้นเท่านั้น ไม่ใช่ค่ามาตรฐานที่ผ่านการรับรอง กรุณาตรวจสอบกับตารางค่าสัมประสิทธิ์ล่าสุดของ TGO/พพ. ก่อนใช้งานจริง</div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-carbon1')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveCarbon1()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-carbon2"><div class="modal modal-lg">
+<div class="mhd"><div class="mttl" id="c2-modal-title">⚡ บันทึกข้อมูล Scope 2 — Indirect Energy Emissions</div><button class="mclose" onclick="closeModal('m-carbon2')">✕</button></div>
+<input type="hidden" id="c2-id">
+<div class="form-row">
+  <div class="form-group"><label class="form-label">เดือน/ปี *</label><input type="month" class="form-control" id="c2-period" onchange="suggestC2Kwh()"></div>
+  <div class="form-group"><label class="form-label">ปริมาณไฟฟ้าที่ใช้ (kWh) * <span style="color:var(--text3);font-weight:400" id="c2-kwh-hint"></span></label><input type="number" class="form-control" id="c2-kwh" step="0.01" oninput="calcC2Total()"></div>
+</div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">Grid Emission Factor (kgCO₂e/kWh) *<span style="color:var(--text3);font-weight:400"> (ค่าเริ่มต้นโดยประมาณ)</span></label><input type="number" class="form-control" id="c2-factor" step="0.0001" value="0.4999" oninput="calcC2Total()"></div>
+  <div class="form-group"><label class="form-label">พลังงานหมุนเวียนชดเชย (Solar kWh)</label><input type="number" class="form-control" id="c2-renew" step="0.01" oninput="calcC2Total()"></div>
+  <div class="form-group"><label class="form-label">Net Total Emissions (kgCO₂e)</label><input type="text" class="form-control" id="c2-total" readonly style="background:var(--bg3);font-weight:700"></div>
+</div>
+<div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-control" id="c2-notes" rows="2"></textarea></div>
+<div class="ss">⚠ Grid Emission Factor เป็นค่าประมาณอ้างอิง Thailand grid ปีล่าสุดที่มี ค่านี้เปลี่ยนแปลงทุกปีตามประกาศของ TGO กรุณาตรวจสอบและปรับปรุงให้เป็นค่าล่าสุดก่อนใช้รายงานอย่างเป็นทางการ</div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-carbon2')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveCarbon2()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-carbon3"><div class="modal modal-lg">
+<div class="mhd"><div class="mttl" id="c3-modal-title">🔗 บันทึกข้อมูล Scope 3 — Other Indirect Emissions</div><button class="mclose" onclick="closeModal('m-carbon3')">✕</button></div>
+<input type="hidden" id="c3-id">
+<div class="form-row">
+  <div class="form-group"><label class="form-label">เดือน/ปี *</label><input type="month" class="form-control" id="c3-period"></div>
+  <div class="form-group"><label class="form-label">GHG Protocol Category *</label>
+    <select class="form-control" id="c3-category"></select>
+  </div>
+</div>
+<div class="form-group"><label class="form-label">รายละเอียดกิจกรรม *</label><input type="text" class="form-control" id="c3-desc" placeholder="รายละเอียดกิจกรรม..."></div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">ปริมาณ (Activity Data) *</label><input type="number" class="form-control" id="c3-qty" step="0.01" oninput="calcC3Total()"></div>
+  <div class="form-group"><label class="form-label">หน่วย</label><input type="text" class="form-control" id="c3-unit" placeholder="เช่น กม./เที่ยว/ตัน"></div>
+  <div class="form-group"><label class="form-label">Emission Factor (kgCO₂e/หน่วย) *</label><input type="number" class="form-control" id="c3-factor" step="0.0001" oninput="calcC3Total()"></div>
+</div>
+<div class="form-group"><label class="form-label">Total Emissions (kgCO₂e)</label><input type="text" class="form-control" id="c3-total" readonly style="background:var(--bg3);font-weight:700"></div>
+<div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-control" id="c3-notes" rows="2"></textarea></div>
+<div class="ss">⚠ ผู้ใช้งานต้องระบุ Emission Factor เอง โปรดอ้างอิงจากฐานข้อมูลที่เชื่อถือได้ (เช่น TGO, DEFRA, Ecoinvent) ตามประเภทกิจกรรม</div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-carbon3')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveCarbon3()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-credit"><div class="modal">
+<div class="mhd"><div class="mttl" id="credit-modal-title">🌳 บันทึก Carbon Credit</div><button class="mclose" onclick="closeModal('m-credit')">✕</button></div>
+<input type="hidden" id="credit-id">
+<div class="form-group"><label class="form-label">วันที่ *</label><input type="date" class="form-control" id="credit-date"></div>
+<div class="form-group"><label class="form-label">แหล่งที่มา/ประเภท *</label>
+  <select class="form-control" id="credit-source">
+    <option value="">-- เลือก --</option>
+    <option value="tver">T-VER (Thailand Voluntary Emission Reduction)</option>
+    <option value="rec">Renewable Energy Certificate (REC)</option>
+    <option value="other">อื่นๆ</option>
+  </select>
+</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">ปริมาณ (tCO₂e) *</label><input type="number" class="form-control" id="credit-qty" step="0.01"></div>
+  <div class="form-group"><label class="form-label">มูลค่า (฿)</label><input type="number" class="form-control" id="credit-cost" step="0.01"></div>
+</div>
+<div class="form-group"><label class="form-label">สถานะ *</label>
+  <select class="form-control" id="credit-status"><option value="held">📦 Held — ถือครอง</option><option value="retired">✅ Retired — ใช้ชดเชยแล้ว</option><option value="sold">💰 Sold — ขายแล้ว</option></select>
+</div>
+<div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-control" id="credit-notes" rows="2"></textarea></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-credit')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveCredit()">💾 บันทึก</button>
 </div>
 </div></div>
 
@@ -3846,7 +4076,7 @@ const META={
   floorplan:{t:'🏢 Building Critical Status',b:'TKO iMATOMs › แผนผังชั้น'},
 };
 const accMap={assets:'s1',lifecycle:'s1',qrcode:'s1',inspection:'s1',valuation:'s1',workrequest:'s1',ppm:'s1',operation:'s1',contract:'s1',inventory:'s1',inspection:'s2',ncr:'s2',fmea:'s2',audit:'s2',budget:'s3',costanalysis:'s3',valuation:'s3',energy:'s4',carbon:'s4',waste:'s4',esgkpi:'s4',training:'s5',competency:'s5',certification:'s5',knowledgebase:'s5',incident:'s6',hazard:'s6',permit:'s6',safetystat:'s6',ai:'s7',integrations:'s8',notifications:'s9','db-assets':'s10','db-floorplan':'s10','db-custom':'s10',config:'s11',cloud:'s12',adminmgmt:'s13'};
-const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,audit:renderAudit,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
+const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,carbon:renderCarbon,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,audit:renderAudit,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
   // คืนค่า floor ก่อน render
   const sel=document.getElementById('fp-floor');
   if(sel){const saved=localStorage.getItem('fp_last_floor')||'l1';if(sel.querySelector(`option[value="${saved}"]`))sel.value=saved;}
@@ -6187,6 +6417,551 @@ function importBudgetExcel(type){
   };
   inp.click();
 }
+// ══════════════════════════════════════════════════════════════
+// ══ CARBON FOOTPRINT — GHG Protocol Scope 1/2/3 + Carbon Credit ══
+// ══════════════════════════════════════════════════════════════
+const CARBON_S1_CATS={
+  diesel_genset:{label:'เชื้อเพลิงเครื่องกำเนิดไฟฟ้าสำรอง (Diesel Generator)',unit:'ลิตร (liter)',factor:2.68},
+  vehicle_fuel:{label:'เชื้อเพลิงยานพาหนะบริษัท (Company Vehicle Fuel)',unit:'ลิตร (liter)',factor:2.68},
+  refrigerant:{label:'สารทำความเย็นรั่วไหล (Refrigerant Leakage - HVAC/Chiller)',unit:'กิโลกรัม (kg)',factor:2088},
+  lpg:{label:'แก๊สหุงต้ม LPG',unit:'กิโลกรัม (kg)',factor:2.98},
+  other:{label:'อื่นๆ',unit:'หน่วย',factor:0}
+};
+const CARBON_S2_FACTOR_DEFAULT=0.4999;
+const CARBON_S3_CATEGORIES=[
+  '1. สินค้า/บริการที่จัดซื้อ (Purchased Goods & Services)',
+  '2. สินค้าทุน (Capital Goods)',
+  '3. กิจกรรมเชื้อเพลิงและพลังงาน (Fuel & Energy Related Activities)',
+  '4. ขนส่งและกระจายสินค้าต้นทาง (Upstream Transportation)',
+  '5. ของเสียจากการดำเนินงาน (Waste Generated in Operations)',
+  '6. การเดินทางเพื่อธุรกิจ (Business Travel)',
+  '7. การเดินทางของพนักงาน (Employee Commuting)',
+  '8. สินทรัพย์เช่าต้นทาง (Upstream Leased Assets)',
+  '9. ขนส่งและกระจายสินค้าปลายทาง (Downstream Transportation)',
+  '10. การแปรรูปสินค้าที่ขาย (Processing of Sold Products)',
+  '11. การใช้งานสินค้าที่ขาย (Use of Sold Products)',
+  '12. การจัดการซากสินค้าที่ขาย (End-of-Life of Sold Products)',
+  '13. สินทรัพย์เช่าปลายทาง (Downstream Leased Assets)',
+  '14. แฟรนไชส์ (Franchises)',
+  '15. การลงทุน (Investments)'
+];
+const CARBON_CREDIT_SRC_LABEL={tver:'T-VER (Thailand Voluntary Emission Reduction)',rec:'Renewable Energy Certificate (REC)',other:'อื่นๆ'};
+const CARBON_CREDIT_STATUS={held:{l:'📦 Held',c:'badge-blue'},retired:{l:'✅ Retired',c:'badge-green'},sold:{l:'💰 Sold',c:'badge-yellow'}};
+
+function renderCarbon(){ ensureCarbonS3CatOptions(); renderCarbonScope1(); }
+function ensureCarbonS3CatOptions(){
+  const sel=document.getElementById('c3-category');
+  if(sel&&!sel.dataset.init){
+    sel.innerHTML='<option value="">-- เลือกหมวด --</option>'+CARBON_S3_CATEGORIES.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join('');
+    sel.dataset.init='1';
+  }
+}
+function carbonMainTab(tab,el){
+  document.querySelectorAll('#carbon-main-tabs .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  ['s1','s2','s3','overview'].forEach(k=>{const p=document.getElementById('carbon-pane-'+k);if(p)p.style.display=(k===tab?'block':'none');});
+  if(tab==='s1')renderCarbonScope1();
+  else if(tab==='s2')renderCarbonScope2();
+  else if(tab==='s3')renderCarbonScope3();
+  else renderCarbonOverview();
+}
+
+// ── Scope 1 ──
+function renderCarbonScope1(){
+  const list=DB.get('carbonScope1',[]).slice().sort((a,b)=>(b.period||'').localeCompare(a.period||''));
+  const tbody=document.getElementById('c1-tbody');
+  if(tbody)tbody.innerHTML=list.length?list.map(x=>{
+    const cat=CARBON_S1_CATS[x.category]||{label:x.category};
+    return `<tr>
+      <td>${x.period||'—'}</td><td style="font-size:12px">${cat.label}</td>
+      <td class="ffm">${(x.qty||0).toLocaleString()} ${x.unit||cat.unit||''}</td>
+      <td class="ffm">${x.factor||0}</td>
+      <td class="ffm fw6">${(x.total||0).toLocaleString(undefined,{maximumFractionDigits:1})}</td>
+      <td style="font-size:12px">${x.notes||'—'}</td>
+      <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openCarbonModal('s1','${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteCarbon('s1','${x.id}')">🗑</button></div></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูล Scope 1</td></tr>';
+
+  const curYr=String(new Date().getFullYear());
+  const yearList=list.filter(x=>(x.period||'').startsWith(curYr));
+  const g=id=>document.getElementById(id);
+  if(g('c1-total-year'))g('c1-total-year').textContent=(yearList.reduce((s,x)=>s+(x.total||0),0)/1000).toLocaleString(undefined,{maximumFractionDigits:2});
+  if(g('c1-count'))g('c1-count').textContent=list.length;
+  if(g('c1-lastdate'))g('c1-lastdate').textContent=list[0]?list[0].period:'—';
+
+  const months=[...Array(12)].map((_,i)=>curYr+'-'+String(i+1).padStart(2,'0'));
+  const vals=months.map(m=>Math.round(yearList.filter(x=>x.period===m).reduce((s,x)=>s+(x.total||0),0)));
+  dChart('chCarbon1');
+  charts.chCarbon1=new Chart(document.getElementById('chCarbon1'),{type:'bar',data:{labels:months.map(m=>m.slice(5)),datasets:[{label:'kgCO₂e',data:vals,backgroundColor:'rgba(239,68,68,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E',font:{size:9}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}});
+}
+function applyC1Default(){
+  const cat=document.getElementById('c1-category').value;
+  const def=CARBON_S1_CATS[cat];
+  if(def){
+    if(!document.getElementById('c1-unit').value)document.getElementById('c1-unit').value=def.unit;
+    if(!document.getElementById('c1-factor').value)document.getElementById('c1-factor').value=def.factor;
+  }
+  calcC1Total();
+}
+function calcC1Total(){
+  const qty=parseFloat(document.getElementById('c1-qty').value)||0;
+  const factor=parseFloat(document.getElementById('c1-factor').value)||0;
+  document.getElementById('c1-total').value=(qty*factor).toLocaleString(undefined,{maximumFractionDigits:2});
+}
+function saveCarbon1(){
+  const period=document.getElementById('c1-period').value;
+  const category=document.getElementById('c1-category').value;
+  if(!period){showToast('⚠ กรุณาระบุเดือน/ปี');return;}
+  if(!category){showToast('⚠ กรุณาเลือกประเภทกิจกรรม');return;}
+  const id=document.getElementById('c1-id').value;
+  const qty=parseFloat(document.getElementById('c1-qty').value)||0;
+  const factor=parseFloat(document.getElementById('c1-factor').value)||0;
+  const list=DB.get('carbonScope1',[]);
+  const rec={id:id||'C1-'+Date.now(),period,category,qty,unit:document.getElementById('c1-unit').value.trim(),factor,total:qty*factor,notes:document.getElementById('c1-notes').value.trim()};
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('carbonScope1',list);
+  showToast('💾 บันทึกสำเร็จ');
+  closeModal('m-carbon1');
+  renderCarbonScope1();
+}
+
+// ── Scope 2 ──
+function suggestC2Kwh(){
+  const period=document.getElementById('c2-period').value;
+  const hint=document.getElementById('c2-kwh-hint');
+  if(!period){if(hint)hint.textContent='';return;}
+  const summary=computeConsumptionSummary('elec','B');
+  const idx=summary.months.indexOf(period);
+  if(idx>-1){
+    const val=summary.values[idx];
+    if(!document.getElementById('c2-kwh').value)document.getElementById('c2-kwh').value=val;
+    if(hint)hint.textContent='(auto-suggest จาก Energy Monitor: '+val.toLocaleString()+' kWh — แก้ไขได้)';
+  } else if(hint){
+    hint.textContent='(ไม่พบข้อมูลจาก Energy Monitor สำหรับเดือนนี้ กรุณากรอกด้วยตนเอง)';
+  }
+  const solarList=DB.get('solarGen',[]).filter(x=>(x.date||'').startsWith(period));
+  if(solarList.length){
+    const solarSum=Math.round(solarList.reduce((s,x)=>s+(x.kwh||0),0));
+    if(!document.getElementById('c2-renew').value)document.getElementById('c2-renew').value=solarSum;
+  }
+  calcC2Total();
+}
+function calcC2Total(){
+  const kwh=parseFloat(document.getElementById('c2-kwh').value)||0;
+  const factor=parseFloat(document.getElementById('c2-factor').value)||0;
+  const renew=parseFloat(document.getElementById('c2-renew').value)||0;
+  const net=Math.max(0,kwh-renew);
+  document.getElementById('c2-total').value=(net*factor).toLocaleString(undefined,{maximumFractionDigits:2});
+}
+function saveCarbon2(){
+  const period=document.getElementById('c2-period').value;
+  if(!period){showToast('⚠ กรุณาระบุเดือน/ปี');return;}
+  const id=document.getElementById('c2-id').value;
+  const kwh=parseFloat(document.getElementById('c2-kwh').value)||0;
+  const factor=parseFloat(document.getElementById('c2-factor').value)||CARBON_S2_FACTOR_DEFAULT;
+  const renew=parseFloat(document.getElementById('c2-renew').value)||0;
+  const net=Math.max(0,kwh-renew);
+  const list=DB.get('carbonScope2',[]);
+  const rec={id:id||'C2-'+Date.now(),period,kwh,factor,renewKwh:renew,total:net*factor,notes:document.getElementById('c2-notes').value.trim()};
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('carbonScope2',list);
+  showToast('💾 บันทึกสำเร็จ');
+  closeModal('m-carbon2');
+  renderCarbonScope2();
+}
+function renderCarbonScope2(){
+  const list=DB.get('carbonScope2',[]).slice().sort((a,b)=>(b.period||'').localeCompare(a.period||''));
+  const tbody=document.getElementById('c2-tbody');
+  if(tbody)tbody.innerHTML=list.length?list.map(x=>`<tr>
+    <td>${x.period||'—'}</td><td class="ffm">${(x.kwh||0).toLocaleString()}</td><td class="ffm">${x.factor||0}</td><td class="ffm">${(x.renewKwh||0).toLocaleString()}</td>
+    <td class="ffm fw6">${(x.total||0).toLocaleString(undefined,{maximumFractionDigits:1})}</td><td style="font-size:12px">${x.notes||'—'}</td>
+    <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openCarbonModal('s2','${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteCarbon('s2','${x.id}')">🗑</button></div></td>
+  </tr>`).join(''):'<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูล Scope 2</td></tr>';
+
+  const curYr=String(new Date().getFullYear());
+  const yearList=list.filter(x=>(x.period||'').startsWith(curYr));
+  const g=id=>document.getElementById(id);
+  if(g('c2-total-year'))g('c2-total-year').textContent=(yearList.reduce((s,x)=>s+(x.total||0),0)/1000).toLocaleString(undefined,{maximumFractionDigits:2});
+  if(g('c2-kwh-year'))g('c2-kwh-year').textContent=yearList.reduce((s,x)=>s+(x.kwh||0),0).toLocaleString();
+  if(g('c2-renew-year'))g('c2-renew-year').textContent=yearList.reduce((s,x)=>s+(x.renewKwh||0),0).toLocaleString();
+  if(g('c2-lastdate'))g('c2-lastdate').textContent=list[0]?list[0].period:'—';
+
+  const months=[...Array(12)].map((_,i)=>curYr+'-'+String(i+1).padStart(2,'0'));
+  const vals=months.map(m=>Math.round(yearList.filter(x=>x.period===m).reduce((s,x)=>s+(x.total||0),0)));
+  dChart('chCarbon2');
+  charts.chCarbon2=new Chart(document.getElementById('chCarbon2'),{type:'bar',data:{labels:months.map(m=>m.slice(5)),datasets:[{label:'kgCO₂e',data:vals,backgroundColor:'rgba(59,130,246,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E',font:{size:9}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}});
+}
+
+// ── Scope 3 ──
+function calcC3Total(){
+  const qty=parseFloat(document.getElementById('c3-qty').value)||0;
+  const factor=parseFloat(document.getElementById('c3-factor').value)||0;
+  document.getElementById('c3-total').value=(qty*factor).toLocaleString(undefined,{maximumFractionDigits:2});
+}
+function saveCarbon3(){
+  const period=document.getElementById('c3-period').value;
+  const category=document.getElementById('c3-category').value;
+  if(!period){showToast('⚠ กรุณาระบุเดือน/ปี');return;}
+  if(!category){showToast('⚠ กรุณาเลือกหมวด Scope 3');return;}
+  const id=document.getElementById('c3-id').value;
+  const qty=parseFloat(document.getElementById('c3-qty').value)||0;
+  const factor=parseFloat(document.getElementById('c3-factor').value)||0;
+  const list=DB.get('carbonScope3',[]);
+  const rec={id:id||'C3-'+Date.now(),period,category,desc:document.getElementById('c3-desc').value.trim(),qty,unit:document.getElementById('c3-unit').value.trim(),factor,total:qty*factor,notes:document.getElementById('c3-notes').value.trim()};
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('carbonScope3',list);
+  showToast('💾 บันทึกสำเร็จ');
+  closeModal('m-carbon3');
+  renderCarbonScope3();
+}
+function renderCarbonScope3(){
+  ensureCarbonS3CatOptions();
+  const list=DB.get('carbonScope3',[]).slice().sort((a,b)=>(b.period||'').localeCompare(a.period||''));
+  const tbody=document.getElementById('c3-tbody');
+  if(tbody)tbody.innerHTML=list.length?list.map(x=>`<tr>
+    <td>${x.period||'—'}</td><td style="font-size:11px">${x.category||'—'}</td><td style="font-size:12px">${x.desc||'—'}</td>
+    <td class="ffm">${(x.qty||0).toLocaleString()} ${x.unit||''}</td><td class="ffm">${x.factor||0}</td>
+    <td class="ffm fw6">${(x.total||0).toLocaleString(undefined,{maximumFractionDigits:1})}</td>
+    <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openCarbonModal('s3','${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteCarbon('s3','${x.id}')">🗑</button></div></td>
+  </tr>`).join(''):'<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูล Scope 3</td></tr>';
+
+  const curYr=String(new Date().getFullYear());
+  const yearList=list.filter(x=>(x.period||'').startsWith(curYr));
+  const g=id=>document.getElementById(id);
+  if(g('c3-total-year'))g('c3-total-year').textContent=(yearList.reduce((s,x)=>s+(x.total||0),0)/1000).toLocaleString(undefined,{maximumFractionDigits:2});
+  if(g('c3-count'))g('c3-count').textContent=list.length;
+  if(g('c3-lastdate'))g('c3-lastdate').textContent=list[0]?list[0].period:'—';
+
+  const months=[...Array(12)].map((_,i)=>curYr+'-'+String(i+1).padStart(2,'0'));
+  const vals=months.map(m=>Math.round(yearList.filter(x=>x.period===m).reduce((s,x)=>s+(x.total||0),0)));
+  dChart('chCarbon3');
+  charts.chCarbon3=new Chart(document.getElementById('chCarbon3'),{type:'bar',data:{labels:months.map(m=>m.slice(5)),datasets:[{label:'kgCO₂e',data:vals,backgroundColor:'rgba(168,85,247,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E',font:{size:9}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}});
+
+  dChart('chCarbon3Cat');
+  const catTotals={};
+  yearList.forEach(x=>{const l=(x.category||'อื่นๆ').split('(')[0].trim();catTotals[l]=(catTotals[l]||0)+(x.total||0);});
+  const catLabels=Object.keys(catTotals),catVals=Object.values(catTotals).map(v=>Math.round(v));
+  const catColors=['#F97316','#3B82F6','#22C55E','#A855F7','#14B8A6','#EAB308','#EF4444','#EC4899','#6366F1','#84CC16','#06B6D4','#F43F5E','#8B5CF6','#10B981','#D97706'];
+  charts.chCarbon3Cat=new Chart(document.getElementById('chCarbon3Cat'),{type:'doughnut',data:{labels:catLabels,datasets:[{data:catVals,backgroundColor:catColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8B949E',font:{size:9},boxWidth:10}}}}});
+}
+
+// ── Shared open/delete ──
+function openCarbonModal(scope,id){
+  if(scope==='s1'){
+    document.getElementById('c1-id').value=id||'';
+    document.getElementById('c1-period').value='';document.getElementById('c1-category').value='';
+    document.getElementById('c1-qty').value='';document.getElementById('c1-unit').value='';document.getElementById('c1-factor').value='';document.getElementById('c1-total').value='';document.getElementById('c1-notes').value='';
+    if(id){
+      const item=DB.get('carbonScope1',[]).find(x=>x.id===id);
+      if(item){
+        document.getElementById('c1-period').value=item.period||'';
+        document.getElementById('c1-category').value=item.category||'';
+        document.getElementById('c1-qty').value=item.qty||'';
+        document.getElementById('c1-unit').value=item.unit||'';
+        document.getElementById('c1-factor').value=item.factor||'';
+        document.getElementById('c1-notes').value=item.notes||'';
+        calcC1Total();
+      }
+    }
+    openModal('m-carbon1');
+  } else if(scope==='s2'){
+    document.getElementById('c2-id').value=id||'';
+    document.getElementById('c2-period').value='';document.getElementById('c2-kwh').value='';document.getElementById('c2-factor').value=CARBON_S2_FACTOR_DEFAULT;document.getElementById('c2-renew').value='';document.getElementById('c2-total').value='';document.getElementById('c2-notes').value='';
+    const hint=document.getElementById('c2-kwh-hint');if(hint)hint.textContent='';
+    if(id){
+      const item=DB.get('carbonScope2',[]).find(x=>x.id===id);
+      if(item){
+        document.getElementById('c2-period').value=item.period||'';
+        document.getElementById('c2-kwh').value=item.kwh||'';
+        document.getElementById('c2-factor').value=item.factor||CARBON_S2_FACTOR_DEFAULT;
+        document.getElementById('c2-renew').value=item.renewKwh||'';
+        document.getElementById('c2-notes').value=item.notes||'';
+        calcC2Total();
+      }
+    } else { suggestC2Kwh(); }
+    openModal('m-carbon2');
+  } else if(scope==='s3'){
+    ensureCarbonS3CatOptions();
+    document.getElementById('c3-id').value=id||'';
+    document.getElementById('c3-period').value='';document.getElementById('c3-category').value='';document.getElementById('c3-desc').value='';
+    document.getElementById('c3-qty').value='';document.getElementById('c3-unit').value='';document.getElementById('c3-factor').value='';document.getElementById('c3-total').value='';document.getElementById('c3-notes').value='';
+    if(id){
+      const item=DB.get('carbonScope3',[]).find(x=>x.id===id);
+      if(item){
+        document.getElementById('c3-period').value=item.period||'';
+        document.getElementById('c3-category').value=item.category||'';
+        document.getElementById('c3-desc').value=item.desc||'';
+        document.getElementById('c3-qty').value=item.qty||'';
+        document.getElementById('c3-unit').value=item.unit||'';
+        document.getElementById('c3-factor').value=item.factor||'';
+        document.getElementById('c3-notes').value=item.notes||'';
+        calcC3Total();
+      }
+    }
+    openModal('m-carbon3');
+  }
+}
+function deleteCarbon(scope,id){
+  if(!confirm('ลบรายการนี้?'))return;
+  const key=scope==='s1'?'carbonScope1':scope==='s2'?'carbonScope2':'carbonScope3';
+  DB.set(key,DB.get(key,[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  if(scope==='s1')renderCarbonScope1();else if(scope==='s2')renderCarbonScope2();else renderCarbonScope3();
+}
+
+// ── Overview / Carbon Credit / Target ──
+function renderCarbonOverview(){
+  const yf=document.getElementById('cov-year');
+  const s1all=DB.get('carbonScope1',[]),s2all=DB.get('carbonScope2',[]),s3all=DB.get('carbonScope3',[]),creditAll=DB.get('carbonCredit',[]);
+  const curYr=String(new Date().getFullYear());
+  const years=[...new Set([...s1all,...s2all,...s3all].map(x=>(x.period||'').slice(0,4)).filter(Boolean))].sort((a,b)=>b-a);
+  if(!years.includes(curYr))years.unshift(curYr);
+  let selYear=curYr;
+  if(yf){
+    const cur=yf.value||curYr;
+    yf.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    yf.value=years.includes(cur)?cur:curYr;
+    selYear=yf.value;
+  }
+
+  const s1=s1all.filter(x=>(x.period||'').startsWith(selYear));
+  const s2=s2all.filter(x=>(x.period||'').startsWith(selYear));
+  const s3=s3all.filter(x=>(x.period||'').startsWith(selYear));
+  const t1=s1.reduce((s,x)=>s+(x.total||0),0)/1000;
+  const t2=s2.reduce((s,x)=>s+(x.total||0),0)/1000;
+  const t3=s3.reduce((s,x)=>s+(x.total||0),0)/1000;
+  const grand=t1+t2+t3;
+  const g=id=>document.getElementById(id);
+  const fmt=v=>v.toLocaleString(undefined,{maximumFractionDigits:2});
+  if(g('cov-s1'))g('cov-s1').textContent=fmt(t1);
+  if(g('cov-s2'))g('cov-s2').textContent=fmt(t2);
+  if(g('cov-s3'))g('cov-s3').textContent=fmt(t3);
+  if(g('cov-total'))g('cov-total').textContent=fmt(grand);
+
+  const months=[...Array(12)].map((_,i)=>selYear+'-'+String(i+1).padStart(2,'0'));
+  const v1=months.map(m=>Math.round(s1.filter(x=>x.period===m).reduce((s,x)=>s+(x.total||0),0)/1000*100)/100);
+  const v2=months.map(m=>Math.round(s2.filter(x=>x.period===m).reduce((s,x)=>s+(x.total||0),0)/1000*100)/100);
+  const v3=months.map(m=>Math.round(s3.filter(x=>x.period===m).reduce((s,x)=>s+(x.total||0),0)/1000*100)/100);
+  dChart('chCarbonOverview');
+  charts.chCarbonOverview=new Chart(document.getElementById('chCarbonOverview'),{type:'bar',data:{labels:months.map(m=>m.slice(5)),datasets:[
+    {label:'Scope 1 (tCO₂e)',data:v1,backgroundColor:'rgba(239,68,68,.75)',stack:'s'},
+    {label:'Scope 2 (tCO₂e)',data:v2,backgroundColor:'rgba(59,130,246,.75)',stack:'s'},
+    {label:'Scope 3 (tCO₂e)',data:v3,backgroundColor:'rgba(168,85,247,.75)',stack:'s'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{stacked:true,ticks:{color:'#8B949E',font:{size:9}}},y:{stacked:true,ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}});
+
+  const creditList=creditAll.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const ctbody=document.getElementById('credit-tbody');
+  if(ctbody)ctbody.innerHTML=creditList.length?creditList.map(x=>{
+    const st=CARBON_CREDIT_STATUS[x.status]||{l:x.status,c:'badge-gray'};
+    return `<tr>
+      <td>${x.date||'—'}</td><td style="font-size:12px">${x.source||'—'}</td><td class="ffm">${(x.qty||0).toLocaleString()}</td><td class="ffm">฿${(x.cost||0).toLocaleString()}</td>
+      <td><span class="badge ${st.c}">${st.l}</span></td><td style="font-size:12px">${x.notes||'—'}</td>
+      <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openCreditModal('${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteCredit('${x.id}')">🗑</button></div></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มี Carbon Credit</td></tr>';
+
+  const heldQty=creditAll.filter(x=>x.status==='held').reduce((s,x)=>s+(x.qty||0),0);
+  const retiredQty=creditAll.filter(x=>x.status==='retired').reduce((s,x)=>s+(x.qty||0),0);
+  const netEm=grand-retiredQty;
+  if(g('cov-credit-held'))g('cov-credit-held').textContent=fmt(heldQty);
+  if(g('cov-net'))g('cov-net').textContent=fmt(netEm);
+
+  const target=DB.get('carbonTarget',{});
+  const gv=(id,val)=>{const el=document.getElementById(id);if(el&&document.activeElement!==el)el.value=(val===undefined||val===null)?'':val;};
+  gv('ctgt-baseyear',target.baselineYear);
+  gv('ctgt-basetotal',target.baselineTotal);
+  gv('ctgt-targetyear',target.targetYear);
+  gv('ctgt-pct',target.targetPct);
+  renderCarbonTargetProgress(target,grand,selYear);
+}
+function renderCarbonTargetProgress(target,curTotal,selYear){
+  const bar=document.getElementById('ctgt-prog-bar'),pctEl=document.getElementById('ctgt-prog-pct'),detail=document.getElementById('ctgt-prog-detail');
+  if(!bar)return;
+  if(!target||!target.baselineYear||!target.baselineTotal||!target.targetYear||target.targetPct==null){
+    bar.style.width='0%';if(pctEl)pctEl.textContent='—';if(detail)detail.textContent='กรุณากรอกและบันทึกข้อมูลปีฐาน/เป้าหมายก่อน เพื่อดูความคืบหน้า';
+    return;
+  }
+  const by=parseInt(target.baselineYear),ty=parseInt(target.targetYear),bt=parseFloat(target.baselineTotal),pct=parseFloat(target.targetPct);
+  const yr=parseInt(selYear);
+  const targetTotalAtEnd=bt*(1-pct/100);
+  const span=ty-by;
+  let expectedReductionByNow=0;
+  if(span>0){
+    const elapsed=Math.min(Math.max(yr-by,0),span);
+    expectedReductionByNow=pct*(elapsed/span);
+  }
+  const actualReductionPct=bt?Math.max(0,Math.min(100,(1-curTotal/bt)*100)):0;
+  const progressVsExpected=expectedReductionByNow>0?Math.round(actualReductionPct/expectedReductionByNow*100):(actualReductionPct>0?100:0);
+  bar.style.width=Math.min(100,Math.max(0,progressVsExpected))+'%';
+  bar.style.background=progressVsExpected>=100?'var(--green)':progressVsExpected>=60?'var(--yellow)':'var(--red)';
+  if(pctEl)pctEl.textContent=actualReductionPct.toFixed(1)+'% ลดแล้ว (เป้าตามเส้นทาง ~'+expectedReductionByNow.toFixed(1)+'%)';
+  if(detail)detail.textContent=`ปีฐาน ${by}: ${bt.toLocaleString()} tCO₂e → เป้าปี ${ty}: ${targetTotalAtEnd.toLocaleString(undefined,{maximumFractionDigits:1})} tCO₂e (ลด ${pct}%) · ปัจจุบัน (${selYear}): ${curTotal.toLocaleString(undefined,{maximumFractionDigits:1})} tCO₂e`;
+}
+function saveCarbonTarget(){
+  const target={
+    baselineYear:parseInt(document.getElementById('ctgt-baseyear').value)||null,
+    baselineTotal:parseFloat(document.getElementById('ctgt-basetotal').value)||0,
+    targetYear:parseInt(document.getElementById('ctgt-targetyear').value)||null,
+    targetPct:parseFloat(document.getElementById('ctgt-pct').value)||0
+  };
+  DB.set('carbonTarget',target);
+  showToast('💾 บันทึกเป้าหมายสำเร็จ');
+  renderCarbonOverview();
+}
+function openCreditModal(id){
+  document.getElementById('credit-id').value=id||'';
+  document.getElementById('credit-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('credit-source').value='';document.getElementById('credit-qty').value='';document.getElementById('credit-cost').value='';document.getElementById('credit-status').value='held';document.getElementById('credit-notes').value='';
+  if(id){
+    const item=DB.get('carbonCredit',[]).find(x=>x.id===id);
+    if(item){
+      document.getElementById('credit-date').value=item.date||'';
+      document.getElementById('credit-source').value=item.sourceKey||'';
+      document.getElementById('credit-qty').value=item.qty||'';
+      document.getElementById('credit-cost').value=item.cost||'';
+      document.getElementById('credit-status').value=item.status||'held';
+      document.getElementById('credit-notes').value=item.notes||'';
+    }
+  }
+  openModal('m-credit');
+}
+function saveCredit(){
+  const date=document.getElementById('credit-date').value;
+  const sourceKey=document.getElementById('credit-source').value;
+  if(!date){showToast('⚠ กรุณาระบุวันที่');return;}
+  if(!sourceKey){showToast('⚠ กรุณาเลือกแหล่งที่มา');return;}
+  const id=document.getElementById('credit-id').value;
+  const list=DB.get('carbonCredit',[]);
+  const rec={id:id||'CR-'+Date.now(),date,source:CARBON_CREDIT_SRC_LABEL[sourceKey]||sourceKey,sourceKey,qty:parseFloat(document.getElementById('credit-qty').value)||0,cost:parseFloat(document.getElementById('credit-cost').value)||0,status:document.getElementById('credit-status').value,notes:document.getElementById('credit-notes').value.trim()};
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('carbonCredit',list);
+  showToast('💾 บันทึกสำเร็จ');
+  closeModal('m-credit');
+  renderCarbonOverview();
+}
+function deleteCredit(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  DB.set('carbonCredit',DB.get('carbonCredit',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderCarbonOverview();
+}
+
+// ── Excel Import/Export ──
+function exportCarbonExcel(scope){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const wb=XLSX.utils.book_new();
+  if(scope==='s1'){
+    const list=DB.get('carbonScope1',[]);
+    const data=[['เดือน/ปี','ประเภท','ปริมาณ','หน่วย','Emission Factor(kgCO2e/หน่วย)','Total(kgCO2e)','หมายเหตุ'],
+      ...list.map(x=>[x.period,(CARBON_S1_CATS[x.category]||{}).label||x.category,x.qty||0,x.unit||'',x.factor||0,x.total||0,x.notes||''])];
+    const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:20}));
+    XLSX.utils.book_append_sheet(wb,ws,'Scope1');
+    XLSX.writeFile(wb,'TKO_CarbonScope1_'+_today()+'.xlsx');
+  } else if(scope==='s2'){
+    const list=DB.get('carbonScope2',[]);
+    const data=[['เดือน/ปี','kWh','Grid Factor(kgCO2e/kWh)','Solar Offset(kWh)','Total(kgCO2e)','หมายเหตุ'],
+      ...list.map(x=>[x.period,x.kwh||0,x.factor||0,x.renewKwh||0,x.total||0,x.notes||''])];
+    const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:20}));
+    XLSX.utils.book_append_sheet(wb,ws,'Scope2');
+    XLSX.writeFile(wb,'TKO_CarbonScope2_'+_today()+'.xlsx');
+  } else if(scope==='s3'){
+    const list=DB.get('carbonScope3',[]);
+    const data=[['เดือน/ปี','หมวด (GHG Protocol Category)','รายละเอียด','ปริมาณ','หน่วย','Emission Factor','Total(kgCO2e)','หมายเหตุ'],
+      ...list.map(x=>[x.period,x.category,x.desc||'',x.qty||0,x.unit||'',x.factor||0,x.total||0,x.notes||''])];
+    const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:22}));
+    XLSX.utils.book_append_sheet(wb,ws,'Scope3');
+    XLSX.writeFile(wb,'TKO_CarbonScope3_'+_today()+'.xlsx');
+  } else if(scope==='credit'){
+    const list=DB.get('carbonCredit',[]);
+    const data=[['วันที่','แหล่งที่มา','ปริมาณ(tCO2e)','มูลค่า(฿)','สถานะ','หมายเหตุ'],
+      ...list.map(x=>[x.date,x.source,x.qty||0,x.cost||0,x.status,x.notes||''])];
+    const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:20}));
+    XLSX.utils.book_append_sheet(wb,ws,'CarbonCredit');
+    XLSX.writeFile(wb,'TKO_CarbonCredit_'+_today()+'.xlsx');
+  }
+  showToast('📊 Export สำเร็จ');
+}
+function exportCarbonAllExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const wb=XLSX.utils.book_new();
+  const s1=DB.get('carbonScope1',[]),s2=DB.get('carbonScope2',[]),s3=DB.get('carbonScope3',[]),cr=DB.get('carbonCredit',[]);
+  const ws1=XLSX.utils.aoa_to_sheet([['เดือน/ปี','ประเภท','ปริมาณ','หน่วย','Emission Factor','Total(kgCO2e)','หมายเหตุ'],...s1.map(x=>[x.period,(CARBON_S1_CATS[x.category]||{}).label||x.category,x.qty||0,x.unit||'',x.factor||0,x.total||0,x.notes||''])]);
+  XLSX.utils.book_append_sheet(wb,ws1,'Scope1');
+  const ws2=XLSX.utils.aoa_to_sheet([['เดือน/ปี','kWh','Grid Factor','Solar Offset(kWh)','Total(kgCO2e)','หมายเหตุ'],...s2.map(x=>[x.period,x.kwh||0,x.factor||0,x.renewKwh||0,x.total||0,x.notes||''])]);
+  XLSX.utils.book_append_sheet(wb,ws2,'Scope2');
+  const ws3=XLSX.utils.aoa_to_sheet([['เดือน/ปี','หมวด','รายละเอียด','ปริมาณ','หน่วย','Emission Factor','Total(kgCO2e)','หมายเหตุ'],...s3.map(x=>[x.period,x.category,x.desc||'',x.qty||0,x.unit||'',x.factor||0,x.total||0,x.notes||''])]);
+  XLSX.utils.book_append_sheet(wb,ws3,'Scope3');
+  const ws4=XLSX.utils.aoa_to_sheet([['วันที่','แหล่งที่มา','ปริมาณ(tCO2e)','มูลค่า(฿)','สถานะ','หมายเหตุ'],...cr.map(x=>[x.date,x.source,x.qty||0,x.cost||0,x.status,x.notes||''])]);
+  XLSX.utils.book_append_sheet(wb,ws4,'CarbonCredit');
+  XLSX.writeFile(wb,'TKO_CarbonFootprint_All_'+_today()+'.xlsx');
+  showToast('📊 Export ทั้งหมดสำเร็จ');
+}
+function importCarbonExcel(scope){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX...');return;}
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        if(!ws){showToast('❌ ไม่พบ sheet ในไฟล์');return;}
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+        if(!rows.length){showToast('⚠ ไม่พบข้อมูลในไฟล์');return;}
+        const g=(r,...keys)=>{for(const k of keys){if(r[k]!==undefined&&r[k]!=='')return String(r[k]).trim();}return '';};
+        const gn=(r,...keys)=>{const v=g(r,...keys);return v?(parseFloat(v)||0):0;};
+        let added=0;
+        if(scope==='s1'){
+          const list=DB.get('carbonScope1',[]);
+          const catByLabel={};Object.entries(CARBON_S1_CATS).forEach(([k,v])=>catByLabel[v.label]=k);
+          rows.forEach(r=>{
+            const period=g(r,'เดือน/ปี','period');if(!period)return;
+            const catRaw=g(r,'ประเภท','category');
+            const qty=gn(r,'ปริมาณ','qty');const factor=gn(r,'Emission Factor(kgCO2e/หน่วย)','Emission Factor','factor');
+            list.push({id:'C1-'+Date.now()+'-'+(added++),period,category:catByLabel[catRaw]||catRaw||'other',qty,unit:g(r,'หน่วย','unit'),factor,total:qty*factor,notes:g(r,'หมายเหตุ','notes')});
+          });
+          DB.set('carbonScope1',list);
+        } else if(scope==='s2'){
+          const list=DB.get('carbonScope2',[]);
+          rows.forEach(r=>{
+            const period=g(r,'เดือน/ปี','period');if(!period)return;
+            const kwh=gn(r,'kWh','kwh');const factor=gn(r,'Grid Factor(kgCO2e/kWh)','Grid Factor','factor')||CARBON_S2_FACTOR_DEFAULT;
+            const renew=gn(r,'Solar Offset(kWh)','renewKwh');
+            list.push({id:'C2-'+Date.now()+'-'+(added++),period,kwh,factor,renewKwh:renew,total:Math.max(0,kwh-renew)*factor,notes:g(r,'หมายเหตุ','notes')});
+          });
+          DB.set('carbonScope2',list);
+        } else if(scope==='s3'){
+          const list=DB.get('carbonScope3',[]);
+          rows.forEach(r=>{
+            const period=g(r,'เดือน/ปี','period');if(!period)return;
+            const qty=gn(r,'ปริมาณ','qty');const factor=gn(r,'Emission Factor','factor');
+            list.push({id:'C3-'+Date.now()+'-'+(added++),period,category:g(r,'หมวด (GHG Protocol Category)','หมวด','category'),desc:g(r,'รายละเอียด','desc'),qty,unit:g(r,'หน่วย','unit'),factor,total:qty*factor,notes:g(r,'หมายเหตุ','notes')});
+          });
+          DB.set('carbonScope3',list);
+        } else if(scope==='credit'){
+          const list=DB.get('carbonCredit',[]);
+          rows.forEach(r=>{
+            const date=g(r,'วันที่','date');if(!date)return;
+            const srcRaw=g(r,'แหล่งที่มา','source');
+            const srcKeyByLabel={};Object.entries(CARBON_CREDIT_SRC_LABEL).forEach(([k,v])=>srcKeyByLabel[v]=k);
+            list.push({id:'CR-'+Date.now()+'-'+(added++),date,source:srcRaw,sourceKey:srcKeyByLabel[srcRaw]||'other',qty:gn(r,'ปริมาณ(tCO2e)','qty'),cost:gn(r,'มูลค่า(฿)','cost'),status:g(r,'สถานะ','status')||'held',notes:g(r,'หมายเหตุ','notes')});
+          });
+          DB.set('carbonCredit',list);
+        }
+        showToast('📥 Import สำเร็จ '+added+' รายการ');
+        if(scope==='s1')renderCarbonScope1();else if(scope==='s2')renderCarbonScope2();else if(scope==='s3')renderCarbonScope3();else renderCarbonOverview();
+      }catch(err){showToast('❌ อ่านไฟล์ไม่ได้: '+err.message);}
+    };
+    reader.readAsArrayBuffer(f);
+  };
+  inp.click();
+}
+
 function renderCostA(){
   const wrCost=WR.reduce((s,w)=>s+(w.totalCost||0),0);const maCost=MA.reduce((s,m)=>s+(m.value||0),0);const invCost=INV.reduce((s,i)=>s+(i.usedMTD||0)*(i.price||0),0);
   document.getElementById('ca-wr').textContent='฿'+wrCost.toLocaleString();document.getElementById('ca-pt').textContent='฿'+invCost.toLocaleString();document.getElementById('ca-ma').textContent='฿'+maCost.toLocaleString();
