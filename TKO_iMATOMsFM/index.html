@@ -1263,8 +1263,111 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       </div>
     </div>
     <div id="view-waste" class="view">
-      <div class="sh"><div><div class="st">♻ Waste Management</div><div class="ss">ของเสีย · Recycle · Zero Waste</div></div><button class="btn btn-teal">+ บันทึก</button></div>
-      <div class="kpi-grid"><div class="kpi teal"><div class="kl">ของเสีย MTD</div><div class="kv ffd">4.2t</div></div><div class="kpi green"><div class="kl">Recycle Rate</div><div class="kv ffd">68%</div></div><div class="kpi yellow"><div class="kl">Hazardous</div><div class="kv ffd">0.3t</div></div><div class="kpi blue"><div class="kl">Disposal Cost</div><div class="kv ffd" style="font-size:18px">฿28K</div></div></div>
+      <div class="sh"><div><div class="st">♻ Waste Management</div><div class="ss">ระบบบำบัดน้ำเสีย · ระบบจัดการขยะ</div></div></div>
+
+      <div class="tabs" id="waste-main-tabs">
+        <div class="tab active" onclick="wasteModuleTab('wwt',this)">💧 ระบบบำบัดน้ำเสีย</div>
+        <div class="tab" onclick="wasteModuleTab('wm',this)">🗑 ระบบจัดการขยะ</div>
+      </div>
+
+      <!-- ═══ WASTEWATER TREATMENT ═══ -->
+      <div id="waste-pane-wwt" class="energy-pane">
+        <div class="tabs" id="wwt-sub-tabs" style="margin-top:8px">
+          <div class="tab active" onclick="wwtSubTab('quality',this)">🧪 คุณภาพน้ำทิ้งรายเดือน</div>
+          <div class="tab" onclick="wwtSubTab('inspection',this)">📋 บันทึกตรวจสอบระบบ (รายวัน/สัปดาห์)</div>
+        </div>
+
+        <!-- A1: Monthly effluent quality -->
+        <div id="wwt-sub-quality" class="energy-subpane">
+          <div class="alr alr-i mb16">⚠ ค่ามาตรฐานตามกฎหมายควรตรวจสอบกับประกาศกระทรวงทรัพยากรธรรมชาติและสิ่งแวดล้อมฉบับล่าสุดตามประเภทอาคาร (ประเภท ก/ข/ค) — ค่าที่แสดงในระบบเป็นค่าเริ่มต้นโดยประมาณเพื่ออ้างอิงเท่านั้น ผู้ใช้งานสามารถแก้ไขได้ในตารางด้านล่าง</div>
+          <div class="card mb16">
+            <div class="flex fca jb mb12" style="flex-wrap:wrap">
+              <div class="ffd fw7" style="font-size:14px">🧪 บันทึกผลตรวจคุณภาพน้ำทิ้งรายเดือน</div>
+              <div class="flex g8">
+                <button class="btn btn-secondary btn-sm" onclick="importWWQExcel()">📥 Import</button>
+                <button class="btn btn-secondary btn-sm" onclick="exportWWQExcel()">📤 Export</button>
+                <button class="btn btn-primary btn-sm" onclick="openWWQModal()">+ บันทึกผลตรวจ</button>
+              </div>
+            </div>
+            <div class="form-sec">✅ เลือกพารามิเตอร์ที่ต้องการแสดง (ตาราง/กราฟ)</div>
+            <div class="flex g12" id="wwq-param-checks" style="flex-wrap:wrap"></div>
+            <div class="form-sec">📐 ค่ามาตรฐานอ้างอิง (แก้ไขได้ — โปรดตรวจสอบกับประกาศฉบับล่าสุด)</div>
+            <div class="table-wrap" style="max-height:220px;overflow:auto"><table><thead><tr><th>พารามิเตอร์</th><th>หน่วย</th><th>ค่าต่ำสุด (Min)</th><th>ค่าสูงสุด (Max)</th></tr></thead><tbody id="wwq-limits-tbody"></tbody></table></div>
+          </div>
+          <div class="card mb16">
+            <div class="flex fca jb mb12" style="flex-wrap:wrap">
+              <div class="ffd fw7" style="font-size:14px">📈 แนวโน้มคุณภาพน้ำทิ้ง</div>
+              <select class="form-control" id="wwq-building-filter" style="width:200px" onchange="renderWWTQuality()"><option value="">— ทุกอาคาร (เฉลี่ย) —</option></select>
+            </div>
+            <div class="chart-wrap"><canvas id="chWWQTrend"></canvas></div>
+          </div>
+          <div class="card mb16">
+            <div class="ffd fw7 mb12" style="font-size:14px">📋 ตารางบันทึกผลตรวจ</div>
+            <div class="table-wrap" id="wwq-table-wrap"><table><thead><tr id="wwq-thead-row"></tr></thead><tbody id="wwq-tbody"></tbody></table></div>
+          </div>
+        </div>
+
+        <!-- A2: Inspection Log -->
+        <div id="wwt-sub-inspection" class="energy-subpane" style="display:none">
+          <div class="card mb16">
+            <div class="flex fca jb mb12" style="flex-wrap:wrap">
+              <div class="ffd fw7" style="font-size:14px">📋 บันทึกตรวจสอบระบบบำบัดน้ำเสีย (รายวัน/สัปดาห์)</div>
+              <div class="flex g8">
+                <button class="btn btn-secondary btn-sm" onclick="openReliabilityView('operation')">🔗 ดูข้อมูลที่เกี่ยวข้องจาก Operation</button>
+                <button class="btn btn-secondary btn-sm" onclick="exportWWIExcel()">📤 Export</button>
+                <button class="btn btn-primary btn-sm" onclick="openWWIModal()">+ บันทึกการตรวจสอบ</button>
+              </div>
+            </div>
+            <div class="kpi-grid">
+              <div class="kpi green"><div class="kl">ปกติ (เดือนนี้)</div><div class="kv ffd" id="wwi-normal" style="font-size:18px">0</div></div>
+              <div class="kpi red"><div class="kl">ผิดปกติ (เดือนนี้)</div><div class="kv ffd" id="wwi-abnormal" style="font-size:18px">0</div></div>
+              <div class="kpi blue"><div class="kl">จำนวนบันทึกทั้งหมด</div><div class="kv ffd" id="wwi-count" style="font-size:18px">0</div></div>
+              <div class="kpi yellow"><div class="kl">บันทึกล่าสุด</div><div class="kv ffd" id="wwi-lastdate" style="font-size:14px">—</div></div>
+            </div>
+            <div class="chart-wrap"><canvas id="chWWI"></canvas></div>
+            <div class="table-wrap mt16"><table><thead><tr><th>วันที่</th><th>กะ/ผู้ตรวจ</th><th>อาคาร</th><th>pH ระบบ</th><th>น้ำเข้า/ออก (m³)</th><th>เครื่องเติมอากาศ</th><th>กลิ่น/สี</th><th>สถานะ</th><th>รูปถ่าย</th><th>Action</th></tr></thead><tbody id="wwi-tbody"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ WASTE MANAGEMENT ═══ -->
+      <div id="waste-pane-wm" class="energy-pane" style="display:none">
+        <div class="card mb16">
+          <div class="flex fca jb mb12" style="flex-wrap:wrap">
+            <div class="ffd fw7" style="font-size:14px">🗑 บันทึกรายการขยะ/ของเสีย</div>
+            <div class="flex g8">
+              <button class="btn btn-secondary btn-sm" onclick="importWasteExcel()">📥 Import</button>
+              <button class="btn btn-secondary btn-sm" onclick="exportWasteExcel()">📤 Export</button>
+              <button class="btn btn-primary btn-sm" onclick="openWasteModal()">+ บันทึกรายการขยะ</button>
+            </div>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi"><div class="kl">ขยะทั่วไป MTD (kg)</div><div class="kv ffd" id="wm-kpi-general" style="font-size:18px">0</div></div>
+            <div class="kpi green"><div class="kl">ขยะรีไซเคิล MTD (kg)</div><div class="kv ffd" id="wm-kpi-recycle" style="font-size:18px">0</div></div>
+            <div class="kpi red"><div class="kl">ขยะมีพิษ/อันตราย MTD (kg)</div><div class="kv ffd" id="wm-kpi-hazard" style="font-size:18px">0</div></div>
+            <div class="kpi orange"><div class="kl">ขยะติดเชื้อ MTD (kg)</div><div class="kv ffd" id="wm-kpi-infectious" style="font-size:18px">0</div></div>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi teal"><div class="kl">น้ำหนักรวม MTD (kg)</div><div class="kv ffd" id="wm-kpi-total" style="font-size:18px">0</div></div>
+            <div class="kpi blue"><div class="kl">Diversion Rate (% รีไซเคิล MTD)</div><div class="kv ffd" id="wm-kpi-diversion" style="font-size:18px">0%</div></div>
+            <div class="kpi purple"><div class="kl">ค่าใช้จ่ายสุทธิ MTD (฿)</div><div class="kv ffd" id="wm-kpi-cost" style="font-size:18px">฿0</div></div>
+          </div>
+
+          <div class="flex g8 mt16" style="flex-wrap:wrap;align-items:flex-end">
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">ประเภทขยะ</label><select class="form-control" id="wm-filter-cat" style="width:180px" onchange="renderWasteRecords()"><option value="">— ทั้งหมด —</option><option value="general">ขยะทั่วไป</option><option value="recycle">ขยะรีไซเคิล</option><option value="hazard">ขยะมีพิษ/อันตราย</option><option value="infectious">ขยะติดเชื้อ</option><option value="other">อื่นๆ</option></select></div>
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">จากวันที่</label><input type="date" class="form-control" id="wm-filter-from" style="width:150px" onchange="renderWasteRecords()"></div>
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">ถึงวันที่</label><input type="date" class="form-control" id="wm-filter-to" style="width:150px" onchange="renderWasteRecords()"></div>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('wm-filter-cat').value='';document.getElementById('wm-filter-from').value='';document.getElementById('wm-filter-to').value='';renderWasteRecords()">↺ ล้างตัวกรอง</button>
+          </div>
+
+          <div class="grid-2 mt16">
+            <div class="card"><div class="ffd fw6 mb12" style="font-size:13px">สัดส่วนตามประเภทขยะ</div><div class="chart-wrap"><canvas id="chWasteCat"></canvas></div></div>
+            <div class="card"><div class="ffd fw6 mb12" style="font-size:13px">แนวโน้มน้ำหนักรายเดือน (แยกประเภท)</div><div class="chart-wrap"><canvas id="chWasteTrend"></canvas></div></div>
+          </div>
+
+          <div class="table-wrap mt16"><table><thead><tr><th>วันที่</th><th>ประเภท</th><th>รายละเอียด</th><th>น้ำหนัก (kg)</th><th>วิธีกำจัด/ผู้รับกำจัด</th><th>ค่าใช้จ่าย/รายได้ (฿)</th><th>รูปถ่าย</th><th>Action</th></tr></thead><tbody id="wm-tbody"></tbody></table></div>
+        </div>
+      </div>
     </div>
     <div id="view-esgkpi" class="view">
       <div class="sh"><div><div class="st">📊 ESG KPI Report</div><div class="ss">Environmental · Social · Governance</div></div><button class="btn btn-teal">📤 Export</button></div>
@@ -2579,6 +2682,88 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 <div class="flex g8" style="justify-content:flex-end;margin-top:8px">
   <button class="btn btn-secondary" onclick="closeModal('m-credit')">ยกเลิก</button>
   <button class="btn btn-primary" onclick="saveCredit()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<!-- ═══ WASTE MANAGEMENT MODULE MODALS ═══ -->
+<div class="modal-overlay" id="m-wwq"><div class="modal modal-lg">
+<div class="mhd"><div class="mttl" id="wwq-modal-title">🧪 บันทึกผลตรวจคุณภาพน้ำทิ้ง</div><button class="mclose" onclick="closeModal('m-wwq')">✕</button></div>
+<input type="hidden" id="wwq-id">
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">เดือน/ปี *</label><input type="month" class="form-control" id="wwq-period"></div>
+  <div class="form-group"><label class="form-label">อาคาร *</label><input type="text" class="form-control" id="wwq-building" list="wwq-building-list" placeholder="เช่น อาคาร A" onchange="wwBuildingTypeAutofill()"><datalist id="wwq-building-list"></datalist></div>
+  <div class="form-group"><label class="form-label">ประเภทอาคาร (ตามประกาศกระทรวงฯ) *</label>
+    <select class="form-control" id="wwq-buildingtype">
+      <option value="ประเภท ก">ประเภท ก</option>
+      <option value="ประเภท ข">ประเภท ข</option>
+      <option value="ประเภท ค">ประเภท ค</option>
+    </select>
+  </div>
+</div>
+<div class="ss mb12">⚠ ค่ามาตรฐานตามกฎหมายควรตรวจสอบกับประกาศกระทรวงทรัพยากรธรรมชาติและสิ่งแวดล้อมฉบับล่าสุดตามประเภทอาคาร</div>
+<div class="form-sec">📋 ผลตรวจวิเคราะห์ (11 พารามิเตอร์)</div>
+<div class="form-row-3" id="wwq-param-fields"></div>
+<div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-control" id="wwq-notes" rows="2"></textarea></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-wwq')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveWWQ()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-wwi"><div class="modal">
+<div class="mhd"><div class="mttl">📋 บันทึกตรวจสอบระบบบำบัดน้ำเสีย</div><button class="mclose" onclick="closeModal('m-wwi')">✕</button></div>
+<input type="hidden" id="wwi-id">
+<div class="form-row">
+  <div class="form-group"><label class="form-label">วันที่ *</label><input type="date" class="form-control" id="wwi-date"></div>
+  <div class="form-group"><label class="form-label">กะ/ผู้ตรวจ</label><input type="text" class="form-control" id="wwi-inspector" placeholder="เช่น กะเช้า / ชื่อผู้ตรวจ"></div>
+</div>
+<div class="form-group"><label class="form-label">อาคาร</label><input type="text" class="form-control" id="wwi-building" list="wwq-building-list" placeholder="เช่น อาคาร A"></div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">pH ระบบ</label><input type="number" class="form-control" id="wwi-ph" step="0.01" placeholder="0"></div>
+  <div class="form-group"><label class="form-label">ปริมาณน้ำเข้า/ออก (m³)</label><input type="number" class="form-control" id="wwi-flow" step="0.01" placeholder="0"></div>
+  <div class="form-group"><label class="form-label">สภาพเครื่องเติมอากาศ</label>
+    <select class="form-control" id="wwi-aerator"><option value="normal">✅ ปกติ</option><option value="abnormal">⚠ ผิดปกติ</option></select>
+  </div>
+</div>
+<div class="form-group"><label class="form-label">กลิ่น/สี</label>
+  <select class="form-control" id="wwi-odor"><option value="normal">✅ ปกติ</option><option value="abnormal">⚠ ผิดปกติ</option></select>
+</div>
+<div class="form-group"><label class="form-label">ถ่ายรูปหลักฐาน (ถ้ามี)</label><input type="file" accept="image/*" capture="environment" class="form-control" id="wwi-photo-input" onchange="handleWWIPhoto(event)"></div>
+<div id="wwi-photo-thumb" style="margin:8px 0"></div>
+<div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-control" id="wwi-notes" rows="2"></textarea></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-wwi')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveWWI()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-wasterec"><div class="modal">
+<div class="mhd"><div class="mttl" id="wm-modal-title">🗑 บันทึกรายการขยะ/ของเสีย</div><button class="mclose" onclick="closeModal('m-wasterec')">✕</button></div>
+<input type="hidden" id="wm-id">
+<div class="form-row">
+  <div class="form-group"><label class="form-label">วันที่ *</label><input type="date" class="form-control" id="wm-date"></div>
+  <div class="form-group"><label class="form-label">ประเภทขยะ *</label>
+    <select class="form-control" id="wm-cat" onchange="updateWasteSubtypeOptions()">
+      <option value="general">ขยะทั่วไป</option>
+      <option value="recycle">ขยะรีไซเคิล</option>
+      <option value="hazard">ขยะมีพิษ/อันตราย</option>
+      <option value="infectious">ขยะติดเชื้อ</option>
+      <option value="other">อื่นๆ</option>
+    </select>
+  </div>
+</div>
+<div class="form-group"><label class="form-label">รายละเอียด/ประเภทย่อย</label><input type="text" class="form-control" id="wm-subtype" list="wm-subtype-list" placeholder="เช่น พลาสติก/กระดาษ/แก้ว/โลหะ"><datalist id="wm-subtype-list"></datalist></div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">น้ำหนัก (kg) *</label><input type="number" class="form-control" id="wm-weight" step="0.01" placeholder="0"></div>
+  <div class="form-group"><label class="form-label">ค่าใช้จ่าย(+) / รายได้(-) (฿)</label><input type="number" class="form-control" id="wm-cost" step="0.01" placeholder="0"></div>
+</div>
+<div class="form-group"><label class="form-label">วิธีกำจัด/ผู้รับกำจัด (Vendor)</label><input type="text" class="form-control" id="wm-vendor" placeholder="เช่น ฝังกลบ / บริษัทรับกำจัด XYZ"></div>
+<div class="form-group"><label class="form-label">ถ่ายรูปหลักฐานการชั่งน้ำหนัก</label><input type="file" accept="image/*" capture="environment" class="form-control" id="wm-photo-input" onchange="handleWastePhoto(event)"></div>
+<div id="wm-photo-thumb" style="margin:8px 0"></div>
+<div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-control" id="wm-notes" rows="2"></textarea></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-wasterec')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveWasteRec()">💾 บันทึก</button>
 </div>
 </div></div>
 
@@ -4076,7 +4261,7 @@ const META={
   floorplan:{t:'🏢 Building Critical Status',b:'TKO iMATOMs › แผนผังชั้น'},
 };
 const accMap={assets:'s1',lifecycle:'s1',qrcode:'s1',inspection:'s1',valuation:'s1',workrequest:'s1',ppm:'s1',operation:'s1',contract:'s1',inventory:'s1',inspection:'s2',ncr:'s2',fmea:'s2',audit:'s2',budget:'s3',costanalysis:'s3',valuation:'s3',energy:'s4',carbon:'s4',waste:'s4',esgkpi:'s4',training:'s5',competency:'s5',certification:'s5',knowledgebase:'s5',incident:'s6',hazard:'s6',permit:'s6',safetystat:'s6',ai:'s7',integrations:'s8',notifications:'s9','db-assets':'s10','db-floorplan':'s10','db-custom':'s10',config:'s11',cloud:'s12',adminmgmt:'s13'};
-const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,carbon:renderCarbon,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,audit:renderAudit,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
+const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,carbon:renderCarbon,waste:renderWaste,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,audit:renderAudit,modules:renderModules,notifications:renderNotifCenter,floorplan:()=>{
   // คืนค่า floor ก่อน render
   const sel=document.getElementById('fp-floor');
   if(sel){const saved=localStorage.getItem('fp_last_floor')||'l1';if(sel.querySelector(`option[value="${saved}"]`))sel.value=saved;}
@@ -7035,6 +7220,513 @@ function renderVal(){
   dChart('chDepr');const yrs=[2019,2020,2021,2022,2023,2024,2025,2026];
   charts.chDepr=new Chart(document.getElementById('chDepr'),{type:'line',data:{labels:yrs,datasets:[{label:'Original Value',data:yrs.map(()=>tv),borderColor:'#3B82F6',borderDash:[4,4],fill:false,pointRadius:0},{label:'NBV',data:yrs.map((y,i)=>Math.max(0,tv-dep/7*i)),borderColor:'#22C55E',fill:true,backgroundColor:'rgba(34,197,94,.1)',tension:.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E',callback:v=>'฿'+Math.round(v/1000000)+'M'},grid:{color:'#21262D'}}}}});
 }
+// ══════════════════════════════════════════════════════════════
+// ══ WASTE MANAGEMENT — Wastewater Treatment + Waste Management ══
+// ══════════════════════════════════════════════════════════════
+const WW_PARAMS=[
+  {key:'bod',label:'BOD',unit:'mg/L'},
+  {key:'cod',label:'COD',unit:'mg/L'},
+  {key:'tds',label:'TDS',unit:'mg/L'},
+  {key:'ph',label:'pH',unit:'-'},
+  {key:'tss',label:'TSS',unit:'mg/L'},
+  {key:'ss',label:'SS (Settleable Solids)',unit:'mL/L'},
+  {key:'oil',label:'Oil & Grease',unit:'mg/L'},
+  {key:'tkn',label:'TKN',unit:'mg/L'},
+  {key:'coliform',label:'Total Coliform Bacteria',unit:'MPN/100mL'},
+  {key:'chlorine',label:'Residual Free Chlorine',unit:'mg/L'},
+  {key:'temp',label:'Temperature',unit:'°C'}
+];
+const WW_LIMITS_DEFAULT={
+  bod:{min:null,max:20},cod:{min:null,max:120},tds:{min:null,max:3000},ph:{min:5.5,max:9},
+  tss:{min:null,max:50},ss:{min:null,max:0.5},oil:{min:null,max:5},tkn:{min:null,max:35},
+  coliform:{min:null,max:5000},chlorine:{min:null,max:1},temp:{min:null,max:40}
+};
+function wwLimits(){const l=DB.get('wasteWaterLimits',null);return l&&Object.keys(l).length?l:WW_LIMITS_DEFAULT;}
+function wwParamVis(){
+  const d=Object.fromEntries(WW_PARAMS.map(p=>[p.key,true]));
+  const v=DB.get('wasteWaterParamVis',null);
+  return v&&Object.keys(v).length?{...d,...v}:d;
+}
+function wwStatus(key,val){
+  if(val===null||val===undefined||val==='')return null;
+  const lim=(wwLimits()[key])||{};
+  const v=parseFloat(val);
+  if(isNaN(v))return null;
+  if(lim.min!=null&&v<lim.min)return false;
+  if(lim.max!=null&&v>lim.max)return false;
+  return true;
+}
+function escWW(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── Main / Sub Tab Switching ──
+function renderWaste(){ renderWWTQuality(); }
+function wasteModuleTab(tab,el){
+  document.querySelectorAll('#waste-main-tabs .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  ['wwt','wm'].forEach(k=>{const p=document.getElementById('waste-pane-'+k);if(p)p.style.display=(k===tab?'block':'none');});
+  if(tab==='wwt')renderWWTQuality(); else renderWasteRecords();
+}
+function wwtSubTab(tab,el){
+  document.querySelectorAll('#wwt-sub-tabs .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  ['quality','inspection'].forEach(k=>{const p=document.getElementById('wwt-sub-'+k);if(p)p.style.display=(k===tab?'block':'none');});
+  if(tab==='quality')renderWWTQuality(); else renderWWTInspection();
+}
+
+// ── A1: Monthly Effluent Quality ──
+function ensureWWQInit(){
+  const chkWrap=document.getElementById('wwq-param-checks');
+  if(chkWrap&&!chkWrap.dataset.init){
+    const vis=wwParamVis();
+    chkWrap.innerHTML=WW_PARAMS.map(p=>`<label class="flex g6 fca" style="font-size:12px;cursor:pointer"><input type="checkbox" ${vis[p.key]?'checked':''} onchange="toggleWWParamVis('${p.key}',this.checked)">${p.label} (${p.unit})</label>`).join('');
+    chkWrap.dataset.init='1';
+  }
+  const limTbody=document.getElementById('wwq-limits-tbody');
+  if(limTbody&&!limTbody.dataset.init){
+    const lim=wwLimits();
+    limTbody.innerHTML=WW_PARAMS.map(p=>{
+      const l=lim[p.key]||{};
+      return `<tr><td style="font-size:12px">${p.label}</td><td style="font-size:12px">${p.unit}</td>
+        <td><input type="number" class="form-control" style="padding:4px 6px;font-size:11px;width:90px" value="${l.min!=null?l.min:''}" placeholder="—" onchange="saveWWLimit('${p.key}','min',this.value)"></td>
+        <td><input type="number" class="form-control" style="padding:4px 6px;font-size:11px;width:90px" value="${l.max!=null?l.max:''}" placeholder="—" onchange="saveWWLimit('${p.key}','max',this.value)"></td>
+      </tr>`;
+    }).join('');
+    limTbody.dataset.init='1';
+  }
+}
+function toggleWWParamVis(key,checked){
+  const v=wwParamVis(); v[key]=checked; DB.set('wasteWaterParamVis',v);
+  renderWWTQuality();
+}
+function saveWWLimit(key,field,val){
+  const lim=wwLimits();
+  if(!lim[key])lim[key]={min:null,max:null};
+  lim[key][field]=val===''?null:parseFloat(val);
+  DB.set('wasteWaterLimits',lim);
+  renderWWTQuality();
+}
+function ensureWWQModalFields(){
+  const wrap=document.getElementById('wwq-param-fields');
+  if(wrap&&!wrap.dataset.init){
+    wrap.innerHTML=WW_PARAMS.map(p=>`<div class="form-group"><label class="form-label">${p.label} (${p.unit})</label><input type="number" class="form-control" id="wwq-p-${p.key}" step="0.01" placeholder="0"></div>`).join('');
+    wrap.dataset.init='1';
+  }
+}
+function wwBuildingTypeAutofill(){
+  const name=document.getElementById('wwq-building').value.trim();
+  if(!name)return;
+  const list=DB.get('wasteWaterQuality',[]).filter(x=>x.building===name).sort((a,b)=>(b.period||'').localeCompare(a.period||''));
+  if(list.length)document.getElementById('wwq-buildingtype').value=list[0].buildingType||'ประเภท ก';
+}
+function openWWQModal(id){
+  ensureWWQModalFields();
+  document.getElementById('wwq-id').value=id||'';
+  document.getElementById('wwq-period').value='';document.getElementById('wwq-building').value='';document.getElementById('wwq-buildingtype').value='ประเภท ก';document.getElementById('wwq-notes').value='';
+  WW_PARAMS.forEach(p=>{const el=document.getElementById('wwq-p-'+p.key);if(el)el.value='';});
+  const bl=[...new Set(DB.get('wasteWaterQuality',[]).map(x=>x.building).filter(Boolean))];
+  const dl=document.getElementById('wwq-building-list'); if(dl)dl.innerHTML=bl.map(b=>`<option value="${escWW(b)}">`).join('');
+  if(id){
+    const item=DB.get('wasteWaterQuality',[]).find(x=>x.id===id);
+    if(item){
+      document.getElementById('wwq-period').value=item.period||'';
+      document.getElementById('wwq-building').value=item.building||'';
+      document.getElementById('wwq-buildingtype').value=item.buildingType||'ประเภท ก';
+      document.getElementById('wwq-notes').value=item.notes||'';
+      WW_PARAMS.forEach(p=>{const el=document.getElementById('wwq-p-'+p.key);if(el)el.value=item[p.key]??'';});
+    }
+  }
+  openModal('m-wwq');
+}
+function saveWWQ(){
+  const period=document.getElementById('wwq-period').value;
+  const building=document.getElementById('wwq-building').value.trim();
+  if(!period){showToast('⚠ กรุณาระบุเดือน/ปี');return;}
+  if(!building){showToast('⚠ กรุณาระบุอาคาร');return;}
+  const id=document.getElementById('wwq-id').value;
+  const list=DB.get('wasteWaterQuality',[]);
+  const rec={id:id||'WWQ-'+Date.now(),period,building,buildingType:document.getElementById('wwq-buildingtype').value,notes:document.getElementById('wwq-notes').value.trim()};
+  WW_PARAMS.forEach(p=>{const el=document.getElementById('wwq-p-'+p.key);rec[p.key]=el&&el.value!==''?parseFloat(el.value):null;});
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('wasteWaterQuality',list);
+  showToast('💾 บันทึกผลตรวจสำเร็จ');
+  closeModal('m-wwq');
+  renderWWTQuality();
+}
+function deleteWWQ(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  DB.set('wasteWaterQuality',DB.get('wasteWaterQuality',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderWWTQuality();
+}
+function renderWWTQuality(){
+  ensureWWQInit();
+  const vis=wwParamVis();
+  const visParams=WW_PARAMS.filter(p=>vis[p.key]);
+  const list=DB.get('wasteWaterQuality',[]).slice().sort((a,b)=>(b.period||'').localeCompare(a.period||''));
+
+  const bl=[...new Set(list.map(x=>x.building).filter(Boolean))];
+  const bf=document.getElementById('wwq-building-filter');
+  if(bf){
+    const cur=bf.value;
+    bf.innerHTML='<option value="">— ทุกอาคาร (เฉลี่ย) —</option>'+bl.map(b=>`<option value="${escWW(b)}">${escWW(b)}</option>`).join('');
+    bf.value=bl.includes(cur)?cur:'';
+  }
+  const selBuilding=bf?bf.value:'';
+
+  const theadRow=document.getElementById('wwq-thead-row');
+  if(theadRow)theadRow.innerHTML='<th>เดือน/ปี</th><th>อาคาร</th><th>ประเภท</th>'+visParams.map(p=>`<th>${p.label}<br><span style="font-weight:400;color:var(--text3)">(${p.unit})</span></th>`).join('')+'<th>หมายเหตุ</th><th>Action</th>';
+  const tbody=document.getElementById('wwq-tbody');
+  if(tbody)tbody.innerHTML=list.length?list.map(x=>{
+    const cells=visParams.map(p=>{
+      const val=x[p.key];
+      if(val===null||val===undefined||val==='')return '<td class="ffm" style="color:var(--text3)">—</td>';
+      const ok=wwStatus(p.key,val);
+      const badge=ok===null?'':(ok?'<span class="badge badge-green" style="margin-left:4px">✅</span>':'<span class="badge badge-red" style="margin-left:4px">⚠</span>');
+      return `<td class="ffm">${val}${badge}</td>`;
+    }).join('');
+    return `<tr>
+      <td>${x.period||'—'}</td><td>${escWW(x.building)}</td><td style="font-size:11px">${escWW(x.buildingType)}</td>
+      ${cells}
+      <td style="font-size:12px">${escWW(x.notes)||'—'}</td>
+      <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openWWQModal('${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteWWQ('${x.id}')">🗑</button></div></td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="${3+visParams.length+2}" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูลผลตรวจคุณภาพน้ำทิ้ง</td></tr>`;
+
+  const filtered=selBuilding?list.filter(x=>x.building===selBuilding):list;
+  const months=[...new Set(filtered.map(x=>x.period).filter(Boolean))].sort();
+  const colors=['#14B8A6','#3B82F6','#EF4444','#EAB308','#A855F7','#22C55E','#F97316','#EC4899','#06B6D4','#8B5CF6','#84CC16'];
+  const datasets=visParams.map((p,i)=>{
+    const vals=months.map(m=>{
+      const recs=filtered.filter(x=>x.period===m&&x[p.key]!=null);
+      if(!recs.length)return null;
+      return +(recs.reduce((s,x)=>s+x[p.key],0)/recs.length).toFixed(2);
+    });
+    return {label:p.label,data:vals,borderColor:colors[i%colors.length],backgroundColor:colors[i%colors.length],tension:.3,pointRadius:3,fill:false};
+  });
+  dChart('chWWQTrend');
+  charts.chWWQTrend=new Chart(document.getElementById('chWWQTrend'),{type:'line',data:{labels:months,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:9},boxWidth:10}}},scales:{x:{ticks:{color:'#8B949E',font:{size:9}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}});
+}
+function exportWWQExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const list=DB.get('wasteWaterQuality',[]);
+  const data=[['เดือน/ปี','อาคาร','ประเภทอาคาร',...WW_PARAMS.map(p=>p.label+' ('+p.unit+')'),'หมายเหตุ'],
+    ...list.map(x=>[x.period,x.building,x.buildingType,...WW_PARAMS.map(p=>x[p.key]??''),x.notes||''])];
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:16}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'WastewaterQuality');
+  XLSX.writeFile(wb,'TKO_WastewaterQuality_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
+}
+function importWWQExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX...');return;}
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        if(!ws){showToast('❌ ไม่พบ sheet ในไฟล์');return;}
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+        if(!rows.length){showToast('⚠ ไม่พบข้อมูลในไฟล์');return;}
+        const g=(r,...keys)=>{for(const k of keys){if(r[k]!==undefined&&r[k]!=='')return String(r[k]).trim();}return '';};
+        const list=DB.get('wasteWaterQuality',[]);
+        let added=0;
+        rows.forEach(r=>{
+          const period=g(r,'เดือน/ปี','period');
+          const building=g(r,'อาคาร','building');
+          if(!period||!building)return;
+          const rec={id:'WWQ-'+Date.now()+'-'+(added++),period,building,buildingType:g(r,'ประเภทอาคาร','buildingType')||'ประเภท ก',notes:g(r,'หมายเหตุ','notes')};
+          WW_PARAMS.forEach(p=>{const v=parseFloat(g(r,p.label+' ('+p.unit+')',p.key));rec[p.key]=isNaN(v)?null:v;});
+          list.push(rec);
+        });
+        DB.set('wasteWaterQuality',list);
+        showToast('📥 Import สำเร็จ '+added+' รายการ');
+        renderWWTQuality();
+      }catch(err){showToast('❌ อ่านไฟล์ไม่ได้: '+err.message);}
+    };
+    reader.readAsArrayBuffer(f);
+  };
+  inp.click();
+}
+
+// ── A2: Wastewater System Inspection Log ──
+let _wwiPhotoData=null;
+function handleWWIPhoto(e){
+  const f=e.target.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    _wwiPhotoData=ev.target.result;
+    document.getElementById('wwi-photo-thumb').innerHTML=`<img src="${_wwiPhotoData}" style="max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--border)">`;
+  };
+  reader.readAsDataURL(f);
+}
+function openWWIModal(id){
+  document.getElementById('wwi-id').value=id||'';
+  document.getElementById('wwi-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('wwi-inspector').value='';document.getElementById('wwi-building').value='';
+  document.getElementById('wwi-ph').value='';document.getElementById('wwi-flow').value='';
+  document.getElementById('wwi-aerator').value='normal';document.getElementById('wwi-odor').value='normal';
+  document.getElementById('wwi-notes').value='';
+  document.getElementById('wwi-photo-thumb').innerHTML='';document.getElementById('wwi-photo-input').value='';
+  _wwiPhotoData=null;
+  if(id){
+    const item=DB.get('wasteWaterInspection',[]).find(x=>x.id===id);
+    if(item){
+      document.getElementById('wwi-date').value=item.date||'';
+      document.getElementById('wwi-inspector').value=item.inspector||'';
+      document.getElementById('wwi-building').value=item.building||'';
+      document.getElementById('wwi-ph').value=item.ph??'';
+      document.getElementById('wwi-flow').value=item.flow??'';
+      document.getElementById('wwi-aerator').value=item.aerator||'normal';
+      document.getElementById('wwi-odor').value=item.odor||'normal';
+      document.getElementById('wwi-notes').value=item.notes||'';
+      if(item.photo){_wwiPhotoData=item.photo;document.getElementById('wwi-photo-thumb').innerHTML=`<img src="${item.photo}" style="max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--border)">`;}
+    }
+  }
+  openModal('m-wwi');
+}
+function saveWWI(){
+  const date=document.getElementById('wwi-date').value;
+  if(!date){showToast('⚠ กรุณาระบุวันที่');return;}
+  const id=document.getElementById('wwi-id').value;
+  const aerator=document.getElementById('wwi-aerator').value;
+  const odor=document.getElementById('wwi-odor').value;
+  const status=(aerator==='normal'&&odor==='normal')?'normal':'abnormal';
+  const list=DB.get('wasteWaterInspection',[]);
+  const rec={id:id||'WWI-'+Date.now(),date,inspector:document.getElementById('wwi-inspector').value.trim(),building:document.getElementById('wwi-building').value.trim(),
+    ph:document.getElementById('wwi-ph').value!==''?parseFloat(document.getElementById('wwi-ph').value):null,
+    flow:document.getElementById('wwi-flow').value!==''?parseFloat(document.getElementById('wwi-flow').value):null,
+    aerator,odor,status,photo:_wwiPhotoData||null,notes:document.getElementById('wwi-notes').value.trim()};
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('wasteWaterInspection',list);
+  showToast('💾 บันทึกการตรวจสอบสำเร็จ');
+  closeModal('m-wwi');
+  renderWWTInspection();
+}
+function deleteWWI(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  DB.set('wasteWaterInspection',DB.get('wasteWaterInspection',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderWWTInspection();
+}
+function renderWWTInspection(){
+  const list=DB.get('wasteWaterInspection',[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const tbody=document.getElementById('wwi-tbody');
+  if(tbody)tbody.innerHTML=list.length?list.map(x=>`<tr>
+    <td>${x.date||'—'}</td><td style="font-size:12px">${escWW(x.inspector)||'—'}</td><td>${escWW(x.building)||'—'}</td>
+    <td class="ffm">${x.ph??'—'}</td><td class="ffm">${x.flow??'—'}</td>
+    <td>${x.aerator==='normal'?'<span class="badge badge-green">ปกติ</span>':'<span class="badge badge-red">ผิดปกติ</span>'}</td>
+    <td>${x.odor==='normal'?'<span class="badge badge-green">ปกติ</span>':'<span class="badge badge-red">ผิดปกติ</span>'}</td>
+    <td>${x.status==='normal'?'<span class="badge badge-green">✅ ปกติ</span>':'<span class="badge badge-red">⚠ ผิดปกติ</span>'}</td>
+    <td>${x.photo?`<img src="${x.photo}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="window.open('${x.photo}','_blank')">`:'—'}</td>
+    <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openWWIModal('${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteWWI('${x.id}')">🗑</button></div></td>
+  </tr>`).join(''):'<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีการบันทึกตรวจสอบ</td></tr>';
+
+  const curMo=new Date().toISOString().slice(0,7);
+  const moList=list.filter(x=>(x.date||'').startsWith(curMo));
+  const g=id=>document.getElementById(id);
+  if(g('wwi-normal'))g('wwi-normal').textContent=moList.filter(x=>x.status==='normal').length;
+  if(g('wwi-abnormal'))g('wwi-abnormal').textContent=moList.filter(x=>x.status==='abnormal').length;
+  if(g('wwi-count'))g('wwi-count').textContent=list.length;
+  if(g('wwi-lastdate'))g('wwi-lastdate').textContent=list[0]?list[0].date:'—';
+
+  const months=[...Array(6)].map((_,i)=>{const d=new Date();d.setMonth(d.getMonth()-(5-i));return d.toISOString().slice(0,7);});
+  const normalVals=months.map(m=>list.filter(x=>(x.date||'').startsWith(m)&&x.status==='normal').length);
+  const abnormalVals=months.map(m=>list.filter(x=>(x.date||'').startsWith(m)&&x.status==='abnormal').length);
+  dChart('chWWI');
+  charts.chWWI=new Chart(document.getElementById('chWWI'),{type:'bar',data:{labels:months,datasets:[
+    {label:'ปกติ',data:normalVals,backgroundColor:'rgba(34,197,94,.7)',borderRadius:4,stack:'s'},
+    {label:'ผิดปกติ',data:abnormalVals,backgroundColor:'rgba(239,68,68,.7)',borderRadius:4,stack:'s'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:9}},stacked:true},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'},stacked:true}}}});
+}
+function exportWWIExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const list=DB.get('wasteWaterInspection',[]);
+  const data=[['วันที่','กะ/ผู้ตรวจ','อาคาร','pH ระบบ','น้ำเข้า/ออก(m3)','เครื่องเติมอากาศ','กลิ่น/สี','สถานะ','หมายเหตุ'],
+    ...list.map(x=>[x.date,x.inspector||'',x.building||'',x.ph??'',x.flow??'',x.aerator||'',x.odor||'',x.status||'',x.notes||''])];
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:16}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'WWTInspection');
+  XLSX.writeFile(wb,'TKO_WWTInspection_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
+}
+
+// ── B: Waste Management (General/Recycle/Hazard/Infectious) ──
+const WASTE_CATS={
+  general:{l:'ขยะทั่วไป',c:'badge-gray'},
+  recycle:{l:'ขยะรีไซเคิล',c:'badge-green'},
+  hazard:{l:'ขยะมีพิษ/อันตราย',c:'badge-red'},
+  infectious:{l:'ขยะติดเชื้อ',c:'badge-orange'},
+  other:{l:'อื่นๆ',c:'badge-blue'}
+};
+const WASTE_SUBTYPES={
+  general:['เศษอาหาร','ขยะทั่วไปคละ','บรรจุภัณฑ์ปนเปื้อน'],
+  recycle:['พลาสติก','กระดาษ','แก้ว','โลหะ/กระป๋อง'],
+  hazard:['หลอดไฟ/แบตเตอรี่','สารเคมี/ถังสี','น้ำมันใช้แล้ว','ชิ้นส่วนอิเล็กทรอนิกส์'],
+  infectious:['ของมีคม (Sharps)','ผ้าปนเปื้อน','ขยะติดเชื้อคละ'],
+  other:[]
+};
+let _wastePhotoData=null;
+function updateWasteSubtypeOptions(){
+  const cat=document.getElementById('wm-cat').value;
+  const dl=document.getElementById('wm-subtype-list');
+  if(dl)dl.innerHTML=(WASTE_SUBTYPES[cat]||[]).map(s=>`<option value="${escWW(s)}">`).join('');
+}
+function handleWastePhoto(e){
+  const f=e.target.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    _wastePhotoData=ev.target.result;
+    document.getElementById('wm-photo-thumb').innerHTML=`<img src="${_wastePhotoData}" style="max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--border)">`;
+  };
+  reader.readAsDataURL(f);
+}
+function openWasteModal(id){
+  document.getElementById('wm-id').value=id||'';
+  document.getElementById('wm-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('wm-cat').value='general';updateWasteSubtypeOptions();
+  document.getElementById('wm-subtype').value='';document.getElementById('wm-weight').value='';document.getElementById('wm-cost').value='';
+  document.getElementById('wm-vendor').value='';document.getElementById('wm-notes').value='';
+  document.getElementById('wm-photo-thumb').innerHTML='';document.getElementById('wm-photo-input').value='';
+  _wastePhotoData=null;
+  if(id){
+    const item=DB.get('wasteRecord',[]).find(x=>x.id===id);
+    if(item){
+      document.getElementById('wm-date').value=item.date||'';
+      document.getElementById('wm-cat').value=item.category||'general';updateWasteSubtypeOptions();
+      document.getElementById('wm-subtype').value=item.subtype||'';
+      document.getElementById('wm-weight').value=item.weightKg??'';
+      document.getElementById('wm-cost').value=item.cost??'';
+      document.getElementById('wm-vendor').value=item.vendor||'';
+      document.getElementById('wm-notes').value=item.notes||'';
+      if(item.photo){_wastePhotoData=item.photo;document.getElementById('wm-photo-thumb').innerHTML=`<img src="${item.photo}" style="max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--border)">`;}
+    }
+  }
+  openModal('m-wasterec');
+}
+function saveWasteRec(){
+  const date=document.getElementById('wm-date').value;
+  const weight=parseFloat(document.getElementById('wm-weight').value);
+  if(!date){showToast('⚠ กรุณาระบุวันที่');return;}
+  if(isNaN(weight)||weight<0){showToast('⚠ กรุณาระบุน้ำหนัก (kg)');return;}
+  const id=document.getElementById('wm-id').value;
+  const list=DB.get('wasteRecord',[]);
+  const rec={id:id||'WM-'+Date.now(),date,category:document.getElementById('wm-cat').value,subtype:document.getElementById('wm-subtype').value.trim(),
+    weightKg:weight,cost:parseFloat(document.getElementById('wm-cost').value)||0,vendor:document.getElementById('wm-vendor').value.trim(),
+    photo:_wastePhotoData||null,notes:document.getElementById('wm-notes').value.trim()};
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('wasteRecord',list);
+  showToast('💾 บันทึกรายการขยะสำเร็จ');
+  closeModal('m-wasterec');
+  renderWasteRecords();
+}
+function deleteWasteRec(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  DB.set('wasteRecord',DB.get('wasteRecord',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderWasteRecords();
+}
+function renderWasteRecords(){
+  const all=DB.get('wasteRecord',[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const catF=document.getElementById('wm-filter-cat')?.value||'';
+  const fromF=document.getElementById('wm-filter-from')?.value||'';
+  const toF=document.getElementById('wm-filter-to')?.value||'';
+  const list=all.filter(x=>{
+    if(catF&&x.category!==catF)return false;
+    if(fromF&&(x.date||'')<fromF)return false;
+    if(toF&&(x.date||'')>toF)return false;
+    return true;
+  });
+
+  const tbody=document.getElementById('wm-tbody');
+  if(tbody)tbody.innerHTML=list.length?list.map(x=>{
+    const cat=WASTE_CATS[x.category]||WASTE_CATS.other;
+    return `<tr>
+      <td>${x.date||'—'}</td><td><span class="badge ${cat.c}">${cat.l}</span></td><td style="font-size:12px">${escWW(x.subtype)||'—'}</td>
+      <td class="ffm">${(x.weightKg||0).toLocaleString()}</td><td style="font-size:12px">${escWW(x.vendor)||'—'}</td>
+      <td class="ffm" style="color:${x.cost>0?'var(--red)':x.cost<0?'var(--green)':'inherit'}">${x.cost?('฿'+x.cost.toLocaleString()):'—'}</td>
+      <td>${x.photo?`<img src="${x.photo}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="window.open('${x.photo}','_blank')">`:'—'}</td>
+      <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openWasteModal('${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteWasteRec('${x.id}')">🗑</button></div></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="8" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูลรายการขยะ</td></tr>';
+
+  const curMo=new Date().toISOString().slice(0,7);
+  const mtd=all.filter(x=>(x.date||'').startsWith(curMo));
+  const sumBy=(cat)=>mtd.filter(x=>x.category===cat).reduce((s,x)=>s+(x.weightKg||0),0);
+  const g=id=>document.getElementById(id);
+  const wGeneral=sumBy('general'),wRecycle=sumBy('recycle'),wHazard=sumBy('hazard'),wInfectious=sumBy('infectious');
+  const wTotal=mtd.reduce((s,x)=>s+(x.weightKg||0),0);
+  if(g('wm-kpi-general'))g('wm-kpi-general').textContent=wGeneral.toLocaleString();
+  if(g('wm-kpi-recycle'))g('wm-kpi-recycle').textContent=wRecycle.toLocaleString();
+  if(g('wm-kpi-hazard'))g('wm-kpi-hazard').textContent=wHazard.toLocaleString();
+  if(g('wm-kpi-infectious'))g('wm-kpi-infectious').textContent=wInfectious.toLocaleString();
+  if(g('wm-kpi-total'))g('wm-kpi-total').textContent=wTotal.toLocaleString();
+  if(g('wm-kpi-diversion'))g('wm-kpi-diversion').textContent=(wTotal?Math.round(wRecycle/wTotal*100):0)+'%';
+  const netCost=mtd.reduce((s,x)=>s+(x.cost||0),0);
+  if(g('wm-kpi-cost'))g('wm-kpi-cost').textContent='฿'+netCost.toLocaleString();
+
+  const scope=list.length?list:all;
+  const catTotals={};
+  Object.keys(WASTE_CATS).forEach(k=>catTotals[k]=0);
+  scope.forEach(x=>{catTotals[x.category]=(catTotals[x.category]||0)+(x.weightKg||0);});
+  dChart('chWasteCat');
+  charts.chWasteCat=new Chart(document.getElementById('chWasteCat'),{type:'doughnut',data:{labels:Object.keys(catTotals).map(k=>WASTE_CATS[k].l),datasets:[{data:Object.values(catTotals).map(v=>Math.round(v*100)/100),backgroundColor:['#8B949E','#22C55E','#EF4444','#F97316','#3B82F6'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8B949E',font:{size:10}}}}}}});
+
+  const months=[...Array(6)].map((_,i)=>{const d=new Date();d.setMonth(d.getMonth()-(5-i));return d.toISOString().slice(0,7);});
+  const catKeys=Object.keys(WASTE_CATS);
+  const catColors={general:'rgba(139,148,158,.7)',recycle:'rgba(34,197,94,.7)',hazard:'rgba(239,68,68,.7)',infectious:'rgba(249,115,22,.7)',other:'rgba(59,130,246,.7)'};
+  const trendDatasets=catKeys.map(k=>({label:WASTE_CATS[k].l,data:months.map(m=>Math.round(all.filter(x=>x.category===k&&(x.date||'').startsWith(m)).reduce((s,x)=>s+(x.weightKg||0),0)*100)/100),backgroundColor:catColors[k],stack:'s',borderRadius:3}));
+  dChart('chWasteTrend');
+  charts.chWasteTrend=new Chart(document.getElementById('chWasteTrend'),{type:'bar',data:{labels:months,datasets:trendDatasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:9}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:9}},stacked:true},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'},stacked:true}}}});
+}
+function exportWasteExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const list=DB.get('wasteRecord',[]);
+  const data=[['วันที่','ประเภท','รายละเอียด','น้ำหนัก(kg)','วิธีกำจัด/ผู้รับกำจัด','ค่าใช้จ่าย(+)/รายได้(-)(฿)','หมายเหตุ'],
+    ...list.map(x=>[x.date,(WASTE_CATS[x.category]||WASTE_CATS.other).l,x.subtype||'',x.weightKg||0,x.vendor||'',x.cost||0,x.notes||''])];
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:18}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'WasteRecord');
+  XLSX.writeFile(wb,'TKO_WasteRecord_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
+}
+function importWasteExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX...');return;}
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        if(!ws){showToast('❌ ไม่พบ sheet ในไฟล์');return;}
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+        if(!rows.length){showToast('⚠ ไม่พบข้อมูลในไฟล์');return;}
+        const g=(r,...keys)=>{for(const k of keys){if(r[k]!==undefined&&r[k]!=='')return String(r[k]).trim();}return '';};
+        const catMap={};Object.keys(WASTE_CATS).forEach(k=>catMap[WASTE_CATS[k].l]=k);
+        const list=DB.get('wasteRecord',[]);
+        let added=0;
+        rows.forEach(r=>{
+          const date=g(r,'วันที่','date','Date');
+          const weight=parseFloat(g(r,'น้ำหนัก(kg)','weightKg','Weight'));
+          if(!date||isNaN(weight))return;
+          const catLabel=g(r,'ประเภท','category','Category');
+          list.push({id:'WM-'+Date.now()+'-'+(added++),date,category:catMap[catLabel]||'general',subtype:g(r,'รายละเอียด','subtype'),
+            weightKg:weight,vendor:g(r,'วิธีกำจัด/ผู้รับกำจัด','vendor'),cost:parseFloat(g(r,'ค่าใช้จ่าย(+)/รายได้(-)(฿)','cost'))||0,notes:g(r,'หมายเหตุ','notes'),photo:null});
+        });
+        DB.set('wasteRecord',list);
+        showToast('📥 Import สำเร็จ '+added+' รายการ');
+        renderWasteRecords();
+      }catch(err){showToast('❌ อ่านไฟล์ไม่ได้: '+err.message);}
+    };
+    reader.readAsArrayBuffer(f);
+  };
+  inp.click();
+}
+
 function renderEnergy(){
   dChart('chEng');const mos=['ก.ย.','ต.ค.','พ.ย.','ธ.ค.','ม.ค.','ก.พ.'];
   charts.chEng=new Chart(document.getElementById('chEng'),{type:'line',data:{labels:mos,datasets:[{label:'kWh (000)',data:[155,148,142,138,145,143],borderColor:'#14B8A6',fill:true,backgroundColor:'rgba(20,184,166,.1)',tension:.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E',callback:v=>v+'K'},grid:{color:'#21262D'}}}}});
