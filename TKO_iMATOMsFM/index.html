@@ -1532,27 +1532,30 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 
     <!-- SAFETY VIEWS -->
     <div id="view-incident" class="view">
-      <div class="sh"><div><div class="st">🚨 Incident Report</div><div class="ss">อุบัติเหตุ · Near Miss · LTI · TRIR</div></div><button class="btn btn-danger" onclick="openModal('m-inc')">+ รายงาน</button></div>
-      <div class="kpi-grid"><div class="kpi red"><div class="kl">YTD Incidents</div><div class="kv ffd" id="inc-tot">0</div></div><div class="kpi yellow"><div class="kl">LTI</div><div class="kv ffd">0</div></div><div class="kpi orange"><div class="kl">Near Miss</div><div class="kv ffd" id="inc-nm">0</div></div><div class="kpi green"><div class="kl">Safe Days (LTI)</div><div class="kv ffd">180</div></div></div>
+      <div class="sh"><div><div class="st">🚨 Incident Report</div><div class="ss">อุบัติเหตุ · Near Miss · LTI · Root Cause</div></div><div class="flex g8"><button class="btn btn-secondary btn-sm" onclick="exportIncidentExcel()">📊 Export Excel</button><button class="btn btn-danger" onclick="openIncidentModal()">+ รายงาน</button></div></div>
+      <div class="kpi-grid"><div class="kpi red"><div class="kl">YTD Incidents</div><div class="kv ffd" id="inc-tot">0</div></div><div class="kpi yellow"><div class="kl">LTI</div><div class="kv ffd" id="inc-lti">0</div></div><div class="kpi orange"><div class="kl">Near Miss</div><div class="kv ffd" id="inc-nm">0</div></div><div class="kpi green"><div class="kl">Safe Days (LTI)</div><div class="kv ffd" id="inc-safedays">0</div></div></div>
       <div class="table-wrap"><table><thead><tr><th>ID</th><th>วันที่</th><th>ประเภท</th><th>สถานที่</th><th>ผลกระทบ</th><th>ความรุนแรง</th><th>Action</th><th>สถานะ</th></tr></thead><tbody id="inc-tbody"><tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มี Incident</td></tr></tbody></table></div>
     </div>
     <div id="view-hazard" class="view">
-      <div class="sh"><div><div class="st">⚠ Hazard Identification</div><div class="ss">JSA · HIRA · Risk Matrix</div></div><button class="btn btn-danger">+ เพิ่ม Hazard</button></div>
-      <div class="alr alr-w mb16">HIRA Risk Matrix 5×5 · 🔴 Critical = ดำเนินการทันที · 🟠 High = ภายใน 1 สัปดาห์</div>
-      <div class="grid-2"><div class="card"><div class="ffd fw6 mb12" style="font-size:14px">Top Hazards</div><div class="mr"><span class="tm">Electrical Hazard</span><span class="badge badge-red">Critical</span></div><div class="mr"><span class="tm">Working at Height</span><span class="badge badge-red">High</span></div><div class="mr"><span class="tm">Chemical Storage</span><span class="badge badge-orange">Med-High</span></div><div class="mr"><span class="tm">Confined Space</span><span class="badge badge-yellow">Medium</span></div><div class="mr"><span class="tm">Hot Work</span><span class="badge badge-yellow">Medium</span></div></div><div class="card"><div class="ffd fw6 mb12" style="font-size:14px">HIRA Summary</div><div class="kpi-grid" style="grid-template-columns:1fr 1fr;margin-bottom:0"><div class="kpi red" style="padding:10px"><div class="kl">Critical</div><div class="kv ffd">3</div></div><div class="kpi orange" style="padding:10px"><div class="kl">High</div><div class="kv ffd">7</div></div><div class="kpi yellow" style="padding:10px"><div class="kl">Medium</div><div class="kv ffd">12</div></div><div class="kpi green" style="padding:10px"><div class="kl">Low</div><div class="kv ffd">18</div></div></div></div></div>
+      <div class="sh"><div><div class="st">⚠ Hazard Identification</div><div class="ss">JSA · HIRA · Risk Matrix</div></div><div class="flex g8"><button class="btn btn-secondary btn-sm" onclick="exportHazardExcel()">📊 Export Excel</button><button class="btn btn-danger" onclick="openHazardModal()">+ เพิ่ม Hazard</button></div></div>
+      <div class="alr alr-w mb16">HIRA Risk Matrix 5×5 · 🔴 Critical (20-25) = ดำเนินการทันที · 🟠 High (12-19) = ภายใน 1 สัปดาห์ · 🟡 Medium (6-11) · 🟢 Low (1-5)</div>
+      <div class="grid-2"><div class="card"><div class="ffd fw6 mb12" style="font-size:14px">Top Hazards</div><div id="haz-top-list"><div class="tm" style="padding:12px;font-size:12px">ยังไม่มีข้อมูล Hazard</div></div></div><div class="card"><div class="ffd fw6 mb12" style="font-size:14px">HIRA Summary</div><div class="kpi-grid" style="grid-template-columns:1fr 1fr;margin-bottom:0"><div class="kpi red" style="padding:10px"><div class="kl">Critical</div><div class="kv ffd" id="haz-cnt-critical">0</div></div><div class="kpi orange" style="padding:10px"><div class="kl">High</div><div class="kv ffd" id="haz-cnt-high">0</div></div><div class="kpi yellow" style="padding:10px"><div class="kl">Medium</div><div class="kv ffd" id="haz-cnt-medium">0</div></div><div class="kpi green" style="padding:10px"><div class="kl">Low</div><div class="kv ffd" id="haz-cnt-low">0</div></div></div></div></div>
+      <div class="table-wrap mt16"><table><thead><tr><th>ID</th><th>Hazard</th><th>สถานที่</th><th>หมวดหมู่</th><th>Risk Score</th><th>ระดับ</th><th>ผู้รับผิดชอบ</th><th>สถานะ</th><th>Action</th></tr></thead><tbody id="hazard-tbody"><tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มี Hazard</td></tr></tbody></table></div>
     </div>
     <div id="view-permit" class="view">
-      <div class="sh"><div><div class="st">📝 Permit to Work (PTW)</div><div class="ss">Hot Work · Confined Space · Electrical · Height</div></div><button class="btn btn-danger" onclick="openModal('m-ptw')">+ ออกใบอนุญาต</button></div>
-      <div class="kpi-grid"><div class="kpi green"><div class="kl">Active</div><div class="kv ffd">4</div></div><div class="kpi yellow"><div class="kl">รออนุมัติ</div><div class="kv ffd">2</div></div><div class="kpi blue"><div class="kl">ปิดวันนี้</div><div class="kv ffd">1</div></div><div class="kpi red"><div class="kl">Expired</div><div class="kv ffd">0</div></div></div>
-      <div class="table-wrap"><table><thead><tr><th>PTW ID</th><th>ประเภท</th><th>สถานที่</th><th>ผู้ขอ</th><th>วันที่</th><th>เวลา</th><th>ผู้อนุมัติ</th><th>สถานะ</th><th>Action</th></tr></thead><tbody>
-        <tr><td><span class="tag">PTW-042</span></td><td><span class="badge badge-red">🔥 Hot Work</span></td><td>B2 Cooling Tower</td><td>ช่าง ก</td><td>16/05/2026</td><td>08:00–17:00</td><td>Mr.Kittanan Onsee</td><td><span class="badge badge-green">✅ Active</span></td><td><button class="btn btn-danger btn-xs">Close</button></td></tr>
-        <tr><td><span class="tag">PTW-043</span></td><td><span class="badge badge-purple">📦 Confined</span></td><td>Underground Tank R1</td><td>ช่าง ข</td><td>16/05/2026</td><td>09:00–12:00</td><td>รออนุมัติ</td><td><span class="badge badge-yellow">⏳ Pending</span></td><td><button class="btn btn-success btn-xs">อนุมัติ</button></td></tr>
-      </tbody></table></div>
+      <div class="sh"><div><div class="st">📝 Permit to Work (PTW)</div><div class="ss">Hot Work · Confined Space · Electrical · Height</div></div><div class="flex g8"><button class="btn btn-secondary btn-sm" onclick="exportPTWExcel()">📊 Export Excel</button><button class="btn btn-danger" onclick="openPTWModal()">+ ออกใบอนุญาต</button></div></div>
+      <div class="kpi-grid"><div class="kpi green"><div class="kl">Active</div><div class="kv ffd" id="ptw-active">0</div></div><div class="kpi yellow"><div class="kl">รออนุมัติ</div><div class="kv ffd" id="ptw-pending">0</div></div><div class="kpi blue"><div class="kl">ปิดวันนี้</div><div class="kv ffd" id="ptw-closedtoday">0</div></div><div class="kpi red"><div class="kl">Expired</div><div class="kv ffd" id="ptw-expired">0</div></div></div>
+      <div class="table-wrap"><table><thead><tr><th>PTW ID</th><th>ประเภท</th><th>สถานที่</th><th>ผู้ขอ</th><th>วันที่</th><th>เวลา</th><th>ผู้อนุมัติ</th><th>สถานะ</th><th>Action</th></tr></thead><tbody id="ptw-tbody"><tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มี PTW</td></tr></tbody></table></div>
     </div>
     <div id="view-safetystat" class="view">
-      <div class="sh"><div><div class="st">📊 Safety Statistics</div><div class="ss">TRIR · LTIR · Safe Days · Trend</div></div><button class="btn btn-secondary btn-sm">📤 Export</button></div>
-      <div class="kpi-grid"><div class="kpi green"><div class="kl">Safe Working Days</div><div class="kv ffd">180</div></div><div class="kpi blue"><div class="kl">Man-Hours</div><div class="kv ffd">42,000</div></div><div class="kpi teal"><div class="kl">TRIR</div><div class="kv ffd">0.14</div></div><div class="kpi yellow"><div class="kl">LTIR</div><div class="kv ffd">0.00</div></div></div>
-      <div class="card mt16"><div class="ffd fw6 mb12" style="font-size:14px">Safety Trend 2026</div><div class="chart-wrap"><canvas id="chSafe"></canvas></div></div>
+      <div class="sh"><div><div class="st">📊 Safety Statistics</div><div class="ss">IFR · ISR · DI · TRIR · LTIR · Root Cause Analysis</div></div><div class="flex g8"><button class="btn btn-secondary btn-sm" onclick="openModal('m-safetystat-set')">⚙ ตั้งค่า Man-Hours</button><button class="btn btn-secondary btn-sm" onclick="exportSafetyStatsExcel()">📤 Export</button></div></div>
+      <div class="kpi-grid"><div class="kpi green"><div class="kl">Safe Working Days</div><div class="kv ffd" id="ss-safedays">0</div></div><div class="kpi blue"><div class="kl">Man-Hours</div><div class="kv ffd" id="ss-manhours-disp">0</div></div><div class="kpi teal"><div class="kl">TRIR</div><div class="kv ffd" id="ss-trir">0.00</div></div><div class="kpi yellow"><div class="kl">LTIR</div><div class="kv ffd" id="ss-ltir">0.00</div></div></div>
+      <div class="kpi-grid"><div class="kpi purple"><div class="kl">IFR (ต่อ 1 ล้าน ชม.)</div><div class="kv ffd" id="ss-ifr">0.00</div></div><div class="kpi orange"><div class="kl">ISR (ต่อ 1,000 ชม.)</div><div class="kv ffd" id="ss-isr">0.00</div></div><div class="kpi red"><div class="kl">DI</div><div class="kv ffd" id="ss-di">0.00</div></div><div class="kpi blue"><div class="kl">Total Incidents (YTD)</div><div class="kv ffd" id="ss-totinc">0</div></div></div>
+      <div class="grid-2 mt16">
+        <div class="card"><div class="ffd fw6 mb12" style="font-size:14px">Safety Trend (12 เดือนล่าสุด)</div><div class="chart-wrap"><canvas id="chSafe"></canvas></div></div>
+        <div class="card"><div class="ffd fw6 mb12" style="font-size:14px">Root Cause Analysis (Immediate Cause)</div><div class="chart-wrap"><canvas id="chRootCause"></canvas></div></div>
+      </div>
+      <div class="card mt16"><div class="ffd fw6 mb12" style="font-size:14px">Top Causes</div><div id="ss-topcauses-list"><div class="tm" style="padding:12px;font-size:12px">ยังไม่มีข้อมูล</div></div></div>
     </div>
 
     <!-- AI ANALYTICS -->
@@ -2492,20 +2495,56 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 <div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-audit')">ยกเลิก</button><button class="btn btn-secondary" onclick="exportAuditForm()">📄 Export PDF View</button><button class="btn btn-primary" onclick="saveAudit()">💾 Save Audit Plan</button></div>
 </div></div>
 
-<div class="modal-overlay" id="m-inc"><div class="modal"><div class="mhd"><div class="mttl">🚨 รายงาน Incident</div><button class="mclose" onclick="closeModal('m-inc')">✕</button></div>
-<div class="form-row"><div class="form-group"><label class="form-label">ประเภท</label><select class="form-control" id="inci-tp"><option>Near Miss</option><option>First Aid</option><option>Medical Treatment</option><option>Lost Time Injury</option><option>Property Damage</option></select></div><div class="form-group"><label class="form-label">วันเวลา</label><input class="form-control" type="datetime-local" id="inci-dt"></div></div>
-<div class="form-group"><label class="form-label">สถานที่ *</label><input class="form-control" id="inci-lc" placeholder="B2 Cooling Tower Area"></div>
-<div class="form-group"><label class="form-label">รายละเอียด *</label><textarea class="form-control" id="inci-dc" placeholder="อธิบายเหตุการณ์..."></textarea></div>
-<div class="form-row"><div class="form-group"><label class="form-label">ผู้ได้รับผลกระทบ</label><input class="form-control" id="inci-af" placeholder="ชื่อ"></div><div class="form-group"><label class="form-label">ความรุนแรง</label><select class="form-control" id="inci-sv"><option value="low">Low</option><option value="minor">Minor</option><option value="moderate">Moderate</option><option value="major">Major</option><option value="critical">Critical</option></select></div></div>
+<div class="modal-overlay" id="m-inc"><div class="modal modal-lg"><div class="mhd"><div class="mttl" id="inc-modal-title">🚨 รายงาน Incident (IR)</div><button class="mclose" onclick="closeModal('m-inc')">✕</button></div>
+<input type="hidden" id="inci-id">
+<div class="form-row"><div class="form-group"><label class="form-label">ประเภท *</label><select class="form-control" id="inci-tp"><option>Near Miss</option><option>First Aid</option><option>Medical Treatment</option><option>Lost Time Injury</option><option>Property Damage</option></select></div><div class="form-group"><label class="form-label">วันเวลาที่เกิดเหตุ *</label><input class="form-control" type="datetime-local" id="inci-dt"></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">สถานที่ *</label><input class="form-control" id="inci-lc" placeholder="B2 Cooling Tower Area"></div><div class="form-group"><label class="form-label">ผู้รายงาน</label><input class="form-control" id="inci-rb" placeholder="ชื่อผู้รายงาน"></div></div>
+<div class="form-group"><label class="form-label">รายละเอียดเหตุการณ์ *</label><textarea class="form-control" id="inci-dc" placeholder="อธิบายเหตุการณ์..."></textarea></div>
+<div class="form-row"><div class="form-group"><label class="form-label">ผู้ได้รับผลกระทบ</label><input class="form-control" id="inci-af" placeholder="ชื่อ"></div><div class="form-group"><label class="form-label">พยาน</label><input class="form-control" id="inci-witness" placeholder="ชื่อพยาน (ถ้ามี)"></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">ความรุนแรง</label><select class="form-control" id="inci-sv"><option value="low">Low</option><option value="minor">Minor</option><option value="moderate">Moderate</option><option value="major">Major</option><option value="critical">Critical</option></select></div><div class="form-group"><label class="form-label">อวัยวะที่บาดเจ็บ (ถ้ามี)</label><input class="form-control" id="inci-body" placeholder="เช่น มือ, เท้า, ศีรษะ"></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">จำนวนวันหยุดงาน (Lost Days)</label><input class="form-control" type="number" min="0" id="inci-lostdays" value="0"></div><div class="form-group"><label class="form-label">สถานะ</label><select class="form-control" id="inci-status"><option value="open">🔴 Open</option><option value="investigating">🟡 Investigating</option><option value="closed">🟢 Closed</option></select></div></div>
+<div class="form-sec">🔎 การวิเคราะห์สาเหตุ (Root Cause Analysis)</div>
+<div class="form-group"><label class="form-label">สาเหตุเบื้องต้น (Immediate Cause)</label><select class="form-control" id="inci-cause"><option value="">— เลือก —</option><option>Unsafe Act</option><option>Unsafe Condition</option><option>Equipment Failure</option><option>Procedure Not Followed</option><option>Other</option></select></div>
+<div class="form-group"><label class="form-label">สาเหตุที่แท้จริง (Root Cause)</label><textarea class="form-control" id="inci-root" placeholder="วิเคราะห์สาเหตุที่แท้จริง..."></textarea></div>
+<div class="form-group"><label class="form-label">มาตรการแก้ไข (Corrective Action)</label><textarea class="form-control" id="inci-corr" placeholder="มาตรการป้องกันไม่ให้เกิดซ้ำ..."></textarea></div>
 <div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-inc')">ยกเลิก</button><button class="btn btn-danger" onclick="saveInc()">🚨 บันทึก</button></div>
 </div></div>
 
-<div class="modal-overlay" id="m-ptw"><div class="modal"><div class="mhd"><div class="mttl">📝 ออกใบอนุญาต PTW</div><button class="mclose" onclick="closeModal('m-ptw')">✕</button></div>
+<div class="modal-overlay" id="m-ptw"><div class="modal modal-lg"><div class="mhd"><div class="mttl" id="ptw-modal-title">📝 ออกใบอนุญาต PTW</div><button class="mclose" onclick="closeModal('m-ptw')">✕</button></div>
+<input type="hidden" id="ptwi-id">
 <div class="form-row"><div class="form-group"><label class="form-label">ประเภทงาน *</label><select class="form-control" id="ptwi-tp"><option>🔥 Hot Work</option><option>📦 Confined Space</option><option>⚡ Electrical</option><option>🧗 Working at Height</option><option>☢ Chemical</option></select></div><div class="form-group"><label class="form-label">สถานที่ *</label><input class="form-control" id="ptwi-lc" placeholder="B2 Cooling Tower"></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">ผู้ขอ</label><input class="form-control" id="ptwi-rq" placeholder="ชื่อ"></div><div class="form-group"><label class="form-label">วันที่ทำงาน</label><input class="form-control" type="date" id="ptwi-dt"></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">เวลาเริ่ม</label><input class="form-control" type="time" id="ptwi-st" value="08:00"></div><div class="form-group"><label class="form-label">เวลาสิ้นสุด</label><input class="form-control" type="time" id="ptwi-en" value="17:00"></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">ผู้ขอ</label><input class="form-control" id="ptwi-rq" placeholder="ชื่อ"></div><div class="form-group"><label class="form-label">ผู้อนุมัติ</label><input class="form-control" id="ptwi-appr" placeholder="ชื่อผู้อนุมัติ"></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">วันที่ทำงาน</label><input class="form-control" type="date" id="ptwi-dt"></div><div class="form-group"><label class="form-label">เวลาเริ่ม</label><input class="form-control" type="time" id="ptwi-st" value="08:00"></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">เวลาสิ้นสุด</label><input class="form-control" type="time" id="ptwi-en" value="17:00"></div><div class="form-group"></div></div>
 <div class="form-group"><label class="form-label">รายละเอียดงาน</label><textarea class="form-control" id="ptwi-dc" placeholder="อธิบายงานที่ทำ..."></textarea></div>
+<div class="form-group"><label class="form-label">มาตรการความปลอดภัย / Precautions</label><textarea class="form-control" id="ptwi-precaution" placeholder="มาตรการความปลอดภัยที่ต้องปฏิบัติ..."></textarea></div>
+<div class="form-group"><label class="form-label">PPE ที่ต้องใช้</label><div class="flex g10" style="flex-wrap:wrap">
+<label class="flex fca g6" style="font-size:12px"><input type="checkbox" class="ptwi-ppe" value="Helmet"> Helmet</label>
+<label class="flex fca g6" style="font-size:12px"><input type="checkbox" class="ptwi-ppe" value="Gloves"> Gloves</label>
+<label class="flex fca g6" style="font-size:12px"><input type="checkbox" class="ptwi-ppe" value="Safety Glasses"> Safety Glasses</label>
+<label class="flex fca g6" style="font-size:12px"><input type="checkbox" class="ptwi-ppe" value="Harness"> Harness</label>
+<label class="flex fca g6" style="font-size:12px"><input type="checkbox" class="ptwi-ppe" value="Respirator"> Respirator</label>
+</div></div>
 <div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-ptw')">ยกเลิก</button><button class="btn btn-danger" onclick="savePTW()">📝 ออกใบอนุญาต</button></div>
+</div></div>
+
+<div class="modal-overlay" id="m-hazard"><div class="modal modal-lg"><div class="mhd"><div class="mttl" id="haz-modal-title">⚠ เพิ่ม Hazard (HIRA)</div><button class="mclose" onclick="closeModal('m-hazard')">✕</button></div>
+<input type="hidden" id="hazi-id">
+<div class="form-group"><label class="form-label">รายละเอียด Hazard *</label><textarea class="form-control" id="hazi-desc" placeholder="อธิบายอันตรายที่พบ..."></textarea></div>
+<div class="form-row"><div class="form-group"><label class="form-label">สถานที่ / พื้นที่</label><input class="form-control" id="hazi-loc" placeholder="เช่น B2 Cooling Tower"></div><div class="form-group"><label class="form-label">หมวดหมู่</label><select class="form-control" id="hazi-cat"><option>Electrical</option><option>Working at Height</option><option>Chemical</option><option>Confined Space</option><option>Hot Work</option><option>Mechanical</option><option>Ergonomic</option><option>Other</option></select></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">โอกาสเกิด (Likelihood) 1-5</label><select class="form-control" id="hazi-lk" onchange="hazUpdateRisk()"><option value="1">1 - แทบไม่เกิด</option><option value="2">2 - นาน ๆ ครั้ง</option><option value="3">3 - เป็นครั้งคราว</option><option value="4">4 - บ่อย</option><option value="5">5 - บ่อยมาก</option></select></div><div class="form-group"><label class="form-label">ความรุนแรง (Severity) 1-5</label><select class="form-control" id="hazi-sv" onchange="hazUpdateRisk()"><option value="1">1 - เล็กน้อย</option><option value="2">2 - บาดเจ็บเล็กน้อย</option><option value="3">3 - บาดเจ็บปานกลาง</option><option value="4">4 - บาดเจ็บรุนแรง</option><option value="5">5 - เสียชีวิต</option></select></div></div>
+<div class="card" style="text-align:center;margin-bottom:14px;padding:12px"><div style="font-size:11px;color:var(--text3)">Risk Score = Likelihood × Severity</div><div class="ffd fw7" id="hazi-score-display" style="font-size:24px">1</div><span class="badge badge-green" id="hazi-level-display">Low</span></div>
+<div class="form-group"><label class="form-label">มาตรการควบคุมปัจจุบัน (Existing Controls)</label><textarea class="form-control" id="hazi-existctrl" placeholder="มาตรการที่มีอยู่แล้ว..."></textarea></div>
+<div class="form-group"><label class="form-label">มาตรการควบคุมเพิ่มเติมที่แนะนำ</label><textarea class="form-control" id="hazi-addctrl" placeholder="มาตรการที่ควรเพิ่ม..."></textarea></div>
+<div class="form-row"><div class="form-group"><label class="form-label">ผู้รับผิดชอบ</label><input class="form-control" id="hazi-owner" placeholder="ชื่อผู้รับผิดชอบ"></div><div class="form-group"><label class="form-label">วันที่กำหนดแล้วเสร็จ</label><input class="form-control" type="date" id="hazi-due"></div></div>
+<div class="form-group"><label class="form-label">สถานะ</label><select class="form-control" id="hazi-status"><option value="open">🔴 Open</option><option value="mitigating">🟡 Mitigating</option><option value="closed">🟢 Closed</option></select></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-hazard')">ยกเลิก</button><button class="btn btn-danger" onclick="saveHazard()">⚠ บันทึก</button></div>
+</div></div>
+
+<div class="modal-overlay" id="m-safetystat-set"><div class="modal"><div class="mhd"><div class="mttl">⚙ ตั้งค่า Safety Statistics</div><button class="mclose" onclick="closeModal('m-safetystat-set')">✕</button></div>
+<div class="form-group"><label class="form-label">Man-Hours รวม (ช่วงเวลาปัจจุบัน)</label><input class="form-control" type="number" min="0" id="ss-manhours" placeholder="เช่น 200000"></div>
+<div class="form-group"><label class="form-label">วันที่เริ่มนับ Safe Days (Baseline) — ใช้เมื่อยังไม่เคยมี LTI</label><input class="form-control" type="date" id="ss-baseline"></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-safetystat-set')">ยกเลิก</button><button class="btn btn-primary" onclick="saveSafetyStatsConfig()">💾 บันทึก</button></div>
 </div></div>
 
 <div class="modal-overlay" id="m-insp"><div class="modal modal-lg"><div class="mhd"><div class="mttl" id="aiq-modal-title">🔍 New Inspection & Visit Site</div><button class="mclose" onclick="closeModal('m-insp')">✕</button></div>
@@ -7700,7 +7739,7 @@ const META={
   floorplan:{t:'🏢 Building Critical Status',b:'TKO iMATOMs › แผนผังชั้น'},
 };
 const accMap={assets:'s1',lifecycle:'s1',qrcode:'s1',inspection:'s1',valuation:'s1',workrequest:'s1',ppm:'s1',operation:'s1',contract:'s1',inventory:'s1',inspection:'s2',ncr:'s2',fmea:'s2',audit:'s2',budget:'s3',costanalysis:'s3',valuation:'s3',energy:'s4',carbon:'s4',waste:'s4',esgkpi:'s4',training:'s5',competency:'s5',certification:'s5',knowledgebase:'s5',exam:'s5',incident:'s6',hazard:'s6',permit:'s6',safetystat:'s6',ai:'s7',integrations:'s8',notifications:'s9','db-assets':'s10','db-floorplan':'s10','db-custom':'s10',config:'s11',cloud:'s12',adminmgmt:'s13'};
-const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,carbon:renderCarbon,waste:renderWaste,esgkpi:renderEsgKpi,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,audit:renderAudit,modules:renderModules,notifications:renderNotifCenter,exam:renderExam,competency:renderCompetency,certification:renderCertification,knowledgebase:renderKnowledgeBase,training:renderTraining,floorplan:()=>{
+const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,incident:renderIncident,hazard:renderHazard,permit:renderPermit,energy:renderEnergy,carbon:renderCarbon,waste:renderWaste,esgkpi:renderEsgKpi,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,audit:renderAudit,modules:renderModules,notifications:renderNotifCenter,exam:renderExam,competency:renderCompetency,certification:renderCertification,knowledgebase:renderKnowledgeBase,training:renderTraining,floorplan:()=>{
   // คืนค่า floor ก่อน render
   const sel=document.getElementById('fp-floor');
   if(sel){const saved=localStorage.getItem('fp_last_floor')||'l1';if(sel.querySelector(`option[value="${saved}"]`))sel.value=saved;}
@@ -9405,20 +9444,400 @@ function renderAudit(){
 }
 
 // ══ INCIDENT ══
+const INC_SEVERITY_BADGE={low:'badge-blue',minor:'badge-teal',moderate:'badge-yellow',major:'badge-orange',critical:'badge-red'};
+const INC_STATUS_BADGE={open:'badge-red',investigating:'badge-yellow',closed:'badge-green'};
+let incEditId=null;
+function openIncidentModal(){
+  incEditId=null;
+  document.getElementById('inci-id').value='';
+  document.getElementById('inc-modal-title').textContent='🚨 รายงาน Incident (IR)';
+  ['inci-lc','inci-dc','inci-af','inci-witness','inci-body','inci-root','inci-corr'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('inci-tp').value='Near Miss';
+  document.getElementById('inci-sv').value='low';
+  document.getElementById('inci-status').value='open';
+  document.getElementById('inci-cause').value='';
+  document.getElementById('inci-lostdays').value='0';
+  document.getElementById('inci-dt').value=new Date().toISOString().slice(0,16);
+  document.getElementById('inci-rb').value=CU?.name||CU?.username||'';
+  openModal('m-inc');
+}
+function editIncident(id){
+  INC=DB.get('incidents',[]);
+  const it=INC.find(x=>x.id===id); if(!it)return;
+  incEditId=id;
+  document.getElementById('inci-id').value=id;
+  document.getElementById('inc-modal-title').textContent='✏️ แก้ไข Incident — '+id;
+  document.getElementById('inci-tp').value=it.type||'Near Miss';
+  document.getElementById('inci-dt').value=it.datetime||'';
+  document.getElementById('inci-lc').value=it.location||'';
+  document.getElementById('inci-rb').value=it.reportedBy||'';
+  document.getElementById('inci-dc').value=it.detail||'';
+  document.getElementById('inci-af').value=it.affected||'';
+  document.getElementById('inci-witness').value=it.witness||'';
+  document.getElementById('inci-sv').value=it.severity||'low';
+  document.getElementById('inci-body').value=it.bodyPart||'';
+  document.getElementById('inci-lostdays').value=it.lostDays||0;
+  document.getElementById('inci-status').value=it.status||'open';
+  document.getElementById('inci-cause').value=it.immediateCause||'';
+  document.getElementById('inci-root').value=it.rootCause||'';
+  document.getElementById('inci-corr').value=it.correctiveAction||'';
+  openModal('m-inc');
+}
 function saveInc(){
-  const lc=document.getElementById('inci-lc').value.trim();const dc=document.getElementById('inci-dc').value.trim();if(!lc||!dc){alert('กรุณากรอกสถานที่และรายละเอียด');return;}
-  INC=DB.get('incidents',[]);const id=`INC-${String(INC.length+1).padStart(3,'0')}`;
-  INC.push({id,type:document.getElementById('inci-tp').value,datetime:document.getElementById('inci-dt').value,location:lc,detail:dc,affected:document.getElementById('inci-af').value,severity:document.getElementById('inci-sv').value,status:'open',date:new Date().toISOString()});
-  DB.set('incidents',INC);closeModal('m-inc');showToast('🚨 บันทึก Incident แล้ว');
-  document.getElementById('inc-tot').textContent=INC.length;document.getElementById('inc-nm').textContent=INC.filter(i=>i.type==='Near Miss').length;
+  const lc=document.getElementById('inci-lc').value.trim();
+  const dc=document.getElementById('inci-dc').value.trim();
+  if(!lc||!dc){alert('กรุณากรอกสถานที่และรายละเอียด');return;}
+  INC=DB.get('incidents',[]);
+  const existingId=document.getElementById('inci-id').value||incEditId;
+  const rec={
+    id: existingId||`INC-${String(INC.length+1).padStart(3,'0')}`,
+    type:document.getElementById('inci-tp').value,
+    datetime:document.getElementById('inci-dt').value,
+    location:lc,
+    reportedBy:document.getElementById('inci-rb').value.trim()||CU?.name||CU?.username||'',
+    detail:dc,
+    affected:document.getElementById('inci-af').value.trim(),
+    witness:document.getElementById('inci-witness').value.trim(),
+    severity:document.getElementById('inci-sv').value,
+    bodyPart:document.getElementById('inci-body').value.trim(),
+    lostDays:parseFloat(document.getElementById('inci-lostdays').value)||0,
+    status:document.getElementById('inci-status').value||'open',
+    immediateCause:document.getElementById('inci-cause').value,
+    rootCause:document.getElementById('inci-root').value.trim(),
+    correctiveAction:document.getElementById('inci-corr').value.trim(),
+  };
+  if(existingId){
+    const idx=INC.findIndex(x=>x.id===existingId);
+    if(idx>=0) INC[idx]={...INC[idx],...rec}; else { rec.createdAt=new Date().toISOString(); INC.push(rec); }
+  } else {
+    rec.createdAt=new Date().toISOString();
+    rec.date=new Date().toISOString();
+    INC.push(rec);
+  }
+  DB.set('incidents',INC);
+  if(!existingId&&(rec.severity==='critical'||rec.severity==='major')){
+    addNotif({type:'critical',title:'🚨 Incident '+rec.severity.toUpperCase()+': '+rec.id,body:rec.location+' — '+rec.detail.substring(0,60)});
+  }
+  closeModal('m-inc');
+  incEditId=null;
+  showToast('🚨 บันทึก Incident แล้ว');
+  renderIncident();
+}
+function deleteIncident(id){
+  if(CU?.role!=='admin'){showToast('⚠ เฉพาะ Admin เท่านั้นที่ลบได้');return;}
+  if(!confirm('ลบ Incident นี้?'))return;
+  INC=DB.get('incidents',[]).filter(x=>x.id!==id);
+  DB.set('incidents',INC);
+  showToast('🗑️ ลบแล้ว');
+  renderIncident();
+}
+function updateIncidentStatus(id,status){
+  INC=DB.get('incidents',[]);
+  const it=INC.find(x=>x.id===id); if(!it)return;
+  it.status=status;
+  DB.set('incidents',INC);
+  showToast('✅ อัปเดตสถานะแล้ว');
+  renderIncident();
+}
+function closeIncident(id){ updateIncidentStatus(id,'closed'); }
+function daysSinceLastLTI(){
+  INC=DB.get('incidents',[]);
+  const ltis=INC.filter(x=>x.type==='Lost Time Injury'&&(x.datetime||x.date)).map(x=>new Date(x.datetime||x.date));
+  const cfg=DB.get('safetyStatsConfig',{});
+  let base;
+  if(ltis.length){ base=new Date(Math.max(...ltis.map(d=>d.getTime()))); }
+  else if(cfg.baselineDate){ base=new Date(cfg.baselineDate); }
+  else { return 0; }
+  const diff=Math.floor((new Date()-base)/86400000);
+  return diff>=0?diff:0;
+}
+function renderIncident(){
+  INC=DB.get('incidents',[]);
+  const yr=new Date().getFullYear();
+  const ytd=INC.filter(x=>{const d=x.datetime||x.date;return d&&new Date(d).getFullYear()===yr;});
+  const tot=document.getElementById('inc-tot'); if(tot)tot.textContent=ytd.length;
+  const lti=document.getElementById('inc-lti'); if(lti)lti.textContent=ytd.filter(x=>x.type==='Lost Time Injury').length;
+  const nm=document.getElementById('inc-nm'); if(nm)nm.textContent=ytd.filter(x=>x.type==='Near Miss').length;
+  const sd=document.getElementById('inc-safedays'); if(sd)sd.textContent=daysSinceLastLTI();
+  const tbody=document.getElementById('inc-tbody');
+  if(!tbody)return;
+  if(!INC.length){ tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มี Incident</td></tr>'; return; }
+  const sorted=[...INC].sort((a,b)=>new Date(b.datetime||b.date||0)-new Date(a.datetime||a.date||0));
+  tbody.innerHTML=sorted.map(x=>{
+    const dt=x.datetime?new Date(x.datetime).toLocaleString('th-TH'):'—';
+    const canAdmin=CU?.role==='admin';
+    return `<tr><td><span class="tag ffm">${x.id}</span></td><td style="font-size:12px">${dt}</td><td style="font-size:12px">${escAudit(x.type||'')}</td><td style="font-size:12px">${escAudit(x.location||'')}</td><td style="font-size:12px">${escAudit(x.affected||'—')}</td><td><span class="badge ${INC_SEVERITY_BADGE[x.severity]||'badge-gray'}">${escAudit(x.severity||'')}</span></td><td><div class="flex g6">
+      <button class="btn btn-secondary btn-xs" onclick="editIncident('${x.id}')">✏️</button>
+      ${x.status!=='closed'?`<button class="btn btn-success btn-xs" onclick="closeIncident('${x.id}')">✔ Close</button>`:''}
+      ${canAdmin?`<button class="btn btn-danger btn-xs" onclick="deleteIncident('${x.id}')">🗑</button>`:''}
+    </div></td><td><span class="badge ${INC_STATUS_BADGE[x.status]||'badge-gray'}">${escAudit(x.status||'open')}</span></td></tr>`;
+  }).join('');
+}
+function exportIncidentExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  INC=DB.get('incidents',[]);
+  const data=[['ID','วันเวลา','ประเภท','สถานที่','ผู้รายงาน','รายละเอียด','ผู้ได้รับผลกระทบ','พยาน','ความรุนแรง','อวัยวะที่บาดเจ็บ','Lost Days','สถานะ','Immediate Cause','Root Cause','Corrective Action'],
+    ...INC.map(x=>[x.id,x.datetime||'',x.type||'',x.location||'',x.reportedBy||'',x.detail||'',x.affected||'',x.witness||'',x.severity||'',x.bodyPart||'',x.lostDays||0,x.status||'',x.immediateCause||'',x.rootCause||'',x.correctiveAction||''])];
+  const ws=XLSX.utils.aoa_to_sheet(data); ws['!cols']=data[0].map(()=>({wch:18}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'IncidentReport');
+  XLSX.writeFile(wb,'TKO_IncidentReport_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
+}
+
+// ══ HAZARD IDENTIFICATION (HIRA) ══
+let HAZ=DB.get('hazards',[]);
+let hazEditId=null;
+function hazardRiskLevel(score){
+  if(score>=20) return {level:'Critical',badgeClass:'badge-red'};
+  if(score>=12) return {level:'High',badgeClass:'badge-orange'};
+  if(score>=6) return {level:'Medium',badgeClass:'badge-yellow'};
+  return {level:'Low',badgeClass:'badge-green'};
+}
+function hazUpdateRisk(){
+  const lk=parseInt(document.getElementById('hazi-lk').value)||1;
+  const sv=parseInt(document.getElementById('hazi-sv').value)||1;
+  const score=lk*sv;
+  const rl=hazardRiskLevel(score);
+  const disp=document.getElementById('hazi-score-display'); if(disp)disp.textContent=score;
+  const lvl=document.getElementById('hazi-level-display');
+  if(lvl){ lvl.textContent=rl.level; lvl.className='badge '+rl.badgeClass; }
+}
+function openHazardModal(){
+  hazEditId=null;
+  document.getElementById('hazi-id').value='';
+  document.getElementById('haz-modal-title').textContent='⚠ เพิ่ม Hazard (HIRA)';
+  ['hazi-desc','hazi-loc','hazi-existctrl','hazi-addctrl','hazi-owner','hazi-due'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('hazi-cat').value='Electrical';
+  document.getElementById('hazi-lk').value='1';
+  document.getElementById('hazi-sv').value='1';
+  document.getElementById('hazi-status').value='open';
+  hazUpdateRisk();
+  openModal('m-hazard');
+}
+function editHazard(id){
+  HAZ=DB.get('hazards',[]);
+  const it=HAZ.find(x=>x.id===id); if(!it)return;
+  hazEditId=id;
+  document.getElementById('hazi-id').value=id;
+  document.getElementById('haz-modal-title').textContent='✏️ แก้ไข Hazard — '+id;
+  document.getElementById('hazi-desc').value=it.desc||'';
+  document.getElementById('hazi-loc').value=it.location||'';
+  document.getElementById('hazi-cat').value=it.category||'Electrical';
+  document.getElementById('hazi-lk').value=it.likelihood||1;
+  document.getElementById('hazi-sv').value=it.severity||1;
+  document.getElementById('hazi-existctrl').value=it.existingControls||'';
+  document.getElementById('hazi-addctrl').value=it.additionalControls||'';
+  document.getElementById('hazi-owner').value=it.owner||'';
+  document.getElementById('hazi-due').value=it.dueDate||'';
+  document.getElementById('hazi-status').value=it.status||'open';
+  hazUpdateRisk();
+  openModal('m-hazard');
+}
+function saveHazard(){
+  const desc=document.getElementById('hazi-desc').value.trim();
+  if(!desc){alert('กรุณากรอกรายละเอียด Hazard');return;}
+  HAZ=DB.get('hazards',[]);
+  const existingId=document.getElementById('hazi-id').value||hazEditId;
+  const lk=parseInt(document.getElementById('hazi-lk').value)||1;
+  const sv=parseInt(document.getElementById('hazi-sv').value)||1;
+  const score=lk*sv;
+  const rl=hazardRiskLevel(score);
+  const rec={
+    id: existingId||`HAZ-${String(HAZ.length+1).padStart(3,'0')}`,
+    desc, location:document.getElementById('hazi-loc').value.trim(),
+    category:document.getElementById('hazi-cat').value,
+    likelihood:lk, severity:sv, riskScore:score, riskLevel:rl.level,
+    existingControls:document.getElementById('hazi-existctrl').value.trim(),
+    additionalControls:document.getElementById('hazi-addctrl').value.trim(),
+    owner:document.getElementById('hazi-owner').value.trim(),
+    dueDate:document.getElementById('hazi-due').value,
+    status:document.getElementById('hazi-status').value||'open',
+  };
+  if(existingId){
+    const idx=HAZ.findIndex(x=>x.id===existingId);
+    if(idx>=0) HAZ[idx]={...HAZ[idx],...rec}; else { rec.createdAt=new Date().toISOString(); HAZ.push(rec); }
+  } else {
+    rec.createdAt=new Date().toISOString();
+    HAZ.push(rec);
+  }
+  DB.set('hazards',HAZ);
+  if(!existingId&&rl.level==='Critical'){
+    addNotif({type:'critical',title:'⚠ Hazard Critical: '+rec.id,body:rec.location+' — '+desc.substring(0,60)});
+  }
+  closeModal('m-hazard');
+  hazEditId=null;
+  showToast('⚠ บันทึก Hazard แล้ว');
+  renderHazard();
+}
+function deleteHazard(id){
+  if(CU?.role!=='admin'){showToast('⚠ เฉพาะ Admin เท่านั้นที่ลบได้');return;}
+  if(!confirm('ลบ Hazard นี้?'))return;
+  HAZ=DB.get('hazards',[]).filter(x=>x.id!==id);
+  DB.set('hazards',HAZ);
+  showToast('🗑️ ลบแล้ว');
+  renderHazard();
+}
+function renderHazard(){
+  HAZ=DB.get('hazards',[]);
+  const cnt={Critical:0,High:0,Medium:0,Low:0};
+  HAZ.forEach(x=>{const lvl=x.riskLevel||hazardRiskLevel(x.riskScore||0).level; cnt[lvl]=(cnt[lvl]||0)+1;});
+  const setTxt=(id,v)=>{const e=document.getElementById(id); if(e)e.textContent=v;};
+  setTxt('haz-cnt-critical',cnt.Critical); setTxt('haz-cnt-high',cnt.High); setTxt('haz-cnt-medium',cnt.Medium); setTxt('haz-cnt-low',cnt.Low);
+  const topList=document.getElementById('haz-top-list');
+  if(topList){
+    const top5=[...HAZ].sort((a,b)=>(b.riskScore||0)-(a.riskScore||0)).slice(0,5);
+    topList.innerHTML=top5.length?top5.map(x=>{const rl=hazardRiskLevel(x.riskScore||0);return `<div class="mr"><span class="tm">${escAudit(x.desc.substring(0,32))}</span><span class="badge ${rl.badgeClass}">${rl.level} (${x.riskScore})</span></div>`;}).join(''):'<div class="tm" style="padding:12px;font-size:12px">ยังไม่มีข้อมูล Hazard</div>';
+  }
+  const tbody=document.getElementById('hazard-tbody');
+  if(!tbody)return;
+  if(!HAZ.length){ tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มี Hazard</td></tr>'; return; }
+  const sorted=[...HAZ].sort((a,b)=>(b.riskScore||0)-(a.riskScore||0));
+  tbody.innerHTML=sorted.map(x=>{
+    const rl=hazardRiskLevel(x.riskScore||0);
+    const canAdmin=CU?.role==='admin';
+    return `<tr><td><span class="tag ffm">${x.id}</span></td><td style="font-size:12px">${escAudit(x.desc.substring(0,40))}</td><td style="font-size:12px">${escAudit(x.location||'—')}</td><td style="font-size:12px">${escAudit(x.category||'')}</td><td class="ffm" style="text-align:center">${x.riskScore}</td><td><span class="badge ${rl.badgeClass}">${rl.level}</span></td><td style="font-size:12px">${escAudit(x.owner||'—')}</td><td><span class="badge ${x.status==='closed'?'badge-green':x.status==='mitigating'?'badge-yellow':'badge-red'}">${escAudit(x.status||'open')}</span></td><td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="editHazard('${x.id}')">✏️</button>${canAdmin?`<button class="btn btn-danger btn-xs" onclick="deleteHazard('${x.id}')">🗑</button>`:''}</div></td></tr>`;
+  }).join('');
+}
+function exportHazardExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  HAZ=DB.get('hazards',[]);
+  const data=[['ID','รายละเอียด','สถานที่','หมวดหมู่','Likelihood','Severity','Risk Score','ระดับความเสี่ยง','มาตรการปัจจุบัน','มาตรการเพิ่มเติม','ผู้รับผิดชอบ','กำหนดแล้วเสร็จ','สถานะ'],
+    ...HAZ.map(x=>[x.id,x.desc||'',x.location||'',x.category||'',x.likelihood||0,x.severity||0,x.riskScore||0,x.riskLevel||'',x.existingControls||'',x.additionalControls||'',x.owner||'',x.dueDate||'',x.status||''])];
+  const ws=XLSX.utils.aoa_to_sheet(data); ws['!cols']=data[0].map(()=>({wch:18}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'HazardIdentification');
+  XLSX.writeFile(wb,'TKO_HazardIdentification_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
 }
 
 // ══ PTW ══
+let ptwEditId=null;
+const PTW_STATUS_BADGE={pending:'badge-yellow',active:'badge-green',closed:'badge-blue',expired:'badge-red'};
+function ptwEffectiveStatus(x){
+  if(x.status==='active'&&x.date&&x.endTime){
+    const end=new Date(x.date+'T'+x.endTime);
+    if(!isNaN(end.getTime())&&end<new Date()) return 'expired';
+  }
+  return x.status||'pending';
+}
+function openPTWModal(){
+  ptwEditId=null;
+  document.getElementById('ptwi-id').value='';
+  document.getElementById('ptw-modal-title').textContent='📝 ออกใบอนุญาต PTW';
+  ['ptwi-lc','ptwi-rq','ptwi-appr','ptwi-dc','ptwi-precaution'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('ptwi-dt').value=_todayISO();
+  document.getElementById('ptwi-st').value='08:00';
+  document.getElementById('ptwi-en').value='17:00';
+  document.querySelectorAll('.ptwi-ppe').forEach(cb=>cb.checked=false);
+  openModal('m-ptw');
+}
 function savePTW(){
-  const lc=document.getElementById('ptwi-lc').value.trim();if(!lc){alert('กรุณากรอกสถานที่');return;}
-  PTW=DB.get('ptw',[]);const id=`PTW-${String(PTW.length+44).padStart(4,'0')}`;
-  PTW.push({id,type:document.getElementById('ptwi-tp').value,location:lc,requester:document.getElementById('ptwi-rq').value,date:document.getElementById('ptwi-dt').value,startTime:document.getElementById('ptwi-st').value,endTime:document.getElementById('ptwi-en').value,detail:document.getElementById('ptwi-dc').value,status:'pending',approvedBy:null});
-  DB.set('ptw',PTW);closeModal('m-ptw');showToast('📝 ออกใบอนุญาตแล้ว รออนุมัติ');
+  const lc=document.getElementById('ptwi-lc').value.trim();
+  if(!lc){alert('กรุณากรอกสถานที่');return;}
+  PTW=DB.get('ptw',[]);
+  const existingId=document.getElementById('ptwi-id').value||ptwEditId;
+  const ppe=[...document.querySelectorAll('.ptwi-ppe:checked')].map(cb=>cb.value);
+  const rec={
+    id: existingId||`PTW-${String(PTW.length+1).padStart(4,'0')}`,
+    type:document.getElementById('ptwi-tp').value,
+    location:lc,
+    requester:document.getElementById('ptwi-rq').value.trim(),
+    approver:document.getElementById('ptwi-appr').value.trim(),
+    date:document.getElementById('ptwi-dt').value,
+    startTime:document.getElementById('ptwi-st').value,
+    endTime:document.getElementById('ptwi-en').value,
+    detail:document.getElementById('ptwi-dc').value.trim(),
+    precaution:document.getElementById('ptwi-precaution').value.trim(),
+    ppe,
+  };
+  if(existingId){
+    const idx=PTW.findIndex(x=>x.id===existingId);
+    if(idx>=0) PTW[idx]={...PTW[idx],...rec}; else { rec.status='pending'; rec.approvedBy=null; rec.createdAt=new Date().toISOString(); PTW.push(rec); }
+  } else {
+    rec.status='pending'; rec.approvedBy=null; rec.createdAt=new Date().toISOString();
+    PTW.push(rec);
+    addNotif({type:'warning',title:'📝 PTW รออนุมัติ: '+rec.id,body:rec.location+' — '+rec.type});
+  }
+  DB.set('ptw',PTW);
+  closeModal('m-ptw');
+  ptwEditId=null;
+  showToast('📝 ออกใบอนุญาตแล้ว');
+  renderPermit();
+}
+function editPTW(id){
+  PTW=DB.get('ptw',[]);
+  const it=PTW.find(x=>x.id===id); if(!it)return;
+  ptwEditId=id;
+  document.getElementById('ptwi-id').value=id;
+  document.getElementById('ptw-modal-title').textContent='✏️ แก้ไข PTW — '+id;
+  document.getElementById('ptwi-tp').value=it.type||'';
+  document.getElementById('ptwi-lc').value=it.location||'';
+  document.getElementById('ptwi-rq').value=it.requester||'';
+  document.getElementById('ptwi-appr').value=it.approver||'';
+  document.getElementById('ptwi-dt').value=it.date||'';
+  document.getElementById('ptwi-st').value=it.startTime||'08:00';
+  document.getElementById('ptwi-en').value=it.endTime||'17:00';
+  document.getElementById('ptwi-dc').value=it.detail||'';
+  document.getElementById('ptwi-precaution').value=it.precaution||'';
+  document.querySelectorAll('.ptwi-ppe').forEach(cb=>cb.checked=(it.ppe||[]).includes(cb.value));
+  openModal('m-ptw');
+}
+function approvePTW(id){
+  if(CU?.role!=='admin'){showToast('⚠ เฉพาะ Admin เท่านั้นที่อนุมัติได้');return;}
+  PTW=DB.get('ptw',[]);
+  const it=PTW.find(x=>x.id===id); if(!it)return;
+  it.status='active'; it.approvedBy=CU?.name||CU?.username||'admin'; it.approvedAt=new Date().toISOString();
+  DB.set('ptw',PTW);
+  showToast('✅ อนุมัติ PTW แล้ว');
+  renderPermit();
+}
+function closePTW(id){
+  PTW=DB.get('ptw',[]);
+  const it=PTW.find(x=>x.id===id); if(!it)return;
+  it.status='closed'; it.closedAt=new Date().toISOString();
+  DB.set('ptw',PTW);
+  showToast('✅ ปิดใบอนุญาตแล้ว');
+  renderPermit();
+}
+function deletePTW(id){
+  if(CU?.role!=='admin'){showToast('⚠ เฉพาะ Admin เท่านั้นที่ลบได้');return;}
+  if(!confirm('ลบ PTW นี้?'))return;
+  PTW=DB.get('ptw',[]).filter(x=>x.id!==id);
+  DB.set('ptw',PTW);
+  showToast('🗑️ ลบแล้ว');
+  renderPermit();
+}
+function renderPermit(){
+  PTW=DB.get('ptw',[]);
+  const today=_todayISO();
+  const eff=PTW.map(x=>({...x,_eff:ptwEffectiveStatus(x)}));
+  const setTxt=(id,v)=>{const e=document.getElementById(id); if(e)e.textContent=v;};
+  setTxt('ptw-active',eff.filter(x=>x._eff==='active').length);
+  setTxt('ptw-pending',eff.filter(x=>x._eff==='pending').length);
+  setTxt('ptw-closedtoday',eff.filter(x=>x._eff==='closed'&&x.closedAt&&x.closedAt.slice(0,10)===today).length);
+  setTxt('ptw-expired',eff.filter(x=>x._eff==='expired').length);
+  const tbody=document.getElementById('ptw-tbody');
+  if(!tbody)return;
+  if(!PTW.length){ tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มี PTW</td></tr>'; return; }
+  const sorted=[...eff].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  const isAdmin=CU?.role==='admin';
+  tbody.innerHTML=sorted.map(x=>{
+    return `<tr><td><span class="tag ffm">${x.id}</span></td><td style="font-size:12px">${escAudit(x.type||'')}</td><td style="font-size:12px">${escAudit(x.location||'')}</td><td style="font-size:12px">${escAudit(x.requester||'—')}</td><td style="font-size:12px">${x.date||'—'}</td><td style="font-size:11px">${x.startTime||''}–${x.endTime||''}</td><td style="font-size:12px">${escAudit(x.approver||x.approvedBy||'—')}</td><td><span class="badge ${PTW_STATUS_BADGE[x._eff]||'badge-gray'}">${escAudit(x._eff)}</span></td><td><div class="flex g6">
+      <button class="btn btn-secondary btn-xs" onclick="editPTW('${x.id}')">✏️</button>
+      ${x._eff==='pending'&&isAdmin?`<button class="btn btn-success btn-xs" onclick="approvePTW('${x.id}')">อนุมัติ</button>`:''}
+      ${x._eff==='active'?`<button class="btn btn-danger btn-xs" onclick="closePTW('${x.id}')">Close</button>`:''}
+      ${isAdmin?`<button class="btn btn-danger btn-xs" onclick="deletePTW('${x.id}')">🗑</button>`:''}
+    </div></td></tr>`;
+  }).join('');
+}
+function exportPTWExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  PTW=DB.get('ptw',[]);
+  const data=[['PTW ID','ประเภท','สถานที่','ผู้ขอ','ผู้อนุมัติ','วันที่','เวลาเริ่ม','เวลาสิ้นสุด','รายละเอียด','มาตรการความปลอดภัย','PPE','สถานะ'],
+    ...PTW.map(x=>[x.id,x.type||'',x.location||'',x.requester||'',x.approver||x.approvedBy||'',x.date||'',x.startTime||'',x.endTime||'',x.detail||'',x.precaution||'',(x.ppe||[]).join(', '),ptwEffectiveStatus(x)])];
+  const ws=XLSX.utils.aoa_to_sheet(data); ws['!cols']=data[0].map(()=>({wch:18}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'PTW');
+  XLSX.writeFile(wb,'TKO_PermitToWork_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
 }
 
 // ══ ANNUAL INSPECTION & VISIT SITE ══
@@ -13154,9 +13573,133 @@ async function fetchChillerGSheet(){
     showToast('❌ ดึงข้อมูลจาก Google Sheet ไม่สำเร็จ: '+err.message+' (ตรวจสอบว่าชีทตั้งค่า "Anyone with the link can view")');
   }
 }
+const SAFETY_RATE_BASE=200000;
+const INC_CAUSE_LABELS={'Unsafe Act':'Unsafe Act','Unsafe Condition':'Unsafe Condition','Equipment Failure':'Equipment Failure','Procedure Not Followed':'Procedure Not Followed','Other':'Other'};
+function saveSafetyStatsConfig(){
+  const manHours=parseFloat(document.getElementById('ss-manhours').value)||0;
+  const baselineDate=document.getElementById('ss-baseline').value||'';
+  DB.set('safetyStatsConfig',{manHours,baselineDate});
+  closeModal('m-safetystat-set');
+  showToast('💾 บันทึกการตั้งค่าแล้ว');
+  renderSafeStat();
+}
 function renderSafeStat(){
-  dChart('chSafe');const mos=['ก.ย.','ต.ค.','พ.ย.','ธ.ค.','ม.ค.','ก.พ.'];
-  charts.chSafe=new Chart(document.getElementById('chSafe'),{type:'bar',data:{labels:mos,datasets:[{label:'Near Miss',data:[3,2,1,2,4,3],backgroundColor:'rgba(234,179,8,.7)',borderRadius:4},{label:'Incidents',data:[1,0,0,0,2,0],backgroundColor:'rgba(239,68,68,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}});
+  INC=DB.get('incidents',[]);
+  const cfg=DB.get('safetyStatsConfig',{manHours:0,baselineDate:''});
+  const mhInput=document.getElementById('ss-manhours'); if(mhInput)mhInput.value=cfg.manHours||'';
+  const blInput=document.getElementById('ss-baseline'); if(blInput)blInput.value=cfg.baselineDate||'';
+  const manHours=cfg.manHours||0;
+  const yr=new Date().getFullYear();
+  const ytd=INC.filter(x=>{const d=x.datetime||x.date;return d&&new Date(d).getFullYear()===yr;});
+  const ltiCount=ytd.filter(x=>x.type==='Lost Time Injury').length;
+  const recordable=ytd.filter(x=>x.type!=='Near Miss').length;
+  const totalLostDays=ytd.reduce((s,x)=>s+(parseFloat(x.lostDays)||0),0);
+  const trir=manHours>0?(recordable*SAFETY_RATE_BASE/manHours):0;
+  const ltir=manHours>0?(ltiCount*SAFETY_RATE_BASE/manHours):0;
+  const ifr=manHours>0?(ytd.length*1000000/manHours):0;
+  const isr=manHours>0?(totalLostDays*1000/manHours):0;
+  const di=(ifr*isr)/1000;
+  const setTxt=(id,v)=>{const e=document.getElementById(id); if(e)e.textContent=v;};
+  setTxt('ss-safedays',daysSinceLastLTI());
+  setTxt('ss-manhours-disp',manHours.toLocaleString());
+  setTxt('ss-trir',trir.toFixed(2));
+  setTxt('ss-ltir',ltir.toFixed(2));
+  setTxt('ss-ifr',ifr.toFixed(2));
+  setTxt('ss-isr',isr.toFixed(2));
+  setTxt('ss-di',di.toFixed(2));
+  setTxt('ss-totinc',ytd.length);
+
+  // Safety trend — last 12 months
+  const months=[];
+  const now=new Date();
+  for(let i=11;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push(d); }
+  const moLabels=months.map(d=>d.toLocaleDateString('th-TH',{month:'short',year:'2-digit'}));
+  const nmData=months.map(d=>INC.filter(x=>{const dt=x.datetime||x.date; if(!dt)return false; const xd=new Date(dt); return x.type==='Near Miss'&&xd.getFullYear()===d.getFullYear()&&xd.getMonth()===d.getMonth();}).length);
+  const incData=months.map(d=>INC.filter(x=>{const dt=x.datetime||x.date; if(!dt)return false; const xd=new Date(dt); return x.type!=='Near Miss'&&xd.getFullYear()===d.getFullYear()&&xd.getMonth()===d.getMonth();}).length);
+  dChart('chSafe');
+  const safeCanvas=document.getElementById('chSafe');
+  if(safeCanvas){
+    const safeCfg={
+      type:'bar',
+      data:{
+        labels:moLabels,
+        datasets:[
+          {label:'Near Miss',data:nmData,backgroundColor:'rgba(234,179,8,.7)',borderRadius:4},
+          {label:'Incidents',data:incData,backgroundColor:'rgba(239,68,68,.7)',borderRadius:4}
+        ]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},
+        scales:{
+          x:{ticks:{color:'#8B949E',font:{size:10}}},
+          y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}
+        }
+      }
+    };
+    charts.chSafe=new Chart(safeCanvas,safeCfg);
+  }
+
+  // Root cause analysis
+  const causeCounts={};
+  INC.forEach(x=>{ if(x.immediateCause){ causeCounts[x.immediateCause]=(causeCounts[x.immediateCause]||0)+1; } });
+  const causeKeys=Object.keys(causeCounts);
+  dChart('chRootCause');
+  const rcCanvas=document.getElementById('chRootCause');
+  if(rcCanvas){
+    const rcCfg={
+      type:'doughnut',
+      data:{
+        labels:causeKeys.length?causeKeys:['ยังไม่มีข้อมูล'],
+        datasets:[{
+          data:causeKeys.length?causeKeys.map(k=>causeCounts[k]):[1],
+          backgroundColor:['#EF4444','#F97316','#EAB308','#3B82F6','#8B949E','#A855F7'],
+          borderWidth:0
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{color:'#8B949E',font:{size:10}}}}
+      }
+    };
+    charts.chRootCause=new Chart(rcCanvas,rcCfg);
+  }
+  const topList=document.getElementById('ss-topcauses-list');
+  if(topList){
+    const ranked=causeKeys.map(k=>({k,n:causeCounts[k]})).sort((a,b)=>b.n-a.n);
+    topList.innerHTML=ranked.length?ranked.map(r=>`<div class="mr"><span class="tm">${escAudit(r.k)}</span><span class="badge badge-red">${r.n} ครั้ง</span></div>`).join(''):'<div class="tm" style="padding:12px;font-size:12px">ยังไม่มีข้อมูล</div>';
+  }
+}
+function exportSafetyStatsExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  INC=DB.get('incidents',[]);
+  const cfg=DB.get('safetyStatsConfig',{manHours:0});
+  const manHours=cfg.manHours||0;
+  const yr=new Date().getFullYear();
+  const ytd=INC.filter(x=>{const d=x.datetime||x.date;return d&&new Date(d).getFullYear()===yr;});
+  const ltiCount=ytd.filter(x=>x.type==='Lost Time Injury').length;
+  const recordable=ytd.filter(x=>x.type!=='Near Miss').length;
+  const totalLostDays=ytd.reduce((s,x)=>s+(parseFloat(x.lostDays)||0),0);
+  const trir=manHours>0?(recordable*SAFETY_RATE_BASE/manHours):0;
+  const ltir=manHours>0?(ltiCount*SAFETY_RATE_BASE/manHours):0;
+  const ifr=manHours>0?(ytd.length*1000000/manHours):0;
+  const isr=manHours>0?(totalLostDays*1000/manHours):0;
+  const di=(ifr*isr)/1000;
+  const kpiSheet=[['KPI','ค่า'],
+    ['Man-Hours',manHours],['Safe Working Days',daysSinceLastLTI()],
+    ['TRIR',trir.toFixed(2)],['LTIR',ltir.toFixed(2)],['IFR',ifr.toFixed(2)],['ISR',isr.toFixed(2)],['DI',di.toFixed(2)],
+    ['Total Incidents (YTD)',ytd.length]];
+  const incSheet=[['ID','วันเวลา','ประเภท','สถานที่','ความรุนแรง','Lost Days','Immediate Cause','Root Cause','สถานะ'],
+    ...INC.map(x=>[x.id,x.datetime||'',x.type||'',x.location||'',x.severity||'',x.lostDays||0,x.immediateCause||'',x.rootCause||'',x.status||''])];
+  const wb=XLSX.utils.book_new();
+  const ws1=XLSX.utils.aoa_to_sheet(kpiSheet); ws1['!cols']=[{wch:24},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws1,'SafetyKPI');
+  const ws2=XLSX.utils.aoa_to_sheet(incSheet); ws2['!cols']=incSheet[0].map(()=>({wch:18}));
+  XLSX.utils.book_append_sheet(wb,ws2,'IncidentLog');
+  XLSX.writeFile(wb,'TKO_SafetyStatistics_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
 }
 
 // ══ AI CHAT ══
