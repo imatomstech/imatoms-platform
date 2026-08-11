@@ -936,6 +936,40 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       <div class="sh"><div><div class="st">📈 Cost Analysis</div><div class="ss">WR + PM + Parts + MA · LCC</div></div></div>
       <div class="kpi-grid"><div class="kpi red"><div class="kl">WR Cost MTD</div><div class="kv ffd" style="font-size:18px" id="ca-wr">฿0</div></div><div class="kpi orange"><div class="kl">PM Cost MTD</div><div class="kv ffd" style="font-size:18px">฿0</div></div><div class="kpi blue"><div class="kl">Parts Issued</div><div class="kv ffd" style="font-size:18px" id="ca-pt">฿0</div></div><div class="kpi teal"><div class="kl">MA Contracts</div><div class="kv ffd" style="font-size:18px" id="ca-ma">฿0</div></div></div>
       <div class="card mt16"><div class="ffd fw6 mb12" style="font-size:14px">Cost Breakdown</div><div class="chart-wrap"><canvas id="chCostBk"></canvas></div></div>
+
+      <!-- CAPEX & OPEX vs Target Analysis -->
+      <div class="sh" style="margin-top:20px"><div><div class="st">🎯 CAPEX &amp; OPEX vs Target</div><div class="ss">วิเคราะห์การใช้งบเทียบเป้าหมาย · จัดอันดับการใช้งบ · แจ้งเตือนอัตโนมัติ</div></div>
+        <div class="form-group" style="margin-bottom:0"><select class="form-control" id="caf-year" onchange="renderCostA()" style="width:110px"><option value="">ทุกปี</option></select></div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi blue"><div class="kl">งบรวม (Target)</div><div class="kv ffd" id="ca-target-total" style="font-size:18px">฿0</div></div>
+        <div class="kpi orange"><div class="kl">ใช้ไปจริง</div><div class="kv ffd" id="ca-target-actual" style="font-size:18px">฿0</div></div>
+        <div class="kpi green"><div class="kl">% ใช้งบเฉลี่ย</div><div class="kv ffd" id="ca-target-pct" style="font-size:18px">0%</div></div>
+        <div class="kpi red"><div class="kl">รายการที่ต้องติดตาม</div><div class="kv ffd" id="ca-alert-count" style="font-size:18px">0</div></div>
+      </div>
+
+      <div class="card mb16"><div class="ffd fw6 mb12" style="font-size:14px">📊 การใช้งบเทียบเป้าหมาย รายรายการ (Actual vs Target)</div><div class="chart-wrap"><canvas id="chCostTarget"></canvas></div></div>
+
+      <div class="grid-3 mb16">
+        <div class="card">
+          <div class="ffd fw7 mb12" style="font-size:13px;color:var(--blue)">🔵 ใช้น้อย / ไม่เคลื่อนไหว (&lt;50%)</div>
+          <div id="ca-low-list" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+        <div class="card">
+          <div class="ffd fw7 mb12" style="font-size:13px;color:var(--yellow)">🟡 ใกล้ครบเป้าหมาย (75-99%)</div>
+          <div id="ca-near-list" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+        <div class="card">
+          <div class="ffd fw7 mb12" style="font-size:13px;color:var(--red)">🔴 ใช้ครบ/เกินเป้าหมาย (≥100%)</div>
+          <div id="ca-over-list" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+      </div>
+
+      <div class="card mb16">
+        <div class="flex fca jb mb12"><div class="ffd fw7" style="font-size:14px">🏆 อันดับการใช้งบประมาณ (มากไปหาน้อย)</div><span class="badge badge-blue" id="ca-rank-count">0 รายการ</span></div>
+        <div class="table-wrap"><table><thead><tr><th>#</th><th>รายการ</th><th>ประเภท</th><th>หมวด</th><th>Target (฿)</th><th>ใช้จริง (฿)</th><th>% ใช้</th><th>สถานะ</th></tr></thead><tbody id="ca-rank-tbody"></tbody></table></div>
+      </div>
     </div>
     <div id="view-valuation" class="view">
       <div class="sh"><div><div class="st">💎 Asset Valuation (NBV)</div><div class="ss">มูลค่าสุทธิ · ค่าเสื่อมราคา</div></div></div>
@@ -5904,6 +5938,68 @@ function renderCostA(){
   const wrCost=WR.reduce((s,w)=>s+(w.totalCost||0),0);const maCost=MA.reduce((s,m)=>s+(m.value||0),0);const invCost=INV.reduce((s,i)=>s+(i.usedMTD||0)*(i.price||0),0);
   document.getElementById('ca-wr').textContent='฿'+wrCost.toLocaleString();document.getElementById('ca-pt').textContent='฿'+invCost.toLocaleString();document.getElementById('ca-ma').textContent='฿'+maCost.toLocaleString();
   dChart('chCostBk');charts.chCostBk=new Chart(document.getElementById('chCostBk'),{type:'bar',data:{labels:['WR Labor','WR Parts','PM Cost','Parts Issued','MA Annual'],datasets:[{label:'Cost (฿)',data:[WR.reduce((s,w)=>s+(w.laborCost||0),0),WR.reduce((s,w)=>s+(w.partsCost||0),0),48000,invCost,maCost/12],backgroundColor:['rgba(239,68,68,.7)','rgba(249,115,22,.7)','rgba(59,130,246,.7)','rgba(168,85,247,.7)','rgba(20,184,166,.7)'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E',callback:v=>'฿'+Math.round(v/1000)+'K'},grid:{color:'#21262D'}}}}});
+
+  // ══ CAPEX & OPEX vs Target Analysis ══
+  const allCapex=DB.get('capex',[]),allOpex=DB.get('opex',[]);
+  const yf=document.getElementById('caf-year');
+  if(yf){
+    const cur=yf.value;
+    const years=[...new Set([...allCapex.map(x=>x.year),...allOpex.map(x=>x.year)].filter(Boolean))].sort((a,b)=>b-a);
+    yf.innerHTML='<option value="">ทุกปี</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    yf.value=cur;
+  }
+  const selYear=yf?.value||'';
+  const unified=[
+    ...allCapex.filter(x=>!selYear||String(x.year)===selYear).map(x=>({id:x.id,name:x.name,type:'CAPEX',category:CAPEX_CATEGORIES[x.category]||x.category,budget:x.budget||0,actual:x.actual||0})),
+    ...allOpex.filter(x=>!selYear||String(x.year)===selYear).map(x=>({id:x.id,name:x.desc,type:'OPEX',category:OPEX_CATEGORIES[x.category]||x.category,budget:x.budget||0,actual:x.actual||0}))
+  ].map(x=>({...x,pct:x.budget?Math.round(x.actual/x.budget*100):0}));
+
+  const targetTotal=unified.reduce((s,x)=>s+x.budget,0);
+  const actualTotal=unified.reduce((s,x)=>s+x.actual,0);
+  const avgPct=targetTotal?Math.round(actualTotal/targetTotal*100):0;
+  document.getElementById('ca-target-total').textContent='฿'+targetTotal.toLocaleString();
+  document.getElementById('ca-target-actual').textContent='฿'+actualTotal.toLocaleString();
+  document.getElementById('ca-target-pct').textContent=avgPct+'%';
+
+  const withBudget=unified.filter(x=>x.budget>0);
+  const lowList=withBudget.filter(x=>x.pct<50);
+  const nearList=withBudget.filter(x=>x.pct>=75&&x.pct<100);
+  const overList=withBudget.filter(x=>x.pct>=100);
+  document.getElementById('ca-alert-count').textContent=(nearList.length+overList.length);
+
+  const rowHtml=(x,color)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:var(--bg3);border-radius:6px;border-left:3px solid ${color}">
+    <div style="min-width:0"><div class="fw6" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${escBud(x.name)}</div><div style="font-size:9px;color:var(--text3)">${x.type} · ${x.category}</div></div>
+    <div style="font-size:11px;font-weight:700;color:${color};flex-shrink:0">${x.pct}%</div>
+  </div>`;
+  document.getElementById('ca-low-list').innerHTML=lowList.length?lowList.sort((a,b)=>a.pct-b.pct).map(x=>rowHtml(x,'#3B82F6')).join(''):'<div class="tm" style="font-size:11px;text-align:center;padding:8px">ไม่มีรายการ</div>';
+  document.getElementById('ca-near-list').innerHTML=nearList.length?nearList.sort((a,b)=>b.pct-a.pct).map(x=>rowHtml(x,'#EAB308')).join(''):'<div class="tm" style="font-size:11px;text-align:center;padding:8px">ไม่มีรายการ</div>';
+  document.getElementById('ca-over-list').innerHTML=overList.length?overList.sort((a,b)=>b.pct-a.pct).map(x=>rowHtml(x,'#EF4444')).join(''):'<div class="tm" style="font-size:11px;text-align:center;padding:8px">ไม่มีรายการ</div>';
+
+  // Ranking table — sorted by actual spend descending
+  const ranked=[...unified].sort((a,b)=>b.actual-a.actual);
+  document.getElementById('ca-rank-count').textContent=ranked.length+' รายการ';
+  document.getElementById('ca-rank-tbody').innerHTML=ranked.length?ranked.map((x,i)=>{
+    const badgeC=x.pct>=100?'badge-red':x.pct>=75?'badge-yellow':x.pct<50?'badge-blue':'badge-green';
+    const badgeL=x.pct>=100?'🔴 เกินเป้า':x.pct>=75?'🟡 ใกล้ครบ':x.pct<50?'🔵 ใช้น้อย':'🟢 ปกติ';
+    return `<tr>
+      <td class="ffm" style="font-size:11px">${i+1}</td>
+      <td><div class="fw6" style="font-size:12px">${escBud(x.name)}</div></td>
+      <td><span class="badge ${x.type==='CAPEX'?'badge-blue':'badge-purple'}">${x.type}</span></td>
+      <td style="font-size:11px">${x.category}</td>
+      <td class="ffm" style="font-size:12px">฿${x.budget.toLocaleString()}</td>
+      <td class="ffm" style="font-size:12px">฿${x.actual.toLocaleString()}</td>
+      <td><span class="badge ${badgeC}">${x.pct}%</span></td>
+      <td><span class="badge ${badgeC}">${badgeL}</span></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text3)">ยังไม่มีข้อมูล CAPEX/OPEX</td></tr>';
+
+  // Chart: top 10 by actual spend — target vs actual
+  dChart('chCostTarget');
+  const top10=ranked.slice(0,10);
+  charts.chCostTarget=new Chart(document.getElementById('chCostTarget'),{type:'bar',data:{labels:top10.map(x=>x.name.length>16?x.name.slice(0,16)+'…':x.name),datasets:[
+    {label:'Target (฿)',data:top10.map(x=>x.budget),backgroundColor:'rgba(59,130,246,.35)',borderRadius:4},
+    {label:'Actual (฿)',data:top10.map(x=>x.actual),backgroundColor:'rgba(249,115,22,.75)',borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:9}}},y:{ticks:{color:'#8B949E',callback:v=>'฿'+Math.round(v/1000)+'K'},grid:{color:'#21262D'}}}}});
 }
 function renderVal(){
   const tv=assets.reduce((s,a)=>s+(a.cost||0),0);const nbv=assets.reduce((s,a)=>s+(a.nbv||0),0);const dep=tv-nbv;const pct=tv?Math.round(nbv/tv*100):0;
