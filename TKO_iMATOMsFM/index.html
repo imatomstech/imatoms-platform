@@ -1462,25 +1462,29 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       </tbody></table></div>
     </div>
     <div id="view-competency" class="view">
-      <div class="sh"><div><div class="st">🧠 Competency Matrix</div><div class="ss">ทักษะ · Gap Analysis</div></div><button class="btn btn-purple">+ พนักงาน</button></div>
+      <div class="sh"><div><div class="st">🧠 Competency Matrix</div><div class="ss">ทักษะ · Gap Analysis</div></div><div class="flex g8"><button class="btn btn-secondary btn-sm" onclick="openCompSkillsModal()">⚙ จัดการทักษะ</button><button class="btn btn-secondary btn-sm" onclick="exportCompetencyExcel()">📊 Export</button><button class="btn btn-purple" onclick="openCompetencyModal()">+ พนักงาน</button></div></div>
       <div class="alr alr-i mb16">ระดับ: 1=Aware · 2=Basic · 3=Proficient · 4=Advanced · 5=Expert</div>
-      <div class="card" style="overflow-x:auto"><table><thead><tr><th>พนักงาน</th><th>แผนก</th><th>Electrical</th><th>Mechanical</th><th>BAS/BMS</th><th>Safety</th><th>ESG</th><th>CMMS</th><th>Avg</th></tr></thead><tbody>
-        <tr><td class="fw6">Mr.Kittanan Onsee</td><td><span class="badge badge-orange">iMATOMs Dev</span></td><td style="text-align:center;color:var(--green)">★★★★★</td><td style="text-align:center;color:var(--green)">★★★★☆</td><td style="text-align:center;color:var(--blue)">★★★★☆</td><td style="text-align:center;color:var(--yellow)">★★★★☆</td><td style="text-align:center;color:var(--teal)">★★★☆☆</td><td style="text-align:center;color:var(--purple)">★★★★★</td><td><span class="badge badge-green">4.5</span></td></tr>
-        <tr><td class="fw6">ช่าง ก</td><td><span class="badge badge-blue">Engineering</span></td><td style="text-align:center;color:var(--green)">★★★★☆</td><td style="text-align:center;color:var(--green)">★★★☆☆</td><td style="text-align:center;color:var(--blue)">★★☆☆☆</td><td style="text-align:center;color:var(--yellow)">★★★☆☆</td><td style="text-align:center;color:var(--teal)">★★☆☆☆</td><td style="text-align:center;color:var(--purple)">★★★☆☆</td><td><span class="badge badge-yellow">3.0</span></td></tr>
-      </tbody></table></div>
+      <div class="kpi-grid">
+        <div class="kpi purple"><div class="kl">พนักงานทั้งหมด</div><div class="kv ffd" id="comp-kpi-total">0</div></div>
+        <div class="kpi green"><div class="kl">Avg รวม</div><div class="kv ffd" id="comp-kpi-avg">0.0</div></div>
+        <div class="kpi blue"><div class="kl">จำนวนทักษะ</div><div class="kv ffd" id="comp-kpi-skills">0</div></div>
+        <div class="kpi red"><div class="kl">ต่ำกว่าเป้าหมาย (จุด)</div><div class="kv ffd" id="comp-kpi-gap">0</div></div>
+      </div>
+      <div class="card" style="overflow-x:auto" id="comp-table-wrap"></div>
+      <div class="card mt16">
+        <div class="flex fca jb mb12"><div class="ffd fw7" style="font-size:14px">🎯 Gap Analysis</div><div class="flex g8 fca"><label class="form-label" style="margin:0">เป้าหมาย (ทุกทักษะ)</label><select class="form-control" id="comp-target" style="width:80px" onchange="renderCompetency()"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option></select></div></div>
+        <div id="comp-gap-wrap"></div>
+      </div>
     </div>
     <div id="view-certification" class="view">
-      <div class="sh"><div><div class="st">📜 Certification Tracker</div><div class="ss">ใบรับรองพนักงาน · License · ต่ออายุ</div></div><button class="btn btn-purple">+ ใบรับรอง</button></div>
-      <div class="kpi-grid"><div class="kpi purple"><div class="kl">ทั้งหมด</div><div class="kv ffd">48</div></div><div class="kpi green"><div class="kl">Valid</div><div class="kv ffd">38</div></div><div class="kpi yellow"><div class="kl">ใกล้หมด</div><div class="kv ffd">7</div></div><div class="kpi red"><div class="kl">หมดอายุ</div><div class="kv ffd">3</div></div></div>
-      <div class="table-wrap"><table><thead><tr><th>พนักงาน</th><th>ใบรับรอง</th><th>หน่วยงาน</th><th>วันออก</th><th>หมดอายุ</th><th>สถานะ</th></tr></thead><tbody>
-        <tr><td>Mr.Kittanan Onsee</td><td>วิศวกรรมไฟฟ้า (กว.)</td><td>วิศวกรรมสภา</td><td>01/01/2024</td><td>31/12/2026</td><td><span class="badge badge-green">✅ Valid</span></td></tr>
-        <tr><td>ช่าง ก</td><td>Safety Officer วิชาชีพ</td><td>กระทรวงแรงงาน</td><td>01/03/2023</td><td>28/02/2026</td><td><span class="badge badge-yellow">⏰ ใกล้หมด</span></td></tr>
-      </tbody></table></div>
+      <div class="sh"><div><div class="st">📜 Certification Tracker</div><div class="ss">ใบรับรองพนักงาน · License · ต่ออายุ</div></div><div class="flex g8"><button class="btn btn-secondary btn-sm" onclick="importCertificationExcel()">📥 Import</button><button class="btn btn-secondary btn-sm" onclick="exportCertificationExcel()">📤 Export</button><button class="btn btn-purple" onclick="openCertificationModal()">+ ใบรับรอง</button></div></div>
+      <div class="kpi-grid"><div class="kpi purple"><div class="kl">ทั้งหมด</div><div class="kv ffd" id="cert-kpi-total">0</div></div><div class="kpi green"><div class="kl">Valid</div><div class="kv ffd" id="cert-kpi-valid">0</div></div><div class="kpi yellow"><div class="kl">ใกล้หมด</div><div class="kv ffd" id="cert-kpi-near">0</div></div><div class="kpi red"><div class="kl">หมดอายุ</div><div class="kv ffd" id="cert-kpi-expired">0</div></div></div>
+      <div class="table-wrap"><table><thead><tr><th>พนักงาน</th><th>ใบรับรอง</th><th>หน่วยงาน</th><th>วันออก</th><th>หมดอายุ</th><th>สถานะ</th><th>ไฟล์</th><th>Action</th></tr></thead><tbody id="cert-tbody"></tbody></table></div>
     </div>
     <div id="view-knowledgebase" class="view">
-      <div class="sh"><div><div class="st">📚 Knowledge Base</div><div class="ss">SOP · คู่มือ · Best Practice · AI Search</div></div><button class="btn btn-purple">+ อัปโหลด</button></div>
-      <div class="fb"><input class="si" placeholder="🔍 ค้นหา SOP คู่มือ..." style="max-width:400px"><button class="btn btn-purple btn-sm" onclick="showView('ai')">🤖 Ask AI</button></div>
-      <div class="grid-3"><div class="card"><div style="font-size:22px;margin-bottom:8px">📋</div><div class="fw6 mb4">SOP-HVAC-001</div><div style="font-size:11px;color:var(--text3);margin-bottom:8px">ขั้นตอน PM HVAC ประจำปี</div><div class="flex g8"><span class="badge badge-orange">Reliability</span><span class="badge badge-gray">v3.0</span></div></div><div class="card"><div style="font-size:22px;margin-bottom:8px">🔌</div><div class="fw6 mb4">WI-Electrical-Safety-002</div><div style="font-size:11px;color:var(--text3);margin-bottom:8px">Work Instruction ความปลอดภัยไฟฟ้า</div><div class="flex g8"><span class="badge badge-red">Safety</span></div></div><div class="card"><div style="font-size:22px;margin-bottom:8px">🌱</div><div class="fw6 mb4">ESG-Policy-2026</div><div style="font-size:11px;color:var(--text3);margin-bottom:8px">นโยบายพลังงานและ Net Zero</div><div class="flex g8"><span class="badge badge-teal">ESG</span></div></div></div>
+      <div class="sh"><div><div class="st">📚 Knowledge Base</div><div class="ss">SOP · คู่มือ · Best Practice · AI Search</div></div><button class="btn btn-purple" onclick="openKnowledgeModal()">+ อัปโหลด</button></div>
+      <div class="fb"><input class="si" id="kb-search" placeholder="🔍 ค้นหา SOP คู่มือ..." style="max-width:400px" oninput="renderKnowledgeBase()"><button class="btn btn-purple btn-sm" onclick="showView('ai')">🤖 Ask AI</button></div>
+      <div class="grid-3" id="kb-grid"></div>
     </div>
     <div id="view-exam" class="view">
       <div class="sh"><div><div class="st">📝 ข้อสอบออนไลน์ (Online Exam)</div><div class="ss">20 หัวข้อ iFEMs SMART HOSPITAL · 15 ข้อ/หัวข้อ · ใช้บัญชี iMATOMs ที่ล็อกอินอยู่</div></div>
@@ -2154,6 +2158,91 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 <div class="alr alr-i mb16">กำหนดความถี่การสอบซ้ำและเกณฑ์คะแนนผ่านของแต่ละหัวข้อ (I1–I20)</div>
 <div id="exam-settings-body"></div>
 <div class="flex g8" style="justify-content:flex-end;margin-top:16px"><button class="btn btn-secondary" onclick="closeModal('m-exam-settings')">ยกเลิก</button><button class="btn btn-primary" onclick="saveExamTopicSettings()">💾 บันทึกการตั้งค่า</button></div>
+</div></div>
+
+<!-- ═══ STAFF ACADEMY: Competency / Certification / Knowledge Base MODALS ═══ -->
+<div class="modal-overlay" id="m-competency"><div class="modal">
+<div class="mhd"><div class="mttl" id="comp-modal-title">🧠 เพิ่ม/แก้ไข พนักงาน (Competency)</div><button class="mclose" onclick="closeModal('m-competency')">✕</button></div>
+<input type="hidden" id="cp-id">
+<div class="form-row">
+  <div class="form-group"><label class="form-label">ชื่อพนักงาน *</label><input class="form-control" id="cp-name" placeholder="ชื่อ-นามสกุล"></div>
+  <div class="form-group"><label class="form-label">แผนก</label><input class="form-control" id="cp-dept" placeholder="เช่น Engineering"></div>
+</div>
+<div class="form-sec">⭐ ระดับทักษะ (1=Aware · 2=Basic · 3=Proficient · 4=Advanced · 5=Expert)</div>
+<div id="cp-skills-wrap"></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-competency')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveCompetencyRecord()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-comp-skills"><div class="modal">
+<div class="mhd"><div class="mttl">⚙ จัดการทักษะ (Skill Columns)</div><button class="mclose" onclick="closeModal('m-comp-skills')">✕</button></div>
+<div id="cs-list-wrap" class="mb16"></div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">เพิ่มทักษะใหม่</label><input class="form-control" id="cs-new-name" placeholder="เช่น Fire Protection"></div>
+</div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-primary" onclick="addCompSkill()">+ เพิ่มทักษะ</button>
+</div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:16px">
+  <button class="btn btn-secondary" onclick="closeModal('m-comp-skills')">ปิด</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-certification"><div class="modal">
+<div class="mhd"><div class="mttl" id="cert-modal-title">📜 เพิ่ม/แก้ไข ใบรับรอง</div><button class="mclose" onclick="closeModal('m-certification')">✕</button></div>
+<input type="hidden" id="ce-id">
+<div class="form-row">
+  <div class="form-group"><label class="form-label">ชื่อพนักงาน *</label><input class="form-control" id="ce-emp" placeholder="ชื่อ-นามสกุล"></div>
+  <div class="form-group"><label class="form-label">ชื่อใบรับรอง *</label><input class="form-control" id="ce-cert" placeholder="เช่น วิศวกรรมไฟฟ้า (กว.)"></div>
+</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">หน่วยงานที่ออกให้</label><input class="form-control" id="ce-org" placeholder="เช่น วิศวกรรมสภา"></div>
+  <div class="form-group"><label class="form-label">เลขที่/หมายเหตุ</label><input class="form-control" id="ce-notes" placeholder="หมายเหตุ"></div>
+</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">วันที่ออก *</label><input type="date" class="form-control" id="ce-issue"></div>
+  <div class="form-group"><label class="form-label">วันหมดอายุ *</label><input type="date" class="form-control" id="ce-expiry"></div>
+</div>
+<div class="form-group"><label class="form-label">แนบไฟล์/รูปใบรับรอง</label><input type="file" accept="image/*,.pdf" class="form-control" id="ce-file-input" onchange="handleCertFile(event)"></div>
+<div id="ce-file-thumb" style="margin:8px 0"></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-certification')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveCertification()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-knowledge"><div class="modal">
+<div class="mhd"><div class="mttl" id="kb-modal-title">📚 อัปโหลดเอกสาร (Knowledge Base)</div><button class="mclose" onclick="closeModal('m-knowledge')">✕</button></div>
+<input type="hidden" id="kb-id">
+<div class="form-row">
+  <div class="form-group"><label class="form-label">รหัสเอกสาร *</label><input class="form-control" id="kb-code" placeholder="เช่น SOP-HVAC-001"></div>
+  <div class="form-group"><label class="form-label">Category</label>
+    <select class="form-control" id="kb-cat">
+      <option value="Reliability">Reliability</option>
+      <option value="Quality">Quality</option>
+      <option value="Cost">Cost</option>
+      <option value="ESG">ESG</option>
+      <option value="Academy">Academy</option>
+      <option value="Safety">Safety</option>
+    </select>
+  </div>
+</div>
+<div class="form-group"><label class="form-label">ชื่อเอกสาร *</label><input class="form-control" id="kb-title" placeholder="เช่น ขั้นตอน PM HVAC ประจำปี"></div>
+<div class="form-group"><label class="form-label">คำอธิบาย</label><textarea class="form-control" id="kb-desc" rows="2"></textarea></div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">Version</label><input class="form-control" id="kb-version" placeholder="เช่น v1.0" value="v1.0"></div>
+  <div class="form-group"><label class="form-label">ผู้อัปโหลด</label><input class="form-control" id="kb-by" placeholder="ชื่อผู้อัปโหลด"></div>
+</div>
+<div class="form-sec">🔗 เลือกอย่างใดอย่างหนึ่ง — ลิงก์เอกสาร หรือ อัปโหลดไฟล์</div>
+<div class="form-group"><label class="form-label">ลิงก์เอกสาร (URL)</label><input class="form-control" id="kb-url" placeholder="https://..."></div>
+<div class="form-group"><label class="form-label">หรืออัปโหลดไฟล์</label><input type="file" accept="image/*,.pdf" class="form-control" id="kb-file-input" onchange="handleKbFile(event)"></div>
+<div id="kb-file-thumb" style="margin:8px 0"></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-knowledge')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveKnowledgeDoc()">💾 บันทึก</button>
+</div>
 </div></div>
 
 <div class="modal-overlay" id="m-ppm"><div class="modal"><div class="mhd"><div class="mttl">📅 เพิ่มแผน PM</div><button class="mclose" onclick="closeModal('m-ppm')">✕</button></div>
@@ -7580,7 +7669,7 @@ const META={
   floorplan:{t:'🏢 Building Critical Status',b:'TKO iMATOMs › แผนผังชั้น'},
 };
 const accMap={assets:'s1',lifecycle:'s1',qrcode:'s1',inspection:'s1',valuation:'s1',workrequest:'s1',ppm:'s1',operation:'s1',contract:'s1',inventory:'s1',inspection:'s2',ncr:'s2',fmea:'s2',audit:'s2',budget:'s3',costanalysis:'s3',valuation:'s3',energy:'s4',carbon:'s4',waste:'s4',esgkpi:'s4',training:'s5',competency:'s5',certification:'s5',knowledgebase:'s5',exam:'s5',incident:'s6',hazard:'s6',permit:'s6',safetystat:'s6',ai:'s7',integrations:'s8',notifications:'s9','db-assets':'s10','db-floorplan':'s10','db-custom':'s10',config:'s11',cloud:'s12',adminmgmt:'s13'};
-const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,carbon:renderCarbon,waste:renderWaste,esgkpi:renderEsgKpi,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,audit:renderAudit,modules:renderModules,notifications:renderNotifCenter,exam:renderExam,floorplan:()=>{
+const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,energy:renderEnergy,carbon:renderCarbon,waste:renderWaste,esgkpi:renderEsgKpi,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,audit:renderAudit,modules:renderModules,notifications:renderNotifCenter,exam:renderExam,competency:renderCompetency,certification:renderCertification,knowledgebase:renderKnowledgeBase,floorplan:()=>{
   // คืนค่า floor ก่อน render
   const sel=document.getElementById('fp-floor');
   if(sel){const saved=localStorage.getItem('fp_last_floor')||'l1';if(sel.querySelector(`option[value="${saved}"]`))sel.value=saved;}
@@ -11350,6 +11439,370 @@ function importWasteExcel(){
     reader.readAsArrayBuffer(f);
   };
   inp.click();
+}
+
+// ══════════════════════════════════════════════════════════════
+// ══ STAFF ACADEMY: Competency Matrix / Certification Tracker / Knowledge Base ══
+// ══════════════════════════════════════════════════════════════
+
+// ── Competency Matrix ──
+function compSkills(){ return DB.get('competencySkills',['Electrical','Mechanical','BAS/BMS','Safety','ESG','CMMS']); }
+function compStarColor(n){ n=Math.round(n||0); return n>=5?'var(--green)':n>=4?'var(--blue)':n>=3?'var(--yellow)':n>=2?'var(--orange)':'var(--red)'; }
+function compStars(n){ n=Math.round(n||0); let s=''; for(let i=1;i<=5;i++)s+=(i<=n?'★':'☆'); return s; }
+function compAvgBadge(avg){ const c=avg>=4?'badge-green':avg>=3?'badge-blue':avg>=2?'badge-yellow':'badge-red'; return `<span class="badge ${c}">${avg.toFixed(1)}</span>`; }
+function compRecordAvg(rec,skills){
+  const vals=skills.map(s=>rec.scores?.[s]||0).filter(v=>v>0);
+  return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
+}
+function renderCompetency(){
+  const skills=compSkills();
+  const records=DB.get('competencyRecords',[]);
+  const target=parseInt(document.getElementById('comp-target')?.value||'4');
+
+  const wrap=document.getElementById('comp-table-wrap');
+  if(wrap){
+    const thead=`<thead><tr><th>พนักงาน</th><th>แผนก</th>${skills.map(s=>`<th>${escWW(s)}</th>`).join('')}<th>Avg</th><th>Action</th></tr></thead>`;
+    const rows=records.length?records.map(r=>{
+      const avg=compRecordAvg(r,skills);
+      const cells=skills.map(s=>{
+        const v=r.scores?.[s]||0;
+        return `<td style="text-align:center;color:${compStarColor(v)}">${v?compStars(v):'—'}</td>`;
+      }).join('');
+      return `<tr><td class="fw6">${escWW(r.employeeName)}</td><td>${r.department?`<span class="badge badge-blue">${escWW(r.department)}</span>`:'—'}</td>${cells}<td>${compAvgBadge(avg)}</td><td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openCompetencyModal('${r.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteCompetencyRecord('${r.id}')">🗑</button></div></td></tr>`;
+    }).join(''):`<tr><td colspan="${skills.length+4}" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูลพนักงาน</td></tr>`;
+    wrap.innerHTML=`<table>${thead}<tbody>${rows}</tbody></table>`;
+  }
+
+  const g=id=>document.getElementById(id);
+  if(g('comp-kpi-total'))g('comp-kpi-total').textContent=records.length;
+  const overallAvg=records.length?records.reduce((s,r)=>s+compRecordAvg(r,skills),0)/records.length:0;
+  if(g('comp-kpi-avg'))g('comp-kpi-avg').textContent=overallAvg.toFixed(1);
+  if(g('comp-kpi-skills'))g('comp-kpi-skills').textContent=skills.length;
+
+  // Gap analysis
+  const gaps=[];
+  records.forEach(r=>{
+    skills.forEach(s=>{
+      const v=r.scores?.[s]||0;
+      if(v<target)gaps.push({emp:r.employeeName,skill:s,score:v,gap:target-v});
+    });
+  });
+  if(g('comp-kpi-gap'))g('comp-kpi-gap').textContent=gaps.length;
+  const gapWrap=document.getElementById('comp-gap-wrap');
+  if(gapWrap){
+    gapWrap.innerHTML=gaps.length?`<div class="table-wrap"><table><thead><tr><th>พนักงาน</th><th>ทักษะ</th><th>ระดับปัจจุบัน</th><th>เป้าหมาย</th><th>ส่วนต่าง</th></tr></thead><tbody>
+      ${gaps.sort((a,b)=>b.gap-a.gap).map(x=>`<tr><td>${escWW(x.emp)}</td><td>${escWW(x.skill)}</td><td style="text-align:center;color:${compStarColor(x.score)}">${x.score?compStars(x.score):'—'}</td><td style="text-align:center">${target}</td><td><span class="badge badge-red">-${x.gap}</span></td></tr>`).join('')}
+    </tbody></table></div>`:`<div class="alr alr-s">✅ ไม่มีพนักงานที่ต่ำกว่าเป้าหมาย ${target} ในทุกทักษะ</div>`;
+  }
+}
+function openCompetencyModal(id){
+  document.getElementById('cp-id').value=id||'';
+  document.getElementById('comp-modal-title').textContent=id?'✏ แก้ไข พนักงาน (Competency)':'🧠 เพิ่ม พนักงาน (Competency)';
+  document.getElementById('cp-name').value='';
+  document.getElementById('cp-dept').value='';
+  const skills=compSkills();
+  let rec=null;
+  if(id)rec=DB.get('competencyRecords',[]).find(x=>x.id===id);
+  if(rec){
+    document.getElementById('cp-name').value=rec.employeeName||'';
+    document.getElementById('cp-dept').value=rec.department||'';
+  }
+  const skWrap=document.getElementById('cp-skills-wrap');
+  skWrap.innerHTML=skills.map(s=>{
+    const v=rec?.scores?.[s]||0;
+    return `<div class="form-row"><div class="form-group" style="flex:1"><label class="form-label">${escWW(s)}</label>
+      <select class="form-control cp-skill-input" data-skill="${escWW(s)}">
+        <option value="0" ${v===0?'selected':''}>— ไม่ประเมิน —</option>
+        <option value="1" ${v===1?'selected':''}>1 - Aware</option>
+        <option value="2" ${v===2?'selected':''}>2 - Basic</option>
+        <option value="3" ${v===3?'selected':''}>3 - Proficient</option>
+        <option value="4" ${v===4?'selected':''}>4 - Advanced</option>
+        <option value="5" ${v===5?'selected':''}>5 - Expert</option>
+      </select></div></div>`;
+  }).join('');
+  openModal('m-competency');
+}
+function saveCompetencyRecord(){
+  const name=document.getElementById('cp-name').value.trim();
+  if(!name){showToast('⚠ กรุณาระบุชื่อพนักงาน');return;}
+  const id=document.getElementById('cp-id').value;
+  const scores={};
+  document.querySelectorAll('.cp-skill-input').forEach(sel=>{
+    const v=parseInt(sel.value)||0;
+    if(v>0)scores[sel.dataset.skill]=v;
+  });
+  const list=DB.get('competencyRecords',[]);
+  const rec={id:id||'CMP-'+Date.now(),employeeName:name,department:document.getElementById('cp-dept').value.trim(),scores,updatedDate:new Date().toISOString().slice(0,10)};
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('competencyRecords',list);
+  showToast('💾 บันทึกข้อมูลพนักงานสำเร็จ');
+  closeModal('m-competency');
+  renderCompetency();
+}
+function deleteCompetencyRecord(id){
+  if(!confirm('ลบข้อมูลพนักงานนี้?'))return;
+  DB.set('competencyRecords',DB.get('competencyRecords',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderCompetency();
+}
+function openCompSkillsModal(){
+  renderCompSkillsList();
+  document.getElementById('cs-new-name').value='';
+  openModal('m-comp-skills');
+}
+function renderCompSkillsList(){
+  const skills=compSkills();
+  const wrap=document.getElementById('cs-list-wrap');
+  wrap.innerHTML=skills.length?skills.map(s=>`<div class="mr"><span class="tm">${escWW(s)}</span>${skills.length>1?`<button class="btn btn-danger btn-xs" onclick="removeCompSkill('${escWW(s)}')">🗑</button>`:''}</div>`).join(''):'<div style="color:var(--text3);font-size:12px">ยังไม่มีทักษะ</div>';
+}
+function addCompSkill(){
+  const name=document.getElementById('cs-new-name').value.trim();
+  if(!name){showToast('⚠ กรุณาระบุชื่อทักษะ');return;}
+  const skills=compSkills();
+  if(skills.includes(name)){showToast('⚠ มีทักษะนี้อยู่แล้ว');return;}
+  skills.push(name);
+  DB.set('competencySkills',skills);
+  document.getElementById('cs-new-name').value='';
+  renderCompSkillsList();
+  renderCompetency();
+  showToast('✅ เพิ่มทักษะสำเร็จ');
+}
+function removeCompSkill(name){
+  if(!confirm(`ลบทักษะ "${name}" ออกจากทุกพนักงาน?`))return;
+  const skills=compSkills().filter(s=>s!==name);
+  DB.set('competencySkills',skills);
+  const records=DB.get('competencyRecords',[]);
+  records.forEach(r=>{if(r.scores)delete r.scores[name];});
+  DB.set('competencyRecords',records);
+  renderCompSkillsList();
+  renderCompetency();
+  showToast('🗑 ลบทักษะสำเร็จ');
+}
+function exportCompetencyExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const skills=compSkills();
+  const records=DB.get('competencyRecords',[]);
+  const data=[['พนักงาน','แผนก',...skills,'Avg'],
+    ...records.map(r=>[r.employeeName,r.department||'',...skills.map(s=>r.scores?.[s]||0),compRecordAvg(r,skills).toFixed(1)])];
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:16}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Competency');
+  XLSX.writeFile(wb,'TKO_CompetencyMatrix_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
+}
+
+// ── Certification Tracker ──
+const CERT_NEAR_DAYS=90; // จำนวนวันก่อนหมดอายุที่ถือว่า "ใกล้หมด" (hardcoded threshold)
+function certStatus(expiryDate){
+  if(!expiryDate)return {c:'gray',l:'—',k:'none'};
+  const days=Math.floor((new Date(expiryDate)-new Date(new Date().toISOString().slice(0,10)))/86400000);
+  if(days<0)return {c:'red',l:'❌ หมดอายุ',k:'expired'};
+  if(days<=CERT_NEAR_DAYS)return {c:'yellow',l:'⏰ ใกล้หมด',k:'near'};
+  return {c:'green',l:'✅ Valid',k:'valid'};
+}
+let _certFileData=null;
+function handleCertFile(e){
+  const f=e.target.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    _certFileData=ev.target.result;
+    const isImg=f.type.startsWith('image/');
+    document.getElementById('ce-file-thumb').innerHTML=isImg?`<img src="${_certFileData}" style="max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--border)">`:`<span class="badge badge-blue">📎 ${escWW(f.name)}</span>`;
+  };
+  reader.readAsDataURL(f);
+}
+function openCertificationModal(id){
+  document.getElementById('ce-id').value=id||'';
+  document.getElementById('cert-modal-title').textContent=id?'✏ แก้ไข ใบรับรอง':'📜 เพิ่ม ใบรับรอง';
+  document.getElementById('ce-emp').value='';document.getElementById('ce-cert').value='';document.getElementById('ce-org').value='';
+  document.getElementById('ce-notes').value='';document.getElementById('ce-issue').value='';document.getElementById('ce-expiry').value='';
+  document.getElementById('ce-file-thumb').innerHTML='';document.getElementById('ce-file-input').value='';
+  _certFileData=null;
+  if(id){
+    const item=DB.get('certifications',[]).find(x=>x.id===id);
+    if(item){
+      document.getElementById('ce-emp').value=item.employeeName||'';
+      document.getElementById('ce-cert').value=item.certName||'';
+      document.getElementById('ce-org').value=item.issuingOrg||'';
+      document.getElementById('ce-notes').value=item.notes||'';
+      document.getElementById('ce-issue').value=item.issueDate||'';
+      document.getElementById('ce-expiry').value=item.expiryDate||'';
+      if(item.file){_certFileData=item.file;document.getElementById('ce-file-thumb').innerHTML=item.file.startsWith('data:image')?`<img src="${item.file}" style="max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--border)">`:`<span class="badge badge-blue">📎 ไฟล์แนบ</span>`;}
+    }
+  }
+  openModal('m-certification');
+}
+function saveCertification(){
+  const emp=document.getElementById('ce-emp').value.trim();
+  const cert=document.getElementById('ce-cert').value.trim();
+  const issue=document.getElementById('ce-issue').value;
+  const expiry=document.getElementById('ce-expiry').value;
+  if(!emp||!cert){showToast('⚠ กรุณาระบุชื่อพนักงานและชื่อใบรับรอง');return;}
+  if(!issue||!expiry){showToast('⚠ กรุณาระบุวันที่ออกและวันหมดอายุ');return;}
+  const id=document.getElementById('ce-id').value;
+  const list=DB.get('certifications',[]);
+  const rec={id:id||'CERT-'+Date.now(),employeeName:emp,certName:cert,issuingOrg:document.getElementById('ce-org').value.trim(),
+    issueDate:issue,expiryDate:expiry,file:_certFileData||null,notes:document.getElementById('ce-notes').value.trim()};
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('certifications',list);
+  showToast('💾 บันทึกใบรับรองสำเร็จ');
+  closeModal('m-certification');
+  renderCertification();
+}
+function deleteCertification(id){
+  if(!confirm('ลบใบรับรองนี้?'))return;
+  DB.set('certifications',DB.get('certifications',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderCertification();
+}
+function renderCertification(){
+  const list=DB.get('certifications',[]).slice().sort((a,b)=>(a.expiryDate||'').localeCompare(b.expiryDate||''));
+  const tbody=document.getElementById('cert-tbody');
+  if(tbody)tbody.innerHTML=list.length?list.map(x=>{
+    const st=certStatus(x.expiryDate);
+    return `<tr>
+      <td>${escWW(x.employeeName)}</td><td>${escWW(x.certName)}</td><td style="font-size:12px">${escWW(x.issuingOrg)||'—'}</td>
+      <td>${x.issueDate||'—'}</td><td>${x.expiryDate||'—'}</td><td><span class="badge badge-${st.c}">${st.l}</span></td>
+      <td>${x.file?`${x.file.startsWith('data:image')?`<img src="${x.file}" style="width:32px;height:32px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="window.open('${x.file}','_blank')">`:`<button class="btn btn-secondary btn-xs" onclick="window.open('${x.file}','_blank')">📎</button>`}`:'—'}</td>
+      <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openCertificationModal('${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteCertification('${x.id}')">🗑</button></div></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="8" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูลใบรับรอง</td></tr>';
+
+  const g=id=>document.getElementById(id);
+  if(g('cert-kpi-total'))g('cert-kpi-total').textContent=list.length;
+  if(g('cert-kpi-valid'))g('cert-kpi-valid').textContent=list.filter(x=>certStatus(x.expiryDate).k==='valid').length;
+  if(g('cert-kpi-near'))g('cert-kpi-near').textContent=list.filter(x=>certStatus(x.expiryDate).k==='near').length;
+  if(g('cert-kpi-expired'))g('cert-kpi-expired').textContent=list.filter(x=>certStatus(x.expiryDate).k==='expired').length;
+}
+function exportCertificationExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const list=DB.get('certifications',[]);
+  const data=[['พนักงาน','ใบรับรอง','หน่วยงาน','วันออก','วันหมดอายุ','สถานะ','หมายเหตุ'],
+    ...list.map(x=>[x.employeeName,x.certName,x.issuingOrg||'',x.issueDate||'',x.expiryDate||'',certStatus(x.expiryDate).l,x.notes||''])];
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:18}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Certification');
+  XLSX.writeFile(wb,'TKO_Certification_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
+}
+function importCertificationExcel(){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX...');return;}
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        if(!ws){showToast('❌ ไม่พบ sheet ในไฟล์');return;}
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+        if(!rows.length){showToast('⚠ ไม่พบข้อมูลในไฟล์');return;}
+        const g=(r,...keys)=>{for(const k of keys){if(r[k]!==undefined&&r[k]!=='')return String(r[k]).trim();}return '';};
+        const list=DB.get('certifications',[]);
+        let added=0;
+        rows.forEach(r=>{
+          const emp=g(r,'พนักงาน','employeeName','Employee');
+          const cert=g(r,'ใบรับรอง','certName','Certification');
+          if(!emp||!cert)return;
+          list.push({id:'CERT-'+Date.now()+'-'+(added++),employeeName:emp,certName:cert,issuingOrg:g(r,'หน่วยงาน','issuingOrg'),
+            issueDate:g(r,'วันออก','issueDate'),expiryDate:g(r,'วันหมดอายุ','expiryDate'),notes:g(r,'หมายเหตุ','notes'),file:null});
+        });
+        DB.set('certifications',list);
+        showToast('📥 Import สำเร็จ '+added+' รายการ');
+        renderCertification();
+      }catch(err){showToast('❌ อ่านไฟล์ไม่ได้: '+err.message);}
+    };
+    reader.readAsArrayBuffer(f);
+  };
+  inp.click();
+}
+
+// ── Knowledge Base ──
+const KB_CATS={
+  Reliability:{c:'badge-orange',icon:'🛠'},Quality:{c:'badge-blue',icon:'✅'},Cost:{c:'badge-purple',icon:'💰'},
+  ESG:{c:'badge-teal',icon:'🌱'},Academy:{c:'badge-green',icon:'🎓'},Safety:{c:'badge-red',icon:'⚠'}
+};
+let _kbFileData=null;
+function handleKbFile(e){
+  const f=e.target.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    _kbFileData=ev.target.result;
+    const isImg=f.type.startsWith('image/');
+    document.getElementById('kb-file-thumb').innerHTML=isImg?`<img src="${_kbFileData}" style="max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--border)">`:`<span class="badge badge-blue">📎 ${escWW(f.name)}</span>`;
+  };
+  reader.readAsDataURL(f);
+}
+function openKnowledgeModal(id){
+  document.getElementById('kb-id').value=id||'';
+  document.getElementById('kb-modal-title').textContent=id?'✏ แก้ไข เอกสาร':'📚 อัปโหลดเอกสาร (Knowledge Base)';
+  document.getElementById('kb-code').value='';document.getElementById('kb-title').value='';document.getElementById('kb-desc').value='';
+  document.getElementById('kb-version').value='v1.0';document.getElementById('kb-by').value='';document.getElementById('kb-url').value='';
+  document.getElementById('kb-cat').value='Reliability';
+  document.getElementById('kb-file-thumb').innerHTML='';document.getElementById('kb-file-input').value='';
+  _kbFileData=null;
+  if(id){
+    const item=DB.get('knowledgeDocs',[]).find(x=>x.id===id);
+    if(item){
+      document.getElementById('kb-code').value=item.code||'';
+      document.getElementById('kb-title').value=item.title||'';
+      document.getElementById('kb-desc').value=item.description||'';
+      document.getElementById('kb-version').value=item.version||'v1.0';
+      document.getElementById('kb-by').value=item.uploadedBy||'';
+      document.getElementById('kb-url').value=item.url||'';
+      document.getElementById('kb-cat').value=item.category||'Reliability';
+      if(item.file){_kbFileData=item.file;document.getElementById('kb-file-thumb').innerHTML=item.file.startsWith('data:image')?`<img src="${item.file}" style="max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--border)">`:`<span class="badge badge-blue">📎 ไฟล์แนบ</span>`;}
+    }
+  }
+  openModal('m-knowledge');
+}
+function saveKnowledgeDoc(){
+  const code=document.getElementById('kb-code').value.trim();
+  const title=document.getElementById('kb-title').value.trim();
+  const url=document.getElementById('kb-url').value.trim();
+  if(!code||!title){showToast('⚠ กรุณาระบุรหัสเอกสารและชื่อเอกสาร');return;}
+  if(!url&&!_kbFileData){showToast('⚠ กรุณาระบุลิงก์เอกสาร หรือ อัปโหลดไฟล์');return;}
+  const id=document.getElementById('kb-id').value;
+  const list=DB.get('knowledgeDocs',[]);
+  const rec={id:id||'KB-'+Date.now(),code,title,description:document.getElementById('kb-desc').value.trim(),
+    category:document.getElementById('kb-cat').value,version:document.getElementById('kb-version').value.trim()||'v1.0',
+    url:url||null,file:_kbFileData||null,uploadedBy:document.getElementById('kb-by').value.trim(),uploadedDate:new Date().toISOString().slice(0,10)};
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('knowledgeDocs',list);
+  showToast('💾 บันทึกเอกสารสำเร็จ');
+  closeModal('m-knowledge');
+  renderKnowledgeBase();
+}
+function deleteKnowledgeDoc(id){
+  if(!confirm('ลบเอกสารนี้?'))return;
+  DB.set('knowledgeDocs',DB.get('knowledgeDocs',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderKnowledgeBase();
+}
+function openKbDoc(id){
+  const item=DB.get('knowledgeDocs',[]).find(x=>x.id===id);
+  if(!item)return;
+  if(item.url)window.open(item.url,'_blank');
+  else if(item.file)window.open(item.file,'_blank');
+  else showToast('⚠ ไม่มีไฟล์หรือลิงก์แนบ');
+}
+function renderKnowledgeBase(){
+  const q=(document.getElementById('kb-search')?.value||'').trim().toLowerCase();
+  const all=DB.get('knowledgeDocs',[]).slice().sort((a,b)=>(b.uploadedDate||'').localeCompare(a.uploadedDate||''));
+  const list=q?all.filter(x=>(x.title||'').toLowerCase().includes(q)||(x.code||'').toLowerCase().includes(q)||(x.description||'').toLowerCase().includes(q)):all;
+  const grid=document.getElementById('kb-grid');
+  if(!grid)return;
+  grid.innerHTML=list.length?list.map(x=>{
+    const cat=KB_CATS[x.category]||KB_CATS.Reliability;
+    return `<div class="card">
+      <div class="flex jb fca" style="margin-bottom:4px"><div style="font-size:22px;cursor:pointer" onclick="openKbDoc('${x.id}')">${cat.icon}</div><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openKnowledgeModal('${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteKnowledgeDoc('${x.id}')">🗑</button></div></div>
+      <div class="fw6 mb4" style="cursor:pointer" onclick="openKbDoc('${x.id}')">${escWW(x.code)} — ${escWW(x.title)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px">${escWW(x.description)||'—'}</div>
+      <div class="flex g8"><span class="badge ${cat.c}">${escWW(x.category)}</span><span class="badge badge-gray">${escWW(x.version)}</span></div>
+    </div>`;
+  }).join(''):'<div class="card" style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text3)">ยังไม่มีเอกสาร — คลิก "+ อัปโหลด" เพื่อเริ่มต้น</div>';
 }
 
 // ══════════════════════════════════════════════════════════════
