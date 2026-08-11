@@ -882,9 +882,55 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 
     <!-- COST VIEWS -->
     <div id="view-budget" class="view">
-      <div class="sh"><div><div class="st">💰 Budget Planning</div><div class="ss">งบ Capex/Opex · Variance Analysis</div></div><button class="btn btn-primary">+ เพิ่มงบ</button></div>
-      <div class="kpi-grid"><div class="kpi blue"><div class="kl">Opex ปี 2026</div><div class="kv ffd" style="font-size:18px">฿12.5M</div></div><div class="kpi orange"><div class="kl">ใช้ไปแล้ว</div><div class="kv ffd" style="font-size:18px">฿4.2M</div><div class="ks">33.6% YTD</div></div><div class="kpi green"><div class="kl">คงเหลือ</div><div class="kv ffd" style="font-size:18px">฿8.3M</div></div><div class="kpi yellow"><div class="kl">Capex Pending</div><div class="kv ffd" style="font-size:18px">฿2.1M</div></div></div>
-      <div class="grid-2"><div class="card"><div class="ffd fw6 mb12" style="font-size:14px">Budget vs Actual</div><div class="chart-wrap"><canvas id="chBudg"></canvas></div></div><div class="card"><div class="ffd fw6 mb12" style="font-size:14px">Cost by System</div><div class="chart-wrap"><canvas id="chCostSys"></canvas></div></div></div>
+      <div class="sh"><div><div class="st">💰 Budget Planning</div><div class="ss">CAPEX / OPEX · Variance Analysis · ประสิทธิภาพการใช้งบ</div></div>
+        <div class="flex g8" style="flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm" onclick="importBudgetExcel('capex')">📥 Import CAPEX</button>
+          <button class="btn btn-secondary btn-sm" onclick="importBudgetExcel('opex')">📥 Import OPEX</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportBudgetExcel('capex')">📤 Export CAPEX</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportBudgetExcel('opex')">📤 Export OPEX</button>
+          <button class="btn btn-primary" onclick="openCapexModal()">+ CAPEX</button>
+          <button class="btn btn-success" onclick="openOpexModal()">+ OPEX</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi blue"><div class="kl">งบรวมทั้งหมด</div><div class="kv ffd" id="bud-total" style="font-size:18px">฿0</div><div class="ks" id="bud-total-sub">CAPEX + OPEX</div></div>
+        <div class="kpi orange"><div class="kl">ใช้ไปแล้ว</div><div class="kv ffd" id="bud-used" style="font-size:18px">฿0</div><div class="ks" id="bud-used-pct">0% ของงบ</div></div>
+        <div class="kpi green"><div class="kl">คงเหลือ</div><div class="kv ffd" id="bud-remain" style="font-size:18px">฿0</div><div class="ks" id="bud-remain-pct">0%</div></div>
+        <div class="kpi yellow"><div class="kl">CAPEX งบ/ใช้ไป</div><div class="kv ffd" id="bud-capex-sum" style="font-size:18px">฿0</div><div class="ks" id="bud-capex-used">ใช้ไป ฿0</div></div>
+        <div class="kpi purple"><div class="kl">OPEX งบ/ใช้ไป</div><div class="kv ffd" id="bud-opex-sum" style="font-size:18px">฿0</div><div class="ks" id="bud-opex-used">ใช้ไป ฿0</div></div>
+        <div class="kpi teal"><div class="kl">ประสิทธิภาพการใช้งบ</div><div class="kv ffd" id="bud-eff" style="font-size:18px">—</div><div class="ks" id="bud-eff-sub">เทียบกรอบเวลา</div></div>
+      </div>
+
+      <div class="alr mb16" id="bud-eff-banner" style="display:none"></div>
+
+      <div class="grid-2 mb16">
+        <div class="card"><div class="ffd fw6 mb12" style="font-size:14px">📊 แผนการใช้งบประมาณรายเดือน (Budget vs Actual)</div><div class="chart-wrap"><canvas id="chBudg"></canvas></div></div>
+        <div class="card"><div class="ffd fw6 mb12" style="font-size:14px">🥧 สัดส่วนงบตามหมวด (CAPEX + OPEX)</div><div class="chart-wrap"><canvas id="chBudgCat"></canvas></div></div>
+      </div>
+      <div class="card mb16"><div class="ffd fw6 mb12" style="font-size:14px">📅 แนวโน้มงบประมาณรายปี</div><div class="chart-wrap"><canvas id="chBudgYear"></canvas></div></div>
+
+      <!-- Filter toolbar -->
+      <div class="card mb16">
+        <div class="flex g8" style="flex-wrap:wrap;align-items:flex-end">
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">ปี</label><select class="form-control" id="budf-year" onchange="renderBudget()" style="width:110px"><option value="">ทั้งหมด</option></select></div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">ประเภท</label><select class="form-control" id="budf-type" onchange="renderBudget()" style="width:130px"><option value="">CAPEX + OPEX</option><option value="capex">CAPEX เท่านั้น</option><option value="opex">OPEX เท่านั้น</option></select></div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">สถานะ/การจ่าย</label><select class="form-control" id="budf-status" onchange="renderBudget()" style="width:150px"><option value="">ทั้งหมด</option></select></div>
+          <button class="btn btn-secondary btn-sm" onclick="resetBudgetFilters()">↺ ล้างตัวกรอง</button>
+        </div>
+      </div>
+
+      <!-- CAPEX Table -->
+      <div class="card mb16">
+        <div class="flex fca jb mb12"><div class="ffd fw7" style="font-size:14px">🏗 CAPEX — โครงการลงทุน</div><span class="badge badge-blue" id="capex-count">0 โครงการ</span></div>
+        <div class="table-wrap"><table><thead><tr><th>โครงการ</th><th>หมวด</th><th>ปี</th><th>อาคาร</th><th>งบ/ใช้ไป</th><th>% ใช้</th><th>สถานะ</th><th>Action</th></tr></thead><tbody id="capex-tbody"></tbody></table></div>
+      </div>
+
+      <!-- OPEX Table -->
+      <div class="card mb16">
+        <div class="flex fca jb mb12"><div class="ffd fw7" style="font-size:14px">🧾 OPEX — ค่าใช้จ่ายบริหารอาคาร</div><span class="badge badge-purple" id="opex-count">0 รายการ</span></div>
+        <div class="table-wrap"><table><thead><tr><th>รายละเอียด</th><th>หมวด</th><th>ปี/เดือน</th><th>อาคาร</th><th>งบ/ใช้ไป</th><th>% ใช้</th><th>การจ่าย</th><th>Action</th></tr></thead><tbody id="opex-tbody"></tbody></table></div>
+      </div>
     </div>
     <div id="view-costanalysis" class="view">
       <div class="sh"><div><div class="st">📈 Cost Analysis</div><div class="ss">WR + PM + Parts + MA · LCC</div></div></div>
@@ -1892,6 +1938,131 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 </div>
 
 <div class="flex g8" style="justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary" onclick="closeModal('m-insp')">ยกเลิก</button><button class="btn btn-primary" onclick="saveAIQ()">💾 Save Inspection</button></div>
+</div></div>
+
+<!-- ═══ CAPEX MODAL ═══ -->
+<div class="modal-overlay" id="m-capex"><div class="modal modal-lg">
+<div class="mhd"><div class="mttl" id="capex-modal-title">🏗 CAPEX — Capital Expenditure (โครงการลงทุน)</div><button class="mclose" onclick="closeModal('m-capex')">✕</button></div>
+<input type="hidden" id="capex-id">
+
+<div class="form-sec">📋 ข้อมูลโครงการ</div>
+<div class="form-group"><label class="form-label">ชื่อโครงการ *</label><input type="text" class="form-control" id="capex-name" placeholder="เช่น ติดตั้ง Solar Rooftop อาคาร A..."></div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">หมวดโครงการ *</label>
+    <select class="form-control" id="capex-category">
+      <option value="">-- เลือกหมวด --</option>
+      <option value="new_construction">🏢 New Construction / Expansion — ก่อสร้าง/ขยายพื้นที่ใหม่</option>
+      <option value="renovation">🔨 Renovation / Retrofit — ปรับปรุงอาคาร/พื้นที่เดิม</option>
+      <option value="equipment_replacement">⚙ Equipment Replacement — เปลี่ยนทดแทนเครื่องจักร/อุปกรณ์</option>
+      <option value="tech_innovation">💡 Technology & Digital Innovation — เทคโนโลยี/นวัตกรรมดิจิทัล</option>
+      <option value="sustainability">🌱 Sustainability & Green Building — ความยั่งยืน/อาคารสีเขียว</option>
+      <option value="safety_compliance">🛡 Safety & Compliance Upgrade — ยกระดับความปลอดภัย/มาตรฐาน</option>
+      <option value="infra_upgrade">🔧 Infrastructure Upgrade — โครงสร้างพื้นฐานระบบวิศวกรรม</option>
+      <option value="other">📦 Other — อื่นๆ</option>
+    </select>
+  </div>
+  <div class="form-group"><label class="form-label">ปีงบประมาณ *</label><input type="number" class="form-control" id="capex-year" placeholder="2026" min="2020" max="2050"></div>
+  <div class="form-group"><label class="form-label">ความสำคัญ</label>
+    <select class="form-control" id="capex-priority"><option value="Critical">🔴 Critical</option><option value="High">🟠 High</option><option value="Medium" selected>🟡 Medium</option><option value="Low">🟢 Low</option></select>
+  </div>
+</div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">อาคาร / BU</label><input type="text" class="form-control" id="capex-building" list="capex-bu-list" placeholder="เลือก/พิมพ์อาคาร"><datalist id="capex-bu-list"></datalist></div>
+  <div class="form-group"><label class="form-label">สถานะ</label>
+    <select class="form-control" id="capex-status"><option value="proposed">📝 Proposed — เสนอโครงการ</option><option value="approved">✅ Approved — อนุมัติแล้ว</option><option value="inprogress">🚧 In Progress — กำลังดำเนินการ</option><option value="completed">🏁 Completed — เสร็จสิ้น</option><option value="onhold">⏸ On Hold — ระงับชั่วคราว</option><option value="cancelled">❌ Cancelled — ยกเลิก</option></select>
+  </div>
+  <div class="form-group"><label class="form-label">แหล่งเงินทุน</label>
+    <select class="form-control" id="capex-funding"><option value="internal">Internal Cash — เงินสดบริษัท</option><option value="loan">Bank Loan — เงินกู้ธนาคาร</option><option value="grant">Grant / Subsidy — เงินสนับสนุน</option><option value="reserve">Reserve Fund — กองทุนสำรอง</option><option value="other">Other — อื่นๆ</option></select>
+  </div>
+</div>
+
+<div class="form-sec">💰 งบประมาณ & ผลตอบแทน</div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">งบประมาณที่ตั้งไว้ (฿) *</label><input type="number" class="form-control" id="capex-budget" placeholder="0" min="0"></div>
+  <div class="form-group"><label class="form-label">ใช้ไปแล้ว (฿)</label><input type="number" class="form-control" id="capex-actual" placeholder="0" min="0"></div>
+  <div class="form-group"><label class="form-label">Payback Period (ปี)</label><input type="number" class="form-control" id="capex-payback" placeholder="0" step="0.1" min="0"></div>
+</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">Expected ROI (%)</label><input type="number" class="form-control" id="capex-roi" placeholder="0" step="0.1"></div>
+  <div class="form-group"><label class="form-label">Vendor / ผู้รับเหมา</label><input type="text" class="form-control" id="capex-vendor" placeholder="ชื่อบริษัท..."></div>
+</div>
+
+<div class="form-sec">📅 ระยะเวลาโครงการ</div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">วันที่เริ่ม (แผน)</label><input type="date" class="form-control" id="capex-start"></div>
+  <div class="form-group"><label class="form-label">วันที่สิ้นสุด (แผน)</label><input type="date" class="form-control" id="capex-end"></div>
+  <div class="form-group"><label class="form-label">วันที่เสร็จจริง</label><input type="date" class="form-control" id="capex-actualend"></div>
+</div>
+
+<div class="form-sec">👥 ผู้เกี่ยวข้อง & เหตุผล</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">ผู้เสนอโครงการ</label><input type="text" class="form-control" id="capex-requestedby" placeholder="ชื่อ..."></div>
+  <div class="form-group"><label class="form-label">ผู้อนุมัติ</label><input type="text" class="form-control" id="capex-approvedby" placeholder="ชื่อ..."></div>
+</div>
+<div class="form-group"><label class="form-label">เหตุผล / Business Case</label><textarea class="form-control" id="capex-justification" rows="2" placeholder="เหตุผลความจำเป็น ปัญหาที่จะแก้ไข..."></textarea></div>
+<div class="form-group"><label class="form-label">ผลประโยชน์ที่คาดว่าจะได้รับ</label><textarea class="form-control" id="capex-benefit" rows="2" placeholder="ผลประโยชน์/ผลกระทบเชิงบวกที่คาดหวัง..."></textarea></div>
+<div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-control" id="capex-notes" rows="2" placeholder="หมายเหตุเพิ่มเติม..."></textarea></div>
+
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-capex')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveCapex()">💾 บันทึก CAPEX</button>
+</div>
+</div></div>
+
+<!-- ═══ OPEX MODAL ═══ -->
+<div class="modal-overlay" id="m-opex"><div class="modal modal-lg">
+<div class="mhd"><div class="mttl" id="opex-modal-title">🧾 OPEX — Operating Expense (ค่าใช้จ่ายบริหารอาคาร)</div><button class="mclose" onclick="closeModal('m-opex')">✕</button></div>
+<input type="hidden" id="opex-id">
+
+<div class="form-sec">📋 ข้อมูลรายการ</div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">หมวดค่าใช้จ่าย *</label>
+    <select class="form-control" id="opex-category" onchange="updateOpexSubCategory()">
+      <option value="">-- เลือกหมวด --</option>
+      <option value="rm">🔧 R&amp;M — Repair &amp; Maintenance</option>
+      <option value="utility">⚡ Utility Cost — ค่าสาธารณูปโภค</option>
+      <option value="ma_contract">📄 MA Contract — สัญญาบำรุงรักษา</option>
+      <option value="insurance">🛡 Insurance — ค่าประกันภัย</option>
+      <option value="cleaning">🧹 Cleaning &amp; Housekeeping — งานทำความสะอาด</option>
+      <option value="security">👮 Security — งานรักษาความปลอดภัย</option>
+      <option value="waste">♻ Waste Management — จัดการขยะ/ของเสีย</option>
+      <option value="consumables">📦 Consumables &amp; Supplies — วัสดุสิ้นเปลือง</option>
+      <option value="admin">🗂 Admin &amp; Overhead — ค่าบริหารจัดการ</option>
+      <option value="landscape">🌳 Landscaping — งานสวน/ภูมิทัศน์</option>
+      <option value="pest">🐜 Pest Control — กำจัดแมลง/สัตว์รบกวน</option>
+      <option value="other">Other — อื่นๆ</option>
+    </select>
+  </div>
+  <div class="form-group"><label class="form-label">หมวดย่อย</label><input type="text" class="form-control" id="opex-subcategory" list="opex-sub-list" placeholder="เช่น ค่าไฟฟ้า / ค่าน้ำ"><datalist id="opex-sub-list"></datalist></div>
+  <div class="form-group"><label class="form-label">อาคาร / BU</label><input type="text" class="form-control" id="opex-building" list="opex-bu-list" placeholder="เลือก/พิมพ์อาคาร"><datalist id="opex-bu-list"></datalist></div>
+</div>
+<div class="form-group"><label class="form-label">รายละเอียด *</label><input type="text" class="form-control" id="opex-desc" placeholder="รายละเอียดรายการค่าใช้จ่าย..."></div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">ปี *</label><input type="number" class="form-control" id="opex-year" placeholder="2026" min="2020" max="2050"></div>
+  <div class="form-group"><label class="form-label">เดือน *</label>
+    <select class="form-control" id="opex-month"><option value="1">มกราคม</option><option value="2">กุมภาพันธ์</option><option value="3">มีนาคม</option><option value="4">เมษายน</option><option value="5">พฤษภาคม</option><option value="6">มิถุนายน</option><option value="7">กรกฎาคม</option><option value="8">สิงหาคม</option><option value="9">กันยายน</option><option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option></select>
+  </div>
+  <div class="form-group"><label class="form-label">สถานะการจ่าย</label>
+    <select class="form-control" id="opex-paystatus"><option value="paid">✅ Paid — จ่ายแล้ว</option><option value="pending" selected>⏳ Pending — รอดำเนินการ</option><option value="overdue">🔴 Overdue — เกินกำหนด</option></select>
+  </div>
+</div>
+
+<div class="form-sec">💰 งบประมาณ</div>
+<div class="form-row-3">
+  <div class="form-group"><label class="form-label">งบประมาณที่ตั้งไว้ (฿) *</label><input type="number" class="form-control" id="opex-budget" placeholder="0" min="0"></div>
+  <div class="form-group"><label class="form-label">ยอดจ่ายจริง (฿)</label><input type="number" class="form-control" id="opex-actual" placeholder="0" min="0"></div>
+  <div class="form-group"><label class="form-label">Vendor / ผู้ให้บริการ</label><input type="text" class="form-control" id="opex-vendor" placeholder="ชื่อบริษัท..."></div>
+</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">เลขที่ Invoice</label><input type="text" class="form-control" id="opex-invoiceno" placeholder="INV-XXXX"></div>
+  <div class="form-group"><label class="form-label">วันที่ Invoice</label><input type="date" class="form-control" id="opex-invoicedate"></div>
+</div>
+<div class="form-group"><label class="form-label">หมายเหตุ</label><textarea class="form-control" id="opex-notes" rows="2" placeholder="หมายเหตุเพิ่มเติม..."></textarea></div>
+
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-opex')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveOpex()">💾 บันทึก OPEX</button>
+</div>
 </div></div>
 
 <div class="modal-overlay" id="m-modacc"><div class="modal"><div class="mhd"><div class="mttl">🔑 Module Access</div><button class="mclose" onclick="closeModal('m-modacc')">✕</button></div>
@@ -5311,10 +5482,423 @@ function renderOp(){
   dChart('chDT');charts.chDT=new Chart(document.getElementById('chDT'),{type:'bar',data:{labels:['AC','EE','FP','FA','SN'],datasets:[{label:'Downtime (h)',data:[4.2,1.1,0.5,2.8,0.3],backgroundColor:['rgba(239,68,68,.6)','rgba(59,130,246,.6)','rgba(249,115,22,.6)','rgba(168,85,247,.6)','rgba(20,184,166,.6)'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}});
   const rh=assets.reduce((s,a)=>s+(a.lifeYears||0)*8760,0);document.getElementById('op-rh').textContent=rh.toLocaleString();
 }
+// ══════════════════════════════════════════════
+// BUDGET PLANNING — CAPEX / OPEX
+// ══════════════════════════════════════════════
+const CAPEX_CATEGORIES={
+  new_construction:'🏢 New Construction / Expansion',renovation:'🔨 Renovation / Retrofit',
+  equipment_replacement:'⚙ Equipment Replacement',tech_innovation:'💡 Technology & Innovation',
+  sustainability:'🌱 Sustainability & Green Building',safety_compliance:'🛡 Safety & Compliance Upgrade',
+  infra_upgrade:'🔧 Infrastructure Upgrade',other:'📦 Other'
+};
+const OPEX_CATEGORIES={
+  rm:'🔧 R&M — Repair & Maintenance',utility:'⚡ Utility Cost',ma_contract:'📄 MA Contract',
+  insurance:'🛡 Insurance',cleaning:'🧹 Cleaning & Housekeeping',security:'👮 Security',
+  waste:'♻ Waste Management',consumables:'📦 Consumables & Supplies',admin:'🗂 Admin & Overhead',
+  landscape:'🌳 Landscaping',pest:'🐜 Pest Control',other:'Other'
+};
+const OPEX_SUBCATS={
+  rm:['HVAC / Chiller','Electrical System','Plumbing / Sanitary','Fire Protection','Building Structure','Elevator / Escalator','Painting / Facade','Other R&M'],
+  utility:['Electricity','Water','Gas / LPG','Diesel / Fuel','Internet / Telecom'],
+  ma_contract:['Chiller MA','Elevator MA','Fire System MA','BMS/BAS MA','Generator MA','CCTV/Security MA','IT/Network MA'],
+  insurance:['Fire Insurance','Property All Risk','Public Liability','Business Interruption','Equipment Breakdown'],
+  cleaning:['Daily Cleaning','Deep Cleaning','Window Cleaning'],
+  security:['Guard Service','CCTV Monitoring','Access Control'],
+  waste:['General Waste','Recycling','Hazardous Waste'],
+  consumables:['Office Supplies','Cleaning Supplies','Spare Parts (minor)'],
+  admin:['Staff Salary','Training','Software License','Utilities Admin'],
+  landscape:['Garden Maintenance','Tree Trimming','Irrigation'],
+  pest:['Rodent Control','Termite Control','Insect Control'],
+  other:[]
+};
+const CAPEX_STATUS={proposed:{l:'📝 Proposed',c:'badge-gray'},approved:{l:'✅ Approved',c:'badge-blue'},inprogress:{l:'🚧 In Progress',c:'badge-yellow'},completed:{l:'🏁 Completed',c:'badge-green'},onhold:{l:'⏸ On Hold',c:'badge-orange'},cancelled:{l:'❌ Cancelled',c:'badge-red'}};
+const OPEX_PAYSTATUS={paid:{l:'✅ Paid',c:'badge-green'},pending:{l:'⏳ Pending',c:'badge-yellow'},overdue:{l:'🔴 Overdue',c:'badge-red'}};
+
+function escBud(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function populateBudgetBuildingOptions(){
+  const bl=[...new Set(bFilter(assets).map(a=>a.building).filter(Boolean))];
+  const opts=bl.map(b=>`<option value="${escBud(b)}">`).join('');
+  const cx=document.getElementById('capex-bu-list'),ox=document.getElementById('opex-bu-list');
+  if(cx)cx.innerHTML=opts; if(ox)ox.innerHTML=opts;
+}
+function updateOpexSubCategory(){
+  const cat=document.getElementById('opex-category').value;
+  const list=OPEX_SUBCATS[cat]||[];
+  const dl=document.getElementById('opex-sub-list');
+  if(dl) dl.innerHTML=list.map(s=>`<option value="${escBud(s)}">`).join('');
+}
+
+// ── CAPEX CRUD ──
+let capexEditId=null;
+function openCapexModal(id){
+  populateBudgetBuildingOptions();
+  capexEditId=id||null;
+  if(id){
+    const item=DB.get('capex',[]).find(x=>x.id===id);
+    if(!item)return;
+    document.getElementById('capex-id').value=item.id;
+    document.getElementById('capex-name').value=item.name||'';
+    document.getElementById('capex-category').value=item.category||'';
+    document.getElementById('capex-year').value=item.year||'';
+    document.getElementById('capex-priority').value=item.priority||'Medium';
+    document.getElementById('capex-building').value=item.building||'';
+    document.getElementById('capex-status').value=item.status||'proposed';
+    document.getElementById('capex-funding').value=item.funding||'internal';
+    document.getElementById('capex-budget').value=item.budget||0;
+    document.getElementById('capex-actual').value=item.actual||0;
+    document.getElementById('capex-payback').value=item.payback||'';
+    document.getElementById('capex-roi').value=item.roi||'';
+    document.getElementById('capex-vendor').value=item.vendor||'';
+    document.getElementById('capex-start').value=item.startDate||'';
+    document.getElementById('capex-end').value=item.endDate||'';
+    document.getElementById('capex-actualend').value=item.actualEnd||'';
+    document.getElementById('capex-requestedby').value=item.requestedBy||'';
+    document.getElementById('capex-approvedby').value=item.approvedBy||'';
+    document.getElementById('capex-justification').value=item.justification||'';
+    document.getElementById('capex-benefit').value=item.benefit||'';
+    document.getElementById('capex-notes').value=item.notes||'';
+    document.getElementById('capex-modal-title').textContent='🏗 แก้ไข CAPEX — '+item.name;
+  } else {
+    ['capex-id','capex-name','capex-building','capex-vendor','capex-start','capex-end','capex-actualend','capex-requestedby','capex-approvedby','capex-justification','capex-benefit','capex-notes','capex-payback','capex-roi'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    document.getElementById('capex-category').value='';
+    document.getElementById('capex-year').value=new Date().getFullYear();
+    document.getElementById('capex-priority').value='Medium';
+    document.getElementById('capex-status').value='proposed';
+    document.getElementById('capex-funding').value='internal';
+    document.getElementById('capex-budget').value=0;
+    document.getElementById('capex-actual').value=0;
+    document.getElementById('capex-modal-title').textContent='🏗 CAPEX — Capital Expenditure (โครงการลงทุน)';
+  }
+  openModal('m-capex');
+}
+function saveCapex(){
+  const name=document.getElementById('capex-name').value.trim();
+  const category=document.getElementById('capex-category').value;
+  const year=parseInt(document.getElementById('capex-year').value)||new Date().getFullYear();
+  const budget=parseFloat(document.getElementById('capex-budget').value)||0;
+  if(!name||!category){alert('กรุณากรอกชื่อโครงการและเลือกหมวด');return;}
+  const list=DB.get('capex',[]);
+  const obj={
+    id:capexEditId||('CAPEX-'+Date.now()),
+    name,category,year,
+    priority:document.getElementById('capex-priority').value,
+    building:document.getElementById('capex-building').value.trim(),
+    status:document.getElementById('capex-status').value,
+    funding:document.getElementById('capex-funding').value,
+    budget,actual:parseFloat(document.getElementById('capex-actual').value)||0,
+    payback:parseFloat(document.getElementById('capex-payback').value)||null,
+    roi:parseFloat(document.getElementById('capex-roi').value)||null,
+    vendor:document.getElementById('capex-vendor').value.trim(),
+    startDate:document.getElementById('capex-start').value||null,
+    endDate:document.getElementById('capex-end').value||null,
+    actualEnd:document.getElementById('capex-actualend').value||null,
+    requestedBy:document.getElementById('capex-requestedby').value.trim(),
+    approvedBy:document.getElementById('capex-approvedby').value.trim(),
+    justification:document.getElementById('capex-justification').value.trim(),
+    benefit:document.getElementById('capex-benefit').value.trim(),
+    notes:document.getElementById('capex-notes').value.trim(),
+    updatedDate:new Date().toISOString()
+  };
+  const idx=list.findIndex(x=>x.id===obj.id);
+  if(idx>=0)list[idx]=obj;else list.push(obj);
+  DB.set('capex',list);
+  closeModal('m-capex');showToast('💾 บันทึก CAPEX แล้ว');renderBudget();
+}
+function deleteCapex(id){
+  if(!confirm('ลบโครงการ CAPEX นี้?'))return;
+  DB.set('capex',DB.get('capex',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบ CAPEX แล้ว');renderBudget();
+}
+
+// ── OPEX CRUD ──
+let opexEditId=null;
+function openOpexModal(id){
+  populateBudgetBuildingOptions();
+  opexEditId=id||null;
+  if(id){
+    const item=DB.get('opex',[]).find(x=>x.id===id);
+    if(!item)return;
+    document.getElementById('opex-id').value=item.id;
+    document.getElementById('opex-category').value=item.category||'';
+    updateOpexSubCategory();
+    document.getElementById('opex-subcategory').value=item.subCategory||'';
+    document.getElementById('opex-building').value=item.building||'';
+    document.getElementById('opex-desc').value=item.desc||'';
+    document.getElementById('opex-year').value=item.year||'';
+    document.getElementById('opex-month').value=item.month||'1';
+    document.getElementById('opex-paystatus').value=item.payStatus||'pending';
+    document.getElementById('opex-budget').value=item.budget||0;
+    document.getElementById('opex-actual').value=item.actual||0;
+    document.getElementById('opex-vendor').value=item.vendor||'';
+    document.getElementById('opex-invoiceno').value=item.invoiceNo||'';
+    document.getElementById('opex-invoicedate').value=item.invoiceDate||'';
+    document.getElementById('opex-notes').value=item.notes||'';
+    document.getElementById('opex-modal-title').textContent='🧾 แก้ไข OPEX — '+item.desc;
+  } else {
+    ['opex-id','opex-subcategory','opex-building','opex-desc','opex-vendor','opex-invoiceno','opex-invoicedate','opex-notes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    document.getElementById('opex-category').value='';
+    document.getElementById('opex-year').value=new Date().getFullYear();
+    document.getElementById('opex-month').value=(new Date().getMonth()+1);
+    document.getElementById('opex-paystatus').value='pending';
+    document.getElementById('opex-budget').value=0;
+    document.getElementById('opex-actual').value=0;
+    document.getElementById('opex-modal-title').textContent='🧾 OPEX — Operating Expense (ค่าใช้จ่ายบริหารอาคาร)';
+  }
+  openModal('m-opex');
+}
+function saveOpex(){
+  const desc=document.getElementById('opex-desc').value.trim();
+  const category=document.getElementById('opex-category').value;
+  const year=parseInt(document.getElementById('opex-year').value)||new Date().getFullYear();
+  const budget=parseFloat(document.getElementById('opex-budget').value)||0;
+  if(!desc||!category){alert('กรุณากรอกรายละเอียดและเลือกหมวด');return;}
+  const list=DB.get('opex',[]);
+  const obj={
+    id:opexEditId||('OPEX-'+Date.now()),
+    desc,category,
+    subCategory:document.getElementById('opex-subcategory').value.trim(),
+    building:document.getElementById('opex-building').value.trim(),
+    year,month:parseInt(document.getElementById('opex-month').value)||1,
+    payStatus:document.getElementById('opex-paystatus').value,
+    budget,actual:parseFloat(document.getElementById('opex-actual').value)||0,
+    vendor:document.getElementById('opex-vendor').value.trim(),
+    invoiceNo:document.getElementById('opex-invoiceno').value.trim(),
+    invoiceDate:document.getElementById('opex-invoicedate').value||null,
+    notes:document.getElementById('opex-notes').value.trim(),
+    updatedDate:new Date().toISOString()
+  };
+  const idx=list.findIndex(x=>x.id===obj.id);
+  if(idx>=0)list[idx]=obj;else list.push(obj);
+  DB.set('opex',list);
+  closeModal('m-opex');showToast('💾 บันทึก OPEX แล้ว');renderBudget();
+}
+function deleteOpex(id){
+  if(!confirm('ลบรายการ OPEX นี้?'))return;
+  DB.set('opex',DB.get('opex',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบ OPEX แล้ว');renderBudget();
+}
+
+function resetBudgetFilters(){
+  ['budf-year','budf-type','budf-status'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  renderBudget();
+}
+function populateBudgetFilterOptions(allCapex,allOpex){
+  const yf=document.getElementById('budf-year');
+  if(yf){
+    const cur=yf.value;
+    const years=[...new Set([...allCapex.map(x=>x.year),...allOpex.map(x=>x.year)].filter(Boolean))].sort((a,b)=>b-a);
+    yf.innerHTML='<option value="">ทั้งหมด</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    yf.value=cur;
+  }
+  const sf=document.getElementById('budf-status');
+  if(sf){
+    const cur=sf.value;
+    const type=document.getElementById('budf-type')?.value||'';
+    let opts='<option value="">ทั้งหมด</option>';
+    if(type==='opex'){opts+=Object.entries(OPEX_PAYSTATUS).map(([k,v])=>`<option value="${k}">${v.l}</option>`).join('');}
+    else if(type==='capex'){opts+=Object.entries(CAPEX_STATUS).map(([k,v])=>`<option value="${k}">${v.l}</option>`).join('');}
+    else{opts+=Object.entries(CAPEX_STATUS).map(([k,v])=>`<option value="c_${k}">CAPEX: ${v.l}</option>`).join('')+Object.entries(OPEX_PAYSTATUS).map(([k,v])=>`<option value="o_${k}">OPEX: ${v.l}</option>`).join('');}
+    sf.innerHTML=opts; sf.value=cur;
+  }
+}
+
 function renderBudget(){
-  dChart('chBudg');const mos=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.'];
-  charts.chBudg=new Chart(document.getElementById('chBudg'),{type:'bar',data:{labels:mos,datasets:[{label:'Budget',data:[1200,1200,1200,1200,1200,1200],backgroundColor:'rgba(59,130,246,.3)',borderRadius:4},{label:'Actual',data:[980,1150,820,1380,950,null],backgroundColor:'rgba(249,115,22,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E',callback:v=>'฿'+v+'K'},grid:{color:'#21262D'}}}}});
-  dChart('chCostSys');charts.chCostSys=new Chart(document.getElementById('chCostSys'),{type:'doughnut',data:{labels:['AC','EE','FP','FA','SN'],datasets:[{data:[42,18,12,20,8],backgroundColor:['#F97316','#3B82F6','#22C55E','#A855F7','#14B8A6'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8B949E',font:{size:10}}}}}});
+  let allCapex=DB.get('capex',[]);
+  let allOpex=DB.get('opex',[]);
+  populateBudgetFilterOptions(allCapex,allOpex);
+
+  const fy=document.getElementById('budf-year')?.value||'';
+  const ft=document.getElementById('budf-type')?.value||'';
+  const fs=document.getElementById('budf-status')?.value||'';
+
+  let capex=allCapex.filter(x=>{
+    if(fy&&String(x.year)!==fy)return false;
+    if(ft==='opex')return false;
+    if(fs){if(fs.startsWith('o_'))return false; const st=fs.startsWith('c_')?fs.slice(2):fs; if(st&&x.status!==st)return false;}
+    return true;
+  });
+  let opex=allOpex.filter(x=>{
+    if(fy&&String(x.year)!==fy)return false;
+    if(ft==='capex')return false;
+    if(fs){if(fs.startsWith('c_'))return false; const st=fs.startsWith('o_')?fs.slice(2):fs; if(st&&x.payStatus!==st)return false;}
+    return true;
+  });
+
+  const capexBudget=capex.reduce((s,x)=>s+(x.budget||0),0);
+  const capexActual=capex.reduce((s,x)=>s+(x.actual||0),0);
+  const opexBudget=opex.reduce((s,x)=>s+(x.budget||0),0);
+  const opexActual=opex.reduce((s,x)=>s+(x.actual||0),0);
+  const totalBudget=capexBudget+opexBudget;
+  const totalActual=capexActual+opexActual;
+  const remain=Math.max(0,totalBudget-totalActual);
+  const usedPct=totalBudget?Math.round(totalActual/totalBudget*100):0;
+  const remainPct=totalBudget?Math.round(remain/totalBudget*100):0;
+
+  const fmt=n=>'฿'+Math.round(n||0).toLocaleString();
+  document.getElementById('bud-total').textContent=fmt(totalBudget);
+  document.getElementById('bud-total-sub').textContent='CAPEX '+fmt(capexBudget)+' + OPEX '+fmt(opexBudget);
+  document.getElementById('bud-used').textContent=fmt(totalActual);
+  document.getElementById('bud-used-pct').textContent=usedPct+'% ของงบ';
+  document.getElementById('bud-remain').textContent=fmt(remain);
+  document.getElementById('bud-remain-pct').textContent=remainPct+'% คงเหลือ';
+  document.getElementById('bud-capex-sum').textContent=fmt(capexBudget);
+  document.getElementById('bud-capex-used').textContent='ใช้ไป '+fmt(capexActual);
+  document.getElementById('bud-opex-sum').textContent=fmt(opexBudget);
+  document.getElementById('bud-opex-used').textContent='ใช้ไป '+fmt(opexActual);
+
+  // ── Efficiency vs Time Elapsed ──
+  const now=new Date();
+  const selYear=fy?parseInt(fy):now.getFullYear();
+  let elapsedPct;
+  if(selYear<now.getFullYear())elapsedPct=100;
+  else if(selYear>now.getFullYear())elapsedPct=0;
+  else{
+    const start=new Date(selYear,0,1),end=new Date(selYear+1,0,1);
+    elapsedPct=Math.round((now-start)/(end-start)*100);
+  }
+  const diff=usedPct-elapsedPct;
+  const effEl=document.getElementById('bud-eff'),effSub=document.getElementById('bud-eff-sub'),banner=document.getElementById('bud-eff-banner');
+  let effLabel,effColor,bannerMsg,bannerClass;
+  if(!totalBudget){effLabel='—';effColor='';bannerMsg='';}
+  else if(diff>15){effLabel='🔴 ใช้เร็วกว่าแผน';bannerMsg=`⚠ ใช้งบไปแล้ว ${usedPct}% แต่เวลาผ่านไปแค่ ${elapsedPct}% ของปี — เสี่ยงงบหมดก่อนสิ้นปี ควรทบทวนการเบิกจ่าย`;bannerClass='alr-w';}
+  else if(diff<-15){effLabel='🟡 ใช้ช้ากว่าแผน';bannerMsg=`ใช้งบไปแล้ว ${usedPct}% ขณะที่เวลาผ่านไป ${elapsedPct}% ของปี — อาจมีความล่าช้าในการดำเนินโครงการ/เบิกจ่าย`;bannerClass='alr-i';}
+  else{effLabel='🟢 เป็นไปตามแผน';bannerMsg=`ใช้งบไปแล้ว ${usedPct}% สอดคล้องกับเวลาที่ผ่านไป ${elapsedPct}% ของปี — อยู่ในกรอบที่เหมาะสม`;bannerClass='alr-s';}
+  effEl.textContent=effLabel;
+  effSub.textContent=totalBudget?`ใช้ไป ${usedPct}% · เวลาผ่านไป ${elapsedPct}%`:'ยังไม่มีข้อมูลงบ';
+  if(bannerMsg){banner.style.display='block';banner.className='alr mb16 '+bannerClass;banner.innerHTML=bannerMsg;}
+  else{banner.style.display='none';}
+
+  // ── CAPEX Table ──
+  document.getElementById('capex-count').textContent=capex.length+' โครงการ';
+  document.getElementById('capex-tbody').innerHTML=capex.length?capex.map(x=>{
+    const pct=x.budget?Math.round((x.actual||0)/x.budget*100):0;
+    const st=CAPEX_STATUS[x.status]||{l:x.status,c:'badge-gray'};
+    return `<tr>
+      <td><div class="fw6" style="font-size:12px">${escBud(x.name)}</div><div style="font-size:10px;color:var(--text3)">${escBud(x.vendor||'')}</div></td>
+      <td style="font-size:11px">${CAPEX_CATEGORIES[x.category]||x.category}</td>
+      <td>${x.year||'—'}</td>
+      <td style="font-size:12px">${escBud(x.building)||'—'}</td>
+      <td class="ffm" style="font-size:12px">฿${(x.budget||0).toLocaleString()}<div style="font-size:10px;color:var(--text3)">ใช้ ฿${(x.actual||0).toLocaleString()}</div></td>
+      <td><span class="badge ${pct>100?'badge-red':pct>80?'badge-yellow':'badge-green'}">${pct}%</span></td>
+      <td><span class="badge ${st.c}">${st.l}</span></td>
+      <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openCapexModal('${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteCapex('${x.id}')">🗑</button></div></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text3)">ยังไม่มีโครงการ CAPEX</td></tr>';
+
+  // ── OPEX Table ──
+  document.getElementById('opex-count').textContent=opex.length+' รายการ';
+  const moNames=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  document.getElementById('opex-tbody').innerHTML=opex.length?opex.map(x=>{
+    const pct=x.budget?Math.round((x.actual||0)/x.budget*100):0;
+    const st=OPEX_PAYSTATUS[x.payStatus]||{l:x.payStatus,c:'badge-gray'};
+    return `<tr>
+      <td><div class="fw6" style="font-size:12px">${escBud(x.desc)}</div><div style="font-size:10px;color:var(--text3)">${escBud(x.subCategory||'')}</div></td>
+      <td style="font-size:11px">${OPEX_CATEGORIES[x.category]||x.category}</td>
+      <td style="font-size:12px">${moNames[x.month]||''} ${x.year||''}</td>
+      <td style="font-size:12px">${escBud(x.building)||'—'}</td>
+      <td class="ffm" style="font-size:12px">฿${(x.budget||0).toLocaleString()}<div style="font-size:10px;color:var(--text3)">ใช้ ฿${(x.actual||0).toLocaleString()}</div></td>
+      <td><span class="badge ${pct>100?'badge-red':pct>80?'badge-yellow':'badge-green'}">${pct}%</span></td>
+      <td><span class="badge ${st.c}">${st.l}</span></td>
+      <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openOpexModal('${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteOpex('${x.id}')">🗑</button></div></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text3)">ยังไม่มีรายการ OPEX</td></tr>';
+
+  // ── Charts ──
+  dChart('chBudg');
+  const monthlyBudget=Array(12).fill(0),monthlyActual=Array(12).fill(0);
+  opex.forEach(x=>{if(x.month>=1&&x.month<=12){monthlyBudget[x.month-1]+=(x.budget||0);monthlyActual[x.month-1]+=(x.actual||0);}});
+  capex.forEach(x=>{
+    if(x.startDate){const m=new Date(x.startDate).getMonth();if(!isNaN(m)){monthlyBudget[m]+=(x.budget||0);monthlyActual[m]+=(x.actual||0);}}
+  });
+  charts.chBudg=new Chart(document.getElementById('chBudg'),{type:'bar',data:{labels:moNames.slice(1),datasets:[
+    {label:'งบประมาณ',data:monthlyBudget.map(v=>Math.round(v/1000)),backgroundColor:'rgba(59,130,246,.35)',borderRadius:4},
+    {label:'ใช้จริง',data:monthlyActual.map(v=>Math.round(v/1000)),backgroundColor:'rgba(249,115,22,.75)',borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E',callback:v=>'฿'+v+'K'},grid:{color:'#21262D'}}}}});
+
+  dChart('chBudgCat');
+  const catTotals={};
+  capex.forEach(x=>{const l=CAPEX_CATEGORIES[x.category]||x.category;catTotals[l]=(catTotals[l]||0)+(x.budget||0);});
+  opex.forEach(x=>{const l=OPEX_CATEGORIES[x.category]||x.category;catTotals[l]=(catTotals[l]||0)+(x.budget||0);});
+  const catLabels=Object.keys(catTotals),catVals=Object.values(catTotals);
+  const catColors=['#F97316','#3B82F6','#22C55E','#A855F7','#14B8A6','#EAB308','#EF4444','#EC4899','#6366F1','#84CC16','#06B6D4','#F43F5E'];
+  charts.chBudgCat=new Chart(document.getElementById('chBudgCat'),{type:'doughnut',data:{labels:catLabels,datasets:[{data:catVals,backgroundColor:catColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8B949E',font:{size:9},boxWidth:10}}}}});
+
+  dChart('chBudgYear');
+  const yearTotals={};
+  allCapex.forEach(x=>{const y=x.year;if(!y)return;yearTotals[y]=yearTotals[y]||{b:0,a:0};yearTotals[y].b+=(x.budget||0);yearTotals[y].a+=(x.actual||0);});
+  allOpex.forEach(x=>{const y=x.year;if(!y)return;yearTotals[y]=yearTotals[y]||{b:0,a:0};yearTotals[y].b+=(x.budget||0);yearTotals[y].a+=(x.actual||0);});
+  const years=Object.keys(yearTotals).sort();
+  charts.chBudgYear=new Chart(document.getElementById('chBudgYear'),{type:'line',data:{labels:years,datasets:[
+    {label:'งบประมาณ',data:years.map(y=>Math.round(yearTotals[y].b/1000000*100)/100),borderColor:'#3B82F6',backgroundColor:'rgba(59,130,246,.1)',fill:true,tension:.3,pointRadius:4},
+    {label:'ใช้จริง',data:years.map(y=>Math.round(yearTotals[y].a/1000000*100)/100),borderColor:'#F97316',backgroundColor:'rgba(249,115,22,.1)',fill:true,tension:.3,pointRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E',callback:v=>'฿'+v+'M'},grid:{color:'#21262D'}}}}});
+}
+
+// ── Excel Export/Import for Budget ──
+function exportBudgetExcel(type){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const wb=XLSX.utils.book_new();
+  if(type==='capex'){
+    const list=DB.get('capex',[]);
+    const data=[['Project Name','Category','Year','Building','Priority','Status','Funding','Budget(฿)','Actual(฿)','ROI(%)','Payback(yr)','Vendor','Start Date','End Date','Requested By','Approved By','Justification','Benefit','Notes'],
+      ...list.map(x=>[x.name,CAPEX_CATEGORIES[x.category]||x.category,x.year,x.building||'',x.priority||'',CAPEX_STATUS[x.status]?.l||x.status,x.funding||'',x.budget||0,x.actual||0,x.roi||'',x.payback||'',x.vendor||'',x.startDate||'',x.endDate||'',x.requestedBy||'',x.approvedBy||'',x.justification||'',x.benefit||'',x.notes||''])];
+    const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:18}));
+    XLSX.utils.book_append_sheet(wb,ws,'CAPEX');
+    XLSX.writeFile(wb,'TKO_CAPEX_'+_today()+'.xlsx');
+    showToast('📊 Export CAPEX สำเร็จ');
+  } else {
+    const list=DB.get('opex',[]);
+    const data=[['Description','Category','Sub-Category','Year','Month','Building','Budget(฿)','Actual(฿)','Pay Status','Vendor','Invoice No.','Invoice Date','Notes'],
+      ...list.map(x=>[x.desc,OPEX_CATEGORIES[x.category]||x.category,x.subCategory||'',x.year,x.month,x.building||'',x.budget||0,x.actual||0,OPEX_PAYSTATUS[x.payStatus]?.l||x.payStatus,x.vendor||'',x.invoiceNo||'',x.invoiceDate||'',x.notes||''])];
+    const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:16}));
+    XLSX.utils.book_append_sheet(wb,ws,'OPEX');
+    XLSX.writeFile(wb,'TKO_OPEX_'+_today()+'.xlsx');
+    showToast('📊 Export OPEX สำเร็จ');
+  }
+}
+function importBudgetExcel(type){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX...');return;}
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        if(!ws){showToast('❌ ไม่พบ sheet ในไฟล์');return;}
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+        if(!rows.length){showToast('⚠ ไม่พบข้อมูลในไฟล์');return;}
+        const g=(r,...keys)=>{for(const k of keys){if(r[k]!==undefined&&r[k]!=='')return String(r[k]).trim();}return '';};
+        const gn=(r,...keys)=>{const v=g(r,...keys);return v?(parseFloat(v)||0):0;};
+        let added=0;
+        if(type==='capex'){
+          const list=DB.get('capex',[]);
+          const catByLabel={};Object.entries(CAPEX_CATEGORIES).forEach(([k,v])=>catByLabel[v]=k);
+          rows.forEach(r=>{
+            const name=g(r,'Project Name','name');if(!name)return;
+            const catRaw=g(r,'Category','category');
+            list.push({id:'CAPEX-'+Date.now()+'-'+(added++),name,category:catByLabel[catRaw]||catRaw||'other',year:gn(r,'Year','year')||new Date().getFullYear(),building:g(r,'Building','building'),priority:g(r,'Priority','priority')||'Medium',status:g(r,'Status','status')||'proposed',funding:g(r,'Funding','funding')||'internal',budget:gn(r,'Budget(฿)','Budget','budget'),actual:gn(r,'Actual(฿)','Actual','actual'),roi:gn(r,'ROI(%)','roi')||null,payback:gn(r,'Payback(yr)','payback')||null,vendor:g(r,'Vendor','vendor'),startDate:g(r,'Start Date','startDate')||null,endDate:g(r,'End Date','endDate')||null,requestedBy:g(r,'Requested By','requestedBy'),approvedBy:g(r,'Approved By','approvedBy'),justification:g(r,'Justification','justification'),benefit:g(r,'Benefit','benefit'),notes:g(r,'Notes','notes'),updatedDate:new Date().toISOString()});
+          });
+          DB.set('capex',list);
+        } else {
+          const list=DB.get('opex',[]);
+          const catByLabel={};Object.entries(OPEX_CATEGORIES).forEach(([k,v])=>catByLabel[v]=k);
+          rows.forEach(r=>{
+            const desc=g(r,'Description','desc');if(!desc)return;
+            const catRaw=g(r,'Category','category');
+            list.push({id:'OPEX-'+Date.now()+'-'+(added++),desc,category:catByLabel[catRaw]||catRaw||'other',subCategory:g(r,'Sub-Category','subCategory'),year:gn(r,'Year','year')||new Date().getFullYear(),month:gn(r,'Month','month')||1,building:g(r,'Building','building'),budget:gn(r,'Budget(฿)','Budget','budget'),actual:gn(r,'Actual(฿)','Actual','actual'),payStatus:g(r,'Pay Status','payStatus')||'pending',vendor:g(r,'Vendor','vendor'),invoiceNo:g(r,'Invoice No.','invoiceNo'),invoiceDate:g(r,'Invoice Date','invoiceDate')||null,notes:g(r,'Notes','notes'),updatedDate:new Date().toISOString()});
+          });
+          DB.set('opex',list);
+        }
+        showToast('📥 Import สำเร็จ '+added+' รายการ');
+        renderBudget();
+      }catch(err){showToast('❌ อ่านไฟล์ไม่ได้: '+err.message);}
+    };
+    reader.readAsArrayBuffer(f);
+  };
+  inp.click();
 }
 function renderCostA(){
   const wrCost=WR.reduce((s,w)=>s+(w.totalCost||0),0);const maCost=MA.reduce((s,m)=>s+(m.value||0),0);const invCost=INV.reduce((s,i)=>s+(i.usedMTD||0)*(i.price||0),0);
