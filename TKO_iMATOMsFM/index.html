@@ -13,6 +13,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -979,10 +980,153 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 
     <!-- ESG VIEWS -->
     <div id="view-energy" class="view">
-      <div class="sh"><div><div class="st">⚡ Energy Monitor</div><div class="ss">kWh · Cost · IoT Meter Stub</div></div><button class="btn btn-teal">+ บันทึกมิเตอร์</button></div>
+      <div class="sh"><div><div class="st">⚡ Energy Monitor</div><div class="ss">Electrical · Water · Solar · Chiller Performance</div></div></div>
       <div class="kpi-grid"><div class="kpi teal"><div class="kl">kWh เดือนนี้</div><div class="kv ffd">142,800</div><div class="ks">vs เดือนก่อน -3.2%</div></div><div class="kpi green"><div class="kl">Cost/kWh</div><div class="kv ffd">฿4.72</div></div><div class="kpi yellow"><div class="kl">Peak Demand</div><div class="kv ffd">680 kW</div></div><div class="kpi blue"><div class="kl">PUE</div><div class="kv ffd">1.42</div></div></div>
-      <div class="grid-2"><div class="card"><div class="ffd fw6 mb12" style="font-size:14px">Energy Trend</div><div class="chart-wrap"><canvas id="chEng"></canvas></div></div><div class="card"><div class="ffd fw6 mb12" style="font-size:14px">By System</div><div class="chart-wrap"><canvas id="chEngSys"></canvas></div></div></div>
-      <div class="alr alr-i mt12">🔌 <strong>IoT Stub:</strong> เชื่อมต่อ Smart Meter/BAS ผ่าน <span onclick="showView('integrations')" style="cursor:pointer;text-decoration:underline">Integrations</span></div>
+      <div class="grid-2 mb16"><div class="card"><div class="ffd fw6 mb12" style="font-size:14px">Energy Trend</div><div class="chart-wrap"><canvas id="chEng"></canvas></div></div><div class="card"><div class="ffd fw6 mb12" style="font-size:14px">By System</div><div class="chart-wrap"><canvas id="chEngSys"></canvas></div></div></div>
+      <div class="alr alr-i mb16">🔌 <strong>IoT Stub:</strong> เชื่อมต่อ Smart Meter/BAS ผ่าน <span onclick="showView('integrations')" style="cursor:pointer;text-decoration:underline">Integrations</span></div>
+
+      <div class="tabs" id="energy-main-tabs">
+        <div class="tab active" onclick="energyMainTab('elec',this)">⚡ Electrical Consumption</div>
+        <div class="tab" onclick="energyMainTab('water',this)">💧 Water Consumption</div>
+        <div class="tab" onclick="energyMainTab('solar',this)">☀ PV Solar Cell</div>
+        <div class="tab" onclick="energyMainTab('chiller',this)">❄ Chiller Performance (kW/TR)</div>
+      </div>
+
+      <!-- ═══ ELECTRICAL CONSUMPTION ═══ -->
+      <div id="energy-pane-elec" class="energy-pane">
+        <div class="tabs">
+          <div class="tab active" onclick="elecSubTab('bill',this)">📄 TOD/TOU (บิลค่าไฟ)</div>
+          <div class="tab" onclick="elecSubTab('meterB',this)">🏢 Sub-Meter (Building)</div>
+          <div class="tab" onclick="elecSubTab('meterT',this)">🧑‍💼 Sub-Meter (Tenant/Client)</div>
+        </div>
+
+        <div id="elec-sub-bill" class="energy-subpane">
+          <div class="card mb16">
+            <div class="flex fca jb mb12" style="flex-wrap:wrap">
+              <div class="ffd fw7" style="font-size:14px">📄 บันทึกบิลค่าไฟฟ้า TOD/TOU รายเดือน</div>
+              <div class="flex g8">
+                <button class="btn btn-secondary btn-sm" onclick="exportBillExcel('elec')">📤 Export</button>
+                <button class="btn btn-primary btn-sm" onclick="openBillModal('elec')">+ บันทึกบิล</button>
+              </div>
+            </div>
+            <div class="kpi-grid">
+              <div class="kpi teal"><div class="kl">บิลล่าสุด (kWh)</div><div class="kv ffd" id="ebill-kwh" style="font-size:18px">0</div></div>
+              <div class="kpi orange"><div class="kl">Demand (kW)</div><div class="kv ffd" id="ebill-kw" style="font-size:18px">0</div></div>
+              <div class="kpi green"><div class="kl">Power Factor</div><div class="kv ffd" id="ebill-pf" style="font-size:18px">—</div></div>
+              <div class="kpi blue"><div class="kl">Load Factor</div><div class="kv ffd" id="ebill-lf" style="font-size:18px">—</div></div>
+            </div>
+            <div class="grid-2 mt16">
+              <div class="card"><div class="ffd fw6 mb12" style="font-size:13px">Load Factor / Power Factor Trend</div><div class="chart-wrap"><canvas id="chElecBillLFPF"></canvas></div></div>
+              <div class="card"><div class="ffd fw6 mb12" style="font-size:13px">kWh On-Peak / Off-Peak รายเดือน</div><div class="chart-wrap"><canvas id="chElecBillKwh"></canvas></div></div>
+            </div>
+            <div class="table-wrap mt16"><table><thead><tr><th>รอบบิล</th><th>kWh On-Peak</th><th>kWh Off-Peak</th><th>Demand (kW)</th><th>Power Factor</th><th>Load Factor</th><th>ยอดบิล (฿)</th><th>ครบกำหนด</th><th>Action</th></tr></thead><tbody id="elec-bill-tbody"></tbody></table></div>
+          </div>
+        </div>
+
+        <div id="elec-sub-meterB" class="energy-subpane" style="display:none"></div>
+        <div id="elec-sub-meterT" class="energy-subpane" style="display:none"></div>
+      </div>
+
+      <!-- ═══ WATER CONSUMPTION ═══ -->
+      <div id="energy-pane-water" class="energy-pane" style="display:none">
+        <div class="tabs">
+          <div class="tab active" onclick="waterMainSubTab('raw',this)">🚰 Raw Water (Municipal)</div>
+          <div class="tab" onclick="waterMainSubTab('cooling',this)">🌀 Cooling Water</div>
+        </div>
+
+        <div id="water-sub-raw" class="energy-subpane">
+          <div class="tabs" style="margin-top:8px">
+            <div class="tab active" onclick="waterRawTab('bill',this)">📄 บิลน้ำประปา</div>
+            <div class="tab" onclick="waterRawTab('meterB',this)">🏢 Sub-Meter (Building)</div>
+            <div class="tab" onclick="waterRawTab('meterT',this)">🧑‍💼 Sub-Meter (Tenant/Client)</div>
+          </div>
+          <div id="water-raw-bill" class="energy-subpane">
+            <div class="card mb16">
+              <div class="flex fca jb mb12" style="flex-wrap:wrap">
+                <div class="ffd fw7" style="font-size:14px">📄 บันทึกบิลน้ำประปา (Municipal) รายเดือน</div>
+                <div class="flex g8">
+                  <button class="btn btn-secondary btn-sm" onclick="exportBillExcel('water')">📤 Export</button>
+                  <button class="btn btn-primary btn-sm" onclick="openBillModal('water')">+ บันทึกบิล</button>
+                </div>
+              </div>
+              <div class="chart-wrap"><canvas id="chWaterBillM3"></canvas></div>
+              <div class="table-wrap mt16"><table><thead><tr><th>รอบบิล</th><th>ปริมาณ (m³)</th><th>ยอดบิล (฿)</th><th>Action</th></tr></thead><tbody id="water-bill-tbody"></tbody></table></div>
+            </div>
+          </div>
+          <div id="water-raw-meterB" class="energy-subpane" style="display:none"></div>
+          <div id="water-raw-meterT" class="energy-subpane" style="display:none"></div>
+        </div>
+
+        <div id="water-sub-cooling" class="energy-subpane" style="display:none">
+          <div class="card mb16">
+            <div class="flex fca jb mb12" style="flex-wrap:wrap">
+              <div class="ffd fw7" style="font-size:14px">🌀 Cooling Water — Make-up / Bleed-off</div>
+              <button class="btn btn-primary btn-sm" onclick="openCoolingModal()">+ บันทึกค่ามิเตอร์</button>
+            </div>
+            <div class="kpi-grid">
+              <div class="kpi blue"><div class="kl">Make-up (m³) MTD</div><div class="kv ffd" id="cw-makeup" style="font-size:18px">0</div></div>
+              <div class="kpi orange"><div class="kl">Bleed-off (m³) MTD</div><div class="kv ffd" id="cw-bleed" style="font-size:18px">0</div></div>
+              <div class="kpi teal"><div class="kl">Bleed-off / Make-up Ratio</div><div class="kv ffd" id="cw-ratio" style="font-size:18px">—</div></div>
+            </div>
+            <div class="chart-wrap"><canvas id="chCoolingWater"></canvas></div>
+            <div class="table-wrap mt16"><table><thead><tr><th>วันที่</th><th>Make-up (m³)</th><th>Bleed-off (m³)</th><th>Ratio</th><th>Action</th></tr></thead><tbody id="cooling-tbody"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ PV SOLAR CELL ═══ -->
+      <div id="energy-pane-solar" class="energy-pane" style="display:none">
+        <div class="card mb16">
+          <div class="flex fca jb mb12" style="flex-wrap:wrap">
+            <div class="ffd fw7" style="font-size:14px">☀ PV Solar Cell — Generation Monitoring</div>
+            <div class="flex g8">
+              <div class="form-group" style="margin-bottom:0"><label class="form-label" style="font-size:10px">Installed Capacity (kWp)</label><input type="number" class="form-control" id="solar-kwp" style="width:120px" onchange="saveSolarCapacity()" placeholder="0"></div>
+              <button class="btn btn-primary btn-sm" onclick="openSolarModal()">+ บันทึกค่าผลิตไฟฟ้า</button>
+            </div>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi teal"><div class="kl">kWh ผลิตวันนี้/ล่าสุด</div><div class="kv ffd" id="solar-latest" style="font-size:18px">0</div></div>
+            <div class="kpi yellow"><div class="kl">Peak kW สูงสุด</div><div class="kv ffd" id="solar-peak" style="font-size:18px">0</div></div>
+            <div class="kpi green"><div class="kl">kWh สะสม (Total)</div><div class="kv ffd" id="solar-total" style="font-size:18px">0</div></div>
+            <div class="kpi blue"><div class="kl">Production Efficiency</div><div class="kv ffd" id="solar-eff" style="font-size:18px">— kWh/kWp</div></div>
+          </div>
+          <div class="tabs" style="margin-top:8px">
+            <div class="tab active" onclick="solarViewTab('daily',this)">รายวัน</div>
+            <div class="tab" onclick="solarViewTab('monthly',this)">รายเดือน</div>
+            <div class="tab" onclick="solarViewTab('yearly',this)">รายปี</div>
+          </div>
+          <div class="chart-wrap"><canvas id="chSolar"></canvas></div>
+          <div class="table-wrap mt16"><table><thead><tr><th>วันที่</th><th>kWh ผลิตได้</th><th>Peak kW</th><th>สภาพอากาศ/หมายเหตุ</th><th>Action</th></tr></thead><tbody id="solar-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ═══ HVAC CHILLER PERFORMANCE ═══ -->
+      <div id="energy-pane-chiller" class="energy-pane" style="display:none">
+        <div class="card mb16">
+          <div class="flex fca jb mb12" style="flex-wrap:wrap">
+            <div class="ffd fw7" style="font-size:14px">❄ HVAC — Chiller Performance Plant (kW/TR)</div>
+            <div class="flex g8">
+              <button class="btn btn-primary btn-sm" onclick="openChillerModal()">+ บันทึกข้อมูล</button>
+            </div>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi teal"><div class="kl">kW/TR ล่าสุด</div><div class="kv ffd" id="chp-latest" style="font-size:18px">—</div></div>
+            <div class="kpi green"><div class="kl">kW/TR เฉลี่ย</div><div class="kv ffd" id="chp-avg" style="font-size:18px">—</div></div>
+            <div class="kpi blue"><div class="kl">Best kW/TR</div><div class="kv ffd" id="chp-best" style="font-size:18px">—</div></div>
+            <div class="kpi yellow"><div class="kl">จำนวนบันทึก</div><div class="kv ffd" id="chp-count" style="font-size:18px">0</div></div>
+          </div>
+          <div class="chart-wrap"><canvas id="chChillerPerf"></canvas></div>
+
+          <div class="form-sec">🔗 ดึงข้อมูลจาก Google Sheet</div>
+          <div class="flex g8" style="flex-wrap:wrap;align-items:flex-end">
+            <div class="form-group" style="margin-bottom:0;flex:1;min-width:260px"><label class="form-label">Google Sheet Link หรือ Sheet ID</label><input type="text" class="form-control" id="chiller-gsheet-id" placeholder="วางลิงก์ Google Sheet หรือ Sheet ID..." onchange="saveChillerGSheetId()"></div>
+            <button class="btn btn-secondary btn-sm" onclick="fetchChillerGSheet()">↻ ดึงข้อมูลจาก Google Sheet</button>
+          </div>
+          <div class="ss mt6">⚠ ชีทต้องตั้งค่าแชร์เป็น "Anyone with the link can view" และมีชื่อแท็บ Sheet1 พร้อมคอลัมน์ Date, kW, TR, Notes จึงจะดึงข้อมูลได้สำเร็จ</div>
+
+          <div class="table-wrap mt16"><table><thead><tr><th>วันที่/เวลา</th><th>Chiller kW</th><th>Cooling Load (TR)</th><th>kW/TR</th><th>Condenser/Chilled Water Temp</th><th>หมายเหตุ</th><th>Action</th></tr></thead><tbody id="chiller-tbody"></tbody></table></div>
+        </div>
+      </div>
     </div>
     <div id="view-carbon" class="view">
       <div class="sh"><div><div class="st">🌱 Carbon Footprint</div><div class="ss">CO₂ · Scope 1/2/3 · Net Zero 2050</div></div></div>
@@ -2096,6 +2240,115 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 <div class="flex g8" style="justify-content:flex-end;margin-top:8px">
   <button class="btn btn-secondary" onclick="closeModal('m-opex')">ยกเลิก</button>
   <button class="btn btn-primary" onclick="saveOpex()">💾 บันทึก OPEX</button>
+</div>
+</div></div>
+
+<!-- ═══ ENERGY MONITOR MODALS ═══ -->
+<div class="modal-overlay" id="m-bill"><div class="modal modal-lg">
+<div class="mhd"><div class="mttl" id="bill-modal-title">📄 บันทึกบิล</div><button class="mclose" onclick="closeModal('m-bill')">✕</button></div>
+<input type="hidden" id="bill-id"><input type="hidden" id="bill-domain">
+<div class="form-row">
+  <div class="form-group"><label class="form-label">รอบบิล (เดือน/ปี) *</label><input type="month" class="form-control" id="bill-period"></div>
+  <div class="form-group"><label class="form-label">ครบกำหนดชำระ</label><input type="date" class="form-control" id="bill-duedate"></div>
+</div>
+<div id="bill-elec-fields">
+  <div class="form-row-3">
+    <div class="form-group"><label class="form-label">kWh On-Peak (TOD) / kWh (TOU)</label><input type="number" class="form-control" id="bill-kwhon" placeholder="0"></div>
+    <div class="form-group"><label class="form-label">kWh Off-Peak (TOD)</label><input type="number" class="form-control" id="bill-kwhoff" placeholder="0"></div>
+    <div class="form-group"><label class="form-label">Demand (kW)</label><input type="number" class="form-control" id="bill-demandkw" placeholder="0"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">Power Factor (%)</label><input type="number" class="form-control" id="bill-pf" placeholder="0" step="0.1"></div>
+    <div class="form-group"><label class="form-label">Load Factor (%)</label><input type="number" class="form-control" id="bill-lf" placeholder="0" step="0.1"></div>
+  </div>
+</div>
+<div id="bill-water-fields" style="display:none">
+  <div class="form-group"><label class="form-label">ปริมาณการใช้น้ำ (m³)</label><input type="number" class="form-control" id="bill-m3" placeholder="0"></div>
+</div>
+<div class="form-group"><label class="form-label">ยอดบิล (฿) *</label><input type="number" class="form-control" id="bill-amount" placeholder="0"></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-bill')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveBill()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-meter"><div class="modal">
+<div class="mhd"><div class="mttl" id="meter-modal-title">🏢 มิเตอร์</div><button class="mclose" onclick="closeModal('m-meter')">✕</button></div>
+<input type="hidden" id="meter-id"><input type="hidden" id="meter-domain"><input type="hidden" id="meter-scope">
+<div class="form-group"><label class="form-label">รหัสมิเตอร์ *</label><input type="text" class="form-control" id="meter-code" placeholder="เช่น EM-B-001"></div>
+<div class="form-group"><label class="form-label">ชื่อ/ตำแหน่งติดตั้ง *</label><input type="text" class="form-control" id="meter-name" placeholder="เช่น MDB-2 ชั้น 3"></div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">MDB/ชั้น/ประเภทอุปกรณ์</label><input type="text" class="form-control" id="meter-mdb" placeholder="เช่น MDB-2 / Floor 3 / AHU-1"></div>
+  <div class="form-group"><label class="form-label">หน่วย</label><input type="text" class="form-control" id="meter-unit" placeholder="kWh / m³"></div>
+</div>
+<div class="form-group"><label class="form-label" id="meter-owner-label">ชื่อผู้เช่า/หมายเหตุ</label><input type="text" class="form-control" id="meter-owner" placeholder="เช่น ชื่อร้าน/บริษัทผู้เช่า"></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-meter')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveMeter()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-reading"><div class="modal">
+<div class="mhd"><div class="mttl" id="reading-modal-title">📸 บันทึกค่ามิเตอร์</div><button class="mclose" onclick="closeModal('m-reading')">✕</button></div>
+<input type="hidden" id="reading-id"><input type="hidden" id="reading-domain"><input type="hidden" id="reading-scope">
+<div class="form-group"><label class="form-label">มิเตอร์ *</label><select class="form-control" id="reading-meter"></select></div>
+<div class="form-group"><label class="form-label">วันที่ *</label><input type="date" class="form-control" id="reading-date"></div>
+<div class="form-group"><label class="form-label">ถ่ายรูปมิเตอร์ (OCR อ่านค่าอัตโนมัติ)</label><input type="file" accept="image/*" capture="environment" class="form-control" id="reading-photo-input" onchange="handleMeterPhoto(event)"></div>
+<div id="reading-photo-thumb" style="margin:8px 0"></div>
+<div id="reading-ocr-status" class="ss" style="margin-bottom:6px"></div>
+<div class="form-group"><label class="form-label">ค่าที่อ่านได้ * <span style="color:var(--text3);font-weight:400">(ตรวจสอบ/แก้ไขค่าจาก OCR ก่อนบันทึกเสมอ)</span></label><input type="number" class="form-control" id="reading-value" step="0.01" placeholder="0"></div>
+<div class="form-group"><label class="form-label">ผู้บันทึก</label><input type="text" class="form-control" id="reading-by" placeholder="ชื่อผู้บันทึก"></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-reading')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveReading()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-cooling"><div class="modal">
+<div class="mhd"><div class="mttl">🌀 บันทึกค่ามิเตอร์ Cooling Water</div><button class="mclose" onclick="closeModal('m-cooling')">✕</button></div>
+<input type="hidden" id="cooling-id">
+<div class="form-group"><label class="form-label">วันที่ *</label><input type="date" class="form-control" id="cooling-date"></div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">Make-up Water (m³) *</label><input type="number" class="form-control" id="cooling-makeup" step="0.01" placeholder="0"></div>
+  <div class="form-group"><label class="form-label">Bleed-off (m³) *</label><input type="number" class="form-control" id="cooling-bleed" step="0.01" placeholder="0"></div>
+</div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-cooling')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveCooling()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-solar"><div class="modal">
+<div class="mhd"><div class="mttl">☀ บันทึกค่าผลิตไฟฟ้า Solar</div><button class="mclose" onclick="closeModal('m-solar')">✕</button></div>
+<input type="hidden" id="solar-id">
+<div class="form-group"><label class="form-label">วันที่ *</label><input type="date" class="form-control" id="solar-date"></div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">kWh ผลิตได้ *</label><input type="number" class="form-control" id="solar-kwh" step="0.01" placeholder="0"></div>
+  <div class="form-group"><label class="form-label">Peak kW</label><input type="number" class="form-control" id="solar-peakkw" step="0.01" placeholder="0"></div>
+</div>
+<div class="form-group"><label class="form-label">สภาพอากาศ/หมายเหตุ</label><input type="text" class="form-control" id="solar-notes" placeholder="เช่น แดดจัด/มีเมฆบางส่วน"></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-solar')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveSolar()">💾 บันทึก</button>
+</div>
+</div></div>
+
+<div class="modal-overlay" id="m-chiller"><div class="modal">
+<div class="mhd"><div class="mttl">❄ บันทึกข้อมูล Chiller Performance</div><button class="mclose" onclick="closeModal('m-chiller')">✕</button></div>
+<input type="hidden" id="chiller-id">
+<div class="form-group"><label class="form-label">วันที่/เวลา *</label><input type="datetime-local" class="form-control" id="chiller-datetime"></div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">Chiller kW *</label><input type="number" class="form-control" id="chiller-kw" step="0.01" placeholder="0"></div>
+  <div class="form-group"><label class="form-label">Cooling Load (TR) *</label><input type="number" class="form-control" id="chiller-tr" step="0.01" placeholder="0"></div>
+</div>
+<div class="form-row">
+  <div class="form-group"><label class="form-label">Condenser Water Temp (°C)</label><input type="number" class="form-control" id="chiller-condtemp" step="0.1" placeholder="0"></div>
+  <div class="form-group"><label class="form-label">Chilled Water Temp (°C)</label><input type="number" class="form-control" id="chiller-chwtemp" step="0.1" placeholder="0"></div>
+</div>
+<div class="form-group"><label class="form-label">หมายเหตุ</label><input type="text" class="form-control" id="chiller-notes" placeholder="หมายเหตุ..."></div>
+<div class="flex g8" style="justify-content:flex-end;margin-top:8px">
+  <button class="btn btn-secondary" onclick="closeModal('m-chiller')">ยกเลิก</button>
+  <button class="btn btn-primary" onclick="saveChiller()">💾 บันทึก</button>
 </div>
 </div></div>
 
@@ -6011,6 +6264,767 @@ function renderEnergy(){
   dChart('chEng');const mos=['ก.ย.','ต.ค.','พ.ย.','ธ.ค.','ม.ค.','ก.พ.'];
   charts.chEng=new Chart(document.getElementById('chEng'),{type:'line',data:{labels:mos,datasets:[{label:'kWh (000)',data:[155,148,142,138,145,143],borderColor:'#14B8A6',fill:true,backgroundColor:'rgba(20,184,166,.1)',tension:.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E',callback:v=>v+'K'},grid:{color:'#21262D'}}}}});
   dChart('chEngSys');charts.chEngSys=new Chart(document.getElementById('chEngSys'),{type:'doughnut',data:{labels:['AC/HVAC','Lighting','Lifts','IT/BAS','Others'],datasets:[{data:[62,18,8,7,5],backgroundColor:['#3B82F6','#EAB308','#A855F7','#14B8A6','#8B949E'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8B949E',font:{size:10}}}}}});
+  ensureEnergyPaneInit();
+  renderElecBill();
+}
+
+// ══════════════════════════════════════════════════════════════
+// ══ ENERGY MONITOR — Electrical / Water / Solar / Chiller ══
+// ══════════════════════════════════════════════════════════════
+function meterKey(domain,scope){return domain+'Meter'+(scope==='B'?'Building':'Tenant');}
+function readingKey(domain,scope){return domain+'Reading'+(scope==='B'?'Building':'Tenant');}
+function rateKey(domain){return domain+'TenantRate';}
+function billKey(domain){return domain+'Bill';}
+
+function meterPaneHTML(domain,scope){
+  const dLabel=domain==='elec'?'ไฟฟ้า':'น้ำประปา';
+  const unit=domain==='elec'?'kWh':'m³';
+  const scopeLabel=scope==='B'?'Building':'Tenant/Client';
+  const p=domain+'-'+scope;
+  let html=`
+  <div class="card mb16">
+    <div class="flex fca jb mb12" style="flex-wrap:wrap">
+      <div class="ffd fw7" style="font-size:14px">🏢 รายการมิเตอร์${dLabel} (${scopeLabel}) — ประมาณ 50 จุด</div>
+      <div class="flex g8">
+        <button class="btn btn-secondary btn-sm" onclick="importMeterExcel('${domain}','${scope}')">📥 Import มิเตอร์</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportMeterExcel('${domain}','${scope}')">📤 Export มิเตอร์</button>
+        <button class="btn btn-primary btn-sm" onclick="openMeterModal('${domain}','${scope}')">+ เพิ่มมิเตอร์</button>
+      </div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>รหัสมิเตอร์</th><th>ชื่อ/ตำแหน่ง</th><th>MDB/ชั้น/อุปกรณ์</th><th>หน่วย</th><th>Action</th></tr></thead><tbody id="${p}-meter-tbody"></tbody></table></div>
+  </div>
+  <div class="card mb16">
+    <div class="flex fca jb mb12" style="flex-wrap:wrap">
+      <div class="ffd fw7" style="font-size:14px">📸 บันทึกค่ามิเตอร์ (ถ่ายรูป + OCR อัตโนมัติ)</div>
+      <div class="flex g8">
+        <button class="btn btn-secondary btn-sm" onclick="importReadingExcel('${domain}','${scope}')">📥 Import การอ่านค่า</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportReadingExcel('${domain}','${scope}')">📤 Export การอ่านค่า</button>
+        <button class="btn btn-primary btn-sm" onclick="openReadingModal('${domain}','${scope}')">+ บันทึกค่ามิเตอร์</button>
+      </div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi teal"><div class="kl">จำนวนมิเตอร์</div><div class="kv ffd" id="${p}-mcount" style="font-size:18px">0</div></div>
+      <div class="kpi blue"><div class="kl">รวมเดือนนี้ (${unit})</div><div class="kv ffd" id="${p}-month" style="font-size:18px">0</div></div>
+      <div class="kpi green"><div class="kl">รวมปีนี้ (${unit})</div><div class="kv ffd" id="${p}-year" style="font-size:18px">0</div></div>
+      <div class="kpi yellow"><div class="kl">บันทึกล่าสุด</div><div class="kv ffd" id="${p}-lastdate" style="font-size:14px">—</div></div>
+    </div>
+    <div class="chart-wrap"><canvas id="ch-${p}-cons"></canvas></div>
+    <div class="table-wrap mt16"><table><thead><tr><th>วันที่</th><th>มิเตอร์</th><th>ค่าที่อ่าน</th><th>รูปถ่าย</th><th>OCR Confidence</th><th>ผู้บันทึก</th><th>Action</th></tr></thead><tbody id="${p}-rdg-tbody"></tbody></table></div>
+  </div>`;
+  if(scope==='T'){
+    html+=`
+  <div class="card mb16">
+    <div class="flex fca jb mb12" style="flex-wrap:wrap">
+      <div class="ffd fw7" style="font-size:14px">🧾 สรุปบิลรายเดือน (Tenant Billing)</div>
+      <div class="flex g8">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="font-size:10px">อัตราค่า${dLabel} / ${unit} (฿)</label><input type="number" class="form-control" id="${p}-rate" style="width:110px" step="0.01" onchange="saveTenantRate('${domain}')"></div>
+        <button class="btn btn-secondary btn-sm" onclick="exportTenantBillingExcel('${domain}')">📤 Export บิล Tenant</button>
+      </div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>Tenant/มิเตอร์</th><th>เดือน</th><th>ค่าก่อนหน้า</th><th>ค่าปัจจุบัน</th><th>ใช้ไป (${unit})</th><th>อัตรา (฿)</th><th>ยอดเรียกเก็บ (฿)</th></tr></thead><tbody id="${p}-billing-tbody"></tbody></table></div>
+  </div>`;
+  }
+  return html;
+}
+function ensureEnergyPaneInit(){
+  const map=[['elec-sub-meterB','elec','B'],['elec-sub-meterT','elec','T'],['water-raw-meterB','water','B'],['water-raw-meterT','water','T']];
+  map.forEach(([id,domain,scope])=>{
+    const el=document.getElementById(id);
+    if(el&&!el.dataset.init){ el.innerHTML=meterPaneHTML(domain,scope); el.dataset.init='1'; }
+  });
+}
+
+// ── Main / Sub Tab Switching ──
+function energyMainTab(tab,el){
+  document.querySelectorAll('#energy-main-tabs .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  ['elec','water','solar','chiller'].forEach(k=>{const p=document.getElementById('energy-pane-'+k);if(p)p.style.display=(k===tab?'block':'none');});
+  if(tab==='elec')renderElecBill();
+  else if(tab==='water')renderBillList('water');
+  else if(tab==='solar')renderSolar();
+  else if(tab==='chiller')renderChiller();
+}
+function elecSubTab(tab,el){
+  document.querySelectorAll('#energy-pane-elec > .tabs .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  ['bill','meterB','meterT'].forEach(k=>{const p=document.getElementById('elec-sub-'+k);if(p)p.style.display=(k===tab?'block':'none');});
+  if(tab==='bill')renderElecBill();
+  else renderMeterScope('elec',tab==='meterB'?'B':'T');
+}
+function waterMainSubTab(tab,el){
+  document.querySelectorAll('#energy-pane-water > .tabs .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  const raw=document.getElementById('water-sub-raw'),cool=document.getElementById('water-sub-cooling');
+  if(raw)raw.style.display=(tab==='raw'?'block':'none');
+  if(cool)cool.style.display=(tab==='cooling'?'block':'none');
+  if(tab==='raw')renderBillList('water'); else renderCoolingWater();
+}
+function waterRawTab(tab,el){
+  document.querySelectorAll('#water-sub-raw > .tabs .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  ['bill','meterB','meterT'].forEach(k=>{const p=document.getElementById('water-raw-'+k);if(p)p.style.display=(k===tab?'block':'none');});
+  if(tab==='bill')renderBillList('water');
+  else renderMeterScope('water',tab==='meterB'?'B':'T');
+}
+
+// ── TOD/TOU & Raw Water Bill ──
+function renderElecBill(){renderBillList('elec');}
+function renderBillList(domain){
+  const list=DB.get(billKey(domain),[]).slice().sort((a,b)=>(b.period||'').localeCompare(a.period||''));
+  const asc=list.slice().sort((a,b)=>(a.period||'').localeCompare(b.period||''));
+  if(domain==='elec'){
+    const tbody=document.getElementById('elec-bill-tbody');
+    if(tbody)tbody.innerHTML=list.length?list.map(x=>`<tr>
+      <td>${x.period||'—'}</td><td>${(x.kwhOn||0).toLocaleString()}</td><td>${(x.kwhOff||0).toLocaleString()}</td><td>${x.demandKw||0}</td><td>${x.pf||'—'}</td><td>${x.lf||'—'}</td><td>฿${(x.amount||0).toLocaleString()}</td><td>${x.dueDate||'—'}</td>
+      <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openBillModal('elec','${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteBill('elec','${x.id}')">🗑</button></div></td>
+    </tr>`).join(''):'<tr><td colspan="9" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูลบิล</td></tr>';
+    const latest=list[0];
+    const g=id=>document.getElementById(id);
+    if(g('ebill-kwh'))g('ebill-kwh').textContent=latest?((latest.kwhOn||0)+(latest.kwhOff||0)).toLocaleString():'0';
+    if(g('ebill-kw'))g('ebill-kw').textContent=latest?(latest.demandKw||0):'0';
+    if(g('ebill-pf'))g('ebill-pf').textContent=latest&&latest.pf?latest.pf+'%':'—';
+    if(g('ebill-lf'))g('ebill-lf').textContent=latest&&latest.lf?latest.lf+'%':'—';
+    dChart('chElecBillLFPF');
+    charts.chElecBillLFPF=new Chart(document.getElementById('chElecBillLFPF'),{type:'line',data:{labels:asc.map(x=>x.period),datasets:[
+      {label:'Power Factor (%)',data:asc.map(x=>x.pf||0),borderColor:'#22C55E',tension:.3,pointRadius:3},
+      {label:'Load Factor (%)',data:asc.map(x=>x.lf||0),borderColor:'#3B82F6',tension:.3,pointRadius:3}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:9}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}});
+    dChart('chElecBillKwh');
+    charts.chElecBillKwh=new Chart(document.getElementById('chElecBillKwh'),{type:'bar',data:{labels:asc.map(x=>x.period),datasets:[
+      {label:'kWh On-Peak',data:asc.map(x=>x.kwhOn||0),backgroundColor:'rgba(249,115,22,.7)',borderRadius:4},
+      {label:'kWh Off-Peak',data:asc.map(x=>x.kwhOff||0),backgroundColor:'rgba(20,184,166,.7)',borderRadius:4}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:9}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}});
+  } else {
+    const tbody=document.getElementById('water-bill-tbody');
+    if(tbody)tbody.innerHTML=list.length?list.map(x=>`<tr>
+      <td>${x.period||'—'}</td><td>${(x.m3||0).toLocaleString()}</td><td>฿${(x.amount||0).toLocaleString()}</td>
+      <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openBillModal('water','${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteBill('water','${x.id}')">🗑</button></div></td>
+    </tr>`).join(''):'<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูลบิล</td></tr>';
+    dChart('chWaterBillM3');
+    charts.chWaterBillM3=new Chart(document.getElementById('chWaterBillM3'),{type:'bar',data:{labels:asc.map(x=>x.period),datasets:[{label:'m³',data:asc.map(x=>x.m3||0),backgroundColor:'rgba(59,130,246,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E',font:{size:9}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}});
+  }
+}
+function openBillModal(domain,id){
+  document.getElementById('bill-id').value=id||'';
+  document.getElementById('bill-domain').value=domain;
+  document.getElementById('bill-modal-title').textContent=domain==='elec'?'📄 บันทึกบิลค่าไฟฟ้า TOD/TOU':'📄 บันทึกบิลน้ำประปา';
+  document.getElementById('bill-elec-fields').style.display=domain==='elec'?'block':'none';
+  document.getElementById('bill-water-fields').style.display=domain==='water'?'block':'none';
+  ['bill-period','bill-duedate','bill-kwhon','bill-kwhoff','bill-demandkw','bill-pf','bill-lf','bill-m3','bill-amount'].forEach(x=>{const el=document.getElementById(x);if(el)el.value='';});
+  if(id){
+    const item=DB.get(billKey(domain),[]).find(x=>x.id===id);
+    if(item){
+      document.getElementById('bill-period').value=item.period||'';
+      document.getElementById('bill-duedate').value=item.dueDate||'';
+      document.getElementById('bill-amount').value=item.amount||'';
+      if(domain==='elec'){
+        document.getElementById('bill-kwhon').value=item.kwhOn||'';
+        document.getElementById('bill-kwhoff').value=item.kwhOff||'';
+        document.getElementById('bill-demandkw').value=item.demandKw||'';
+        document.getElementById('bill-pf').value=item.pf||'';
+        document.getElementById('bill-lf').value=item.lf||'';
+      } else {
+        document.getElementById('bill-m3').value=item.m3||'';
+      }
+    }
+  }
+  openModal('m-bill');
+}
+function saveBill(){
+  const domain=document.getElementById('bill-domain').value;
+  const id=document.getElementById('bill-id').value;
+  const period=document.getElementById('bill-period').value;
+  if(!period){showToast('⚠ กรุณาระบุรอบบิล');return;}
+  const list=DB.get(billKey(domain),[]);
+  const rec={id:id||(domain.toUpperCase()+'BILL-'+Date.now()),period,dueDate:document.getElementById('bill-duedate').value||'',amount:parseFloat(document.getElementById('bill-amount').value)||0};
+  if(domain==='elec'){
+    rec.kwhOn=parseFloat(document.getElementById('bill-kwhon').value)||0;
+    rec.kwhOff=parseFloat(document.getElementById('bill-kwhoff').value)||0;
+    rec.demandKw=parseFloat(document.getElementById('bill-demandkw').value)||0;
+    rec.pf=parseFloat(document.getElementById('bill-pf').value)||0;
+    rec.lf=parseFloat(document.getElementById('bill-lf').value)||0;
+  } else {
+    rec.m3=parseFloat(document.getElementById('bill-m3').value)||0;
+  }
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set(billKey(domain),list);
+  showToast('💾 บันทึกบิลสำเร็จ');
+  closeModal('m-bill');
+  renderBillList(domain);
+}
+function deleteBill(domain,id){
+  if(!confirm('ลบรายการบิลนี้?'))return;
+  DB.set(billKey(domain),DB.get(billKey(domain),[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderBillList(domain);
+}
+function exportBillExcel(domain){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const list=DB.get(billKey(domain),[]);
+  let data;
+  if(domain==='elec'){
+    data=[['รอบบิล','kWh On-Peak','kWh Off-Peak','Demand(kW)','Power Factor(%)','Load Factor(%)','ยอดบิล(฿)','ครบกำหนด'],
+      ...list.map(x=>[x.period,x.kwhOn||0,x.kwhOff||0,x.demandKw||0,x.pf||0,x.lf||0,x.amount||0,x.dueDate||''])];
+  } else {
+    data=[['รอบบิล','ปริมาณ(m³)','ยอดบิล(฿)','ครบกำหนด'],...list.map(x=>[x.period,x.m3||0,x.amount||0,x.dueDate||''])];
+  }
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:16}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Bill');
+  XLSX.writeFile(wb,'TKO_'+(domain==='elec'?'ElecBill':'WaterBill')+'_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
+}
+
+// ── Sub-Meter (Building / Tenant) — Elec & Water shared ──
+function computeConsumptionSummary(domain,scope){
+  const readings=DB.get(readingKey(domain,scope),[]);
+  const byMeter={};
+  readings.forEach(r=>{(byMeter[r.meterId]=byMeter[r.meterId]||[]).push(r);});
+  const monthTotals={};
+  Object.values(byMeter).forEach(arr=>{
+    arr.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    for(let i=1;i<arr.length;i++){
+      const delta=(arr[i].reading||0)-(arr[i-1].reading||0);
+      if(delta<0)continue;
+      const mo=(arr[i].date||'').slice(0,7);
+      if(!mo)continue;
+      monthTotals[mo]=(monthTotals[mo]||0)+delta;
+    }
+  });
+  const months=Object.keys(monthTotals).sort();
+  const values=months.map(m=>Math.round(monthTotals[m]));
+  const now=new Date();const curMo=now.toISOString().slice(0,7);const curYr=String(now.getFullYear());
+  const thisMonth=Math.round(monthTotals[curMo]||0);
+  const thisYear=Math.round(months.filter(m=>m.startsWith(curYr)).reduce((s,m)=>s+monthTotals[m],0));
+  return {months,values,thisMonth,thisYear};
+}
+function renderMeterScope(domain,scope){
+  ensureEnergyPaneInit();
+  const p=domain+'-'+scope;
+  const meters=DB.get(meterKey(domain,scope),[]);
+  const readings=DB.get(readingKey(domain,scope),[]);
+  const mtbody=document.getElementById(p+'-meter-tbody');
+  if(mtbody)mtbody.innerHTML=meters.length?meters.map(m=>`<tr>
+    <td class="ffm">${m.code||''}</td><td>${m.name||''}<div style="font-size:10px;color:var(--text3)">${m.owner||''}</div></td><td style="font-size:12px">${m.mdb||'—'}</td><td>${m.unit||(domain==='elec'?'kWh':'m³')}</td>
+    <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openMeterModal('${domain}','${scope}','${m.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteMeter('${domain}','${scope}','${m.id}')">🗑</button></div></td>
+  </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีมิเตอร์ — เพิ่มมิเตอร์หรือ Import Excel</td></tr>';
+
+  const sortedR=readings.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const rtbody=document.getElementById(p+'-rdg-tbody');
+  if(rtbody)rtbody.innerHTML=sortedR.length?sortedR.slice(0,200).map(r=>{
+    const m=meters.find(x=>x.id===r.meterId);
+    return `<tr>
+      <td>${r.date||''}</td><td>${m?m.code:(r.meterId||'—')}</td><td class="ffm">${(r.reading??0).toLocaleString()}</td>
+      <td>${r.photo?`<img src="${r.photo}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="window.open('${r.photo}','_blank')">`:'—'}</td>
+      <td>${r.ocrConfidence!=null?Math.round(r.ocrConfidence)+'%':'—'}</td><td>${r.recordedBy||'—'}</td>
+      <td><div class="flex g6"><button class="btn btn-danger btn-xs" onclick="deleteReading('${domain}','${scope}','${r.id}')">🗑</button></div></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีการบันทึกค่ามิเตอร์</td></tr>';
+
+  const summary=computeConsumptionSummary(domain,scope);
+  const g=id=>document.getElementById(id);
+  if(g(p+'-mcount'))g(p+'-mcount').textContent=meters.length;
+  if(g(p+'-month'))g(p+'-month').textContent=summary.thisMonth.toLocaleString();
+  if(g(p+'-year'))g(p+'-year').textContent=summary.thisYear.toLocaleString();
+  if(g(p+'-lastdate'))g(p+'-lastdate').textContent=sortedR[0]?sortedR[0].date:'—';
+
+  dChart('ch-'+p+'-cons');
+  const cvs=document.getElementById('ch-'+p+'-cons');
+  if(cvs)charts['ch-'+p+'-cons']=new Chart(cvs,{type:'bar',data:{labels:summary.months,datasets:[{label:'การใช้ ('+(domain==='elec'?'kWh':'m³')+')',data:summary.values,backgroundColor:'rgba(20,184,166,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E',font:{size:9}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}});
+
+  if(scope==='T')renderTenantBilling(domain);
+}
+function openMeterModal(domain,scope,id){
+  document.getElementById('meter-domain').value=domain;
+  document.getElementById('meter-scope').value=scope;
+  document.getElementById('meter-id').value=id||'';
+  document.getElementById('meter-modal-title').textContent=(domain==='elec'?'⚡ มิเตอร์ไฟฟ้า':'💧 มิเตอร์น้ำ')+' — '+(scope==='B'?'Building':'Tenant/Client');
+  document.getElementById('meter-owner-label').textContent=scope==='T'?'ชื่อผู้เช่า/Tenant':'หมายเหตุ';
+  ['meter-code','meter-name','meter-mdb','meter-unit','meter-owner'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('meter-unit').value=domain==='elec'?'kWh':'m³';
+  if(id){
+    const item=DB.get(meterKey(domain,scope),[]).find(x=>x.id===id);
+    if(item){
+      document.getElementById('meter-code').value=item.code||'';
+      document.getElementById('meter-name').value=item.name||'';
+      document.getElementById('meter-mdb').value=item.mdb||'';
+      document.getElementById('meter-unit').value=item.unit||'';
+      document.getElementById('meter-owner').value=item.owner||'';
+    }
+  }
+  openModal('m-meter');
+}
+function saveMeter(){
+  const domain=document.getElementById('meter-domain').value;
+  const scope=document.getElementById('meter-scope').value;
+  const id=document.getElementById('meter-id').value;
+  const code=document.getElementById('meter-code').value.trim();
+  const name=document.getElementById('meter-name').value.trim();
+  if(!code||!name){showToast('⚠ กรุณาระบุรหัสและชื่อมิเตอร์');return;}
+  const list=DB.get(meterKey(domain,scope),[]);
+  const rec={id:id||(domain.toUpperCase()+'-M-'+Date.now()),code,name,mdb:document.getElementById('meter-mdb').value.trim(),unit:document.getElementById('meter-unit').value.trim(),owner:document.getElementById('meter-owner').value.trim()};
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set(meterKey(domain,scope),list);
+  showToast('💾 บันทึกมิเตอร์สำเร็จ');
+  closeModal('m-meter');
+  renderMeterScope(domain,scope);
+}
+function deleteMeter(domain,scope,id){
+  if(!confirm('ลบมิเตอร์นี้? (ประวัติการอ่านค่าจะยังคงอยู่)'))return;
+  DB.set(meterKey(domain,scope),DB.get(meterKey(domain,scope),[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderMeterScope(domain,scope);
+}
+
+// ── Reading + Photo/OCR ──
+let _readingPhotoData=null,_readingOcrConf=null;
+function openReadingModal(domain,scope){
+  document.getElementById('reading-domain').value=domain;
+  document.getElementById('reading-scope').value=scope;
+  document.getElementById('reading-id').value='';
+  document.getElementById('reading-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('reading-value').value='';
+  document.getElementById('reading-by').value=(typeof CU!=='undefined'&&CU?.name)||'';
+  document.getElementById('reading-photo-thumb').innerHTML='';
+  document.getElementById('reading-ocr-status').textContent='';
+  document.getElementById('reading-photo-input').value='';
+  _readingPhotoData=null;_readingOcrConf=null;
+  const meters=DB.get(meterKey(domain,scope),[]);
+  const sel=document.getElementById('reading-meter');
+  sel.innerHTML=meters.length?meters.map(m=>`<option value="${m.id}">${m.code} — ${m.name}</option>`).join(''):'<option value="">— ไม่มีมิเตอร์ กรุณาเพิ่มก่อน —</option>';
+  document.getElementById('reading-modal-title').textContent=(domain==='elec'?'⚡':'💧')+' บันทึกค่ามิเตอร์ — '+(scope==='B'?'Building':'Tenant/Client');
+  openModal('m-reading');
+}
+function handleMeterPhoto(e){
+  const f=e.target.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    _readingPhotoData=ev.target.result;
+    document.getElementById('reading-photo-thumb').innerHTML=`<img src="${_readingPhotoData}" style="max-width:160px;max-height:160px;border-radius:8px;border:1px solid var(--border)">`;
+    const statusEl=document.getElementById('reading-ocr-status');
+    if(typeof Tesseract==='undefined'){statusEl.textContent='⚠ ไม่พบไลบรารี OCR — กรุณากรอกค่าด้วยตนเอง';return;}
+    statusEl.textContent='🔍 กำลังอ่านค่าด้วย OCR...';
+    try{
+      const {data}=await Tesseract.recognize(_readingPhotoData,'eng',{tessedit_char_whitelist:'0123456789.'});
+      const text=(data.text||'').replace(/[^0-9.]/g,'').trim();
+      _readingOcrConf=data.confidence||0;
+      if(text){
+        document.getElementById('reading-value').value=text;
+        statusEl.textContent=`✅ OCR อ่านค่าได้: "${text}" (ความมั่นใจ ${Math.round(_readingOcrConf)}%) — กรุณาตรวจสอบ/แก้ไขค่าก่อนบันทึกเสมอ`;
+      } else {
+        statusEl.textContent='⚠ OCR อ่านค่าไม่ได้ กรุณากรอกค่าด้วยตนเอง';
+      }
+    }catch(err){
+      statusEl.textContent='❌ OCR ผิดพลาด: '+err.message+' — กรุณากรอกค่าด้วยตนเอง';
+    }
+  };
+  reader.readAsDataURL(f);
+}
+function saveReading(){
+  const domain=document.getElementById('reading-domain').value;
+  const scope=document.getElementById('reading-scope').value;
+  const meterId=document.getElementById('reading-meter').value;
+  const date=document.getElementById('reading-date').value;
+  const val=parseFloat(document.getElementById('reading-value').value);
+  if(!meterId){showToast('⚠ กรุณาเลือกมิเตอร์');return;}
+  if(!date){showToast('⚠ กรุณาระบุวันที่');return;}
+  if(isNaN(val)){showToast('⚠ กรุณาระบุค่าที่อ่าน');return;}
+  const list=DB.get(readingKey(domain,scope),[]);
+  list.push({id:domain.toUpperCase()+'-R-'+Date.now(),meterId,date,reading:val,photo:_readingPhotoData||null,ocrConfidence:_readingOcrConf,recordedBy:document.getElementById('reading-by').value.trim()||((typeof CU!=='undefined'&&CU?.name)||'')});
+  DB.set(readingKey(domain,scope),list);
+  showToast('💾 บันทึกค่ามิเตอร์สำเร็จ');
+  closeModal('m-reading');
+  renderMeterScope(domain,scope);
+}
+function deleteReading(domain,scope,id){
+  if(!confirm('ลบรายการนี้?'))return;
+  DB.set(readingKey(domain,scope),DB.get(readingKey(domain,scope),[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderMeterScope(domain,scope);
+}
+
+// ── Excel Import/Export for Meters & Readings ──
+function exportMeterExcel(domain,scope){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const list=DB.get(meterKey(domain,scope),[]);
+  const data=[['รหัสมิเตอร์','ชื่อ/ตำแหน่ง','MDB/ชั้น/อุปกรณ์','หน่วย','ผู้เช่า/หมายเหตุ'],...list.map(x=>[x.code,x.name,x.mdb||'',x.unit||'',x.owner||''])];
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:20}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Meters');
+  XLSX.writeFile(wb,'TKO_'+domain+'Meter'+scope+'_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
+}
+function importMeterExcel(domain,scope){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX...');return;}
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        if(!ws){showToast('❌ ไม่พบ sheet ในไฟล์');return;}
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+        if(!rows.length){showToast('⚠ ไม่พบข้อมูลในไฟล์');return;}
+        const g=(r,...keys)=>{for(const k of keys){if(r[k]!==undefined&&r[k]!=='')return String(r[k]).trim();}return '';};
+        const list=DB.get(meterKey(domain,scope),[]);
+        let added=0;
+        rows.forEach(r=>{
+          const code=g(r,'รหัสมิเตอร์','code','Meter Code');
+          const name=g(r,'ชื่อ/ตำแหน่ง','name','Name');
+          if(!code||!name)return;
+          list.push({id:domain.toUpperCase()+'-M-'+Date.now()+'-'+(added++),code,name,mdb:g(r,'MDB/ชั้น/อุปกรณ์','mdb'),unit:g(r,'หน่วย','unit')||(domain==='elec'?'kWh':'m³'),owner:g(r,'ผู้เช่า/หมายเหตุ','owner')});
+        });
+        DB.set(meterKey(domain,scope),list);
+        showToast('📥 Import สำเร็จ '+added+' รายการ');
+        renderMeterScope(domain,scope);
+      }catch(err){showToast('❌ อ่านไฟล์ไม่ได้: '+err.message);}
+    };
+    reader.readAsArrayBuffer(f);
+  };
+  inp.click();
+}
+function exportReadingExcel(domain,scope){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const list=DB.get(readingKey(domain,scope),[]);
+  const meters=DB.get(meterKey(domain,scope),[]);
+  const data=[['วันที่','รหัสมิเตอร์','ค่าที่อ่าน','OCR Confidence(%)','ผู้บันทึก'],...list.map(x=>{const m=meters.find(y=>y.id===x.meterId);return [x.date,m?m.code:x.meterId,x.reading||0,x.ocrConfidence!=null?Math.round(x.ocrConfidence):'',x.recordedBy||''];})];
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:18}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Readings');
+  XLSX.writeFile(wb,'TKO_'+domain+'Reading'+scope+'_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
+}
+function importReadingExcel(domain,scope){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX...');return;}
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        if(!ws){showToast('❌ ไม่พบ sheet ในไฟล์');return;}
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+        if(!rows.length){showToast('⚠ ไม่พบข้อมูลในไฟล์');return;}
+        const g=(r,...keys)=>{for(const k of keys){if(r[k]!==undefined&&r[k]!=='')return String(r[k]).trim();}return '';};
+        const meters=DB.get(meterKey(domain,scope),[]);
+        const list=DB.get(readingKey(domain,scope),[]);
+        let added=0;
+        rows.forEach(r=>{
+          const code=g(r,'รหัสมิเตอร์','code');
+          const date=g(r,'วันที่','date');
+          const reading=g(r,'ค่าที่อ่าน','reading');
+          if(!code||!date||reading==='')return;
+          const m=meters.find(x=>x.code===code);
+          if(!m)return;
+          list.push({id:domain.toUpperCase()+'-R-'+Date.now()+'-'+(added++),meterId:m.id,date,reading:parseFloat(reading)||0,photo:null,ocrConfidence:null,recordedBy:g(r,'ผู้บันทึก','recordedBy')});
+        });
+        DB.set(readingKey(domain,scope),list);
+        showToast('📥 Import สำเร็จ '+added+' รายการ');
+        renderMeterScope(domain,scope);
+      }catch(err){showToast('❌ อ่านไฟล์ไม่ได้: '+err.message);}
+    };
+    reader.readAsArrayBuffer(f);
+  };
+  inp.click();
+}
+
+// ── Tenant Billing ──
+let _elecTenantBillingRows=[],_waterTenantBillingRows=[];
+function saveTenantRate(domain){
+  const el=document.getElementById(domain+'-T-rate');
+  DB.set(rateKey(domain),parseFloat(el.value)||0);
+  renderTenantBilling(domain);
+}
+function renderTenantBilling(domain){
+  const rate=DB.get(rateKey(domain),domain==='elec'?4.5:20);
+  const rateEl=document.getElementById(domain+'-T-rate');
+  if(rateEl&&document.activeElement!==rateEl)rateEl.value=rate;
+  const meters=DB.get(meterKey(domain,'T'),[]);
+  const readings=DB.get(readingKey(domain,'T'),[]);
+  const byMeter={};
+  readings.forEach(r=>{(byMeter[r.meterId]=byMeter[r.meterId]||[]).push(r);});
+  const rows=[];
+  meters.forEach(m=>{
+    const arr=(byMeter[m.id]||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    for(let i=1;i<arr.length;i++){
+      const usage=(arr[i].reading||0)-(arr[i-1].reading||0);
+      if(usage<0)continue;
+      const mo=(arr[i].date||'').slice(0,7);
+      rows.push({tenant:m.owner||m.name,meter:m.code,month:mo,prev:arr[i-1].reading,cur:arr[i].reading,usage,rate,amount:usage*rate});
+    }
+  });
+  rows.sort((a,b)=>b.month.localeCompare(a.month));
+  if(domain==='elec')_elecTenantBillingRows=rows; else _waterTenantBillingRows=rows;
+  const tbody=document.getElementById(domain+'-T-billing-tbody');
+  if(tbody)tbody.innerHTML=rows.length?rows.map(r=>`<tr>
+    <td>${r.tenant}<div style="font-size:10px;color:var(--text3)">${r.meter}</div></td><td>${r.month}</td><td class="ffm">${r.prev.toLocaleString()}</td><td class="ffm">${r.cur.toLocaleString()}</td><td class="ffm">${r.usage.toLocaleString()}</td><td>฿${r.rate}</td><td class="ffm fw6">฿${Math.round(r.amount).toLocaleString()}</td>
+  </tr>`).join(''):'<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูลเพียงพอสำหรับคำนวณบิล (ต้องมีการอ่านค่าอย่างน้อย 2 ครั้ง/มิเตอร์)</td></tr>';
+}
+function exportTenantBillingExcel(domain){
+  if(typeof XLSX==='undefined'){showToast('⚠ กำลังโหลด XLSX library...');return;}
+  const rows=domain==='elec'?_elecTenantBillingRows:_waterTenantBillingRows;
+  const data=[['Tenant','มิเตอร์','เดือน','ค่าก่อนหน้า','ค่าปัจจุบัน','ใช้ไป','อัตรา(฿)','ยอดเรียกเก็บ(฿)'],...rows.map(r=>[r.tenant,r.meter,r.month,r.prev,r.cur,r.usage,r.rate,Math.round(r.amount)])];
+  const ws=XLSX.utils.aoa_to_sheet(data);ws['!cols']=data[0].map(()=>({wch:16}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Billing');
+  XLSX.writeFile(wb,'TKO_'+domain+'TenantBilling_'+_today()+'.xlsx');
+  showToast('📊 Export สำเร็จ');
+}
+
+// ── Cooling Water ──
+function renderCoolingWater(){
+  const list=DB.get('coolingWaterReading',[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const tbody=document.getElementById('cooling-tbody');
+  if(tbody)tbody.innerHTML=list.length?list.map(x=>{
+    const ratio=x.makeup?Math.round((x.bleed||0)/x.makeup*100)/100:0;
+    return `<tr><td>${x.date||''}</td><td>${(x.makeup||0).toLocaleString()}</td><td>${(x.bleed||0).toLocaleString()}</td><td>${ratio}</td>
+    <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openCoolingModal('${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteCooling('${x.id}')">🗑</button></div></td></tr>`;
+  }).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูล</td></tr>';
+  const now=new Date();const curMo=now.toISOString().slice(0,7);
+  const mtd=list.filter(x=>(x.date||'').startsWith(curMo));
+  const mtdMakeup=mtd.reduce((s,x)=>s+(x.makeup||0),0);
+  const mtdBleed=mtd.reduce((s,x)=>s+(x.bleed||0),0);
+  const g=id=>document.getElementById(id);
+  if(g('cw-makeup'))g('cw-makeup').textContent=mtdMakeup.toLocaleString();
+  if(g('cw-bleed'))g('cw-bleed').textContent=mtdBleed.toLocaleString();
+  if(g('cw-ratio'))g('cw-ratio').textContent=mtdMakeup?(Math.round(mtdBleed/mtdMakeup*1000)/10)+'%':'—';
+  const asc=list.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  dChart('chCoolingWater');
+  charts.chCoolingWater=new Chart(document.getElementById('chCoolingWater'),{type:'line',data:{labels:asc.map(x=>x.date),datasets:[
+    {label:'Make-up (m³)',data:asc.map(x=>x.makeup||0),borderColor:'#3B82F6',tension:.3,pointRadius:3},
+    {label:'Bleed-off (m³)',data:asc.map(x=>x.bleed||0),borderColor:'#F97316',tension:.3,pointRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:9}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}});
+}
+function openCoolingModal(id){
+  document.getElementById('cooling-id').value=id||'';
+  document.getElementById('cooling-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('cooling-makeup').value='';
+  document.getElementById('cooling-bleed').value='';
+  if(id){
+    const item=DB.get('coolingWaterReading',[]).find(x=>x.id===id);
+    if(item){document.getElementById('cooling-date').value=item.date||'';document.getElementById('cooling-makeup').value=item.makeup||'';document.getElementById('cooling-bleed').value=item.bleed||'';}
+  }
+  openModal('m-cooling');
+}
+function saveCooling(){
+  const id=document.getElementById('cooling-id').value;
+  const date=document.getElementById('cooling-date').value;
+  if(!date){showToast('⚠ กรุณาระบุวันที่');return;}
+  const list=DB.get('coolingWaterReading',[]);
+  const rec={id:id||'CW-'+Date.now(),date,makeup:parseFloat(document.getElementById('cooling-makeup').value)||0,bleed:parseFloat(document.getElementById('cooling-bleed').value)||0};
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('coolingWaterReading',list);
+  showToast('💾 บันทึกสำเร็จ');
+  closeModal('m-cooling');
+  renderCoolingWater();
+}
+function deleteCooling(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  DB.set('coolingWaterReading',DB.get('coolingWaterReading',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderCoolingWater();
+}
+
+// ── PV Solar Cell ──
+let _solarViewMode='daily';
+function solarViewTab(mode,el){
+  _solarViewMode=mode;
+  document.querySelectorAll('#energy-pane-solar .tabs .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderSolar();
+}
+function saveSolarCapacity(){
+  DB.set('solarCapacityKwp',parseFloat(document.getElementById('solar-kwp').value)||0);
+  renderSolar();
+}
+function renderSolar(){
+  const list=DB.get('solarGen',[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const kwp=DB.get('solarCapacityKwp',0);
+  const kwpEl=document.getElementById('solar-kwp');
+  if(kwpEl&&document.activeElement!==kwpEl)kwpEl.value=kwp||'';
+  const tbody=document.getElementById('solar-tbody');
+  if(tbody)tbody.innerHTML=list.length?list.map(x=>`<tr>
+    <td>${x.date||''}</td><td>${(x.kwh||0).toLocaleString()}</td><td>${x.peakKw||0}</td><td style="font-size:12px">${x.notes||'—'}</td>
+    <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openSolarModal('${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteSolar('${x.id}')">🗑</button></div></td>
+  </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูล</td></tr>';
+
+  const latest=list[0];
+  const totalKwh=list.reduce((s,x)=>s+(x.kwh||0),0);
+  const peakMax=list.reduce((s,x)=>Math.max(s,x.peakKw||0),0);
+  const g=id=>document.getElementById(id);
+  if(g('solar-latest'))g('solar-latest').textContent=latest?(latest.kwh||0).toLocaleString():'0';
+  if(g('solar-peak'))g('solar-peak').textContent=peakMax.toLocaleString();
+  if(g('solar-total'))g('solar-total').textContent=totalKwh.toLocaleString();
+  if(g('solar-eff'))g('solar-eff').textContent=kwp?(Math.round(totalKwh/kwp*10)/10)+' kWh/kWp':'— kWh/kWp (ระบุกำลังผลิตติดตั้ง)';
+
+  const asc=list.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  let labels=[],values=[];
+  if(_solarViewMode==='daily'){labels=asc.map(x=>x.date);values=asc.map(x=>x.kwh||0);}
+  else if(_solarViewMode==='monthly'){const m={};asc.forEach(x=>{const k=(x.date||'').slice(0,7);if(!k)return;m[k]=(m[k]||0)+(x.kwh||0);});labels=Object.keys(m).sort();values=labels.map(k=>Math.round(m[k]));}
+  else {const y={};asc.forEach(x=>{const k=(x.date||'').slice(0,4);if(!k)return;y[k]=(y[k]||0)+(x.kwh||0);});labels=Object.keys(y).sort();values=labels.map(k=>Math.round(y[k]));}
+  dChart('chSolar');
+  charts.chSolar=new Chart(document.getElementById('chSolar'),{type:'bar',data:{labels,datasets:[{label:'kWh',data:values,backgroundColor:'rgba(234,179,8,.75)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E',font:{size:9}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}});
+}
+function openSolarModal(id){
+  document.getElementById('solar-id').value=id||'';
+  document.getElementById('solar-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('solar-kwh').value='';document.getElementById('solar-peakkw').value='';document.getElementById('solar-notes').value='';
+  if(id){
+    const item=DB.get('solarGen',[]).find(x=>x.id===id);
+    if(item){document.getElementById('solar-date').value=item.date||'';document.getElementById('solar-kwh').value=item.kwh||'';document.getElementById('solar-peakkw').value=item.peakKw||'';document.getElementById('solar-notes').value=item.notes||'';}
+  }
+  openModal('m-solar');
+}
+function saveSolar(){
+  const id=document.getElementById('solar-id').value;
+  const date=document.getElementById('solar-date').value;
+  if(!date){showToast('⚠ กรุณาระบุวันที่');return;}
+  const list=DB.get('solarGen',[]);
+  const rec={id:id||'SOLAR-'+Date.now(),date,kwh:parseFloat(document.getElementById('solar-kwh').value)||0,peakKw:parseFloat(document.getElementById('solar-peakkw').value)||0,notes:document.getElementById('solar-notes').value.trim()};
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('solarGen',list);
+  showToast('💾 บันทึกสำเร็จ');
+  closeModal('m-solar');
+  renderSolar();
+}
+function deleteSolar(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  DB.set('solarGen',DB.get('solarGen',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderSolar();
+}
+
+// ── HVAC Chiller Performance (kW/TR) ──
+function renderChiller(){
+  const list=DB.get('chillerPerf',[]).slice().sort((a,b)=>(b.datetime||'').localeCompare(a.datetime||''));
+  const tbody=document.getElementById('chiller-tbody');
+  if(tbody)tbody.innerHTML=list.length?list.map(x=>{
+    const kwtr=x.tr?Math.round((x.kw||0)/x.tr*1000)/1000:0;
+    return `<tr><td>${x.datetime||''}</td><td>${x.kw||0}</td><td>${x.tr||0}</td><td class="fw6">${kwtr||'—'}</td><td style="font-size:12px">${x.condTemp??'—'} / ${x.chwTemp??'—'}</td><td style="font-size:12px">${x.notes||'—'}</td>
+    <td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="openChillerModal('${x.id}')">✏</button><button class="btn btn-danger btn-xs" onclick="deleteChiller('${x.id}')">🗑</button></div></td></tr>`;
+  }).join(''):'<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--text3)">ยังไม่มีข้อมูล</td></tr>';
+
+  const withKwTr=list.map(x=>x.tr?((x.kw||0)/x.tr):null).filter(v=>v!=null&&isFinite(v)&&v>0);
+  const avg=withKwTr.length?withKwTr.reduce((s,v)=>s+v,0)/withKwTr.length:0;
+  const best=withKwTr.length?Math.min(...withKwTr):0;
+  const g=id=>document.getElementById(id);
+  if(g('chp-latest'))g('chp-latest').textContent=(list[0]&&list[0].tr)?(Math.round((list[0].kw||0)/list[0].tr*1000)/1000):'—';
+  if(g('chp-avg'))g('chp-avg').textContent=avg?Math.round(avg*1000)/1000:'—';
+  if(g('chp-best'))g('chp-best').textContent=best?Math.round(best*1000)/1000:'—';
+  if(g('chp-count'))g('chp-count').textContent=list.length;
+
+  const asc=list.slice().sort((a,b)=>(a.datetime||'').localeCompare(b.datetime||''));
+  dChart('chChillerPerf');
+  charts.chChillerPerf=new Chart(document.getElementById('chChillerPerf'),{type:'line',data:{labels:asc.map(x=>x.datetime),datasets:[{label:'kW/TR',data:asc.map(x=>x.tr?Math.round((x.kw||0)/x.tr*1000)/1000:null),borderColor:'#14B8A6',backgroundColor:'rgba(20,184,166,.1)',fill:true,tension:.3,pointRadius:3,spanGaps:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:8}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}});
+
+  const gs=DB.get('chillerGSheetId','');
+  const gsEl=document.getElementById('chiller-gsheet-id');
+  if(gsEl&&document.activeElement!==gsEl)gsEl.value=gs;
+}
+function openChillerModal(id){
+  document.getElementById('chiller-id').value=id||'';
+  document.getElementById('chiller-datetime').value=new Date().toISOString().slice(0,16);
+  ['chiller-kw','chiller-tr','chiller-condtemp','chiller-chwtemp','chiller-notes'].forEach(x=>document.getElementById(x).value='');
+  if(id){
+    const item=DB.get('chillerPerf',[]).find(x=>x.id===id);
+    if(item){
+      document.getElementById('chiller-datetime').value=item.datetime||'';
+      document.getElementById('chiller-kw').value=item.kw||'';
+      document.getElementById('chiller-tr').value=item.tr||'';
+      document.getElementById('chiller-condtemp').value=item.condTemp??'';
+      document.getElementById('chiller-chwtemp').value=item.chwTemp??'';
+      document.getElementById('chiller-notes').value=item.notes||'';
+    }
+  }
+  openModal('m-chiller');
+}
+function saveChiller(){
+  const id=document.getElementById('chiller-id').value;
+  const datetime=document.getElementById('chiller-datetime').value;
+  if(!datetime){showToast('⚠ กรุณาระบุวันที่/เวลา');return;}
+  const list=DB.get('chillerPerf',[]);
+  const rec={id:id||'CHP-'+Date.now(),datetime,kw:parseFloat(document.getElementById('chiller-kw').value)||0,tr:parseFloat(document.getElementById('chiller-tr').value)||0,condTemp:parseFloat(document.getElementById('chiller-condtemp').value)||null,chwTemp:parseFloat(document.getElementById('chiller-chwtemp').value)||null,notes:document.getElementById('chiller-notes').value.trim()};
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>-1)list[idx]={...list[idx],...rec}; else list.push(rec);
+  DB.set('chillerPerf',list);
+  showToast('💾 บันทึกสำเร็จ');
+  closeModal('m-chiller');
+  renderChiller();
+}
+function deleteChiller(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  DB.set('chillerPerf',DB.get('chillerPerf',[]).filter(x=>x.id!==id));
+  showToast('🗑 ลบสำเร็จ');
+  renderChiller();
+}
+function saveChillerGSheetId(){
+  DB.set('chillerGSheetId',(document.getElementById('chiller-gsheet-id').value||'').trim());
+}
+function extractGSheetId(input){
+  const m=input.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  return m?m[1]:input.trim();
+}
+function parseCSVSimple(text){
+  const rows=[];let row=[],field='',inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQuotes){
+      if(c==='"'){if(text[i+1]==='"'){field+='"';i++;}else inQuotes=false;}
+      else field+=c;
+    } else {
+      if(c==='"')inQuotes=true;
+      else if(c===','){row.push(field);field='';}
+      else if(c==='\r'){}
+      else if(c==='\n'){row.push(field);rows.push(row);row=[];field='';}
+      else field+=c;
+    }
+  }
+  if(field!==''||row.length){row.push(field);rows.push(row);}
+  return rows;
+}
+async function fetchChillerGSheet(){
+  const raw=(document.getElementById('chiller-gsheet-id').value||'').trim();
+  if(!raw){showToast('⚠ กรุณาระบุ Google Sheet Link หรือ Sheet ID');return;}
+  DB.set('chillerGSheetId',raw);
+  const id=extractGSheetId(raw);
+  const url=`https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=Sheet1`;
+  showToast('↻ กำลังดึงข้อมูลจาก Google Sheet...');
+  try{
+    const res=await fetch(url);
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const text=await res.text();
+    if(text.trim().startsWith('<'))throw new Error('ชีทไม่ได้ตั้งค่าเป็นสาธารณะ หรือไม่พบชีท');
+    const rows=parseCSVSimple(text).filter(r=>r.length&&r.some(c=>c!==''));
+    if(rows.length<2){showToast('⚠ ไม่พบข้อมูลในชีท');return;}
+    const header=rows[0].map(h=>String(h).trim().toLowerCase());
+    const idxOf=names=>{for(const n of names){const i=header.indexOf(n);if(i>-1)return i;}return -1;};
+    const iDate=idxOf(['date','วันที่','datetime']);
+    const iKw=idxOf(['kw','chiller kw']);
+    const iTr=idxOf(['tr','cooling load','load tr']);
+    const iNotes=idxOf(['notes','หมายเหตุ']);
+    if(iDate===-1||iKw===-1||iTr===-1){showToast('❌ ไม่พบคอลัมน์ Date/kW/TR ในชีท กรุณาตรวจสอบหัวตาราง');return;}
+    const list=DB.get('chillerPerf',[]);
+    let added=0;
+    rows.slice(1).forEach(r=>{
+      const date=(r[iDate]||'').trim();
+      const kw=parseFloat(r[iKw]);
+      const tr=parseFloat(r[iTr]);
+      if(!date||isNaN(kw)||isNaN(tr))return;
+      const existingIdx=list.findIndex(x=>x.datetime===date&&x.source==='gsheet');
+      const rec={id:existingIdx>-1?list[existingIdx].id:('CHP-GS-'+Date.now()+'-'+added),datetime:date,kw,tr,notes:iNotes>-1?(r[iNotes]||''):'',source:'gsheet'};
+      if(existingIdx>-1)list[existingIdx]=rec; else list.push(rec);
+      added++;
+    });
+    DB.set('chillerPerf',list);
+    showToast('✅ ดึงข้อมูลจาก Google Sheet สำเร็จ ('+added+' รายการ)');
+    renderChiller();
+  }catch(err){
+    showToast('❌ ดึงข้อมูลจาก Google Sheet ไม่สำเร็จ: '+err.message+' (ตรวจสอบว่าชีทตั้งค่า "Anyone with the link can view")');
+  }
 }
 function renderSafeStat(){
   dChart('chSafe');const mos=['ก.ย.','ต.ค.','พ.ย.','ธ.ค.','ม.ค.','ก.พ.'];
