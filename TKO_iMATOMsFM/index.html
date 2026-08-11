@@ -7673,7 +7673,7 @@ function renderWasteRecords(){
   Object.keys(WASTE_CATS).forEach(k=>catTotals[k]=0);
   scope.forEach(x=>{catTotals[x.category]=(catTotals[x.category]||0)+(x.weightKg||0);});
   dChart('chWasteCat');
-  charts.chWasteCat=new Chart(document.getElementById('chWasteCat'),{type:'doughnut',data:{labels:Object.keys(catTotals).map(k=>WASTE_CATS[k].l),datasets:[{data:Object.values(catTotals).map(v=>Math.round(v*100)/100),backgroundColor:['#8B949E','#22C55E','#EF4444','#F97316','#3B82F6'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8B949E',font:{size:10}}}}}}});
+  charts.chWasteCat=new Chart(document.getElementById('chWasteCat'),{type:'doughnut',data:{labels:Object.keys(catTotals).map(k=>WASTE_CATS[k].l),datasets:[{data:Object.values(catTotals).map(v=>Math.round(v*100)/100),backgroundColor:['#8B949E','#22C55E','#EF4444','#F97316','#3B82F6'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8B949E',font:{size:10}}}}}});
 
   const months=[...Array(6)].map((_,i)=>{const d=new Date();d.setMonth(d.getMonth()-(5-i));return d.toISOString().slice(0,7);});
   const catKeys=Object.keys(WASTE_CATS);
