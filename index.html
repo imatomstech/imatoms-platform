@@ -30,9 +30,14 @@ body{
 .orbitron{font-family:'Orbitron','Noto Sans Thai',sans-serif}
 
 /* ===== Decorative digital background (hex + grid + circuitry) ===== */
-.bgfx{position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; opacity:.55}
-.bgfx .hex{fill:none; stroke-width:1.6}
-.bgfx .grid-rect{opacity:.7}
+.bgfx{position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; opacity:.85}
+.bgfx .hex{fill:none; stroke-width:1.8}
+.bgfx .grid-rect{opacity:.9}
+.bgfx .spoke{stroke-width:1; opacity:.22}
+.bgfx .scan{animation:scanrot 26s linear infinite; transform-origin:800px 500px}
+.bgfx .pulse-dot{animation:dotpulse 3s ease-in-out infinite}
+@keyframes scanrot{from{transform:rotate(0deg)} to{transform:rotate(360deg)}}
+@keyframes dotpulse{0%,100%{opacity:.25; r:3} 50%{opacity:1; r:5}}
 
 /* everything else above the bg layer */
 .langbar,.hero,.page-title,.orbit,footer{position:relative; z-index:1}
@@ -102,34 +107,35 @@ footer span{color:var(--orange2)}
 
 /* ===== Desktop: arrange the 7 cards in an orbit around a central core ===== */
 @media(min-width:901px){
-  .orbit{display:block; position:relative; width:780px; height:780px; max-width:none; margin:64px auto 0}
-  .orbit .card{position:absolute; top:50%; left:50%; width:196px; margin:0}
-  .orbit .card:nth-child(1){transform:translate(calc(-50% + 0px), calc(-50% + -320px))}
-  .orbit .card:nth-child(2){transform:translate(calc(-50% + 250px), calc(-50% + -200px))}
-  .orbit .card:nth-child(3){transform:translate(calc(-50% + 312px), calc(-50% + 71px))}
-  .orbit .card:nth-child(4){transform:translate(calc(-50% + 139px), calc(-50% + 288px))}
-  .orbit .card:nth-child(5){transform:translate(calc(-50% + -139px), calc(-50% + 288px))}
-  .orbit .card:nth-child(6){transform:translate(calc(-50% + -312px), calc(-50% + 71px))}
-  .orbit .card:nth-child(7){transform:translate(calc(-50% + -250px), calc(-50% + -200px))}
-  .orbit .card:hover{transform:translate(-50%,-50%) translateY(-4px) scale(1.04) !important}
-  .orbit .card:nth-child(1):hover{transform:translate(calc(-50% + 0px), calc(-50% + -324px)) scale(1.04) !important}
-  .orbit .card:nth-child(2):hover{transform:translate(calc(-50% + 254px), calc(-50% + -204px)) scale(1.04) !important}
-  .orbit .card:nth-child(3):hover{transform:translate(calc(-50% + 316px), calc(-50% + 71px)) scale(1.04) !important}
-  .orbit .card:nth-child(4):hover{transform:translate(calc(-50% + 141px), calc(-50% + 292px)) scale(1.04) !important}
-  .orbit .card:nth-child(5):hover{transform:translate(calc(-50% + -141px), calc(-50% + 292px)) scale(1.04) !important}
-  .orbit .card:nth-child(6):hover{transform:translate(calc(-50% + -316px), calc(-50% + 71px)) scale(1.04) !important}
-  .orbit .card:nth-child(7):hover{transform:translate(calc(-50% + -254px), calc(-50% + -204px)) scale(1.04) !important}
+  .orbit{display:block; position:relative; width:920px; height:920px; max-width:none; margin:70px auto 0}
+  .orbit .card{position:absolute; top:50%; left:50%; width:186px; margin:0}
+  /* nth-of-type counts only <a> siblings, so the svg/core wrapper elements before the cards don't shift the index */
+  .orbit .card:nth-of-type(1){transform:translate(calc(-50% + 0px), calc(-50% + -360px))}
+  .orbit .card:nth-of-type(2){transform:translate(calc(-50% + 281px), calc(-50% + -225px))}
+  .orbit .card:nth-of-type(3){transform:translate(calc(-50% + 351px), calc(-50% + 80px))}
+  .orbit .card:nth-of-type(4){transform:translate(calc(-50% + 156px), calc(-50% + 324px))}
+  .orbit .card:nth-of-type(5){transform:translate(calc(-50% + -156px), calc(-50% + 324px))}
+  .orbit .card:nth-of-type(6){transform:translate(calc(-50% + -351px), calc(-50% + 80px))}
+  .orbit .card:nth-of-type(7){transform:translate(calc(-50% + -281px), calc(-50% + -225px))}
+  .orbit .card:nth-of-type(1):hover{transform:translate(calc(-50% + 0px), calc(-50% + -368px)) scale(1.05) !important}
+  .orbit .card:nth-of-type(2):hover{transform:translate(calc(-50% + 287px), calc(-50% + -230px)) scale(1.05) !important}
+  .orbit .card:nth-of-type(3):hover{transform:translate(calc(-50% + 359px), calc(-50% + 80px)) scale(1.05) !important}
+  .orbit .card:nth-of-type(4):hover{transform:translate(calc(-50% + 159px), calc(-50% + 332px)) scale(1.05) !important}
+  .orbit .card:nth-of-type(5):hover{transform:translate(calc(-50% + -159px), calc(-50% + 332px)) scale(1.05) !important}
+  .orbit .card:nth-of-type(6):hover{transform:translate(calc(-50% + -359px), calc(-50% + 80px)) scale(1.05) !important}
+  .orbit .card:nth-of-type(7):hover{transform:translate(calc(-50% + -287px), calc(-50% + -230px)) scale(1.05) !important}
 
   .orbit-lines{display:block; position:absolute; inset:0; width:100%; height:100%; z-index:0}
   .orbit-lines line{stroke-dasharray:3 5; animation:dashflow 2.4s linear infinite}
+  .orbit-lines circle{animation:spin 40s linear infinite; transform-origin:460px 460px}
 
   .orbit-core{display:flex; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    width:120px; height:120px; border-radius:50%; align-items:center; justify-content:center; z-index:1}
-  .orbit-core-glow{position:absolute; inset:-10px; border-radius:50%;
-    background:radial-gradient(circle,rgba(249,115,22,.5),rgba(56,189,248,.25) 55%,transparent 75%);
-    filter:blur(6px)}
+    width:140px; height:140px; border-radius:50%; align-items:center; justify-content:center; z-index:1}
+  .orbit-core-glow{position:absolute; inset:-24px; border-radius:50%;
+    background:radial-gradient(circle,rgba(249,115,22,.55),rgba(56,189,248,.3) 45%,rgba(34,197,94,.15) 65%,transparent 78%);
+    filter:blur(10px); animation:pulse 3s ease-in-out infinite}
   .orbit-core svg{width:100%; height:100%; position:relative}
-  .orbit-ring{fill:none; stroke-width:1.5; opacity:.8; transform-origin:60px 60px}
+  .orbit-ring{fill:none; stroke-width:1.5; opacity:.85; transform-origin:60px 60px}
   .orbit-ring.r1{animation:spin 16s linear infinite}
   .orbit-ring.r2{animation:spinrev 22s linear infinite}
   .orbit-core-dot{animation:pulse 2.4s ease-in-out infinite; transform-origin:60px 60px}
@@ -144,20 +150,46 @@ footer span{color:var(--orange2)}
   <svg class="bgfx" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
     <defs>
       <pattern id="gridlines" width="46" height="46" patternUnits="userSpaceOnUse">
-        <path d="M46 0H0V46" fill="none" stroke="rgba(148,197,255,0.07)" stroke-width="1"/>
+        <path d="M46 0H0V46" fill="none" stroke="rgba(148,197,255,0.10)" stroke-width="1"/>
       </pattern>
+      <radialGradient id="scanFade" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="var(--sky)" stop-opacity=".35"/>
+        <stop offset="100%" stop-color="var(--sky)" stop-opacity="0"/>
+      </radialGradient>
     </defs>
     <rect class="grid-rect" width="1600" height="1000" fill="url(#gridlines)"/>
-    <polygon class="hex" points="260.6,185 200,220 139.4,185 139.4,115 200,80 260.6,115" stroke="var(--orange)" opacity=".16"/>
-    <polygon class="hex" points="1477.9,225 1400,270 1322.1,225 1322.1,135 1400,90 1477.9,135" stroke="var(--sky)" opacity=".16"/>
-    <polygon class="hex" points="172,810 120,840 68,810 68,750 120,720 172,750" stroke="var(--green)" opacity=".16"/>
-    <polygon class="hex" points="1549.3,800 1480,840 1410.7,800 1410.7,720 1480,680 1549.3,720" stroke="var(--orange)" opacity=".14"/>
-    <polygon class="hex" points="803.3,85 760,110 716.7,85 716.7,35 760,10 803.3,35" stroke="var(--sky)" opacity=".14"/>
-    <polygon class="hex" points="876.3,982.5 820,1015 763.7,982.5 763.7,917.5 820,885 876.3,917.5" stroke="var(--green)" opacity=".14"/>
-    <circle cx="200" cy="150" r="4" fill="var(--orange)" opacity=".4"/>
-    <circle cx="1400" cy="180" r="4" fill="var(--sky)" opacity=".4"/>
-    <circle cx="120" cy="780" r="4" fill="var(--green)" opacity=".4"/>
-    <circle cx="1480" cy="760" r="4" fill="var(--orange)" opacity=".4"/>
+
+    <!-- concentric radar rings + rotating scan wedge behind the hub -->
+    <circle cx="800" cy="500" r="140" fill="none" stroke="var(--orange)" stroke-width="1" opacity=".18"/>
+    <circle cx="800" cy="500" r="240" fill="none" stroke="var(--sky)" stroke-width="1" opacity=".14"/>
+    <circle cx="800" cy="500" r="340" fill="none" stroke="var(--green)" stroke-width="1" opacity=".12"/>
+    <g class="scan"><path d="M800,500 L800,180 A320,320 0 0 1 1077,340 Z" fill="url(#scanFade)"/></g>
+
+    <!-- radiating spokes -->
+    <g class="spoke" stroke="var(--sky)">
+      <line x1="800" y1="500" x2="800" y2="60"/>
+      <line x1="800" y1="500" x2="1180" y2="280"/>
+      <line x1="800" y1="500" x2="1240" y2="640"/>
+      <line x1="800" y1="500" x2="960" y2="960"/>
+      <line x1="800" y1="500" x2="640" y2="960"/>
+      <line x1="800" y1="500" x2="360" y2="640"/>
+      <line x1="800" y1="500" x2="420" y2="280"/>
+    </g>
+
+    <polygon class="hex" points="260.6,185 200,220 139.4,185 139.4,115 200,80 260.6,115" stroke="var(--orange)" opacity=".3"/>
+    <polygon class="hex" points="1477.9,225 1400,270 1322.1,225 1322.1,135 1400,90 1477.9,135" stroke="var(--sky)" opacity=".3"/>
+    <polygon class="hex" points="172,810 120,840 68,810 68,750 120,720 172,750" stroke="var(--green)" opacity=".3"/>
+    <polygon class="hex" points="1549.3,800 1480,840 1410.7,800 1410.7,720 1480,680 1549.3,720" stroke="var(--orange)" opacity=".26"/>
+    <polygon class="hex" points="803.3,85 760,110 716.7,85 716.7,35 760,10 803.3,35" stroke="var(--sky)" opacity=".26"/>
+    <polygon class="hex" points="876.3,982.5 820,1015 763.7,982.5 763.7,917.5 820,885 876.3,917.5" stroke="var(--green)" opacity=".26"/>
+    <polygon class="hex" points="90,470 55,490 20,470 20,430 55,410 90,430" stroke="var(--green)" opacity=".22"/>
+    <polygon class="hex" points="1560,480 1525,500 1490,480 1490,440 1525,420 1560,440" stroke="var(--orange)" opacity=".22"/>
+
+    <circle class="pulse-dot" cx="200" cy="150" r="3" fill="var(--orange)"/>
+    <circle class="pulse-dot" cx="1400" cy="180" r="3" fill="var(--sky)" style="animation-delay:.6s"/>
+    <circle class="pulse-dot" cx="120" cy="780" r="3" fill="var(--green)" style="animation-delay:1.2s"/>
+    <circle class="pulse-dot" cx="1480" cy="760" r="3" fill="var(--orange)" style="animation-delay:1.8s"/>
+    <circle class="pulse-dot" cx="800" cy="120" r="3" fill="var(--sky)" style="animation-delay:2.2s"/>
   </svg>
 
   <div class="langbar">
@@ -197,7 +229,7 @@ footer span{color:var(--orange2)}
   <div class="orbit">
 
     <!-- connecting lines from core to each node (desktop only) -->
-    <svg class="orbit-lines" viewBox="0 0 780 780" xmlns="http://www.w3.org/2000/svg">
+    <svg class="orbit-lines" viewBox="0 0 920 920" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="var(--orange)"/>
@@ -205,13 +237,14 @@ footer span{color:var(--orange2)}
           <stop offset="100%" stop-color="var(--green)"/>
         </linearGradient>
       </defs>
-      <line x1="390" y1="390" x2="390" y2="90" stroke="url(#lg)" stroke-width="1.4" opacity=".35"/>
-      <line x1="390" y1="390" x2="610" y2="210" stroke="url(#lg)" stroke-width="1.4" opacity=".35"/>
-      <line x1="390" y1="390" x2="670" y2="440" stroke="url(#lg)" stroke-width="1.4" opacity=".35"/>
-      <line x1="390" y1="390" x2="510" y2="640" stroke="url(#lg)" stroke-width="1.4" opacity=".35"/>
-      <line x1="390" y1="390" x2="270" y2="640" stroke="url(#lg)" stroke-width="1.4" opacity=".35"/>
-      <line x1="390" y1="390" x2="110" y2="440" stroke="url(#lg)" stroke-width="1.4" opacity=".35"/>
-      <line x1="390" y1="390" x2="170" y2="210" stroke="url(#lg)" stroke-width="1.4" opacity=".35"/>
+      <circle cx="460" cy="460" r="215" fill="none" stroke="var(--sky)" stroke-width="1" stroke-dasharray="2 10" opacity=".3"/>
+      <line x1="460" y1="460" x2="460" y2="150" stroke="url(#lg)" stroke-width="1.4" opacity=".4"/>
+      <line x1="460" y1="460" x2="712" y2="272" stroke="url(#lg)" stroke-width="1.4" opacity=".4"/>
+      <line x1="460" y1="460" x2="778" y2="497" stroke="url(#lg)" stroke-width="1.4" opacity=".4"/>
+      <line x1="460" y1="460" x2="600" y2="722" stroke="url(#lg)" stroke-width="1.4" opacity=".4"/>
+      <line x1="460" y1="460" x2="320" y2="722" stroke="url(#lg)" stroke-width="1.4" opacity=".4"/>
+      <line x1="460" y1="460" x2="142" y2="497" stroke="url(#lg)" stroke-width="1.4" opacity=".4"/>
+      <line x1="460" y1="460" x2="208" y2="272" stroke="url(#lg)" stroke-width="1.4" opacity=".4"/>
     </svg>
 
     <!-- central glowing core (desktop only) -->
