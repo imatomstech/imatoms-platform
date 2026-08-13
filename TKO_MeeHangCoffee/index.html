@@ -3,24 +3,2291 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TKO MeeHang Coffee — Coming Soon</title>
+<title>MEE HANG TALK & COFFEE — ร้านกาแฟคู่ห้องประชุมส่วนตัว</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;
-  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;text-align:center;padding:24px}
-.icon{width:64px;height:64px;background:linear-gradient(135deg,#f97316,#ef4444);border-radius:16px;
-  display:flex;align-items:center;justify-content:center;font-size:32px}
-h1{font-size:26px;color:#fff}
-.sub{font-size:14px;color:#64748b}
-.badge{padding:6px 16px;border-radius:20px;background:#1e2330;border:1px solid #2d3748;color:#f97316;font-size:12px;font-weight:700;letter-spacing:1px;margin-top:8px}
-a.back{margin-top:20px;color:#60a5fa;text-decoration:none;font-size:13px}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange: #E8813A;
+    --orange-light: #F4A96A;
+    --orange-pale: #FEF0E6;
+    --orange-dark: #C46220;
+    --blue: #2B7FC0;
+    --blue-light: #5BA3D8;
+    --blue-pale: #EBF4FC;
+    --blue-dark: #1A5C90;
+    --text: #3A3530;
+    --text-muted: #8A8480;
+    --border: #DDE8F5;
+    --bg: #F5F8FC;
+    --bg-warm: #FEF9F5;
+    --white: #FFFFFF;
+    --green: #2E9E6E;
+    --green-pale: #E4F7EE;
+    --radius: 18px;
+    --shadow: 0 2px 14px rgba(43,127,192,0.10);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.6;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-bottom: 100px;
+  }
+
+  /* NAV */
+  nav {
+    background: var(--white);
+    border-bottom: 1.5px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+  }
+  .nav-logo {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--orange-dark);
+    letter-spacing: 0.5px;
+  }
+  .nav-links { display: flex; gap: 16px; list-style: none; }
+  .nav-links a {
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .nav-links a:hover { color: var(--blue); }
+
+  /* HERO */
+  .hero {
+    padding: 48px 24px 44px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    background: #1A3040;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+  }
+  .hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg,
+      rgba(15,28,45,0.62) 0%,
+      rgba(20,38,60,0.50) 40%,
+      rgba(10,20,35,0.72) 100%);
+  }
+  .hero-content {
+    position: relative;
+    z-index: 2;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.16);
+    color: #B8D8F5;
+    font-size: 12px;
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+    letter-spacing: 0.8px;
+  }
+  .hero h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #FFFFFF;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .hero h1 span { color: #FFB87A; }
+  .hero p {
+    font-size: 15px;
+    color: rgba(255,255,255,0.82);
+    margin-bottom: 28px;
+    font-weight: 300;
+  }
+  .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    background: var(--orange);
+    color: white;
+    border: none;
+    padding: 13px 24px;
+    border-radius: 50px;
+    font-size: 15px;
+    font-family: 'Sarabun', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+  }
+  .btn-primary:hover { background: var(--orange-dark); }
+  .btn-outline {
+    background: transparent;
+    color: white;
+    border: 1.5px solid rgba(255,255,255,0.5);
+    padding: 12px 22px;
+    border-radius: 50px;
+    font-size: 15px;
+    font-family: 'Sarabun', sans-serif;
+    font-weight: 400;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-outline:hover { background: rgba(255,255,255,0.1); }
+
+  /* SECTIONS */
+  section { padding: 28px 18px; }
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--blue);
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    margin-bottom: 4px;
+  }
+  .section-title {
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 18px;
+  }
+  .section-divider { height: 6px; background: var(--border); opacity: 0.5; }
+
+  /* COFFEE MENU CARDS */
+  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .menu-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .menu-card.featured { border-color: var(--orange-light); }
+
+  /* Coffee SVG illustration area */
+  .coffee-img {
+    width: 100%;
+    height: 120px;
+    background: var(--blue-pale);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .menu-card.featured .coffee-img { background: var(--orange-pale); }
+
+  .sticker {
+    position: absolute;
+    bottom: 7px; right: 7px;
+    background: var(--orange);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    letter-spacing: 0.5px;
+    transform: rotate(-4deg);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  }
+  .featured-badge {
+    position: absolute;
+    top: 8px; left: 8px;
+    background: var(--orange);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 10px;
+    display: flex; align-items: center; gap: 3px;
+  }
+
+  .menu-body { padding: 12px 12px 14px; flex: 1; display: flex; flex-direction: column; }
+  .menu-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .menu-desc { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4; flex: 1; }
+
+  .price-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 8px;
+  }
+  .price-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+  }
+  .price-label {
+    color: var(--text-muted);
+    display: flex; align-items: center; gap: 3px;
+  }
+  .price-hot { color: var(--orange-dark); font-weight: 700; font-size: 14px; }
+  .price-cold { color: var(--blue); font-weight: 700; font-size: 14px; }
+
+  .shot-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--blue-pale);
+    color: var(--blue-dark);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    width: fit-content;
+  }
+
+  /* OTHER MENU */
+  .other-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .other-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .other-img {
+    width: 100%;
+    height: 90px;
+    background: var(--blue-pale);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .other-body { padding: 10px 12px 12px; }
+  .other-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .other-desc { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; line-height: 1.3; }
+  .other-price { font-size: 15px; font-weight: 700; color: var(--orange-dark); }
+
+  /* MEETING ROOMS */
+  .room-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .room-header {
+    background: linear-gradient(135deg, #1A3A5C 0%, #2B5F96 100%);
+    padding: 20px 20px 16px;
+    position: relative;
+  }
+  .room-badge-avail {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--green-pale);
+    color: var(--green);
+    font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px; margin-bottom: 10px;
+  }
+  .room-badge-avail::before {
+    content: ''; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--green); display: inline-block;
+  }
+  .room-name { font-size: 18px; font-weight: 700; color: white; margin-bottom: 4px; }
+  .room-sub { font-size: 13px; color: rgba(255,255,255,0.65); }
+  .room-capacity { position: absolute; top: 20px; right: 20px; text-align: center; }
+  .cap-num { font-size: 28px; font-weight: 700; color: #FFB87A; line-height: 1; }
+  .cap-label { font-size: 11px; color: rgba(255,255,255,0.55); }
+  .room-body { padding: 16px 18px 20px; }
+  .room-features { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .feature-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--text); }
+  .feature-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--blue-pale);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .room-includes {
+    background: var(--bg);
+    border-radius: 10px; padding: 10px 14px;
+    font-size: 12px; color: var(--text-muted); margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+  .room-includes strong { color: var(--text); font-weight: 600; }
+  .room-price-row { display: flex; align-items: center; justify-content: space-between; }
+  .room-price { font-size: 22px; font-weight: 700; color: var(--orange-dark); }
+  .room-price span { font-size: 13px; font-weight: 400; color: var(--text-muted); }
+  .btn-book {
+    background: var(--orange);
+    color: white; border: none;
+    padding: 10px 20px; border-radius: 50px;
+    font-size: 14px; font-family: 'Sarabun', sans-serif; font-weight: 600;
+    cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .btn-book:hover { background: var(--orange-dark); }
+
+  .amenities {
+    background: var(--blue-pale);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1.5px solid var(--border);
+  }
+  .amenities-title { font-size: 13px; font-weight: 700; color: var(--blue-dark); margin-bottom: 10px; }
+  .amenities-list { display: flex; flex-wrap: wrap; gap: 7px; }
+  .amenity-pill {
+    background: white;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 12px;
+    padding: 4px 12px; border-radius: 20px;
+  }
+
+  /* ROOM STATUS BADGE (toggleable) */
+  .room-badge-avail { cursor: pointer; user-select: none; transition: opacity 0.2s; }
+  .room-badge-avail:active { opacity: 0.7; }
+  .badge-busy {
+    background: #FDECEA !important;
+    color: #C0392B !important;
+  }
+  .badge-busy::before { background: #C0392B !important; }
+  .status-hint {
+    font-size: 11px; color: var(--text-muted);
+    text-align: right; margin-top: 6px; margin-bottom: 12px;
+  }
+
+  /* GALLERY */
+  .gallery-wrap {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow);
+    margin-bottom: 14px;
+  }
+  .gallery-track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0;
+  }
+  .gallery-track::-webkit-scrollbar { display: none; }
+  .gallery-slide {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    position: relative;
+    height: 240px;
+    overflow: hidden;
+  }
+  .gallery-slide img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .slide-caption {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(10,20,35,0.78));
+    color: white;
+    padding: 24px 14px 12px;
+    font-size: 13px;
+    font-weight: 400;
+  }
+  .slide-caption strong { display: block; font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .parking-badge {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: rgba(46,158,110,0.92);
+    color: white;
+    font-size: 11px; font-weight: 700;
+    padding: 4px 10px; border-radius: 20px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .gallery-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 10px 0 4px;
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .dot.active { background: var(--orange); transform: scale(1.3); }
+  .gallery-arrows {
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 10px;
+    pointer-events: none;
+  }
+  .arrow-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.85);
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    pointer-events: all;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .gallery-caption {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .gallery-caption strong { color: var(--text); font-weight: 700; }
+
+  /* BOOKING */
+  .booking-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .booking-header {
+    background: linear-gradient(135deg, #1A3A5C 0%, #2B7FC0 100%);
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .booking-header-icon { font-size: 28px; }
+  .booking-header-text { color: white; }
+  .booking-header-text h3 { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+  .booking-header-text p { font-size: 12px; opacity: 0.75; }
+  .booking-body { padding: 18px; }
+  .booking-form { display: flex; flex-direction: column; gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--text); }
+  .form-input, .form-select, .form-textarea {
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--blue);
+  }
+  .form-textarea { resize: vertical; min-height: 70px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn-submit {
+    background: var(--orange);
+    color: white; border: none;
+    padding: 14px; border-radius: 50px;
+    font-size: 15px; font-family: 'Sarabun', sans-serif; font-weight: 700;
+    cursor: pointer; width: 100%;
+    transition: background 0.2s;
+  }
+  .btn-submit:hover { background: var(--orange-dark); }
+  .booking-note {
+    background: var(--blue-pale);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--blue-dark);
+    border: 1px solid var(--border);
+  }
+  .form-success {
+    display: none;
+    text-align: center;
+    padding: 24px 16px;
+    color: var(--green);
+  }
+  .form-success .success-icon { font-size: 40px; margin-bottom: 8px; }
+  .form-success p { font-size: 15px; font-weight: 600; }
+
+  /* LOCATION */
+  .map-wrap {
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1.5px solid var(--border);
+    margin-bottom: 14px;
+    height: 200px;
+  }
+  .map-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
+  .info-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+  }
+  .info-row {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--bg);
+  }
+  .info-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .info-row:first-child { padding-top: 0; }
+  .info-emoji { font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+  .info-text { font-size: 14px; color: var(--text); line-height: 1.5; }
+  .info-text strong { font-weight: 700; color: var(--text); display: block; margin-bottom: 1px; }
+
+  /* STICKY CALL */
+  .sticky-call {
+    position: fixed; bottom: 18px;
+    left: 50%; transform: translateX(-50%);
+    z-index: 200;
+    width: calc(100% - 36px); max-width: 444px;
+  }
+  .sticky-call a {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: linear-gradient(90deg, var(--orange) 0%, #F4A030 100%);
+    color: white; text-decoration: none;
+    padding: 16px; border-radius: 50px;
+    font-size: 16px; font-family: 'Sarabun', sans-serif; font-weight: 700;
+    box-shadow: 0 4px 20px rgba(232,129,58,0.45);
+  }
+
+  footer {
+    background: #1A3040;
+    color: rgba(255,255,255,0.6);
+    text-align: center;
+    padding: 28px 20px;
+    font-size: 13px; line-height: 1.9;
+  }
+  footer strong { color: white; font-weight: 700; }
+
+  @media (min-width: 481px) {
+    body { border-left: 1.5px solid var(--border); border-right: 1.5px solid var(--border); }
+  }
+
+  /* ===== THAI DESSERT MENU ===== */
+  .dessert-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .dessert-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .dessert-img {
+    width: 100%; height: 90px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .dessert-body { padding: 10px 12px 13px; }
+  .dessert-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .dessert-desc { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; line-height: 1.35; }
+  .dessert-price { font-size: 15px; font-weight: 700; color: #C84A8A; }
+
+  /* ===== LOYALTY CARDS ===== */
+  .loyalty-tabs {
+    display: flex; gap: 8px; margin-bottom: 16px;
+  }
+  .ltab {
+    flex: 1; padding: 10px 6px; border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    font-size: 13px; font-weight: 600; text-align: center;
+    cursor: pointer; color: var(--text-muted);
+    transition: all 0.2s; font-family: 'Sarabun', sans-serif;
+  }
+  .ltab.active { background: var(--orange); color: white; border-color: var(--orange); }
+  .loyalty-panel { display: none; }
+  .loyalty-panel.active { display: block; }
+  .lcard {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .lcard-header {
+    padding: 16px 18px 14px;
+    background: linear-gradient(135deg, #5A3010 0%, #E8813A 100%);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .lcard-header.blue { background: linear-gradient(135deg, #1A3A5C 0%, #2B7FC0 100%); }
+  .lcard-icon { font-size: 32px; }
+  .lcard-title { color: white; }
+  .lcard-title h3 { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+  .lcard-title p { font-size: 12px; opacity: 0.75; }
+  .lcard-body { padding: 16px 18px 18px; }
+  .member-info {
+    background: var(--bg);
+    border-radius: 10px; padding: 10px 14px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .member-id { font-weight: 700; color: var(--orange-dark); font-size: 15px; }
+  .stamp-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 8px; margin-bottom: 14px;
+  }
+  .stamp {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    background: var(--bg);
+    transition: all 0.3s;
+    cursor: default;
+  }
+  .stamp.filled { background: var(--orange-pale); border-color: var(--orange); }
+  .stamp.filled.blue-fill { background: var(--blue-pale); border-color: var(--blue); }
+  .stamp-progress {
+    font-size: 12px; color: var(--text-muted); margin-bottom: 12px; text-align: center;
+  }
+  .stamp-progress strong { color: var(--orange-dark); }
+  .btn-redeem {
+    width: 100%; padding: 12px;
+    background: var(--green);
+    color: white; border: none;
+    border-radius: 50px;
+    font-size: 14px; font-family: 'Sarabun', sans-serif; font-weight: 700;
+    cursor: pointer; display: none;
+  }
+  .btn-redeem.show { display: block; }
+  .btn-add-stamp {
+    width: 100%; padding: 11px;
+    background: none; border: 1.5px dashed var(--orange);
+    color: var(--orange-dark);
+    border-radius: 50px;
+    font-size: 13px; font-family: 'Sarabun', sans-serif; font-weight: 600;
+    cursor: pointer; margin-top: 8px;
+  }
+
+  /* MEMBER REGISTER */
+  .reg-card {
+    background: var(--blue-pale);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1.5px solid var(--border);
+  }
+  .reg-title { font-size: 14px; font-weight: 700; color: var(--blue-dark); margin-bottom: 12px; }
+  .reg-form { display: flex; flex-direction: column; gap: 10px; }
+  .reg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn-register {
+    background: var(--blue);
+    color: white; border: none;
+    padding: 12px; border-radius: 50px;
+    font-size: 14px; font-family: 'Sarabun', sans-serif; font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* ===== FEEDBACK ===== */
+  .feedback-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .feedback-header {
+    background: linear-gradient(135deg, #2A1A40 0%, #5A3A8A 100%);
+    padding: 16px 18px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .feedback-header-text { color: white; }
+  .feedback-header-text h3 { font-size: 16px; font-weight: 700; }
+  .feedback-header-text p { font-size: 12px; opacity: 0.7; }
+  .feedback-body { padding: 18px; }
+  .star-row {
+    display: flex; gap: 8px; justify-content: center;
+    margin-bottom: 16px;
+  }
+  .star-btn {
+    font-size: 32px; cursor: pointer;
+    filter: grayscale(1) opacity(0.35);
+    transition: transform 0.15s, filter 0.15s;
+    background: none; border: none; padding: 0;
+    line-height: 1;
+  }
+  .star-btn.lit { filter: grayscale(0) opacity(1); transform: scale(1.15); }
+  .rating-label {
+    text-align: center; font-size: 14px; font-weight: 600;
+    margin-bottom: 14px; min-height: 22px;
+    color: var(--text);
+  }
+  .complaint-notice {
+    display: none;
+    background: #FFF3F3;
+    border: 1.5px solid #F5C6C6;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px; color: #A02020;
+    margin-bottom: 12px;
+  }
+  .complaint-notice.show { display: block; }
+  .privacy-note {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 11px; color: var(--text-muted);
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+  .btn-send-feedback {
+    width: 100%; padding: 13px;
+    background: #5A3A8A;
+    color: white; border: none;
+    border-radius: 50px;
+    font-size: 15px; font-family: 'Sarabun', sans-serif; font-weight: 700;
+    cursor: pointer;
+  }
+  .feedback-success {
+    display: none; text-align: center; padding: 20px;
+  }
+  .feedback-success .fb-icon { font-size: 40px; margin-bottom: 8px; }
 </style>
 </head>
 <body>
-  <div class="icon">☕</div>
-  <h1>TKO MeeHang Coffee</h1>
-  <div class="sub">มีฮัง คอฟฟี่ — TKO Technology</div>
-  <div class="badge">🚧 COMING SOON</div>
-  <a class="back" href="/">← กลับสู่ TKO iMATOMs Platform</a>
+<a href="/" style="position:fixed;top:12px;left:12px;z-index:600;display:flex;align-items:center;gap:5px;
+  background:var(--white);border:1.5px solid var(--border);border-radius:999px;padding:6px 12px 6px 10px;
+  color:var(--orange-dark);text-decoration:none;font-size:11px;font-weight:700;font-family:'Sarabun',sans-serif;
+  box-shadow:var(--shadow);transition:.2s"
+  onmouseover="this.style.borderColor='var(--orange)';this.style.background='var(--orange-pale)'"
+  onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--white)'">
+  <span style="font-size:12px">←</span> กลับสู่ TKO iMATOMs Platform
+</a>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-logo">MEE HANG ☕</span>
+  <ul class="nav-links">
+    <li><a href="#menu">เมนู</a></li>
+    <li><a href="#rooms">ห้อง</a></li>
+    <li><a href="#loyalty">แต้ม</a></li>
+    <li><a href="#feedback">รีวิว</a></li>
+    <li><a href="#location">ที่ตั้ง</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+
+  <!-- SVG countryside landscape background -->
+  <svg class="hero-bg" viewBox="0 0 480 320" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <!-- Sky gradient -->
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0D1F35"/>
+        <stop offset="55%" stop-color="#1A4A7A"/>
+        <stop offset="100%" stop-color="#2E7BB8" stop-opacity="0.7"/>
+      </linearGradient>
+      <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#FFD080"/>
+        <stop offset="100%" stop-color="#E8813A" stop-opacity="0.0"/>
+      </linearGradient>
+      <linearGradient id="field1" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#4A8C3A"/>
+        <stop offset="100%" stop-color="#2A5A1E"/>
+      </linearGradient>
+      <linearGradient id="field2" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#5EA84A"/>
+        <stop offset="100%" stop-color="#3A7228"/>
+      </linearGradient>
+      <linearGradient id="field3" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#80C060"/>
+        <stop offset="100%" stop-color="#4A8C38"/>
+      </linearGradient>
+      <radialGradient id="glow" cx="72%" cy="28%" r="35%">
+        <stop offset="0%" stop-color="#FFB040" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#E8813A" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+
+    <!-- Sky -->
+    <rect width="480" height="320" fill="url(#sky)"/>
+
+    <!-- Sun glow -->
+    <ellipse cx="346" cy="88" rx="90" ry="70" fill="url(#glow)"/>
+    <ellipse cx="346" cy="88" rx="24" ry="24" fill="#FFD890" opacity="0.9"/>
+    <ellipse cx="346" cy="88" rx="14" ry="14" fill="#FFF0B0" opacity="0.95"/>
+
+    <!-- Stars / dots in sky -->
+    <circle cx="40" cy="30" r="1" fill="white" opacity="0.5"/>
+    <circle cx="90" cy="18" r="1.2" fill="white" opacity="0.45"/>
+    <circle cx="160" cy="25" r="0.8" fill="white" opacity="0.4"/>
+    <circle cx="220" cy="12" r="1" fill="white" opacity="0.5"/>
+    <circle cx="60" cy="55" r="0.7" fill="white" opacity="0.35"/>
+    <circle cx="130" cy="42" r="1" fill="white" opacity="0.4"/>
+
+    <!-- Distant city skyline (far background, misty) -->
+    <g opacity="0.22" fill="#A8C8E8">
+      <rect x="30" y="120" width="8" height="28"/>
+      <rect x="40" y="112" width="12" height="36"/>
+      <rect x="54" y="118" width="6" height="30"/>
+      <rect x="62" y="108" width="10" height="40"/>
+      <rect x="74" y="115" width="7" height="33"/>
+      <rect x="83" y="105" width="14" height="43"/>
+      <rect x="99" y="118" width="6" height="30"/>
+      <rect x="107" y="110" width="10" height="38"/>
+      <rect x="119" y="120" width="8" height="28"/>
+      <!-- Windows on buildings -->
+      <rect x="42" y="116" width="2" height="2" fill="white" opacity="0.6"/>
+      <rect x="46" y="116" width="2" height="2" fill="white" opacity="0.6"/>
+      <rect x="42" y="122" width="2" height="2" fill="white" opacity="0.4"/>
+      <rect x="86" y="110" width="2" height="2" fill="white" opacity="0.6"/>
+      <rect x="90" y="110" width="2" height="2" fill="white" opacity="0.5"/>
+      <rect x="86" y="116" width="2" height="2" fill="white" opacity="0.4"/>
+      <rect x="64" y="112" width="2" height="2" fill="white" opacity="0.5"/>
+    </g>
+
+    <!-- Distant mist layer over city -->
+    <rect x="0" y="130" width="480" height="30" fill="#1A4A7A" opacity="0.35"/>
+
+    <!-- Far forest line (dark, misty) -->
+    <!-- Left forest mass -->
+    <ellipse cx="30" cy="158" rx="38" ry="22" fill="#1A3A22" opacity="0.85"/>
+    <ellipse cx="70" cy="152" rx="45" ry="26" fill="#1E4228" opacity="0.9"/>
+    <ellipse cx="110" cy="156" rx="40" ry="22" fill="#1A3A22" opacity="0.85"/>
+    <!-- Right forest mass -->
+    <ellipse cx="370" cy="154" rx="42" ry="24" fill="#1A3A22" opacity="0.85"/>
+    <ellipse cx="415" cy="150" rx="50" ry="28" fill="#1E4228" opacity="0.9"/>
+    <ellipse cx="460" cy="158" rx="38" ry="22" fill="#1A3A22" opacity="0.85"/>
+
+    <!-- Mid forest trees (left) -->
+    <g fill="#244A2C">
+      <!-- Triangle trees left group -->
+      <polygon points="0,210 18,155 36,210"/>
+      <polygon points="15,210 35,148 55,210"/>
+      <polygon points="32,210 54,152 76,210"/>
+      <polygon points="52,210 72,158 92,210"/>
+      <polygon points="70,210 88,162 106,210"/>
+      <!-- Layer 2 left -->
+      <polygon points="5,210 20,168 35,210" fill="#2E5E38"/>
+      <polygon points="28,210 46,162 64,210" fill="#2E5E38"/>
+      <polygon points="58,210 74,170 90,210" fill="#2E5E38"/>
+    </g>
+
+    <!-- Mid forest trees (right) -->
+    <g fill="#244A2C">
+      <polygon points="374,210 394,155 414,210"/>
+      <polygon points="395,210 416,148 437,210"/>
+      <polygon points="418,210 440,154 462,210"/>
+      <polygon points="440,210 460,160 480,210"/>
+      <polygon points="458,210 472,165 480,210"/>
+      <!-- Layer 2 right -->
+      <polygon points="380,210 396,168 412,210" fill="#2E5E38"/>
+      <polygon points="408,210 426,162 444,210" fill="#2E5E38"/>
+      <polygon points="448,210 464,170 480,210" fill="#2E5E38"/>
+    </g>
+
+    <!-- Rolling hills / fields - back -->
+    <path d="M0 200 Q60 178 120 192 Q180 206 240 188 Q300 170 360 190 Q420 210 480 196 L480 320 L0 320Z" fill="url(#field1)" opacity="0.9"/>
+
+    <!-- Rolling hills / fields - mid -->
+    <path d="M0 218 Q50 200 110 212 Q170 224 230 208 Q290 192 350 210 Q410 228 480 214 L480 320 L0 320Z" fill="url(#field2)"/>
+
+    <!-- Rice/grass field rows (texture) -->
+    <g stroke="#3A7228" stroke-width="0.7" opacity="0.5">
+      <path d="M20 240 Q120 232 220 238 Q320 244 460 236"/>
+      <path d="M0 252 Q100 244 200 250 Q300 256 480 248"/>
+      <path d="M10 264 Q110 256 210 262 Q310 268 470 260"/>
+      <path d="M0 276 Q100 268 200 274 Q300 280 480 272"/>
+    </g>
+
+    <!-- Foreground meadow -->
+    <path d="M0 255 Q60 238 130 248 Q200 258 270 244 Q340 230 410 248 Q450 258 480 250 L480 320 L0 320Z" fill="url(#field3)"/>
+
+    <!-- Foreground wild grass tufts -->
+    <g fill="#5EA84A" opacity="0.7">
+      <path d="M15 270 Q18 258 21 270"/>
+      <path d="M18 270 Q22 254 26 270"/>
+      <path d="M22 270 Q25 260 28 270"/>
+      <path d="M55 265 Q58 252 61 265"/>
+      <path d="M59 266 Q63 250 67 266"/>
+      <path d="M150 272 Q153 260 156 272"/>
+      <path d="M154 272 Q158 255 162 272"/>
+      <path d="M260 268 Q263 254 266 268"/>
+      <path d="M264 268 Q268 252 272 268"/>
+      <path d="M380 270 Q383 256 386 270"/>
+      <path d="M384 271 Q388 254 392 271"/>
+      <path d="M440 266 Q443 252 446 266"/>
+      <path d="M444 267 Q448 250 452 267"/>
+      <path d="M460 272 Q463 260 466 272"/>
+    </g>
+
+    <!-- Small flowers in foreground -->
+    <g opacity="0.65">
+      <circle cx="40" cy="278" r="2.5" fill="#FFD060"/>
+      <circle cx="80" cy="282" r="2" fill="#FF8080"/>
+      <circle cx="130" cy="276" r="2.5" fill="#FFD060"/>
+      <circle cx="200" cy="280" r="2" fill="#FFFFFF" opacity="0.8"/>
+      <circle cx="280" cy="275" r="2.5" fill="#FFD060"/>
+      <circle cx="340" cy="283" r="2" fill="#FF8080"/>
+      <circle cx="400" cy="278" r="2" fill="#FFFFFF" opacity="0.8"/>
+      <circle cx="450" cy="276" r="2.5" fill="#FFD060"/>
+    </g>
+
+    <!-- Path/trail through fields -->
+    <path d="M200 320 Q220 285 240 265 Q260 250 290 320" fill="#5A8040" opacity="0.3"/>
+
+    <!-- Warm morning mist at horizon -->
+    <rect x="0" y="175" width="480" height="30" fill="#E8813A" opacity="0.07"/>
+    <rect x="0" y="188" width="480" height="20" fill="#FFD080" opacity="0.05"/>
+
+    <!-- Orange sun rays -->
+    <g stroke="#FFB040" stroke-width="0.8" opacity="0.2">
+      <line x1="346" y1="88" x2="150" y2="160"/>
+      <line x1="346" y1="88" x2="0" y2="180"/>
+      <line x1="346" y1="88" x2="80" y2="220"/>
+      <line x1="346" y1="88" x2="480" y2="170"/>
+      <line x1="346" y1="88" x2="400" y2="230"/>
+    </g>
+  </svg>
+
+  <div class="hero-overlay"></div>
+
+  <div class="hero-content">
+    <div class="hero-badge">TALK & COFFEE</div>
+    <h1>MEE HANG<br><span>TALK & COFFEE</span></h1>
+    <p>ร้านกาแฟอบอุ่น คู่ห้องประชุมส่วนตัว<br>เหมาะสำหรับนัดคุยงาน ประชุมทีม หรือทำงานคนเดียว</p>
+    <div class="hero-btns">
+      <a href="tel:+66925241749" class="btn-primary">📞 โทรจองห้อง</a>
+      <a href="#rooms" class="btn-outline">🚪 ดูห้องประชุม</a>
+    </div>
+  </div>
+</section>
+
+<!-- COFFEE MENU -->
+<section id="menu">
+  <div class="section-label">Coffee Menu</div>
+  <div class="section-title">☕ กาแฟยอดนิยม</div>
+  <div class="menu-grid">
+
+    <!-- Americano -->
+    <div class="menu-card featured">
+      <div class="coffee-img">
+        <svg width="80" height="90" viewBox="0 0 80 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="40" cy="20" rx="26" ry="6" fill="#C8A882" opacity="0.4"/>
+          <path d="M16 22 Q14 60 20 72 Q28 82 40 82 Q52 82 60 72 Q66 60 64 22 Z" fill="#6B3A1F"/>
+          <path d="M18 22 Q16 58 22 70 Q30 80 40 80 Q50 80 58 70 Q64 58 62 22 Z" fill="#7D4422"/>
+          <ellipse cx="40" cy="22" rx="22" ry="5" fill="#3D1A06"/>
+          <ellipse cx="40" cy="22" rx="19" ry="3.5" fill="#2A1005" opacity="0.8"/>
+          <path d="M36 19 Q40 16 44 19" stroke="#6B3A1F" stroke-width="1.5" fill="none" opacity="0.6"/>
+          <ellipse cx="40" cy="22" rx="8" ry="2" fill="#1A0800" opacity="0.5"/>
+          <path d="M62 38 Q72 36 72 44 Q72 52 62 52" stroke="#6B3A1F" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <rect x="24" y="80" width="32" height="5" rx="2.5" fill="#5A3010"/>
+        </svg>
+        <div class="sticker">MEE HANG</div>
+        <div class="featured-badge">⭐ แนะนำ</div>
+      </div>
+      <div class="menu-body">
+        <div class="menu-name">Americano</div>
+        <div class="menu-desc">เข้มกลาง · รสสะอาด กลมกล่อม</div>
+        <div class="price-row">
+          <div class="price-line">
+            <span class="price-label">🔴 ร้อน</span>
+            <span class="price-hot">65 ฿</span>
+          </div>
+          <div class="price-line">
+            <span class="price-label">🔵 เย็น</span>
+            <span class="price-cold">70 ฿</span>
+          </div>
+        </div>
+        <div class="shot-badge">☕ +Shot 5 ฿</div>
+      </div>
+    </div>
+
+    <!-- Espresso -->
+    <div class="menu-card">
+      <div class="coffee-img">
+        <svg width="72" height="80" viewBox="0 0 72 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 28 Q16 52 22 62 Q28 70 36 70 Q44 70 50 62 Q56 52 54 28 Z" fill="#4A2010"/>
+          <path d="M19 28 Q17 50 23 60 Q29 68 36 68 Q43 68 49 60 Q55 50 53 28 Z" fill="#5C2A14"/>
+          <ellipse cx="36" cy="28" rx="18" ry="4" fill="#2A0E05"/>
+          <ellipse cx="36" cy="28" rx="14" ry="2.5" fill="#1A0800"/>
+          <path d="M32 26 Q35 23 39 26 Q36 29 32 26Z" fill="#8B4513" opacity="0.5"/>
+          <path d="M53 40 Q61 38 61 44 Q61 50 53 50" stroke="#5C2A14" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <rect x="23" y="68" width="26" height="5" rx="2.5" fill="#4A2010"/>
+          <ellipse cx="36" cy="73" rx="16" ry="3" fill="#3A1A08"/>
+          <path d="M30 10 Q33 4 36 10 Q39 16 42 10" stroke="#C8A882" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="0.6"/>
+        </svg>
+        <div class="sticker">MEE HANG</div>
+      </div>
+      <div class="menu-body">
+        <div class="menu-name">Espresso</div>
+        <div class="menu-desc">ช็อต · เข้มข้น กลิ่นหอมเต็มคัพ</div>
+        <div class="price-row">
+          <div class="price-line">
+            <span class="price-label">🔴 ร้อน</span>
+            <span class="price-hot">55 ฿</span>
+          </div>
+          <div class="price-line">
+            <span class="price-label">🔵 เย็น</span>
+            <span class="price-cold">60 ฿</span>
+          </div>
+        </div>
+        <div class="shot-badge">☕ +Shot 5 ฿</div>
+      </div>
+    </div>
+
+    <!-- Latte -->
+    <div class="menu-card">
+      <div class="coffee-img">
+        <svg width="76" height="90" viewBox="0 0 76 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 18 Q12 62 20 74 Q28 84 38 84 Q48 84 56 74 Q64 62 62 18 Z" fill="#D4A96A"/>
+          <path d="M16 18 Q14 60 22 72 Q30 82 38 82 Q46 82 54 72 Q62 60 60 18 Z" fill="#E8C48A"/>
+          <ellipse cx="38" cy="18" rx="24" ry="5.5" fill="#F5DEB3"/>
+          <ellipse cx="38" cy="18" rx="20" ry="3.5" fill="#FAEBD7"/>
+          <path d="M28 16 Q33 12 38 16 Q43 20 48 16" stroke="#D4A96A" stroke-width="1.5" fill="none" opacity="0.7"/>
+          <path d="M30 14 Q36 10 38 14 Q40 18 38 18 Q34 16 30 14Z" fill="#8B4513" opacity="0.3"/>
+          <path d="M60 36 Q70 34 70 42 Q70 50 60 50" stroke="#D4A96A" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <rect x="22" y="82" width="32" height="5" rx="2.5" fill="#C8A06A"/>
+          <path d="M33 10 Q36 5 39 10 Q37 14 33 10Z" fill="#E8C48A" opacity="0.5"/>
+        </svg>
+        <div class="sticker">MEE HANG</div>
+      </div>
+      <div class="menu-body">
+        <div class="menu-name">Latte</div>
+        <div class="menu-desc">ครีมมี่ · นมเยอะ นุ่มลิ้น</div>
+        <div class="price-row">
+          <div class="price-line">
+            <span class="price-label">🔴 ร้อน</span>
+            <span class="price-hot">70 ฿</span>
+          </div>
+          <div class="price-line">
+            <span class="price-label">🔵 เย็น</span>
+            <span class="price-cold">75 ฿</span>
+          </div>
+        </div>
+        <div class="shot-badge">☕ +Shot 5 ฿</div>
+      </div>
+    </div>
+
+    <!-- Cappuccino -->
+    <div class="menu-card">
+      <div class="coffee-img">
+        <svg width="76" height="88" viewBox="0 0 76 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 22 Q12 62 20 72 Q28 82 38 82 Q48 82 56 72 Q64 62 62 22 Z" fill="#C8945A"/>
+          <path d="M16 22 Q14 60 22 70 Q30 80 38 80 Q46 80 54 70 Q62 60 60 22 Z" fill="#DDA870"/>
+          <ellipse cx="38" cy="22" rx="24" ry="5.5" fill="#F9F5F0"/>
+          <ellipse cx="38" cy="22" rx="20" ry="4" fill="#FFFFFF"/>
+          <ellipse cx="32" cy="20" rx="5" ry="4" fill="#F0E8DC" opacity="0.7"/>
+          <ellipse cx="44" cy="20" rx="5" ry="4" fill="#F0E8DC" opacity="0.7"/>
+          <ellipse cx="38" cy="21" rx="4" ry="3.5" fill="#F5F0E8" opacity="0.5"/>
+          <circle cx="32" cy="20" r="3" fill="white" opacity="0.8"/>
+          <circle cx="44" cy="20" r="3" fill="white" opacity="0.8"/>
+          <path d="M60 36 Q70 34 70 42 Q70 50 60 50" stroke="#C8945A" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <rect x="22" y="80" width="32" height="5" rx="2.5" fill="#B07840"/>
+          <path d="M30 16 Q38 10 46 16" stroke="#DDA870" stroke-width="1.5" fill="none" opacity="0.5"/>
+        </svg>
+        <div class="sticker">MEE HANG</div>
+      </div>
+      <div class="menu-body">
+        <div class="menu-name">Cappuccino</div>
+        <div class="menu-desc">โฟมนม · สมดุลคลาสสิก</div>
+        <div class="price-row">
+          <div class="price-line">
+            <span class="price-label">🔴 ร้อน</span>
+            <span class="price-hot">70 ฿</span>
+          </div>
+          <div class="price-line">
+            <span class="price-label">🔵 เย็น</span>
+            <span class="price-cold">75 ฿</span>
+          </div>
+        </div>
+        <div class="shot-badge">☕ +Shot 5 ฿</div>
+      </div>
+    </div>
+
+    <!-- Cold Brew -->
+    <div class="menu-card">
+      <div class="coffee-img" style="background:#E8F4FC;">
+        <svg width="68" height="95" viewBox="0 0 68 95" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="14" y="8" width="40" height="70" rx="8" fill="#B8D8EE" opacity="0.5"/>
+          <rect x="16" y="10" width="36" height="66" rx="7" fill="#D4ECFA"/>
+          <rect x="16" y="10" width="36" height="28" rx="7" fill="#1A3A5C" opacity="0.85"/>
+          <path d="M16 38 Q20 52 16 66 Q16 73 20 76 Q26 80 34 80 Q42 80 48 76 Q52 73 52 66 Q48 52 52 38 Z" fill="#3D1A06" opacity="0.7"/>
+          <rect x="16" y="38" width="36" height="4" fill="rgba(255,255,255,0.3)"/>
+          <circle cx="24" cy="28" r="2" fill="rgba(255,255,255,0.4)"/>
+          <circle cx="34" cy="22" r="1.5" fill="rgba(255,255,255,0.35)"/>
+          <circle cx="44" cy="30" r="2" fill="rgba(255,255,255,0.4)"/>
+          <rect x="30" y="4" width="8" height="8" rx="1" fill="#D4ECFA"/>
+          <path d="M26 6 L42 6" stroke="#B8D8EE" stroke-width="1.5" stroke-linecap="round"/>
+          <rect x="22" y="78" width="24" height="5" rx="2.5" fill="#4A8AB0"/>
+        </svg>
+        <div class="sticker">MEE HANG</div>
+      </div>
+      <div class="menu-body">
+        <div class="menu-name">Cold Brew</div>
+        <div class="menu-desc">หมักข้ามคืน · หวานนิด ลื่นคอ</div>
+        <div class="price-row">
+          <div class="price-line">
+            <span class="price-label">🔵 เย็น</span>
+            <span class="price-cold">75 ฿</span>
+          </div>
+          <div class="price-line">
+            <span class="price-label">🧊 on Rock</span>
+            <span class="price-cold">80 ฿</span>
+          </div>
+        </div>
+        <div class="shot-badge">☕ +Shot 5 ฿</div>
+      </div>
+    </div>
+
+    <!-- Flat White -->
+    <div class="menu-card">
+      <div class="coffee-img">
+        <svg width="78" height="88" viewBox="0 0 78 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M15 20 Q13 62 21 73 Q29 82 39 82 Q49 82 57 73 Q65 62 63 20 Z" fill="#C8845A"/>
+          <path d="M17 20 Q15 60 23 71 Q31 80 39 80 Q47 80 55 71 Q63 60 61 20 Z" fill="#DDA070"/>
+          <ellipse cx="39" cy="20" rx="24" ry="5" fill="#F8EEE4"/>
+          <ellipse cx="39" cy="20" rx="20" ry="3.5" fill="#FFF8F2"/>
+          <path d="M29 18 Q34 14 39 18 Q44 22 49 18" stroke="#D4A080" stroke-width="1.2" fill="none" opacity="0.6"/>
+          <ellipse cx="33" cy="18" rx="4" ry="2.5" fill="#8B4513" opacity="0.15"/>
+          <ellipse cx="45" cy="18" rx="4" ry="2.5" fill="#8B4513" opacity="0.15"/>
+          <path d="M35 16 Q39 13 43 16 Q39 19 35 16Z" fill="#C8845A" opacity="0.2"/>
+          <path d="M61 35 Q72 33 72 42 Q72 51 61 51" stroke="#C8845A" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <rect x="23" y="80" width="32" height="5" rx="2.5" fill="#B07040"/>
+          <path d="M32 10 Q35 5 38 8 Q41 5 44 10" stroke="#DDA070" stroke-width="1.2" fill="none" opacity="0.4"/>
+        </svg>
+        <div class="sticker">MEE HANG</div>
+      </div>
+      <div class="menu-body">
+        <div class="menu-name">Flat White</div>
+        <div class="menu-desc">Velvet milk · เข้มนม อ่อนโยน</div>
+        <div class="price-row">
+          <div class="price-line">
+            <span class="price-label">🔴 ร้อน</span>
+            <span class="price-hot">75 ฿</span>
+          </div>
+          <div class="price-line">
+            <span class="price-label">🔵 เย็น</span>
+            <span class="price-cold">80 ฿</span>
+          </div>
+        </div>
+        <div class="shot-badge">☕ +Shot 5 ฿</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- OTHER MENU -->
+<section>
+  <div class="section-label">Other Menu</div>
+  <div class="section-title">🍵 เครื่องดื่ม & อาหาร</div>
+  <div class="other-grid">
+
+    <div class="other-card">
+      <div class="other-img" style="background:#FFF0E0;">
+        <svg width="60" height="70" viewBox="0 0 60 70" fill="none">
+          <path d="M12 18 Q10 52 16 60 Q22 67 30 67 Q38 67 44 60 Q50 52 48 18Z" fill="#E8A050"/>
+          <path d="M14 18 Q12 50 18 58 Q24 65 30 65 Q36 65 42 58 Q48 50 46 18Z" fill="#F0B870"/>
+          <ellipse cx="30" cy="18" rx="18" ry="4" fill="#FAEBD7"/>
+          <path d="M22 16 Q26 12 30 16 Q34 20 38 16" stroke="#E8A050" stroke-width="1.2" fill="none"/>
+          <path d="M46 32 Q54 30 54 37 Q54 44 46 44" stroke="#E8A050" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <rect x="18" y="65" width="24" height="4" rx="2" fill="#C07830"/>
+        </svg>
+      </div>
+      <div class="other-body">
+        <div class="other-name">ชาไทยเย็น</div>
+        <div class="other-desc">หวานมัน · คลาสสิกไทยแท้</div>
+        <div class="other-price">55 ฿</div>
+      </div>
+    </div>
+
+    <div class="other-card">
+      <div class="other-img" style="background:#EDFAF2;">
+        <svg width="60" height="72" viewBox="0 0 60 72" fill="none">
+          <path d="M12 18 Q10 54 16 62 Q22 70 30 70 Q38 70 44 62 Q50 54 48 18Z" fill="#3D7A4E"/>
+          <path d="M14 18 Q12 52 18 60 Q24 68 30 68 Q36 68 42 60 Q48 52 46 18Z" fill="#4E9A62"/>
+          <ellipse cx="30" cy="18" rx="18" ry="4" fill="#D4EDDA"/>
+          <ellipse cx="30" cy="18" rx="14" ry="2.5" fill="#E8F5EC"/>
+          <path d="M24 16 Q27 12 30 16 Q33 20 36 16" stroke="#3D7A4E" stroke-width="1.2" fill="none" opacity="0.7"/>
+          <path d="M46 30 Q54 28 54 36 Q54 44 46 44" stroke="#3D7A4E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <rect x="18" y="68" width="24" height="4" rx="2" fill="#2A5A38"/>
+        </svg>
+      </div>
+      <div class="other-body">
+        <div class="other-name">มัทฉะลาเต้</div>
+        <div class="other-desc">พรีเมียม · มัทฉะแท้</div>
+        <div class="other-price">85 ฿</div>
+      </div>
+    </div>
+
+    <div class="other-card">
+      <div class="other-img" style="background:#FFF5F0;">
+        <svg width="60" height="70" viewBox="0 0 60 70" fill="none">
+          <path d="M12 18 Q10 52 16 60 Q22 67 30 67 Q38 67 44 60 Q50 52 48 18Z" fill="#6B2D1A"/>
+          <path d="M14 18 Q12 50 18 58 Q24 65 30 65 Q36 65 42 58 Q48 50 46 18Z" fill="#8B3820"/>
+          <ellipse cx="30" cy="18" rx="18" ry="4" fill="#F5D5C0"/>
+          <ellipse cx="30" cy="18" rx="12" ry="2.5" fill="#FAE8DC"/>
+          <path d="M24 15 Q30 11 36 15" stroke="#8B3820" stroke-width="1.2" fill="none"/>
+          <path d="M46 30 Q54 28 54 36 Q54 44 46 44" stroke="#6B2D1A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <rect x="18" y="65" width="24" height="4" rx="2" fill="#4A1E10"/>
+          <path d="M26 10 Q29 5 32 10 Q30 14 26 10Z" fill="#C87050" opacity="0.5"/>
+        </svg>
+      </div>
+      <div class="other-body">
+        <div class="other-name">โกโก้ร้อน/เย็น</div>
+        <div class="other-desc">เข้มข้น · หอมช็อกโกแลต</div>
+        <div class="other-price">65 ฿</div>
+      </div>
+    </div>
+
+    <div class="other-card">
+      <div class="other-img" style="background:#FFF0F5;">
+        <svg width="56" height="75" viewBox="0 0 56 75" fill="none">
+          <rect x="10" y="15" width="36" height="52" rx="8" fill="#FFB8CC" opacity="0.4"/>
+          <rect x="12" y="17" width="32" height="48" rx="7" fill="#FFC8D8"/>
+          <path d="M12 32 Q28 28 44 32 Q44 55 40 62 Q34 67 28 67 Q22 67 16 62 Q12 55 12 32Z" fill="#FF8FAB" opacity="0.8"/>
+          <path d="M16 24 Q22 20 28 24 Q22 28 16 24Z" fill="#FF6888" opacity="0.5"/>
+          <circle cx="20" cy="22" r="3" fill="#FFB8CC" opacity="0.6"/>
+          <circle cx="36" cy="20" r="2.5" fill="#FFD0DC" opacity="0.7"/>
+          <rect x="10" y="12" width="36" height="6" rx="3" fill="#FFB8CC"/>
+          <rect x="24" y="8" width="8" height="6" rx="1" fill="#FFB8CC"/>
+        </svg>
+      </div>
+      <div class="other-body">
+        <div class="other-name">สโมธตี้ผลไม้</div>
+        <div class="other-desc">ปั่นสด · ผลไม้รวม</div>
+        <div class="other-price">90 ฿</div>
+      </div>
+    </div>
+
+    <div class="other-card">
+      <div class="other-img" style="background:#FFFBF0;">
+        <svg width="70" height="55" viewBox="0 0 70 55" fill="none">
+          <ellipse cx="35" cy="40" rx="28" ry="8" fill="#D4A06A" opacity="0.3"/>
+          <rect x="10" y="18" width="50" height="24" rx="8" fill="#F5D5A0"/>
+          <rect x="12" y="20" width="46" height="20" rx="7" fill="#FAE0B0"/>
+          <path d="M10 26 Q35 22 60 26 Q60 30 35 32 Q10 30 10 26Z" fill="#FAEFD0"/>
+          <path d="M14 22 Q35 18 56 22" stroke="#E8C080" stroke-width="1" fill="none" opacity="0.6"/>
+          <ellipse cx="35" cy="20" rx="23" ry="4" fill="#FFFBF0"/>
+          <ellipse cx="35" cy="20" rx="20" ry="2.5" fill="white" opacity="0.8"/>
+          <path d="M20 18 Q35 14 50 18" stroke="#F0C880" stroke-width="1.2" fill="none" opacity="0.5"/>
+        </svg>
+      </div>
+      <div class="other-body">
+        <div class="other-name">เค้กชิฟฟ่อน</div>
+        <div class="other-desc">ฟู นุ่ม · เข้ากับกาแฟทุกชนิด</div>
+        <div class="other-price">60 ฿</div>
+      </div>
+    </div>
+
+    <div class="other-card">
+      <div class="other-img" style="background:#F0F8F0;">
+        <svg width="70" height="50" viewBox="0 0 70 50" fill="none">
+          <rect x="8" y="14" width="54" height="24" rx="6" fill="#F0F0DC"/>
+          <rect x="10" y="16" width="50" height="20" rx="5" fill="#FAFAF0"/>
+          <rect x="12" y="22" width="46" height="8" rx="2" fill="#E8C090" opacity="0.5"/>
+          <path d="M16 24 Q20 20 24 24 Q28 28 32 24 Q36 20 40 24 Q44 28 48 24 Q52 20 56 24" stroke="#B0A070" stroke-width="1" fill="none"/>
+          <path d="M10 24 Q35 20 60 24" stroke="#D4D090" stroke-width="0.8" fill="none" opacity="0.4"/>
+          <rect x="8" y="12" width="54" height="6" rx="3" fill="#F5F5E0"/>
+          <rect x="8" y="34" width="54" height="6" rx="3" fill="#F5F5E0"/>
+          <circle cx="20" cy="24" r="2" fill="#FF8080" opacity="0.7"/>
+          <circle cx="35" cy="23" r="2" fill="#80B880" opacity="0.7"/>
+          <circle cx="50" cy="24" r="2" fill="#80C0D0" opacity="0.6"/>
+        </svg>
+      </div>
+      <div class="other-body">
+        <div class="other-name">แซนวิชทูน่า</div>
+        <div class="other-desc">อาหารเช้า/กลางวัน · อิ่มกำลังดี</div>
+        <div class="other-price">85 ฿</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- THAI DESSERTS -->
+<section id="desserts">
+  <div class="section-label">ขนมไทย</div>
+  <div class="section-title">🍡 ขนมไทยโฮมเมด</div>
+  <div class="dessert-grid">
+
+    <!-- 1. ขนมครก -->
+    <div class="dessert-card">
+      <div class="dessert-img" style="background:#FFF8EE;">
+        <svg width="90" height="70" viewBox="0 0 90 70" fill="none">
+          <g><ellipse cx="18" cy="50" rx="12" ry="5" fill="#F4D090" opacity="0.4"/>
+          <circle cx="18" cy="46" r="11" fill="#F5E0A0"/><circle cx="18" cy="45" r="9" fill="#FFF0C8"/>
+          <ellipse cx="18" cy="43" rx="7" ry="3" fill="white" opacity="0.6"/>
+          <ellipse cx="50" cy="50" rx="12" ry="5" fill="#F4D090" opacity="0.4"/>
+          <circle cx="50" cy="46" r="11" fill="#F5E0A0"/><circle cx="50" cy="45" r="9" fill="#FFF0C8"/>
+          <ellipse cx="50" cy="43" rx="7" ry="3" fill="white" opacity="0.6"/>
+          <ellipse cx="34" cy="50" rx="12" ry="5" fill="#F4D090" opacity="0.4"/>
+          <circle cx="34" cy="46" r="11" fill="#E8C870"/><circle cx="34" cy="45" r="9" fill="#F5D880"/>
+          <ellipse cx="34" cy="43" rx="7" ry="3" fill="#FFF0A0" opacity="0.6"/>
+          <ellipse cx="66" cy="50" rx="12" ry="5" fill="#F4D090" opacity="0.4"/>
+          <circle cx="66" cy="46" r="11" fill="#E8C870"/><circle cx="66" cy="45" r="9" fill="#F5D880"/>
+          <ellipse cx="66" cy="43" rx="7" ry="3" fill="#FFF0A0" opacity="0.6"/></g>
+        </svg>
+      </div>
+      <div class="dessert-body">
+        <div class="dessert-name">ขนมครก</div>
+        <div class="dessert-desc">กะทิสด · หอมมะพร้าว อ่อนนุ่ม</div>
+        <div class="dessert-price">35 ฿</div>
+      </div>
+    </div>
+
+    <!-- 2. ขนมชั้น -->
+    <div class="dessert-card">
+      <div class="dessert-img" style="background:#FFF0F8;">
+        <svg width="80" height="72" viewBox="0 0 80 72" fill="none">
+          <rect x="10" y="50" width="60" height="8" rx="2" fill="#F5A0C0"/>
+          <rect x="10" y="43" width="60" height="8" rx="2" fill="#FFF0B8"/>
+          <rect x="10" y="36" width="60" height="8" rx="2" fill="#F5A0C0"/>
+          <rect x="10" y="29" width="60" height="8" rx="2" fill="#FFF0B8"/>
+          <rect x="10" y="22" width="60" height="8" rx="2" fill="#F5A0C0"/>
+          <rect x="10" y="15" width="60" height="8" rx="2" fill="#FFF0B8"/>
+          <rect x="8" y="56" width="64" height="5" rx="2.5" fill="#E08090"/>
+          <path d="M10 15 Q40 12 70 15" stroke="#E8D0A0" stroke-width="0.5" fill="none"/>
+        </svg>
+      </div>
+      <div class="dessert-body">
+        <div class="dessert-name">ขนมชั้น</div>
+        <div class="dessert-desc">หลายชั้น · กะทิหวานมัน</div>
+        <div class="dessert-price">40 ฿</div>
+      </div>
+    </div>
+
+    <!-- 3. ทองหยิบ -->
+    <div class="dessert-card">
+      <div class="dessert-img" style="background:#FFFBEE;">
+        <svg width="80" height="72" viewBox="0 0 80 72" fill="none">
+          <g transform="translate(40,36)">
+            <path d="M0,-28 L6,-10 L22,-10 L9,0 L14,18 L0,8 L-14,18 L-9,0 L-22,-10 L-6,-10 Z" fill="#F0B820"/>
+            <path d="M0,-22 L5,-8 L17,-8 L7,0 L11,14 L0,6 L-11,14 L-7,0 L-17,-8 L-5,-8 Z" fill="#F8D040"/>
+            <circle cx="0" cy="0" r="6" fill="#FFE860"/>
+          </g>
+        </svg>
+      </div>
+      <div class="dessert-body">
+        <div class="dessert-name">ทองหยิบ</div>
+        <div class="dessert-desc">มงคล · ไข่แดงน้ำตาลทอง</div>
+        <div class="dessert-price">50 ฿</div>
+      </div>
+    </div>
+
+    <!-- 4. ฝอยทอง -->
+    <div class="dessert-card">
+      <div class="dessert-img" style="background:#FFFBEE;">
+        <svg width="80" height="70" viewBox="0 0 80 70" fill="none">
+          <ellipse cx="40" cy="50" rx="30" ry="8" fill="#E8A820" opacity="0.3"/>
+          <g stroke="#F0B820" stroke-width="1.2" opacity="0.9">
+            <path d="M15 30 Q25 45 35 35 Q45 25 55 40 Q65 55 72 42"/><path d="M12 35 Q22 50 32 40 Q42 30 52 45 Q62 60 70 47"/>
+            <path d="M14 42 Q24 52 34 44 Q44 36 54 48 Q64 58 70 52"/><path d="M18 48 Q28 56 38 50 Q48 44 58 52 Q65 58 68 55"/>
+            <path d="M10 27 Q20 42 30 32 Q40 22 50 37 Q60 52 68 39"/><path d="M16 22 Q26 37 36 27 Q46 17 56 32 Q66 47 74 34"/>
+          </g>
+          <ellipse cx="40" cy="45" rx="26" ry="7" fill="#F8D060" opacity="0.25"/>
+        </svg>
+      </div>
+      <div class="dessert-body">
+        <div class="dessert-name">ฝอยทอง</div>
+        <div class="dessert-desc">เส้นทองละเอียด · หวานกำลังดี</div>
+        <div class="dessert-price">50 ฿</div>
+      </div>
+    </div>
+
+    <!-- 5. ขนมต้ม -->
+    <div class="dessert-card">
+      <div class="dessert-img" style="background:#F5FFF5;">
+        <svg width="80" height="70" viewBox="0 0 80 70" fill="none">
+          <circle cx="25" cy="42" r="16" fill="#E8F0D0"/><circle cx="25" cy="42" r="13" fill="#F0F8D8"/>
+          <circle cx="25" cy="40" r="5" fill="#E8C870" opacity="0.7"/>
+          <circle cx="55" cy="42" r="16" fill="#E8F0D0"/><circle cx="55" cy="42" r="13" fill="#F0F8D8"/>
+          <circle cx="55" cy="40" r="5" fill="#E8C870" opacity="0.7"/>
+          <g fill="#A8C878" opacity="0.8">
+            <ellipse cx="10" cy="45" rx="4" ry="2" transform="rotate(-20,10,45)"/>
+            <ellipse cx="16" cy="30" rx="4" ry="2" transform="rotate(15,16,30)"/>
+            <ellipse cx="40" cy="28" rx="4" ry="2" transform="rotate(-10,40,28)"/>
+            <ellipse cx="64" cy="30" rx="4" ry="2" transform="rotate(20,64,30)"/>
+            <ellipse cx="70" cy="44" rx="4" ry="2" transform="rotate(-15,70,44)"/>
+          </g>
+        </svg>
+      </div>
+      <div class="dessert-body">
+        <div class="dessert-name">ขนมต้ม</div>
+        <div class="dessert-desc">มะพร้าวขูด · ไส้น้ำตาลปี๊บ</div>
+        <div class="dessert-price">35 ฿</div>
+      </div>
+    </div>
+
+    <!-- 6. บัวลอย -->
+    <div class="dessert-card">
+      <div class="dessert-img" style="background:#FFF8F0;">
+        <svg width="85" height="70" viewBox="0 0 85 70" fill="none">
+          <ellipse cx="42" cy="55" rx="34" ry="10" fill="#F5DCA0" opacity="0.5"/>
+          <path d="M8 45 Q42 38 76 45 Q76 62 42 65 Q8 62 8 45Z" fill="#F8E8C0"/>
+          <path d="M10 45 Q42 40 74 45 Q74 58 42 62 Q10 58 10 45Z" fill="#FFF0D0"/>
+          <circle cx="28" cy="50" r="7" fill="#FF9CC0"/><circle cx="28" cy="50" r="5" fill="#FFB8D0"/>
+          <circle cx="42" cy="47" r="7" fill="#A0D870"/><circle cx="42" cy="47" r="5" fill="#C0E890"/>
+          <circle cx="56" cy="50" r="7" fill="#FFD060"/><circle cx="56" cy="50" r="5" fill="#FFE080"/>
+          <circle cx="35" cy="57" r="5" fill="#FF9CC0" opacity="0.7"/>
+          <circle cx="50" cy="57" r="5" fill="#A0D870" opacity="0.7"/>
+        </svg>
+      </div>
+      <div class="dessert-body">
+        <div class="dessert-name">บัวลอย</div>
+        <div class="dessert-desc">3 สี · น้ำกะทิร้อนหอมวนิลา</div>
+        <div class="dessert-price">45 ฿</div>
+      </div>
+    </div>
+
+    <!-- 7. ลอดช่อง -->
+    <div class="dessert-card">
+      <div class="dessert-img" style="background:#F0FFF5;">
+        <svg width="85" height="70" viewBox="0 0 85 70" fill="none">
+          <path d="M8 45 Q42 38 76 45 Q76 62 42 65 Q8 62 8 45Z" fill="#F8E8C0"/>
+          <path d="M10 45 Q42 40 74 45 Q74 58 42 62 Q10 58 10 45Z" fill="#FFF5D8"/>
+          <g fill="#5AC878" opacity="0.85">
+            <rect x="18" y="42" width="4" height="16" rx="2"/>
+            <rect x="25" y="44" width="4" height="14" rx="2"/>
+            <rect x="32" y="41" width="4" height="17" rx="2"/>
+            <rect x="39" y="43" width="4" height="15" rx="2"/>
+            <rect x="46" y="41" width="4" height="17" rx="2"/>
+            <rect x="53" y="44" width="4" height="14" rx="2"/>
+            <rect x="60" y="42" width="4" height="16" rx="2"/>
+          </g>
+          <ellipse cx="42" cy="44" rx="30" ry="4" fill="#FFF0C0" opacity="0.7"/>
+        </svg>
+      </div>
+      <div class="dessert-body">
+        <div class="dessert-name">ลอดช่อง</div>
+        <div class="dessert-desc">ใบเตยสด · กะทิน้ำตาลมะพร้าว</div>
+        <div class="dessert-price">40 ฿</div>
+      </div>
+    </div>
+
+    <!-- 8. สังขยา -->
+    <div class="dessert-card">
+      <div class="dessert-img" style="background:#FFFBEE;">
+        <svg width="80" height="72" viewBox="0 0 80 72" fill="none">
+          <ellipse cx="40" cy="56" rx="28" ry="8" fill="#8B5E28" opacity="0.3"/>
+          <path d="M18 38 Q16 54 20 60 Q28 68 40 68 Q52 68 60 60 Q64 54 62 38Z" fill="#7A4E1E"/>
+          <path d="M20 38 Q18 52 22 58 Q30 66 40 66 Q50 66 58 58 Q62 52 60 38Z" fill="#8B5E28"/>
+          <ellipse cx="40" cy="38" rx="22" ry="6" fill="#A07838"/>
+          <ellipse cx="40" cy="36" rx="20" ry="5" fill="#F8D880"/>
+          <ellipse cx="40" cy="35" rx="16" ry="3.5" fill="#FFE890"/>
+          <ellipse cx="40" cy="34" rx="8" ry="2" fill="#FFF4A0" opacity="0.7"/>
+        </svg>
+      </div>
+      <div class="dessert-body">
+        <div class="dessert-name">สังขยา</div>
+        <div class="dessert-desc">คัสตาร์ดไทย · ในฟักทอง/ขนมปัง</div>
+        <div class="dessert-price">55 ฿</div>
+      </div>
+    </div>
+
+    <!-- 9. ขนมเปียกปูน -->
+    <div class="dessert-card">
+      <div class="dessert-img" style="background:#F5FFF8;">
+        <svg width="85" height="70" viewBox="0 0 85 70" fill="none">
+          <rect x="12" y="22" width="26" height="36" rx="4" fill="#A8D8A0"/>
+          <rect x="14" y="24" width="22" height="32" rx="3" fill="#C0E8B8"/>
+          <rect x="16" y="26" width="18" height="6" rx="1" fill="#E8F8E0" opacity="0.7"/>
+          <rect x="47" y="22" width="26" height="36" rx="4" fill="#F5D890"/>
+          <rect x="49" y="24" width="22" height="32" rx="3" fill="#FDEAA0"/>
+          <rect x="51" y="26" width="18" height="6" rx="1" fill="#FFF8D0" opacity="0.7"/>
+          <ellipse cx="25" cy="58" rx="13" ry="3" fill="#6A9060" opacity="0.25"/>
+          <ellipse cx="60" cy="58" rx="13" ry="3" fill="#C8A840" opacity="0.25"/>
+        </svg>
+      </div>
+      <div class="dessert-body">
+        <div class="dessert-name">ขนมเปียกปูน</div>
+        <div class="dessert-desc">เผือก/ใบเตย · เหนียวนุ่ม</div>
+        <div class="dessert-price">35 ฿</div>
+      </div>
+    </div>
+
+    <!-- 10. วุ้นมะพร้าว -->
+    <div class="dessert-card">
+      <div class="dessert-img" style="background:#F0FBFF;">
+        <svg width="85" height="72" viewBox="0 0 85 72" fill="none">
+          <rect x="14" y="18" width="57" height="42" rx="6" fill="#C8EEF8" opacity="0.5"/>
+          <rect x="16" y="20" width="53" height="38" rx="5" fill="#DCF5FC"/>
+          <g fill="#A8E0F0" opacity="0.7">
+            <rect x="20" y="24" width="14" height="10" rx="2"/>
+            <rect x="37" y="24" width="14" height="10" rx="2"/>
+            <rect x="54" y="24" width="10" height="10" rx="2"/>
+            <rect x="20" y="37" width="10" height="10" rx="2"/>
+            <rect x="33" y="37" width="14" height="10" rx="2"/>
+            <rect x="50" y="37" width="14" height="10" rx="2"/>
+          </g>
+          <rect x="14" y="57" width="57" height="7" rx="3.5" fill="#90D8F0" opacity="0.5"/>
+        </svg>
+      </div>
+      <div class="dessert-body">
+        <div class="dessert-name">วุ้นมะพร้าว</div>
+        <div class="dessert-desc">วุ้นใส · น้ำมะพร้าวอ่อนสดชื่น</div>
+        <div class="dessert-price">45 ฿</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- MEETING ROOMS -->
+<section id="rooms">
+  <div class="section-label">Meeting Room</div>
+  <div class="section-title">🚪 เช่าห้องคุยงาน</div>
+
+  <p class="status-hint">💡 กดที่สถานะห้องเพื่ออัปเดต (เจ้าของร้าน)</p>
+
+  <!-- Room A -->
+  <div class="room-card">
+    <div class="room-header">
+      <div class="room-badge-avail" id="statusA" onclick="toggleRoom('A')">🟢 ว่าง — พร้อมใช้</div>
+      <div class="room-name">ห้อง A — The Focus Room</div>
+      <div class="room-sub">ประชุมทีมเล็ก · งานโฟกัส · 1-on-1</div>
+      <div class="room-capacity">
+        <div class="cap-num">4</div>
+        <div class="cap-label">คน</div>
+      </div>
+    </div>
+    <div class="room-body">
+      <div class="room-features">
+        <div class="feature-item"><div class="feature-icon">📺</div><span>TV/จอฉาย 43"</span></div>
+        <div class="feature-item"><div class="feature-icon">📋</div><span>ไวท์บอร์ด</span></div>
+        <div class="feature-item"><div class="feature-icon">📶</div><span>Wi-Fi เร็ว</span></div>
+        <div class="feature-item"><div class="feature-icon">🔌</div><span>ปลั๊กไฟ/USB</span></div>
+        <div class="feature-item"><div class="feature-icon">❄️</div><span>ปรับอากาศ</span></div>
+        <div class="feature-item"><div class="feature-icon">🔇</div><span>กันเสียงรบกวน</span></div>
+      </div>
+      <div class="room-includes">
+        <strong>รวมในราคา:</strong> น้ำดื่ม 1 ขวด · กระดาษ+ปากกา · Wi-Fi password
+      </div>
+      <div class="room-price-row">
+        <div class="room-price">300 ฿ <span>/ ชั่วโมง</span></div>
+        <a href="tel:+66925241749" class="btn-book">📞 จองเลย</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Room B -->
+  <div class="room-card">
+    <div class="room-header">
+      <div class="room-badge-avail" id="statusB" onclick="toggleRoom('B')">🟢 ว่าง — พร้อมใช้</div>
+      <div class="room-name">ห้อง B — The Collab Room</div>
+      <div class="room-sub">ประชุมทีมกลาง · เวิร์กช็อป · Brainstorm</div>
+      <div class="room-capacity">
+        <div class="cap-num">6</div>
+        <div class="cap-label">คน</div>
+      </div>
+    </div>
+    <div class="room-body">
+      <div class="room-features">
+        <div class="feature-item"><div class="feature-icon">📽️</div><span>Projector + จอ</span></div>
+        <div class="feature-item"><div class="feature-icon">📋</div><span>ไวท์บอร์ดใหญ่</span></div>
+        <div class="feature-item"><div class="feature-icon">📶</div><span>Wi-Fi เร็ว</span></div>
+        <div class="feature-item"><div class="feature-icon">🔌</div><span>ปลั๊กไฟ/USB</span></div>
+        <div class="feature-item"><div class="feature-icon">❄️</div><span>ปรับอากาศ</span></div>
+        <div class="feature-item"><div class="feature-icon">🪑</div><span>โต๊ะรูปตัว U</span></div>
+      </div>
+      <div class="room-includes">
+        <strong>รวมในราคา:</strong> น้ำดื่ม 1 ขวด/คน · กระดาษ+ปากกา · HDMI cable · Wi-Fi password
+      </div>
+      <div class="room-price-row">
+        <div class="room-price">450 ฿ <span>/ ชั่วโมง</span></div>
+        <a href="tel:+66925241749" class="btn-book">📞 จองเลย</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="amenities">
+    <div class="amenities-title">✅ สิ่งที่ได้รับทุกห้อง</div>
+    <div class="amenities-list">
+      <span class="amenity-pill">📶 Wi-Fi ไม่จำกัด</span>
+      <span class="amenity-pill">🔌 ปลั๊ก USB-A/C</span>
+      <span class="amenity-pill">💧 น้ำดื่มฟรี</span>
+      <span class="amenity-pill">📝 อุปกรณ์เขียน</span>
+      <span class="amenity-pill">❄️ แอร์ส่วนตัว</span>
+      <span class="amenity-pill">🔇 ความเป็นส่วนตัว</span>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- GALLERY -->
+<section id="gallery">
+  <div class="section-label">Gallery</div>
+  <div class="section-title">🌾 บรรยากาศร้านโคกหนองนา</div>
+  <div class="gallery-wrap">
+    <div class="gallery-track" id="galleryTrack">
+
+      <!-- Slide 1: Outdoor cafe in nature -->
+      <div class="gallery-slide">
+        <img src="https://images.pexels.com/photos/34238525/pexels-photo-34238525.jpeg?auto=compress&cs=tinysrgb&w=480&h=240&dpr=1"
+             alt="บรรยากาศร้านกาแฟกลางแจ้ง" loading="lazy"
+             onerror="this.src='https://images.pexels.com/photos/1002740/pexels-photo-1002740.jpeg?auto=compress&cs=tinysrgb&w=480&h=240'">
+        <div class="slide-caption">
+          <strong>☕ ซุ้มกาแฟกลางแจ้ง</strong>
+          บรรยากาศอบอุ่น นั่งชิลล์ได้ทั้งวัน
+        </div>
+      </div>
+
+      <!-- Slide 2: Wooden hut by pond (โคกหนองนา) -->
+      <div class="gallery-slide">
+        <img src="https://images.pexels.com/photos/20708351/pexels-photo-20708351.jpeg?auto=compress&cs=tinysrgb&w=480&h=240&dpr=1"
+             alt="ซุ้มไม้ริมบ่อน้ำ" loading="lazy"
+             onerror="this.src='https://images.pexels.com/photos/2079249/pexels-photo-2079249.jpeg?auto=compress&cs=tinysrgb&w=480&h=240'">
+        <div class="slide-caption">
+          <strong>🌿 สวนโคกหนองนา</strong>
+          ซุ้มไม้ริมบ่อบัว · ร่มรื่น · เงียบสงบ
+        </div>
+      </div>
+
+      <!-- Slide 3: Wooden hut on lake in valley -->
+      <div class="gallery-slide">
+        <img src="https://images.pexels.com/photos/18276986/pexels-photo-18276986.jpeg?auto=compress&cs=tinysrgb&w=480&h=240&dpr=1"
+             alt="กระท่อมกลางธรรมชาติ" loading="lazy"
+             onerror="this.src='https://images.pexels.com/photos/1581882/pexels-photo-1581882.jpeg?auto=compress&cs=tinysrgb&w=480&h=240'">
+        <div class="slide-caption">
+          <strong>🏡 กระท่อมกลางธรรมชาติ</strong>
+          ห้องประชุมส่วนตัวกลางสวน
+        </div>
+      </div>
+
+      <!-- Slide 4: Nature field -->
+      <div class="gallery-slide">
+        <img src="https://images.pexels.com/photos/459225/pexels-photo-459225.jpeg?auto=compress&cs=tinysrgb&w=480&h=240&dpr=1"
+             alt="ทุ่งหญ้าและธรรมชาติ" loading="lazy">
+        <div class="slide-caption">
+          <strong>🌾 ทุ่งกว้างกลางสวน</strong>
+          วิวธรรมชาติ เขียวขจี ผ่อนคลายทั้งวัน
+        </div>
+      </div>
+
+      <!-- Slide 5: Parking area -->
+      <div class="gallery-slide" style="background:#2A3A2A;">
+        <img src="https://images.pexels.com/photos/1004409/pexels-photo-1004409.jpeg?auto=compress&cs=tinysrgb&w=480&h=240&dpr=1"
+             alt="ที่จอดรถ" loading="lazy"
+             onerror="this.src='https://images.pexels.com/photos/1004409/pexels-photo-1004409.jpeg?auto=compress&cs=tinysrgb&w=480&h=240'">
+        <div class="parking-badge">🅿️ จอดรถ 10–15 คัน</div>
+        <div class="slide-caption">
+          <strong>🚗 ที่จอดรถกว้างขวาง</strong>
+          รองรับ 10–15 คัน · จอดสบาย · ฟรี
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Arrows -->
+    <div class="gallery-arrows">
+      <button class="arrow-btn" onclick="slideGallery(-1)">‹</button>
+      <button class="arrow-btn" onclick="slideGallery(1)">›</button>
+    </div>
+  </div>
+
+  <!-- Dots -->
+  <div class="gallery-dots" id="galleryDots">
+    <div class="dot active" onclick="goSlide(0)"></div>
+    <div class="dot" onclick="goSlide(1)"></div>
+    <div class="dot" onclick="goSlide(2)"></div>
+    <div class="dot" onclick="goSlide(3)"></div>
+    <div class="dot" onclick="goSlide(4)"></div>
+  </div>
+
+  <div class="gallery-caption">
+    <strong>📸 ภาพบรรยากาศร้าน MEE HANG TALK & COFFEE</strong><br>
+    สวนโคกหนองนา · ซุ้มกาแฟกลางธรรมชาติ · ที่จอดรถ 10–15 คัน<br>
+    ต.แคราย อ.กระทุ่มแบน จ.สมุทรสาคร
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- BOOKING -->
+<section id="booking">
+  <div class="section-label">จองออนไลน์</div>
+  <div class="section-title">📅 จองห้องประชุมล่วงหน้า</div>
+  <div class="booking-card">
+    <div class="booking-header">
+      <div class="booking-header-icon">🗓️</div>
+      <div class="booking-header-text">
+        <h3>เลือกวันเวลาที่สะดวก</h3>
+        <p>ยืนยันการจองภายใน 30 นาที · โทรกลับทุกเคส</p>
+      </div>
+    </div>
+    <div class="booking-body">
+      <div id="bookingForm" class="booking-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ชื่อ-นามสกุล *</label>
+            <input class="form-input" type="text" id="bName" placeholder="ชื่อของคุณ">
+          </div>
+          <div class="form-group">
+            <label class="form-label">เบอร์โทร *</label>
+            <input class="form-input" type="tel" id="bPhone" placeholder="08X-XXX-XXXX">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">เลือกห้อง *</label>
+          <select class="form-select" id="bRoom">
+            <option value="">-- เลือกห้อง --</option>
+            <option value="A">ห้อง A — The Focus Room (4 คน / 300฿/ชม.)</option>
+            <option value="B">ห้อง B — The Collab Room (6 คน / 450฿/ชม.)</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">วันที่ *</label>
+            <input class="form-input" type="date" id="bDate">
+          </div>
+          <div class="form-group">
+            <label class="form-label">เวลาเริ่ม *</label>
+            <select class="form-select" id="bTime">
+              <option value="">-- เลือก --</option>
+              <option>06:00</option><option>07:00</option><option>08:00</option>
+              <option>09:00</option><option>10:00</option><option>11:00</option>
+              <option>12:00</option><option>13:00</option><option>14:00</option>
+              <option>15:00</option><option>16:00</option><option>17:00</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">จำนวนชั่วโมง</label>
+          <select class="form-select" id="bHours">
+            <option value="1">1 ชั่วโมง</option>
+            <option value="2">2 ชั่วโมง</option>
+            <option value="3">3 ชั่วโมง</option>
+            <option value="4">4 ชั่วโมง</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">หมายเหตุ (ถ้ามี)</label>
+          <textarea class="form-textarea" id="bNote" placeholder="เช่น ต้องการอุปกรณ์เพิ่ม หรือข้อมูลอื่นๆ"></textarea>
+        </div>
+        <div class="booking-note">
+          📞 หลังกด "ส่งคำขอจอง" ทีมงานจะโทรยืนยันภายใน 30 นาที
+          ในเวลาทำการ (จ–ศ 06:00–18:00 / ส–อา 08:00–20:00)
+        </div>
+        <button class="btn-submit" onclick="submitBooking()">📩 ส่งคำขอจอง</button>
+      </div>
+      <div id="bookingSuccess" class="form-success">
+        <div class="success-icon">✅</div>
+        <p>ส่งคำขอจองแล้ว!</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:6px;">
+          ทีมงานจะโทรยืนยันที่เบอร์ของคุณภายใน 30 นาที<br>
+          หรือโทรตรง <a href="tel:+66925241749" style="color:var(--orange);font-weight:700;">09-2524-1749</a>
+        </p>
+        <button style="margin-top:16px;background:none;border:1.5px solid var(--border);padding:8px 20px;border-radius:50px;font-family:'Sarabun',sans-serif;font-size:14px;cursor:pointer;color:var(--text);" onclick="resetBooking()">จองอีกครั้ง</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- LOYALTY -->
+<section id="loyalty">
+  <div class="section-label">สิทธิพิเศษสมาชิก</div>
+  <div class="section-title">🎁 สะสมแต้ม & รับฟรี</div>
+
+  <div class="loyalty-tabs">
+    <button class="ltab active" onclick="switchLoyalty('cup')">☕ สะสมแก้ว</button>
+    <button class="ltab" onclick="switchLoyalty('hour')">🕐 สะสมชั่วโมง</button>
+    <button class="ltab" onclick="switchLoyalty('reg')">✨ สมัครสมาชิก</button>
+  </div>
+
+  <!-- CUP LOYALTY -->
+  <div class="loyalty-panel active" id="panel-cup">
+    <div class="lcard">
+      <div class="lcard-header">
+        <div class="lcard-icon">☕</div>
+        <div class="lcard-title">
+          <h3>สะสมแก้วกาแฟ</h3>
+          <p>ครบ 10 แก้ว รับฟรี 1 แก้ว ทุกเมนู</p>
+        </div>
+      </div>
+      <div class="lcard-body">
+        <div class="member-info">
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);">รหัสสมาชิก</div>
+            <div class="member-id" id="cupMemberId">—</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:var(--text-muted);">แก้วที่สะสม</div>
+            <div style="font-size:20px;font-weight:700;color:var(--orange-dark);" id="cupCount">0</div>
+          </div>
+        </div>
+        <div class="stamp-grid" id="cupStamps">
+          <!-- filled by JS -->
+        </div>
+        <div class="stamp-progress" id="cupProgress">สะสมแล้ว <strong>0/10</strong> แก้ว</div>
+        <button class="btn-redeem" id="cupRedeem" onclick="redeemCup()">🎉 กดรับแก้วฟรี!</button>
+        <button class="btn-add-stamp" onclick="addCupStamp()">+ เพิ่มแก้ว (สำหรับพนักงาน)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOUR LOYALTY -->
+  <div class="loyalty-panel" id="panel-hour">
+    <div class="lcard">
+      <div class="lcard-header blue">
+        <div class="lcard-icon">🕐</div>
+        <div class="lcard-title">
+          <h3>สะสมชั่วโมงประชุม</h3>
+          <p>ครบ 10 ชั่วโมง รับฟรี 1 ชั่วโมง</p>
+        </div>
+      </div>
+      <div class="lcard-body">
+        <div class="member-info">
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);">รหัสสมาชิก</div>
+            <div class="member-id" id="hourMemberId">—</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:var(--text-muted);">ชั่วโมงสะสม</div>
+            <div style="font-size:20px;font-weight:700;color:var(--blue-dark);" id="hourCount">0</div>
+          </div>
+        </div>
+        <div class="stamp-grid" id="hourStamps"></div>
+        <div class="stamp-progress" id="hourProgress">สะสมแล้ว <strong>0/10</strong> ชั่วโมง</div>
+        <button class="btn-redeem" id="hourRedeem" style="background:var(--blue);" onclick="redeemHour()">🎉 กดรับ 1 ชั่วโมงฟรี!</button>
+        <button class="btn-add-stamp" style="border-color:var(--blue);color:var(--blue-dark);" onclick="addHourStamp()">+ เพิ่มชั่วโมง (สำหรับพนักงาน)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REGISTER -->
+  <div class="loyalty-panel" id="panel-reg">
+    <div id="regForm">
+      <div class="reg-card">
+        <div class="reg-title">✨ สมัครสมาชิกฟรี — รับรหัสสะสมแต้มทันที</div>
+        <div class="reg-form">
+          <div class="reg-row">
+            <div class="form-group">
+              <label class="form-label">ชื่อ *</label>
+              <input class="form-input" id="regName" type="text" placeholder="ชื่อของคุณ">
+            </div>
+            <div class="form-group">
+              <label class="form-label">นามสกุล</label>
+              <input class="form-input" id="regLname" type="text" placeholder="นามสกุล">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">เบอร์โทร *</label>
+            <input class="form-input" id="regPhone" type="tel" placeholder="08X-XXX-XXXX">
+          </div>
+          <div class="form-group">
+            <label class="form-label">อีเมล (ไม่บังคับ)</label>
+            <input class="form-input" id="regEmail" type="email" placeholder="email@example.com">
+          </div>
+          <button class="btn-register" onclick="doRegister()">✨ สมัครฟรีทันที</button>
+        </div>
+      </div>
+    </div>
+    <div id="regSuccess" style="display:none;">
+      <div class="lcard">
+        <div class="lcard-header" style="background:linear-gradient(135deg,#1A5C30,#2E9E6E);">
+          <div class="lcard-icon">🎊</div>
+          <div class="lcard-title">
+            <h3>สมัครสำเร็จแล้ว!</h3>
+            <p>ยินดีต้อนรับสู่ MEE HANG Member</p>
+          </div>
+        </div>
+        <div class="lcard-body">
+          <div style="text-align:center;padding:8px 0 4px;">
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">รหัสสมาชิกของคุณ</div>
+            <div style="font-size:32px;font-weight:700;color:var(--orange-dark);letter-spacing:4px;" id="newMemberId"></div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">📌 จดรหัสไว้ หรือ screenshot เก็บไว้</div>
+          </div>
+          <div style="margin-top:14px;background:var(--orange-pale);border-radius:10px;padding:12px;font-size:13px;color:var(--orange-dark);">
+            🎁 สิทธิประโยชน์: สะสมแก้วกาแฟ · สะสมชั่วโมงประชุม · ข่าวสารโปรโมชั่นก่อนใคร
+          </div>
+          <button style="margin-top:14px;width:100%;padding:12px;background:var(--orange);color:white;border:none;border-radius:50px;font-size:14px;font-family:'Sarabun',sans-serif;font-weight:700;cursor:pointer;" onclick="switchLoyalty('cup')">เริ่มสะสมแก้วเลย →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- FEEDBACK -->
+<section id="feedback">
+  <div class="section-label">ความพึงพอใจ</div>
+  <div class="section-title">💬 บอกเราตรงๆ</div>
+  <div class="feedback-card">
+    <div class="feedback-header">
+      <div style="font-size:28px;">⭐</div>
+      <div class="feedback-header-text">
+        <h3>ความพึงพอใจของคุณ</h3>
+        <p>ข้อเสนอแนะส่งตรงถึงผู้บริหาร · พนักงานไม่เห็น</p>
+      </div>
+    </div>
+    <div class="feedback-body">
+      <div id="fbForm">
+        <div class="star-row" id="starRow">
+          <button class="star-btn" onclick="rateStar(1)">⭐</button>
+          <button class="star-btn" onclick="rateStar(2)">⭐</button>
+          <button class="star-btn" onclick="rateStar(3)">⭐</button>
+          <button class="star-btn" onclick="rateStar(4)">⭐</button>
+          <button class="star-btn" onclick="rateStar(5)">⭐</button>
+        </div>
+        <div class="rating-label" id="ratingLabel">กรุณาให้คะแนน</div>
+
+        <div class="complaint-notice" id="complaintNotice">
+          🔒 ข้อความนี้จะถูกส่งตรงถึงผู้บริหาร เท่านั้น พนักงานจะไม่เห็นความคิดเห็นของคุณ
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label">ชื่อของคุณ (ไม่บังคับ)</label>
+          <input class="form-input" id="fbName" type="text" placeholder="ไม่ระบุก็ได้">
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label" id="fbCommentLabel">ความคิดเห็น / คำแนะนำ</label>
+          <textarea class="form-textarea" id="fbComment" placeholder="บอกเราได้เลย เราอยากได้ยินจากคุณ..." style="min-height:90px;"></textarea>
+        </div>
+        <div class="privacy-note">
+          🔐 ข้อร้องเรียนและคำติชมส่งตรงถึงผู้บริหารโดยตรง ไม่ผ่านพนักงาน
+        </div>
+        <button class="btn-send-feedback" onclick="sendFeedback()">📨 ส่งความคิดเห็น</button>
+      </div>
+      <div class="feedback-success" id="fbSuccess">
+        <div class="fb-icon" id="fbSuccessIcon">🙏</div>
+        <p id="fbSuccessMsg" style="font-size:15px;font-weight:700;color:var(--text);">ขอบคุณมากครับ!</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-top:6px;" id="fbSuccessDetail">ความคิดเห็นของคุณมีคุณค่ามากสำหรับเรา</p>
+        <button style="margin-top:16px;background:none;border:1.5px solid var(--border);padding:8px 20px;border-radius:50px;font-family:'Sarabun',sans-serif;font-size:14px;cursor:pointer;color:var(--text);" onclick="resetFeedback()">ให้คะแนนอีกครั้ง</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- LOCATION -->
+<section id="location">
+  <div class="section-label">Location</div>
+  <div class="section-title">📍 มาหาเราได้ที่นี่</div>
+  <div class="map-wrap">
+    <iframe
+      src="https://maps.google.com/maps?q=105/19+หมู่บ้านวิเศษสิริ+กระทุ่มแบน+สมุทรสาคร+74110&output=embed"
+      allowfullscreen="" loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"
+      title="แผนที่ MEE HANG TALK & COFFEE">
+    </iframe>
+  </div>
+  <div class="info-card">
+    <div class="info-row">
+      <div class="info-emoji">📍</div>
+      <div class="info-text">
+        <strong>ที่อยู่</strong>
+        105/19 หมู่บ้านวิเศษสิริ หมู่ 2<br>
+        ถนนแคราย ต.แคราย อ.กระทุ่มแบน<br>
+        จ.สมุทรสาคร 74110
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-emoji">🕐</div>
+      <div class="info-text">
+        <strong>เวลาเปิดทำการ</strong>
+        จันทร์ – ศุกร์: 06:00 – 18:00<br>
+        เสาร์ – อาทิตย์: 08:00 – 20:00
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-emoji">📞</div>
+      <div class="info-text">
+        <strong>โทรศัพท์</strong>
+        <a href="tel:+66925241749" style="color:var(--orange);text-decoration:none;font-weight:700;">09-2524-1749</a><br>
+        <span style="font-size:12px;color:#9AB0C8;">โทรได้ทุกวันในเวลาทำการ</span>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-emoji">🚗</div>
+      <div class="info-text">
+        <strong>การเดินทาง</strong>
+        มีที่จอดรถบริเวณหน้าร้าน · เดินทางสะดวกจากสมุทรสาคร–กรุงเทพฯ
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Gallery slider
+  let currentSlide = 0;
+  const totalSlides = 5;
+  function goSlide(n) {
+    currentSlide = n;
+    const track = document.getElementById('galleryTrack');
+    track.scrollTo({ left: track.offsetWidth * n, behavior: 'smooth' });
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === n));
+  }
+  function slideGallery(dir) { goSlide(Math.max(0, Math.min(totalSlides - 1, currentSlide + dir))); }
+  // Sync dots on manual swipe
+  document.addEventListener('DOMContentLoaded', () => {
+    const track = document.getElementById('galleryTrack');
+    if (track) {
+      track.addEventListener('scroll', () => {
+        const idx = Math.round(track.scrollLeft / track.offsetWidth);
+        if (idx !== currentSlide) { currentSlide = idx; document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('active', i===idx)); }
+      }, { passive: true });
+    }
+  });
+
+  // Room status toggle (saves to localStorage)
+  function toggleRoom(room) {
+    const el = document.getElementById('status' + room);
+    const key = 'roomStatus' + room;
+    const busy = localStorage.getItem(key) === 'busy';
+    if (busy) {
+      localStorage.setItem(key, 'free');
+      el.textContent = '🟢 ว่าง — พร้อมใช้';
+      el.classList.remove('badge-busy');
+    } else {
+      localStorage.setItem(key, 'busy');
+      el.textContent = '🔴 ไม่ว่าง — มีการจอง';
+      el.classList.add('badge-busy');
+    }
+  }
+  // Restore status on load
+  ['A','B'].forEach(r => {
+    if (localStorage.getItem('roomStatus' + r) === 'busy') {
+      const el = document.getElementById('status' + r);
+      if (el) { el.textContent = '🔴 ไม่ว่าง — มีการจอง'; el.classList.add('badge-busy'); }
+    }
+  });
+
+  // Booking form
+  function submitBooking() {
+    const name = document.getElementById('bName').value.trim();
+    const phone = document.getElementById('bPhone').value.trim();
+    const room = document.getElementById('bRoom').value;
+    const date = document.getElementById('bDate').value;
+    const time = document.getElementById('bTime').value;
+    if (!name || !phone || !room || !date || !time) {
+      alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
+      return;
+    }
+    // Build WhatsApp / mailto message as fallback
+    const hours = document.getElementById('bHours').value;
+    const note = document.getElementById('bNote').value;
+    const msg = encodeURIComponent(
+      'สวัสดีครับ ขอจองห้องประชุม MEE HANG\n' +
+      'ชื่อ: ' + name + '\n' +
+      'ห้อง: ' + room + '\n' +
+      'วันที่: ' + date + ' เวลา ' + time + ' น.\n' +
+      'จำนวน: ' + hours + ' ชั่วโมง\n' +
+      (note ? 'หมายเหตุ: ' + note : '')
+    );
+    // Open WhatsApp with pre-filled message
+    window.open('https://wa.me/66925241749?text=' + msg, '_blank');
+    document.getElementById('bookingForm').style.display = 'none';
+    document.getElementById('bookingSuccess').style.display = 'block';
+  }
+  function resetBooking() {
+    document.getElementById('bookingForm').style.display = 'flex';
+    document.getElementById('bookingSuccess').style.display = 'none';
+    ['bName','bPhone','bDate','bNote'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('bRoom').value = '';
+    document.getElementById('bTime').value = '';
+    document.getElementById('bHours').value = '1';
+  }
+  // Set min date to today
+  document.getElementById('bDate').min = new Date().toISOString().split('T')[0];
+
+  // ===== LOYALTY SYSTEM =====
+  function switchLoyalty(tab) {
+    ['cup','hour','reg'].forEach(t => {
+      document.getElementById('panel-'+t).classList.toggle('active', t===tab);
+    });
+    document.querySelectorAll('.ltab').forEach((b,i) => {
+      b.classList.toggle('active', ['cup','hour','reg'][i]===tab);
+    });
+  }
+
+  function renderStamps(containerId, count, isCup) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = '';
+    for (let i = 0; i < 10; i++) {
+      const d = document.createElement('div');
+      d.className = 'stamp' + (i < count ? (isCup ? ' filled' : ' filled blue-fill') : '');
+      d.textContent = i < count ? (isCup ? '☕' : '🕐') : '';
+      el.appendChild(d);
+    }
+  }
+
+  function updateCupUI() {
+    const mid = localStorage.getItem('mhMemberId') || '—';
+    const n = parseInt(localStorage.getItem('mhCupCount') || '0');
+    document.getElementById('cupMemberId').textContent = mid;
+    document.getElementById('cupCount').textContent = n;
+    document.getElementById('cupProgress').innerHTML = 'สะสมแล้ว <strong>' + n + '/10</strong> แก้ว';
+    renderStamps('cupStamps', n, true);
+    const btn = document.getElementById('cupRedeem');
+    if (n >= 10) btn.classList.add('show'); else btn.classList.remove('show');
+  }
+
+  function updateHourUI() {
+    const mid = localStorage.getItem('mhMemberId') || '—';
+    const n = parseInt(localStorage.getItem('mhHourCount') || '0');
+    document.getElementById('hourMemberId').textContent = mid;
+    document.getElementById('hourCount').textContent = n;
+    document.getElementById('hourProgress').innerHTML = 'สะสมแล้ว <strong>' + n + '/10</strong> ชั่วโมง';
+    renderStamps('hourStamps', n, false);
+    const btn = document.getElementById('hourRedeem');
+    if (n >= 10) btn.classList.add('show'); else btn.classList.remove('show');
+  }
+
+  function addCupStamp() {
+    const n = parseInt(localStorage.getItem('mhCupCount') || '0');
+    if (n >= 10) { alert('ครบ 10 แก้วแล้ว กรุณากดรับฟรีก่อน'); return; }
+    localStorage.setItem('mhCupCount', n + 1);
+    updateCupUI();
+  }
+
+  function addHourStamp() {
+    const n = parseInt(localStorage.getItem('mhHourCount') || '0');
+    if (n >= 10) { alert('ครบ 10 ชั่วโมงแล้ว กรุณากดรับฟรีก่อน'); return; }
+    localStorage.setItem('mhHourCount', n + 1);
+    updateHourUI();
+  }
+
+  function redeemCup() {
+    const mid = localStorage.getItem('mhMemberId') || 'ไม่ระบุ';
+    const msg = encodeURIComponent('🎁 ขอแลกแก้วฟรี!\nรหัสสมาชิก: ' + mid + '\nสะสมครบ 10 แก้วแล้ว');
+    window.open('https://wa.me/66925241749?text=' + msg, '_blank');
+    localStorage.setItem('mhCupCount', '0');
+    updateCupUI();
+  }
+
+  function redeemHour() {
+    const mid = localStorage.getItem('mhMemberId') || 'ไม่ระบุ';
+    const msg = encodeURIComponent('🎁 ขอแลกชั่วโมงฟรี!\nรหัสสมาชิก: ' + mid + '\nสะสมครบ 10 ชั่วโมงแล้ว');
+    window.open('https://wa.me/66925241749?text=' + msg, '_blank');
+    localStorage.setItem('mhHourCount', '0');
+    updateHourUI();
+  }
+
+  function doRegister() {
+    const name = document.getElementById('regName').value.trim();
+    const phone = document.getElementById('regPhone').value.trim();
+    if (!name || !phone) { alert('กรุณากรอกชื่อและเบอร์โทร'); return; }
+    let mid = localStorage.getItem('mhMemberId');
+    if (!mid) {
+      mid = 'MH' + Math.floor(100000 + Math.random() * 900000);
+      localStorage.setItem('mhMemberId', mid);
+    }
+    const lname = document.getElementById('regLname').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const msg = encodeURIComponent(
+      '✨ สมัครสมาชิก MEE HANG\nชื่อ: ' + name + ' ' + lname +
+      '\nเบอร์: ' + phone + (email ? '\nอีเมล: ' + email : '') +
+      '\nรหัสสมาชิก: ' + mid
+    );
+    window.open('https://wa.me/66925241749?text=' + msg, '_blank');
+    document.getElementById('newMemberId').textContent = mid;
+    document.getElementById('regForm').style.display = 'none';
+    document.getElementById('regSuccess').style.display = 'block';
+    updateCupUI(); updateHourUI();
+  }
+
+  // Init loyalty on load
+  updateCupUI(); updateHourUI();
+
+  // ===== FEEDBACK =====
+  let currentRating = 0;
+  const ratingTexts = ['', '😞 ต้องปรับปรุงด่วน', '😕 พอใช้ ยังมีที่แก้ไข', '😊 ดีครับ ชอบเลย', '😄 ดีมาก ประทับใจ', '🤩 ดีเยี่ยม! รักเลย'];
+
+  function rateStar(n) {
+    currentRating = n;
+    document.querySelectorAll('.star-btn').forEach((b, i) => b.classList.toggle('lit', i < n));
+    document.getElementById('ratingLabel').textContent = ratingTexts[n];
+    const isComplaint = n <= 2;
+    document.getElementById('complaintNotice').classList.toggle('show', isComplaint);
+    document.getElementById('fbCommentLabel').textContent = isComplaint
+      ? '🔒 ข้อร้องเรียน (ส่งตรงผู้บริหาร)'
+      : 'ความคิดเห็น / คำแนะนำ';
+  }
+
+  function sendFeedback() {
+    if (!currentRating) { alert('กรุณาให้คะแนนก่อนส่ง'); return; }
+    const name = document.getElementById('fbName').value.trim() || 'ไม่ระบุชื่อ';
+    const comment = document.getElementById('fbComment').value.trim();
+    const isComplaint = currentRating <= 2;
+    const prefix = isComplaint ? '⚠️ ข้อร้องเรียน (ส่งตรงผู้บริหาร)' : '💬 ความคิดเห็นลูกค้า';
+    const stars = '⭐'.repeat(currentRating);
+    const msg = encodeURIComponent(
+      prefix + '\n' + stars + ' ' + currentRating + '/5\n' +
+      'ชื่อ: ' + name + '\n' +
+      (comment ? 'ความคิดเห็น: ' + comment : '')
+    );
+    // Always goes to manager's WhatsApp
+    window.open('https://wa.me/66925241749?text=' + msg, '_blank');
+    document.getElementById('fbForm').style.display = 'none';
+    const suc = document.getElementById('fbSuccess');
+    suc.style.display = 'block';
+    document.getElementById('fbSuccessIcon').textContent = isComplaint ? '🔒' : '🙏';
+    document.getElementById('fbSuccessMsg').textContent = isComplaint ? 'รับทราบและขออภัยครับ' : 'ขอบคุณมากครับ!';
+    document.getElementById('fbSuccessDetail').textContent = isComplaint
+      ? 'ผู้บริหารจะรับเรื่องและปรับปรุงโดยด่วน พนักงานไม่ทราบ'
+      : 'ความคิดเห็นของคุณมีคุณค่ามากสำหรับเรา';
+  }
+
+  function resetFeedback() {
+    currentRating = 0;
+    document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('lit'));
+    document.getElementById('ratingLabel').textContent = 'กรุณาให้คะแนน';
+    document.getElementById('complaintNotice').classList.remove('show');
+    document.getElementById('fbName').value = '';
+    document.getElementById('fbComment').value = '';
+    document.getElementById('fbForm').style.display = 'block';
+    document.getElementById('fbSuccess').style.display = 'none';
+  }
+</script>
+
+<!-- FOOTER -->
+<footer>
+  <strong>MEE HANG TALK & COFFEE</strong><br>
+  ร้านกาแฟคู่ห้องประชุมส่วนตัว · โคกหนองนา สมุทรสาคร<br>
+  โทร: <a href="tel:+66925241749" style="color:#FFB87A;text-decoration:none;">09-2524-1749</a>
+  · จ–ศ 06:00–18:00 · ส–อา 08:00–20:00<br>
+  <span style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:8px;display:block;">© 2025 MEE HANG TALK & COFFEE. All rights reserved.</span>
+</footer>
+
+<!-- STICKY CALL BUTTON -->
+<div class="sticky-call">
+  <a href="tel:+66925241749">
+    <span>📞</span> โทรจองห้องประชุม
+  </a>
+</div>
+
 </body>
 </html>
