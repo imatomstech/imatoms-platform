@@ -40,7 +40,7 @@ body{
 @keyframes dotpulse{0%,100%{opacity:.25; r:3} 50%{opacity:1; r:5}}
 
 /* everything else above the bg layer */
-.langbar,.hero,.page-title,.orbit,footer{position:relative; z-index:1}
+.langbar,.page-title,.orbit,footer{position:relative; z-index:1}
 
 /* ===== Language toggle ===== */
 .langbar{position:fixed; top:18px; right:18px; z-index:20; display:flex; gap:6px;
@@ -50,98 +50,100 @@ body{
 .langbar button.active{background:linear-gradient(135deg,var(--orange),var(--orange2)); color:#0b0f16; box-shadow:0 0 14px var(--orange-glow)}
 .langbar button:not(.active):hover{color:var(--text)}
 
-/* ===== Header / Logo ===== */
-.hero{display:flex; flex-direction:column; align-items:center; text-align:center; margin-top:10px; margin-bottom:8px}
-.atom-wrap{width:104px; height:104px; position:relative; margin-bottom:18px; filter:drop-shadow(0 0 18px var(--orange-glow))}
+@keyframes spin{from{transform:rotate(0deg)} to{transform:rotate(360deg)}}
+@keyframes spinrev{from{transform:rotate(360deg)} to{transform:rotate(0deg)}}
+@keyframes pulse{0%,100%{opacity:.6; transform:scale(1)} 50%{opacity:1; transform:scale(1.05)}}
+@keyframes dashflow{to{stroke-dashoffset:-40}}
+
+.page-title{margin-top:6px; text-align:center}
+.page-title h1{font-family:'Orbitron','Noto Sans Thai',sans-serif; font-weight:800; font-size:clamp(20px,3vw,28px); color:var(--text)}
+.page-title p{color:var(--text2); font-size:14px; margin-top:8px}
+
+/* ===== Orbit layout (mobile-first = grid with the hub as a banner; becomes a circle on desktop) ===== */
+.orbit{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:34px 18px;
+  max-width:1180px; width:100%; margin-top:30px; align-items:start}
+.orbit-lines{display:none}
+
+/* ---- central hub (brand block) ---- */
+.hub{grid-column:1/-1; display:flex; flex-direction:column; align-items:center; text-align:center;
+  padding:34px 24px; border-radius:28px; margin-bottom:8px;
+  background:
+    radial-gradient(ellipse at 30% 15%, rgba(249,115,22,.16), transparent 60%),
+    radial-gradient(ellipse at 80% 85%, rgba(56,189,248,.16), transparent 60%),
+    linear-gradient(160deg, rgba(23,56,128,.55), rgba(7,26,62,.9));
+  border:1px solid var(--border); box-shadow:0 0 60px -20px var(--orange-glow);
+}
+.atom-wrap{width:88px; height:88px; position:relative; margin-bottom:14px; filter:drop-shadow(0 0 18px var(--orange-glow))}
 .atom-wrap svg{width:100%; height:100%}
 .ring{transform-origin:60px 60px; animation:spin 10s linear infinite}
 .ring2{animation-duration:14s; animation-direction:reverse}
 .ring3{animation-duration:18s}
-@keyframes spin{from{transform:rotate(0deg)} to{transform:rotate(360deg)}}
-@keyframes spinrev{from{transform:rotate(360deg)} to{transform:rotate(0deg)}}
-@keyframes pulse{0%,100%{opacity:.55; transform:scale(1)} 50%{opacity:1; transform:scale(1.06)}}
-@keyframes dashflow{to{stroke-dashoffset:-40}}
 .nucleus{filter:drop-shadow(0 0 8px rgba(249,115,22,.9))}
 
-.brand-kicker{font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; letter-spacing:4px; color:var(--orange2); margin-bottom:6px}
-.brand-title{font-family:'Orbitron',sans-serif; font-size:clamp(28px,5vw,46px); font-weight:900; letter-spacing:1px; line-height:1.1;
+.brand-kicker{font-family:'Orbitron',sans-serif; font-size:12px; font-weight:700; letter-spacing:4px; color:var(--orange2); margin-bottom:6px}
+.brand-title{font-family:'Orbitron',sans-serif; font-size:clamp(24px,4vw,36px); font-weight:900; letter-spacing:1px; line-height:1.1;
   background:linear-gradient(135deg,#fff 30%,#cfe0ff 60%,var(--orange2) 100%); -webkit-background-clip:text; background-clip:text; color:transparent}
 .brand-title .v{color:var(--orange); -webkit-text-fill-color:var(--orange)}
-.brand-tag{font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:3px; color:var(--text3); margin-top:10px; text-transform:uppercase}
+.brand-tag{font-family:'Orbitron',sans-serif; font-size:10.5px; letter-spacing:2.6px; color:var(--text3); margin-top:10px; text-transform:uppercase}
 
-.page-title{margin-top:34px; text-align:center}
-.page-title h1{font-family:'Orbitron','Noto Sans Thai',sans-serif; font-weight:800; font-size:clamp(20px,3vw,28px); color:var(--text)}
-.page-title p{color:var(--text2); font-size:14px; margin-top:8px}
-
-/* ===== Orbit layout (mobile-first = simple grid; becomes a circle on desktop) ===== */
-.orbit{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:18px;
-  max-width:1180px; width:100%; margin-top:34px}
-.orbit-core,.orbit-lines{display:none}
-
-.card{position:relative; background:linear-gradient(160deg,var(--card),rgba(16,27,48,.4));
-  border:1px solid var(--border); border-radius:18px; padding:24px 18px; text-decoration:none;
-  display:flex; flex-direction:column; gap:12px; overflow:hidden; transition:.28s cubic-bezier(.2,.8,.2,1);
-  cursor:pointer}
-.card::before{content:'';position:absolute; inset:0; border-radius:18px; padding:1px;
-  background:linear-gradient(135deg,var(--card-a,var(--orange)),transparent 40%,var(--card-b,var(--blue)));
-  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
-  -webkit-mask-composite:xor; mask-composite:exclude; opacity:0; transition:.28s}
-.card::after{content:'';position:absolute; top:-40%; right:-30%; width:160px; height:160px; border-radius:50%;
-  background:radial-gradient(circle,var(--card-a,var(--orange)) 0%, transparent 70%); opacity:.14; transition:.3s}
-.card:hover{transform:translateY(-6px); border-color:transparent; box-shadow:0 18px 40px -12px rgba(0,0,0,.6), 0 0 0 1px var(--card-a,var(--orange)) inset; z-index:5}
-.card:hover::before{opacity:1}
-.card:hover::after{opacity:.28; transform:scale(1.15)}
-.card-icon{width:48px; height:48px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:24px;
-  background:linear-gradient(135deg,var(--card-a,var(--orange)),var(--card-b,var(--blue))); box-shadow:0 8px 20px -6px var(--card-a,var(--orange))}
-.card-code{font-family:'Orbitron',sans-serif; font-size:9.5px; letter-spacing:2px; color:var(--text3); font-weight:700}
-.card-title{font-family:'Orbitron','Noto Sans Thai',sans-serif; font-size:16px; font-weight:700; color:var(--text)}
-.card-title-en{font-size:10.5px; color:var(--text3); margin-top:2px; letter-spacing:.3px}
-.card-desc{font-size:12px; color:var(--text2); line-height:1.5; flex:1}
-.card-cta{display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--card-a,var(--orange));
-  font-family:'Orbitron',sans-serif; letter-spacing:.5px; opacity:.85}
-.card-cta .arrow{transition:.25s}
-.card:hover .card-cta .arrow{transform:translateX(4px)}
+/* ---- circular module nodes ---- */
+.node{display:flex; flex-direction:column; align-items:center; gap:10px; text-decoration:none; text-align:center; cursor:pointer}
+.node-circle{position:relative; width:118px; height:118px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:38px;
+  background:radial-gradient(circle at 35% 28%, var(--card-b,var(--sky)) 0%, var(--card-a,var(--orange)) 55%, rgba(4,12,28,.9) 100%);
+  box-shadow:
+    inset -10px -10px 22px rgba(0,0,0,.4),
+    inset 8px 8px 16px rgba(255,255,255,.22),
+    0 0 0 3px rgba(255,255,255,.05),
+    0 10px 26px -8px var(--card-a,var(--orange)),
+    0 0 34px -6px var(--card-a,var(--orange));
+  transition:.3s cubic-bezier(.2,.8,.2,1);
+}
+.node-circle::after{content:'';position:absolute; top:12%; left:18%; width:34%; height:22%; border-radius:50%;
+  background:rgba(255,255,255,.35); filter:blur(4px)}
+.node:hover .node-circle{transform:scale(1.1); box-shadow:
+    inset -10px -10px 22px rgba(0,0,0,.4),
+    inset 8px 8px 16px rgba(255,255,255,.3),
+    0 0 0 3px rgba(255,255,255,.1),
+    0 14px 32px -6px var(--card-a,var(--orange)),
+    0 0 50px -4px var(--card-a,var(--orange))}
+.node-code{font-family:'Orbitron',sans-serif; font-size:9px; letter-spacing:1.8px; color:var(--text3); font-weight:700}
+.node-title{font-family:'Orbitron','Noto Sans Thai',sans-serif; font-size:13.5px; font-weight:700; color:var(--text); line-height:1.3; max-width:160px}
+.node-title-en{font-size:9.5px; color:var(--text3); letter-spacing:.3px}
+.node-cta{display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700; color:var(--card-a,var(--orange));
+  font-family:'Orbitron',sans-serif; letter-spacing:.5px; opacity:.9}
+.node-cta .arrow{transition:.25s}
+.node:hover .node-cta .arrow{transform:translateX(4px)}
 
 footer{margin-top:52px; text-align:center; color:var(--text3); font-size:11px; font-family:'Orbitron',sans-serif; letter-spacing:1px}
 footer span{color:var(--orange2)}
 
-/* ===== Desktop: arrange the 7 cards in an orbit around a central core ===== */
+/* ===== Desktop: hub becomes a glowing circle, nodes arranged around it ===== */
 @media(min-width:901px){
-  .orbit{display:block; position:relative; width:920px; height:920px; max-width:none; margin:70px auto 0}
-  .orbit .card{position:absolute; top:50%; left:50%; width:186px; margin:0}
-  /* nth-of-type counts only <a> siblings, so the svg/core wrapper elements before the cards don't shift the index */
-  .orbit .card:nth-of-type(1){transform:translate(calc(-50% + 0px), calc(-50% + -360px))}
-  .orbit .card:nth-of-type(2){transform:translate(calc(-50% + 281px), calc(-50% + -225px))}
-  .orbit .card:nth-of-type(3){transform:translate(calc(-50% + 351px), calc(-50% + 80px))}
-  .orbit .card:nth-of-type(4){transform:translate(calc(-50% + 156px), calc(-50% + 324px))}
-  .orbit .card:nth-of-type(5){transform:translate(calc(-50% + -156px), calc(-50% + 324px))}
-  .orbit .card:nth-of-type(6){transform:translate(calc(-50% + -351px), calc(-50% + 80px))}
-  .orbit .card:nth-of-type(7){transform:translate(calc(-50% + -281px), calc(-50% + -225px))}
-  .orbit .card:nth-of-type(1):hover{transform:translate(calc(-50% + 0px), calc(-50% + -368px)) scale(1.05) !important}
-  .orbit .card:nth-of-type(2):hover{transform:translate(calc(-50% + 287px), calc(-50% + -230px)) scale(1.05) !important}
-  .orbit .card:nth-of-type(3):hover{transform:translate(calc(-50% + 359px), calc(-50% + 80px)) scale(1.05) !important}
-  .orbit .card:nth-of-type(4):hover{transform:translate(calc(-50% + 159px), calc(-50% + 332px)) scale(1.05) !important}
-  .orbit .card:nth-of-type(5):hover{transform:translate(calc(-50% + -159px), calc(-50% + 332px)) scale(1.05) !important}
-  .orbit .card:nth-of-type(6):hover{transform:translate(calc(-50% + -359px), calc(-50% + 80px)) scale(1.05) !important}
-  .orbit .card:nth-of-type(7):hover{transform:translate(calc(-50% + -287px), calc(-50% + -230px)) scale(1.05) !important}
+  .orbit{display:block; position:relative; width:940px; height:940px; max-width:none; margin:50px auto 0}
+
+  .hub{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2;
+    width:380px; height:380px; border-radius:50%; justify-content:center; padding:20px;
+    box-shadow:0 0 0 1px rgba(255,255,255,.06) inset, 0 0 70px -12px var(--orange-glow), 0 0 130px -20px rgba(56,189,248,.35);
+    margin-bottom:0}
+
+  .node{position:absolute; top:50%; left:50%; width:170px; z-index:1}
+  /* nth-of-type counts only <a> siblings, so the svg/hub wrapper elements before the cards don't shift the index */
+  .node:nth-of-type(1){transform:translate(calc(-50% + 0px), calc(-50% + -330px))}
+  .node:nth-of-type(2){transform:translate(calc(-50% + 258px), calc(-50% + -206px))}
+  .node:nth-of-type(3){transform:translate(calc(-50% + 322px), calc(-50% + 73px))}
+  .node:nth-of-type(4){transform:translate(calc(-50% + 143px), calc(-50% + 297px))}
+  .node:nth-of-type(5){transform:translate(calc(-50% + -143px), calc(-50% + 297px))}
+  .node:nth-of-type(6){transform:translate(calc(-50% + -322px), calc(-50% + 73px))}
+  .node:nth-of-type(7){transform:translate(calc(-50% + -258px), calc(-50% + -206px))}
 
   .orbit-lines{display:block; position:absolute; inset:0; width:100%; height:100%; z-index:0}
-  .orbit-lines line{stroke-dasharray:3 5; animation:dashflow 2.4s linear infinite}
-  .orbit-lines circle{animation:spin 40s linear infinite; transform-origin:460px 460px}
-
-  .orbit-core{display:flex; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    width:140px; height:140px; border-radius:50%; align-items:center; justify-content:center; z-index:1}
-  .orbit-core-glow{position:absolute; inset:-24px; border-radius:50%;
-    background:radial-gradient(circle,rgba(249,115,22,.55),rgba(56,189,248,.3) 45%,rgba(34,197,94,.15) 65%,transparent 78%);
-    filter:blur(10px); animation:pulse 3s ease-in-out infinite}
-  .orbit-core svg{width:100%; height:100%; position:relative}
-  .orbit-ring{fill:none; stroke-width:1.5; opacity:.85; transform-origin:60px 60px}
-  .orbit-ring.r1{animation:spin 16s linear infinite}
-  .orbit-ring.r2{animation:spinrev 22s linear infinite}
-  .orbit-core-dot{animation:pulse 2.4s ease-in-out infinite; transform-origin:60px 60px}
+  .orbit-lines line{stroke-dasharray:4 6; animation:dashflow 2.2s linear infinite;
+    filter:drop-shadow(0 0 4px rgba(56,189,248,.65))}
+  .orbit-lines .ring1{animation:spin 50s linear infinite; transform-origin:470px 470px}
 }
 
-@media(max-width:520px){ .langbar{top:10px; right:10px} .orbit{grid-template-columns:1fr 1fr} }
+@media(max-width:520px){ .langbar{top:10px; right:10px} .orbit{grid-template-columns:1fr 1fr} .node-circle{width:96px; height:96px; font-size:30px} }
 </style>
 </head>
 <body>
@@ -197,30 +199,6 @@ footer span{color:var(--orange2)}
     <button id="btn-en" onclick="setLang('en')">EN</button>
   </div>
 
-  <div class="hero">
-    <div class="atom-wrap">
-      <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-        <ellipse class="ring" cx="60" cy="60" rx="52" ry="20" fill="none" stroke="var(--orange)" stroke-width="3"/>
-        <ellipse class="ring ring2" cx="60" cy="60" rx="52" ry="20" fill="none" stroke="var(--sky)" stroke-width="3" transform="rotate(60 60 60)"/>
-        <ellipse class="ring ring3" cx="60" cy="60" rx="52" ry="20" fill="none" stroke="var(--green)" stroke-width="3" transform="rotate(120 60 60)"/>
-        <circle class="nucleus" cx="60" cy="60" r="11" fill="url(#g)"/>
-        <defs>
-          <radialGradient id="g" cx="35%" cy="30%" r="70%">
-            <stop offset="0%" stop-color="#ffd9a8"/>
-            <stop offset="45%" stop-color="var(--orange2)"/>
-            <stop offset="100%" stop-color="var(--orange)"/>
-          </radialGradient>
-        </defs>
-      </svg>
-    </div>
-    <div class="brand-kicker">TKO &middot; IMATOMS TECH</div>
-    <div class="brand-title">Platform <span class="v">V3.0</span></div>
-    <div class="brand-tag">
-      <span style="color:#22C55E" data-th="สู่องค์กรที่ยั่งยืน" data-en="TOWARDS SUSTAINABLE ORGANIZATION">สู่องค์กรที่ยั่งยืน</span>
-      <span style="color:var(--orange2)"> &middot; </span><span style="color:var(--orange2)" data-th="2569" data-en="2026">2569</span>
-    </div>
-  </div>
-
   <div class="page-title">
     <h1 data-th="เลือกแพลตฟอร์มที่ต้องการเข้าใช้งาน" data-en="Choose Your Platform">เลือกแพลตฟอร์มที่ต้องการเข้าใช้งาน</h1>
     <p data-th="รวมทุกบริการและธุรกิจในเครือ TKO ไว้ในที่เดียว" data-en="All TKO Group services and ventures, in one place">รวมทุกบริการและธุรกิจในเครือ TKO ไว้ในที่เดียว</p>
@@ -228,8 +206,8 @@ footer span{color:var(--orange2)}
 
   <div class="orbit">
 
-    <!-- connecting lines from core to each node (desktop only) -->
-    <svg class="orbit-lines" viewBox="0 0 920 920" xmlns="http://www.w3.org/2000/svg">
+    <!-- connecting lines from hub to each node (desktop only) -->
+    <svg class="orbit-lines" viewBox="0 0 940 940" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="var(--orange)"/>
@@ -237,118 +215,95 @@ footer span{color:var(--orange2)}
           <stop offset="100%" stop-color="var(--green)"/>
         </linearGradient>
       </defs>
-      <circle cx="460" cy="460" r="215" fill="none" stroke="var(--sky)" stroke-width="1" stroke-dasharray="2 10" opacity=".3"/>
-      <line x1="460" y1="460" x2="460" y2="150" stroke="url(#lg)" stroke-width="1.4" opacity=".4"/>
-      <line x1="460" y1="460" x2="712" y2="272" stroke="url(#lg)" stroke-width="1.4" opacity=".4"/>
-      <line x1="460" y1="460" x2="778" y2="497" stroke="url(#lg)" stroke-width="1.4" opacity=".4"/>
-      <line x1="460" y1="460" x2="600" y2="722" stroke="url(#lg)" stroke-width="1.4" opacity=".4"/>
-      <line x1="460" y1="460" x2="320" y2="722" stroke="url(#lg)" stroke-width="1.4" opacity=".4"/>
-      <line x1="460" y1="460" x2="142" y2="497" stroke="url(#lg)" stroke-width="1.4" opacity=".4"/>
-      <line x1="460" y1="460" x2="208" y2="272" stroke="url(#lg)" stroke-width="1.4" opacity=".4"/>
+      <circle class="ring1" cx="470" cy="470" r="255" fill="none" stroke="var(--sky)" stroke-width="1" stroke-dasharray="2 10" opacity=".35"/>
+      <line x1="470" y1="470" x2="470" y2="170" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line x1="470" y1="470" x2="728" y2="294" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line x1="470" y1="470" x2="792" y2="543" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line x1="470" y1="470" x2="613" y2="767" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line x1="470" y1="470" x2="327" y2="767" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line x1="470" y1="470" x2="148" y2="543" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line x1="470" y1="470" x2="212" y2="294" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
     </svg>
 
-    <!-- central glowing core (desktop only) -->
-    <div class="orbit-core">
-      <div class="orbit-core-glow"></div>
-      <svg viewBox="0 0 120 120">
-        <circle class="orbit-ring r1" cx="60" cy="60" r="52" stroke="var(--orange)" stroke-dasharray="6 6"/>
-        <circle class="orbit-ring r2" cx="60" cy="60" r="40" stroke="var(--sky)" stroke-dasharray="4 8"/>
-        <circle class="orbit-core-dot" cx="60" cy="60" r="16" fill="url(#coreg)"/>
-        <defs>
-          <radialGradient id="coreg" cx="35%" cy="30%" r="70%">
-            <stop offset="0%" stop-color="#fff4e0"/>
-            <stop offset="45%" stop-color="var(--orange2)"/>
-            <stop offset="100%" stop-color="var(--green)"/>
-          </radialGradient>
-        </defs>
-      </svg>
+    <!-- central hub: brand block, moved here so it sits at the exact center of the orbit -->
+    <div class="hub">
+      <div class="atom-wrap">
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <ellipse class="ring" cx="60" cy="60" rx="52" ry="20" fill="none" stroke="var(--orange)" stroke-width="3"/>
+          <ellipse class="ring ring2" cx="60" cy="60" rx="52" ry="20" fill="none" stroke="var(--sky)" stroke-width="3" transform="rotate(60 60 60)"/>
+          <ellipse class="ring ring3" cx="60" cy="60" rx="52" ry="20" fill="none" stroke="var(--green)" stroke-width="3" transform="rotate(120 60 60)"/>
+          <circle class="nucleus" cx="60" cy="60" r="11" fill="url(#g)"/>
+          <defs>
+            <radialGradient id="g" cx="35%" cy="30%" r="70%">
+              <stop offset="0%" stop-color="#ffd9a8"/>
+              <stop offset="45%" stop-color="var(--orange2)"/>
+              <stop offset="100%" stop-color="var(--orange)"/>
+            </radialGradient>
+          </defs>
+        </svg>
+      </div>
+      <div class="brand-kicker">TKO &middot; IMATOMS TECH</div>
+      <div class="brand-title">Platform <span class="v">V3.0</span></div>
+      <div class="brand-tag">
+        <span style="color:#22C55E" data-th="สู่องค์กรที่ยั่งยืน" data-en="TOWARDS SUSTAINABLE ORGANIZATION">สู่องค์กรที่ยั่งยืน</span>
+        <span style="color:var(--orange2)"> &middot; </span><span style="color:var(--orange2)" data-th="2569" data-en="2026">2569</span>
+      </div>
     </div>
 
-    <a class="card" href="/TKO_iMATOMsFM/" style="--card-a:var(--orange); --card-b:var(--orange2)">
-      <div class="card-icon">🏢</div>
-      <div>
-        <div class="card-code">01 &middot; HARD FM</div>
-        <div class="card-title" data-th="บริหารจัดการอาคาร" data-en="Facility Management">บริหารจัดการอาคาร</div>
-        <div class="card-title-en">iMATOMs FM</div>
-      </div>
-      <div class="card-desc" data-th="WR · OPT · PPM · MA Contract · Inventory บริหารงานวิศวกรรมอาคารครบวงจร"
-           data-en="WR · OPT · PPM · MA Contract · Inventory — full facility engineering operations">
-           WR · OPT · PPM · MA Contract · Inventory บริหารงานวิศวกรรมอาคารครบวงจร</div>
-      <div class="card-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    <a class="node" href="/TKO_iMATOMsFM/" style="--card-a:var(--orange); --card-b:var(--orange2)">
+      <div class="node-circle">🏢</div>
+      <div class="node-code">01 &middot; HARD FM</div>
+      <div class="node-title" data-th="บริหารจัดการอาคาร" data-en="Facility Management">บริหารจัดการอาคาร</div>
+      <div class="node-title-en">iMATOMs FM</div>
+      <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="card" href="/TKO_iMATOMsIoT/" style="--card-a:var(--sky); --card-b:var(--blue)">
-      <div class="card-icon">📡</div>
-      <div>
-        <div class="card-code">02 &middot; IOT</div>
-        <div class="card-title" data-th="ระบบ IoT ตรวจสอบ & แจ้งเตือน" data-en="IoT Monitoring & Alarm">ระบบ IoT ตรวจสอบ &amp; แจ้งเตือน</div>
-        <div class="card-title-en">iMATOMs IoT</div>
-      </div>
-      <div class="card-desc" data-th="ติดตั้งเซ็นเซอร์ เชื่อม Dashboard พร้อมแจ้งเตือนอัตโนมัติแบบเรียลไทม์"
-           data-en="Sensor installation, live dashboard and automated warning alarms">
-           ติดตั้งเซ็นเซอร์ เชื่อม Dashboard พร้อมแจ้งเตือนอัตโนมัติแบบเรียลไทม์</div>
-      <div class="card-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    <a class="node" href="/TKO_iMATOMsIoT/" style="--card-a:var(--sky); --card-b:var(--blue)">
+      <div class="node-circle">📡</div>
+      <div class="node-code">02 &middot; IOT</div>
+      <div class="node-title" data-th="ระบบ IoT ตรวจสอบ & แจ้งเตือน" data-en="IoT Monitoring & Alarm">ระบบ IoT ตรวจสอบ &amp; แจ้งเตือน</div>
+      <div class="node-title-en">iMATOMs IoT</div>
+      <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="card" href="/TKO_iMATOMsMV/" style="--card-a:var(--blue); --card-b:var(--green)">
-      <div class="card-icon">📊</div>
-      <div>
-        <div class="card-code">03 &middot; M&amp;V</div>
-        <div class="card-title" data-th="วัดผลและทวนสอบพลังงาน" data-en="Measurement & Validation">วัดผลและทวนสอบพลังงาน</div>
-        <div class="card-title-en">iMATOMs M&amp;V</div>
-      </div>
-      <div class="card-desc" data-th="ทดสอบประสิทธิภาพเครื่องทำน้ำเย็น (Chiller Performance Test)"
-           data-en="Chiller performance testing and energy validation">
-           ทดสอบประสิทธิภาพเครื่องทำน้ำเย็น (Chiller Performance Test)</div>
-      <div class="card-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    <a class="node" href="/TKO_iMATOMsMV/" style="--card-a:var(--blue); --card-b:var(--green)">
+      <div class="node-circle">📊</div>
+      <div class="node-code">03 &middot; M&amp;V</div>
+      <div class="node-title" data-th="วัดผลและทวนสอบพลังงาน" data-en="Measurement & Validation">วัดผลและทวนสอบพลังงาน</div>
+      <div class="node-title-en">iMATOMs M&amp;V</div>
+      <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="card" href="/TKO_iMATOMsadV/" style="--card-a:var(--amber); --card-b:var(--orange)">
-      <div class="card-icon">🏆</div>
-      <div>
-        <div class="card-code">04 &middot; ADVISORY</div>
-        <div class="card-title" data-th="ที่ปรึกษาพลังงาน & รางวัล" data-en="Energy Consultant & Awards">ที่ปรึกษาพลังงาน &amp; รางวัล</div>
-        <div class="card-title-en">iMATOMs adV</div>
-      </div>
-      <div class="card-desc" data-th="จัดทำรายงานพลังงาน และที่ปรึกษาสมัครรางวัล Thailand & Asia Energy Awards"
-           data-en="Energy reports and consulting for Thailand & Asia Energy Awards submissions">
-           จัดทำรายงานพลังงาน และที่ปรึกษาสมัครรางวัล Thailand &amp; Asia Energy Awards</div>
-      <div class="card-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    <a class="node" href="/TKO_iMATOMsadV/" style="--card-a:var(--amber); --card-b:var(--orange)">
+      <div class="node-circle">🏆</div>
+      <div class="node-code">04 &middot; ADVISORY</div>
+      <div class="node-title" data-th="ที่ปรึกษาพลังงาน & รางวัล" data-en="Energy Consultant & Awards">ที่ปรึกษาพลังงาน &amp; รางวัล</div>
+      <div class="node-title-en">iMATOMs adV</div>
+      <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="card" href="/TKO_iMATOMsBOT/" style="--card-a:var(--green); --card-b:var(--sky)">
-      <div class="card-icon">🤖</div>
-      <div>
-        <div class="card-code">05 &middot; ROBOTICS</div>
-        <div class="card-title" data-th="หุ่นยนต์ & ระบบอัตโนมัติ" data-en="Robotics & Automation">หุ่นยนต์ &amp; ระบบอัตโนมัติ</div>
-        <div class="card-title-en">iMATOMs BOT</div>
-      </div>
-      <div class="card-desc" data-th="แพลตฟอร์มควบคุมและพัฒนา ROBOT & BAS System"
-           data-en="Control and development platform for ROBOT & BAS System">
-           แพลตฟอร์มควบคุมและพัฒนา ROBOT &amp; BAS System</div>
-      <div class="card-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    <a class="node" href="/TKO_iMATOMsBOT/" style="--card-a:var(--green); --card-b:var(--sky)">
+      <div class="node-circle">🤖</div>
+      <div class="node-code">05 &middot; ROBOTICS</div>
+      <div class="node-title" data-th="หุ่นยนต์ & ระบบอัตโนมัติ" data-en="Robotics & Automation">หุ่นยนต์ &amp; ระบบอัตโนมัติ</div>
+      <div class="node-title-en">iMATOMs BOT</div>
+      <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="card" href="/TKO_IsanFoodMarket/" style="--card-a:var(--orange); --card-b:var(--green)">
-      <div class="card-icon">🍜</div>
-      <div>
-        <div class="card-code">06 &middot; MARKET</div>
-        <div class="card-title" data-th="ตลาดอาหารอีสาน" data-en="Isan Food Market">ตลาดอาหารอีสาน</div>
-        <div class="card-title-en">Isan Food Market</div>
-      </div>
-      <div class="card-desc" data-th="ธุรกิจอาหารในเครือ TKO Group" data-en="A TKO Group food business">ธุรกิจอาหารในเครือ TKO Group</div>
-      <div class="card-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    <a class="node" href="/TKO_IsanFoodMarket/" style="--card-a:var(--orange); --card-b:var(--green)">
+      <div class="node-circle">🍜</div>
+      <div class="node-code">06 &middot; MARKET</div>
+      <div class="node-title" data-th="ตลาดอาหารอีสาน" data-en="Isan Food Market">ตลาดอาหารอีสาน</div>
+      <div class="node-title-en">Isan Food Market</div>
+      <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="card" href="/TKO_MeeHangCoffee/" style="--card-a:var(--amber); --card-b:var(--sky)">
-      <div class="card-icon">☕</div>
-      <div>
-        <div class="card-code">07 &middot; CAFE</div>
-        <div class="card-title" data-th="มีฮัง คอฟฟี่" data-en="MeeHang Coffee">มีฮัง คอฟฟี่</div>
-        <div class="card-title-en">MeeHang Coffee</div>
-      </div>
-      <div class="card-desc" data-th="ธุรกิจร้านกาแฟในเครือ TKO Group" data-en="A TKO Group coffee shop business">ธุรกิจร้านกาแฟในเครือ TKO Group</div>
-      <div class="card-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    <a class="node" href="/TKO_MeeHangCoffee/" style="--card-a:var(--amber); --card-b:var(--sky)">
+      <div class="node-circle">☕</div>
+      <div class="node-code">07 &middot; CAFE</div>
+      <div class="node-title" data-th="มีฮัง คอฟฟี่" data-en="MeeHang Coffee">มีฮัง คอฟฟี่</div>
+      <div class="node-title-en">MeeHang Coffee</div>
+      <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
   </div>
