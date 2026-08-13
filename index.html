@@ -11,6 +11,7 @@
 :root{
   --orange:#F97316; --orange2:#FB923C; --orange-glow:rgba(249,115,22,.35);
   --blue:#3B82F6; --sky:#38BDF8; --green:#22C55E; --teal:#14B8A6; --purple:#A855F7; --amber:#F59E0B;
+  --amber2:#D97706; --red:#EF4444;
   --bg0:#040c1c; --bg1:#071A3E; --bg2:#0D2554; --card:#0D2554;
   --border:#173880; --text:#e6edf7; --text2:#8fa1bd; --text3:#5b6c88;
 }
@@ -55,7 +56,7 @@ body{
 @keyframes pulse{0%,100%{opacity:.6; transform:scale(1)} 50%{opacity:1; transform:scale(1.05)}}
 @keyframes dashflow{to{stroke-dashoffset:-40}}
 
-.page-title{margin-top:6px; text-align:center}
+.page-title{margin-top:44px; text-align:center}
 .page-title h1{font-family:'Orbitron','Noto Sans Thai',sans-serif; font-weight:800; font-size:clamp(20px,3vw,28px); color:var(--text)}
 .page-title p{color:var(--text2); font-size:14px; margin-top:8px}
 
@@ -87,26 +88,24 @@ body{
 .brand-tag{font-family:'Orbitron',sans-serif; font-size:10.5px; letter-spacing:2.6px; color:var(--text3); margin-top:10px; text-transform:uppercase}
 
 /* ---- circular module nodes ---- */
-.node{display:flex; flex-direction:column; align-items:center; gap:10px; text-decoration:none; text-align:center; cursor:pointer}
-.node-circle{position:relative; width:118px; height:118px; border-radius:50%; flex-shrink:0;
-  display:flex; align-items:center; justify-content:center; font-size:38px;
-  background:radial-gradient(circle at 35% 28%, var(--card-b,var(--sky)) 0%, var(--card-a,var(--orange)) 55%, rgba(4,12,28,.9) 100%);
+.node{display:flex; flex-direction:column; align-items:center; gap:9px; text-decoration:none; text-align:center; cursor:pointer}
+.node-circle{position:relative; width:100px; height:100px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:32px;
+  background:radial-gradient(circle at 35% 28%, var(--card-b,var(--sky)) 0%, var(--card-a,var(--orange)) 60%, rgba(4,12,28,.92) 100%);
   box-shadow:
-    inset -10px -10px 22px rgba(0,0,0,.4),
-    inset 8px 8px 16px rgba(255,255,255,.22),
-    0 0 0 3px rgba(255,255,255,.05),
-    0 10px 26px -8px var(--card-a,var(--orange)),
-    0 0 34px -6px var(--card-a,var(--orange));
+    inset -4px -4px 10px rgba(0,0,0,.28),
+    inset 3px 3px 7px rgba(255,255,255,.14),
+    0 6px 16px -6px var(--card-a,var(--orange)),
+    0 0 22px -8px var(--card-a,var(--orange));
   transition:.3s cubic-bezier(.2,.8,.2,1);
 }
-.node-circle::after{content:'';position:absolute; top:12%; left:18%; width:34%; height:22%; border-radius:50%;
-  background:rgba(255,255,255,.35); filter:blur(4px)}
-.node:hover .node-circle{transform:scale(1.1); box-shadow:
-    inset -10px -10px 22px rgba(0,0,0,.4),
-    inset 8px 8px 16px rgba(255,255,255,.3),
-    0 0 0 3px rgba(255,255,255,.1),
-    0 14px 32px -6px var(--card-a,var(--orange)),
-    0 0 50px -4px var(--card-a,var(--orange))}
+.node-circle::after{content:'';position:absolute; top:14%; left:20%; width:26%; height:16%; border-radius:50%;
+  background:rgba(255,255,255,.22); filter:blur(3px)}
+.node:hover .node-circle{transform:scale(1.08); box-shadow:
+    inset -4px -4px 10px rgba(0,0,0,.28),
+    inset 3px 3px 7px rgba(255,255,255,.2),
+    0 8px 20px -6px var(--card-a,var(--orange)),
+    0 0 30px -6px var(--card-a,var(--orange))}
 .node-code{font-family:'Orbitron',sans-serif; font-size:9px; letter-spacing:1.8px; color:var(--text3); font-weight:700}
 .node-title{font-family:'Orbitron','Noto Sans Thai',sans-serif; font-size:13.5px; font-weight:700; color:var(--text); line-height:1.3; max-width:160px}
 .node-title-en{font-size:9.5px; color:var(--text3); letter-spacing:.3px}
@@ -117,30 +116,35 @@ body{
 
 footer{margin-top:52px; text-align:center; color:var(--text3); font-size:11px; font-family:'Orbitron',sans-serif; letter-spacing:1px}
 footer span{color:var(--orange2)}
+.footer-sub{margin-top:12px; font-size:10px; letter-spacing:1px; line-height:1.8; color:var(--text2); max-width:520px}
 
 /* ===== Desktop: hub becomes a glowing circle, nodes arranged around it ===== */
 @media(min-width:901px){
-  .orbit{display:block; position:relative; width:940px; height:940px; max-width:none; margin:50px auto 0}
+  .orbit{display:block; position:relative; width:820px; height:820px; max-width:none; margin:70px auto 0}
 
   .hub{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2;
-    width:380px; height:380px; border-radius:50%; justify-content:center; padding:20px;
-    box-shadow:0 0 0 1px rgba(255,255,255,.06) inset, 0 0 70px -12px var(--orange-glow), 0 0 130px -20px rgba(56,189,248,.35);
+    width:320px; height:320px; border-radius:50%; justify-content:center; padding:18px;
+    box-shadow:0 0 0 1px rgba(255,255,255,.06) inset, 0 0 60px -12px var(--orange-glow), 0 0 110px -20px rgba(56,189,248,.35);
     margin-bottom:0}
+  .hub .atom-wrap{width:74px; height:74px; margin-bottom:10px}
+  .hub .brand-title{font-size:clamp(20px,3vw,28px)}
+  .hub .brand-kicker{font-size:11px}
+  .hub .brand-tag{font-size:9.5px}
 
-  .node{position:absolute; top:50%; left:50%; width:170px; z-index:1}
+  .node{position:absolute; top:50%; left:50%; width:150px; z-index:1}
   /* nth-of-type counts only <a> siblings, so the svg/hub wrapper elements before the cards don't shift the index */
-  .node:nth-of-type(1){transform:translate(calc(-50% + 0px), calc(-50% + -330px))}
-  .node:nth-of-type(2){transform:translate(calc(-50% + 258px), calc(-50% + -206px))}
-  .node:nth-of-type(3){transform:translate(calc(-50% + 322px), calc(-50% + 73px))}
-  .node:nth-of-type(4){transform:translate(calc(-50% + 143px), calc(-50% + 297px))}
-  .node:nth-of-type(5){transform:translate(calc(-50% + -143px), calc(-50% + 297px))}
-  .node:nth-of-type(6){transform:translate(calc(-50% + -322px), calc(-50% + 73px))}
-  .node:nth-of-type(7){transform:translate(calc(-50% + -258px), calc(-50% + -206px))}
+  .node:nth-of-type(1){transform:translate(calc(-50% + 0px), calc(-50% + -290px))}
+  .node:nth-of-type(2){transform:translate(calc(-50% + 227px), calc(-50% + -181px))}
+  .node:nth-of-type(3){transform:translate(calc(-50% + 283px), calc(-50% + 64px))}
+  .node:nth-of-type(4){transform:translate(calc(-50% + 126px), calc(-50% + 261px))}
+  .node:nth-of-type(5){transform:translate(calc(-50% + -126px), calc(-50% + 261px))}
+  .node:nth-of-type(6){transform:translate(calc(-50% + -283px), calc(-50% + 64px))}
+  .node:nth-of-type(7){transform:translate(calc(-50% + -227px), calc(-50% + -181px))}
 
   .orbit-lines{display:block; position:absolute; inset:0; width:100%; height:100%; z-index:0}
   .orbit-lines line{stroke-dasharray:4 6; animation:dashflow 2.2s linear infinite;
     filter:drop-shadow(0 0 4px rgba(56,189,248,.65))}
-  .orbit-lines .ring1{animation:spin 50s linear infinite; transform-origin:470px 470px}
+  .orbit-lines .ring1{animation:spin 50s linear infinite; transform-origin:410px 410px}
 }
 
 @media(max-width:520px){ .langbar{top:10px; right:10px} .orbit{grid-template-columns:1fr 1fr} .node-circle{width:96px; height:96px; font-size:30px} }
@@ -207,7 +211,7 @@ footer span{color:var(--orange2)}
   <div class="orbit">
 
     <!-- connecting lines from hub to each node (desktop only) -->
-    <svg class="orbit-lines" viewBox="0 0 940 940" xmlns="http://www.w3.org/2000/svg">
+    <svg class="orbit-lines" viewBox="0 0 820 820" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="var(--orange)"/>
@@ -215,14 +219,14 @@ footer span{color:var(--orange2)}
           <stop offset="100%" stop-color="var(--green)"/>
         </linearGradient>
       </defs>
-      <circle class="ring1" cx="470" cy="470" r="255" fill="none" stroke="var(--sky)" stroke-width="1" stroke-dasharray="2 10" opacity=".35"/>
-      <line x1="470" y1="470" x2="470" y2="170" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
-      <line x1="470" y1="470" x2="728" y2="294" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
-      <line x1="470" y1="470" x2="792" y2="543" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
-      <line x1="470" y1="470" x2="613" y2="767" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
-      <line x1="470" y1="470" x2="327" y2="767" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
-      <line x1="470" y1="470" x2="148" y2="543" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
-      <line x1="470" y1="470" x2="212" y2="294" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <circle class="ring1" cx="410" cy="410" r="190" fill="none" stroke="var(--sky)" stroke-width="1" stroke-dasharray="2 10" opacity=".35"/>
+      <line x1="410" y1="410" x2="410" y2="120" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line x1="410" y1="410" x2="637" y2="229" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line x1="410" y1="410" x2="693" y2="474" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line x1="410" y1="410" x2="536" y2="671" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line x1="410" y1="410" x2="284" y2="671" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line x1="410" y1="410" x2="127" y2="474" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line x1="410" y1="410" x2="183" y2="229" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
     </svg>
 
     <!-- central hub: brand block, moved here so it sits at the exact center of the orbit -->
@@ -266,7 +270,7 @@ footer span{color:var(--orange2)}
       <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="node" href="/TKO_iMATOMsMV/" style="--card-a:var(--blue); --card-b:var(--green)">
+    <a class="node" href="/TKO_iMATOMsMV/" style="--card-a:var(--teal); --card-b:var(--sky)">
       <div class="node-circle">📊</div>
       <div class="node-code">03 &middot; M&amp;V</div>
       <div class="node-title" data-th="วัดผลและทวนสอบพลังงาน" data-en="Measurement & Validation">วัดผลและทวนสอบพลังงาน</div>
@@ -282,7 +286,7 @@ footer span{color:var(--orange2)}
       <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="node" href="/TKO_iMATOMsBOT/" style="--card-a:var(--green); --card-b:var(--sky)">
+    <a class="node" href="/TKO_iMATOMsBOT/" style="--card-a:var(--green); --card-b:var(--teal)">
       <div class="node-circle">🤖</div>
       <div class="node-code">05 &middot; ROBOTICS</div>
       <div class="node-title" data-th="หุ่นยนต์ & ระบบอัตโนมัติ" data-en="Robotics & Automation">หุ่นยนต์ &amp; ระบบอัตโนมัติ</div>
@@ -290,7 +294,7 @@ footer span{color:var(--orange2)}
       <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="node" href="/TKO_IsanFoodMarket/" style="--card-a:var(--orange); --card-b:var(--green)">
+    <a class="node" href="/TKO_IsanFoodMarket/" style="--card-a:var(--red); --card-b:var(--purple)">
       <div class="node-circle">🍜</div>
       <div class="node-code">06 &middot; MARKET</div>
       <div class="node-title" data-th="ตลาดอาหารอีสาน" data-en="Isan Food Market">ตลาดอาหารอีสาน</div>
@@ -298,7 +302,7 @@ footer span{color:var(--orange2)}
       <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="node" href="/TKO_MeeHangCoffee/" style="--card-a:var(--amber); --card-b:var(--sky)">
+    <a class="node" href="/TKO_MeeHangCoffee/" style="--card-a:var(--amber2); --card-b:var(--red)">
       <div class="node-circle">☕</div>
       <div class="node-code">07 &middot; CAFE</div>
       <div class="node-title" data-th="มีฮัง คอฟฟี่" data-en="MeeHang Coffee">มีฮัง คอฟฟี่</div>
@@ -308,7 +312,13 @@ footer span{color:var(--orange2)}
 
   </div>
 
-  <footer>TKO GROUP &middot; <span>TECHNOLOGY</span> &middot; <span style="color:var(--purple)">INNOVATION</span> &middot; <span style="color:var(--blue)">SUSTAINABILITY</span></footer>
+  <footer>
+    TKO GROUP &middot; <span>TECHNOLOGY</span> &middot; <span style="color:var(--purple)">INNOVATION</span> &middot; <span style="color:var(--blue)">SUSTAINABILITY</span>
+    <div class="footer-sub">
+      <span style="color:var(--orange2)">iMATOMs</span> &ndash; Integrated Maintenance Analytics Technical Operations Management and Safety<br>
+      <span style="color:var(--sky)">Edition &middot; 2026</span>
+    </div>
+  </footer>
 
 <script>
 function setLang(lang){
