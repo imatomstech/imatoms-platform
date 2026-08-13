@@ -74,7 +74,7 @@ body{
     linear-gradient(160deg, rgba(23,56,128,.55), rgba(7,26,62,.9));
   border:1px solid var(--border); box-shadow:0 0 60px -20px var(--orange-glow);
 }
-.atom-wrap{width:88px; height:88px; position:relative; margin-bottom:14px; filter:drop-shadow(0 0 18px var(--orange-glow))}
+.atom-wrap{width:110px; height:110px; position:relative; margin-bottom:14px; filter:drop-shadow(0 0 22px var(--orange-glow))}
 .atom-wrap svg{width:100%; height:100%}
 .ring{transform-origin:60px 60px; animation:spin 10s linear infinite}
 .ring2{animation-duration:14s; animation-direction:reverse}
@@ -87,25 +87,18 @@ body{
 .brand-title .v{color:var(--orange); -webkit-text-fill-color:var(--orange)}
 .brand-tag{font-family:'Orbitron',sans-serif; font-size:10.5px; letter-spacing:2.6px; color:var(--text3); margin-top:10px; text-transform:uppercase}
 
-/* ---- circular module nodes ---- */
+/* ---- module nodes: flat glass tile icon, no ball/sphere ---- */
 .node{display:flex; flex-direction:column; align-items:center; gap:9px; text-decoration:none; text-align:center; cursor:pointer}
-.node-circle{position:relative; width:100px; height:100px; border-radius:50%; flex-shrink:0;
-  display:flex; align-items:center; justify-content:center; font-size:32px;
-  background:radial-gradient(circle at 35% 28%, var(--card-b,var(--sky)) 0%, var(--card-a,var(--orange)) 60%, rgba(4,12,28,.92) 100%);
-  box-shadow:
-    inset -4px -4px 10px rgba(0,0,0,.28),
-    inset 3px 3px 7px rgba(255,255,255,.14),
-    0 6px 16px -6px var(--card-a,var(--orange)),
-    0 0 22px -8px var(--card-a,var(--orange));
+.node-circle{position:relative; width:88px; height:88px; border-radius:22px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:34px;
+  background:linear-gradient(150deg, var(--card-b,var(--sky)) 0%, var(--card-a,var(--orange)) 100%);
+  box-shadow:0 10px 24px -10px var(--card-a,var(--orange)), 0 0 0 1px rgba(255,255,255,.12) inset;
   transition:.3s cubic-bezier(.2,.8,.2,1);
 }
-.node-circle::after{content:'';position:absolute; top:14%; left:20%; width:26%; height:16%; border-radius:50%;
-  background:rgba(255,255,255,.22); filter:blur(3px)}
-.node:hover .node-circle{transform:scale(1.08); box-shadow:
-    inset -4px -4px 10px rgba(0,0,0,.28),
-    inset 3px 3px 7px rgba(255,255,255,.2),
-    0 8px 20px -6px var(--card-a,var(--orange)),
-    0 0 30px -6px var(--card-a,var(--orange))}
+.node-circle::before{content:'';position:absolute; inset:0; border-radius:22px;
+  background:linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,0) 55%); pointer-events:none}
+.node:hover .node-circle{transform:translateY(-4px) scale(1.05);
+  box-shadow:0 16px 32px -10px var(--card-a,var(--orange)), 0 0 0 1px rgba(255,255,255,.2) inset}
 .node-code{font-family:'Orbitron',sans-serif; font-size:9px; letter-spacing:1.8px; color:var(--text3); font-weight:700}
 .node-title{font-family:'Orbitron','Noto Sans Thai',sans-serif; font-size:13.5px; font-weight:700; color:var(--text); line-height:1.3; max-width:160px}
 .node-title-en{font-size:9.5px; color:var(--text3); letter-spacing:.3px}
@@ -127,7 +120,7 @@ footer span{color:var(--orange2)}
     width:320px; height:320px; border-radius:50%; justify-content:center; padding:18px;
     box-shadow:0 0 0 1px rgba(255,255,255,.06) inset, 0 0 60px -12px var(--orange-glow), 0 0 110px -20px rgba(56,189,248,.35);
     margin-bottom:0}
-  .hub .atom-wrap{width:74px; height:74px; margin-bottom:10px}
+  .hub .atom-wrap{width:100px; height:100px; margin-bottom:8px}
   .hub .brand-title{font-size:clamp(20px,3vw,28px)}
   .hub .brand-kicker{font-size:11px}
   .hub .brand-tag{font-size:9.5px}
@@ -234,10 +227,10 @@ footer span{color:var(--orange2)}
     <div class="hub">
       <div class="atom-wrap">
         <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-          <ellipse class="ring" cx="60" cy="60" rx="52" ry="20" fill="none" stroke="var(--orange)" stroke-width="3"/>
-          <ellipse class="ring ring2" cx="60" cy="60" rx="52" ry="20" fill="none" stroke="var(--sky)" stroke-width="3" transform="rotate(60 60 60)"/>
-          <ellipse class="ring ring3" cx="60" cy="60" rx="52" ry="20" fill="none" stroke="var(--green)" stroke-width="3" transform="rotate(120 60 60)"/>
-          <circle class="nucleus" cx="60" cy="60" r="11" fill="url(#g)"/>
+          <ellipse class="ring" cx="60" cy="60" rx="54" ry="21" fill="none" stroke="var(--orange)" stroke-width="3.4"/>
+          <ellipse class="ring ring2" cx="60" cy="60" rx="54" ry="21" fill="none" stroke="var(--sky)" stroke-width="3.4" transform="rotate(60 60 60)"/>
+          <ellipse class="ring ring3" cx="60" cy="60" rx="54" ry="21" fill="none" stroke="var(--green)" stroke-width="3.4" transform="rotate(120 60 60)"/>
+          <circle class="nucleus" cx="60" cy="60" r="13" fill="url(#g)"/>
           <defs>
             <radialGradient id="g" cx="35%" cy="30%" r="70%">
               <stop offset="0%" stop-color="#ffd9a8"/>
