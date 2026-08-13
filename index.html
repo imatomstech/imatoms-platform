@@ -3,46 +3,233 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TKO Group — imatomstech.com</title>
-<meta http-equiv="refresh" content="1;url=/TKO_iMATOMsFM/">
+<title>TKO iMATOMs Tech Platform V3.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+:root{
+  --orange:#F97316; --orange2:#FB923C; --orange-glow:rgba(249,115,22,.35);
+  --blue:#3B82F6; --teal:#14B8A6; --purple:#A855F7; --amber:#F59E0B;
+  --bg0:#060a14; --bg1:#0b1220; --bg2:#0f1a2e; --card:#101b30;
+  --border:#1e2b45; --text:#e6edf7; --text2:#8fa1bd; --text3:#5b6c88;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;
-  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px;text-align:center;padding:24px}
-.logo{display:flex;align-items:center;gap:14px}
-.logo-icon{width:52px;height:52px;background:linear-gradient(135deg,#f97316,#ef4444);border-radius:14px;
-  display:flex;align-items:center;justify-content:center;font-size:26px}
-.logo-text{font-size:28px;font-weight:700;color:#fff;text-align:left}
-.logo-sub{font-size:13px;color:#64748b;margin-top:2px;text-align:left}
-.spinner{width:28px;height:28px;border:3px solid #2d3748;border-top-color:#f97316;border-radius:50%;
-  animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.msg{font-size:14px;color:#94a3b8}
-.links{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:640px;margin-top:12px}
-.links a{padding:8px 16px;border-radius:20px;background:#1e2330;border:1px solid #2d3748;
-  color:#94a3b8;text-decoration:none;font-size:12px;font-weight:600;transition:.2s}
-.links a:hover{border-color:#f97316;color:#f97316}
+body{
+  font-family:'Noto Sans Thai','Segoe UI',sans-serif;
+  background:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(249,115,22,.12), transparent 60%),
+    radial-gradient(ellipse 900px 600px at 85% 0%, rgba(59,130,246,.15), transparent 60%),
+    linear-gradient(180deg,var(--bg0),var(--bg1) 40%,var(--bg2));
+  color:var(--text); min-height:100vh; padding:40px 20px 60px;
+  display:flex; flex-direction:column; align-items:center;
+}
+.orbitron{font-family:'Orbitron','Noto Sans Thai',sans-serif}
+
+/* ===== Language toggle ===== */
+.langbar{position:fixed; top:18px; right:18px; z-index:20; display:flex; gap:6px;
+  background:rgba(16,27,48,.75); border:1px solid var(--border); border-radius:999px; padding:4px; backdrop-filter:blur(8px)}
+.langbar button{border:none; background:transparent; color:var(--text3); font-weight:700; font-size:12px;
+  padding:6px 14px; border-radius:999px; cursor:pointer; transition:.2s; font-family:'Orbitron',sans-serif; letter-spacing:.5px}
+.langbar button.active{background:linear-gradient(135deg,var(--orange),var(--orange2)); color:#0b0f16; box-shadow:0 0 14px var(--orange-glow)}
+.langbar button:not(.active):hover{color:var(--text)}
+
+/* ===== Header / Logo ===== */
+.hero{display:flex; flex-direction:column; align-items:center; text-align:center; margin-top:10px; margin-bottom:8px}
+.atom-wrap{width:104px; height:104px; position:relative; margin-bottom:18px; filter:drop-shadow(0 0 18px var(--orange-glow))}
+.atom-wrap svg{width:100%; height:100%}
+.ring{transform-origin:60px 60px; animation:spin 10s linear infinite}
+.ring2{animation-duration:14s; animation-direction:reverse}
+.ring3{animation-duration:18s}
+@keyframes spin{from{transform:rotate(0deg)} to{transform:rotate(360deg)}}
+.nucleus{filter:drop-shadow(0 0 8px rgba(249,115,22,.9))}
+
+.brand-kicker{font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; letter-spacing:4px; color:var(--orange2); margin-bottom:6px}
+.brand-title{font-family:'Orbitron',sans-serif; font-size:clamp(28px,5vw,46px); font-weight:900; letter-spacing:1px; line-height:1.1;
+  background:linear-gradient(135deg,#fff 30%,#cfe0ff 60%,var(--orange2) 100%); -webkit-background-clip:text; background-clip:text; color:transparent}
+.brand-title .v{color:var(--orange); -webkit-text-fill-color:var(--orange)}
+.brand-tag{font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:3px; color:var(--text3); margin-top:10px; text-transform:uppercase}
+
+.page-title{margin-top:34px; text-align:center}
+.page-title h1{font-family:'Orbitron','Noto Sans Thai',sans-serif; font-weight:800; font-size:clamp(20px,3vw,28px); color:var(--text)}
+.page-title p{color:var(--text2); font-size:14px; margin-top:8px}
+
+/* ===== Grid ===== */
+.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:18px;
+  max-width:1180px; width:100%; margin-top:34px}
+.card{position:relative; background:linear-gradient(160deg,var(--card),rgba(16,27,48,.4));
+  border:1px solid var(--border); border-radius:18px; padding:26px 20px; text-decoration:none;
+  display:flex; flex-direction:column; gap:14px; overflow:hidden; transition:.28s cubic-bezier(.2,.8,.2,1);
+  cursor:pointer}
+.card::before{content:'';position:absolute; inset:0; border-radius:18px; padding:1px;
+  background:linear-gradient(135deg,var(--card-a,var(--orange)),transparent 40%,var(--card-b,var(--blue)));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude; opacity:0; transition:.28s}
+.card::after{content:'';position:absolute; top:-40%; right:-30%; width:160px; height:160px; border-radius:50%;
+  background:radial-gradient(circle,var(--card-a,var(--orange)) 0%, transparent 70%); opacity:.14; transition:.3s}
+.card:hover{transform:translateY(-6px); border-color:transparent; box-shadow:0 18px 40px -12px rgba(0,0,0,.6), 0 0 0 1px var(--card-a,var(--orange)) inset}
+.card:hover::before{opacity:1}
+.card:hover::after{opacity:.28; transform:scale(1.15)}
+.card-icon{width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:26px;
+  background:linear-gradient(135deg,var(--card-a,var(--orange)),var(--card-b,var(--blue))); box-shadow:0 8px 20px -6px var(--card-a,var(--orange))}
+.card-code{font-family:'Orbitron',sans-serif; font-size:10px; letter-spacing:2px; color:var(--text3); font-weight:700}
+.card-title{font-family:'Orbitron','Noto Sans Thai',sans-serif; font-size:17px; font-weight:700; color:var(--text)}
+.card-title-en{font-size:11px; color:var(--text3); margin-top:2px; letter-spacing:.3px}
+.card-desc{font-size:12.5px; color:var(--text2); line-height:1.5; flex:1}
+.card-cta{display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--card-a,var(--orange));
+  font-family:'Orbitron',sans-serif; letter-spacing:.5px; opacity:.85}
+.card-cta .arrow{transition:.25s}
+.card:hover .card-cta .arrow{transform:translateX(4px)}
+
+footer{margin-top:52px; text-align:center; color:var(--text3); font-size:11px; font-family:'Orbitron',sans-serif; letter-spacing:1px}
+footer span{color:var(--orange2)}
+
+@media(max-width:520px){ .langbar{top:10px; right:10px} .grid{grid-template-columns:1fr 1fr} }
 </style>
 </head>
 <body>
-  <div class="logo">
-    <div class="logo-icon">🔧</div>
-    <div>
-      <div class="logo-text">TKO Group</div>
-      <div class="logo-sub">Technology · Innovation · Sustainability</div>
+
+  <div class="langbar">
+    <button id="btn-th" class="active" onclick="setLang('th')">TH</button>
+    <button id="btn-en" onclick="setLang('en')">EN</button>
+  </div>
+
+  <div class="hero">
+    <div class="atom-wrap">
+      <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <ellipse class="ring" cx="60" cy="60" rx="52" ry="20" fill="none" stroke="var(--orange)" stroke-width="3"/>
+        <ellipse class="ring ring2" cx="60" cy="60" rx="52" ry="20" fill="none" stroke="var(--blue)" stroke-width="3" transform="rotate(60 60 60)"/>
+        <ellipse class="ring ring3" cx="60" cy="60" rx="52" ry="20" fill="none" stroke="var(--teal)" stroke-width="3" transform="rotate(120 60 60)"/>
+        <circle class="nucleus" cx="60" cy="60" r="11" fill="var(--orange)"/>
+        <circle class="nucleus" cx="60" cy="60" r="11" fill="url(#g)"/>
+        <defs>
+          <radialGradient id="g" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#ffd9a8"/>
+            <stop offset="45%" stop-color="var(--orange2)"/>
+            <stop offset="100%" stop-color="var(--orange)"/>
+          </radialGradient>
+        </defs>
+      </svg>
     </div>
+    <div class="brand-kicker">TKO &middot; IMATOMS TECH</div>
+    <div class="brand-title">Platform <span class="v">V3.0</span></div>
+    <div class="brand-tag" data-th="สู่องค์กรที่ยั่งยืน · 2569" data-en="TOWARDS SUSTAINABLE ORGANIZATION &middot; 2026">สู่องค์กรที่ยั่งยืน · 2569</div>
   </div>
-  <div class="spinner"></div>
-  <div class="msg">กำลังนำคุณไปยัง iMATOMs FM Platform...</div>
-  <div class="links">
-    <a href="/TKO_iMATOMsFM/">iMATOMs FM</a>
-    <a href="/TKO_iMATOMsBOT/">iMATOMs BOT</a>
-    <a href="/TKO_iMATOMsIoT/">iMATOMs IoT</a>
-    <a href="/TKO_IsanFoodMarket/">Isan Food Market</a>
-    <a href="/TKO_MeeHangCoffee/">MeeHang Coffee</a>
-    <a href="/TKO_iMATOMsadV/">iMATOMs adV</a>
-    <a href="/TKO_iMATOMsMV/">iMATOMs MV</a>
+
+  <div class="page-title">
+    <h1 data-th="เลือกแพลตฟอร์มที่ต้องการเข้าใช้งาน" data-en="Choose Your Platform">เลือกแพลตฟอร์มที่ต้องการเข้าใช้งาน</h1>
+    <p data-th="รวมทุกบริการและธุรกิจในเครือ TKO ไว้ในที่เดียว" data-en="All TKO Group services and ventures, in one place">รวมทุกบริการและธุรกิจในเครือ TKO ไว้ในที่เดียว</p>
   </div>
-  <script>setTimeout(()=>{location.href='/TKO_iMATOMsFM/'},1000);</script>
+
+  <div class="grid">
+
+    <a class="card" href="/TKO_iMATOMsFM/" style="--card-a:var(--orange); --card-b:#fb923c">
+      <div class="card-icon">🏢</div>
+      <div>
+        <div class="card-code">01 &middot; HARD FM</div>
+        <div class="card-title" data-th="บริหารจัดการอาคาร" data-en="Facility Management">บริหารจัดการอาคาร</div>
+        <div class="card-title-en">iMATOMs FM</div>
+      </div>
+      <div class="card-desc" data-th="WR · OPT · PPM · MA Contract · Inventory บริหารงานวิศวกรรมอาคารครบวงจร"
+           data-en="WR · OPT · PPM · MA Contract · Inventory — full facility engineering operations">
+           WR · OPT · PPM · MA Contract · Inventory บริหารงานวิศวกรรมอาคารครบวงจร</div>
+      <div class="card-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    </a>
+
+    <a class="card" href="/TKO_iMATOMsIoT/" style="--card-a:var(--teal); --card-b:var(--blue)">
+      <div class="card-icon">📡</div>
+      <div>
+        <div class="card-code">02 &middot; IOT</div>
+        <div class="card-title" data-th="ระบบ IoT ตรวจสอบ & แจ้งเตือน" data-en="IoT Monitoring & Alarm">ระบบ IoT ตรวจสอบ &amp; แจ้งเตือน</div>
+        <div class="card-title-en">iMATOMs IoT</div>
+      </div>
+      <div class="card-desc" data-th="ติดตั้งเซ็นเซอร์ เชื่อม Dashboard พร้อมแจ้งเตือนอัตโนมัติแบบเรียลไทม์"
+           data-en="Sensor installation, live dashboard and automated warning alarms">
+           ติดตั้งเซ็นเซอร์ เชื่อม Dashboard พร้อมแจ้งเตือนอัตโนมัติแบบเรียลไทม์</div>
+      <div class="card-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    </a>
+
+    <a class="card" href="/TKO_iMATOMsMV/" style="--card-a:var(--blue); --card-b:var(--purple)">
+      <div class="card-icon">📊</div>
+      <div>
+        <div class="card-code">03 &middot; M&amp;V</div>
+        <div class="card-title" data-th="วัดผลและทวนสอบพลังงาน" data-en="Measurement & Validation">วัดผลและทวนสอบพลังงาน</div>
+        <div class="card-title-en">iMATOMs M&amp;V</div>
+      </div>
+      <div class="card-desc" data-th="ทดสอบประสิทธิภาพเครื่องทำน้ำเย็น (Chiller Performance Test)"
+           data-en="Chiller performance testing and energy validation">
+           ทดสอบประสิทธิภาพเครื่องทำน้ำเย็น (Chiller Performance Test)</div>
+      <div class="card-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    </a>
+
+    <a class="card" href="/TKO_iMATOMsadV/" style="--card-a:var(--amber); --card-b:var(--orange)">
+      <div class="card-icon">🏆</div>
+      <div>
+        <div class="card-code">04 &middot; ADVISORY</div>
+        <div class="card-title" data-th="ที่ปรึกษาพลังงาน & รางวัล" data-en="Energy Consultant & Awards">ที่ปรึกษาพลังงาน &amp; รางวัล</div>
+        <div class="card-title-en">iMATOMs adV</div>
+      </div>
+      <div class="card-desc" data-th="จัดทำรายงานพลังงาน และที่ปรึกษาสมัครรางวัล Thailand & Asia Energy Awards"
+           data-en="Energy reports and consulting for Thailand & Asia Energy Awards submissions">
+           จัดทำรายงานพลังงาน และที่ปรึกษาสมัครรางวัล Thailand &amp; Asia Energy Awards</div>
+      <div class="card-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    </a>
+
+    <a class="card" href="/TKO_iMATOMsBOT/" style="--card-a:var(--purple); --card-b:var(--blue)">
+      <div class="card-icon">🤖</div>
+      <div>
+        <div class="card-code">05 &middot; ROBOTICS</div>
+        <div class="card-title" data-th="หุ่นยนต์ & ระบบอัตโนมัติ" data-en="Robotics & Automation">หุ่นยนต์ &amp; ระบบอัตโนมัติ</div>
+        <div class="card-title-en">iMATOMs BOT</div>
+      </div>
+      <div class="card-desc" data-th="แพลตฟอร์มควบคุมและพัฒนา ROBOT & BAS System"
+           data-en="Control and development platform for ROBOT & BAS System">
+           แพลตฟอร์มควบคุมและพัฒนา ROBOT &amp; BAS System</div>
+      <div class="card-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    </a>
+
+    <a class="card" href="/TKO_IsanFoodMarket/" style="--card-a:#EF4444; --card-b:var(--orange)">
+      <div class="card-icon">🍜</div>
+      <div>
+        <div class="card-code">06 &middot; MARKET</div>
+        <div class="card-title" data-th="ตลาดอาหารอีสาน" data-en="Isan Food Market">ตลาดอาหารอีสาน</div>
+        <div class="card-title-en">Isan Food Market</div>
+      </div>
+      <div class="card-desc" data-th="ธุรกิจอาหารในเครือ TKO Group" data-en="A TKO Group food business">ธุรกิจอาหารในเครือ TKO Group</div>
+      <div class="card-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    </a>
+
+    <a class="card" href="/TKO_MeeHangCoffee/" style="--card-a:#A16207; --card-b:var(--amber)">
+      <div class="card-icon">☕</div>
+      <div>
+        <div class="card-code">07 &middot; CAFE</div>
+        <div class="card-title" data-th="มีฮัง คอฟฟี่" data-en="MeeHang Coffee">มีฮัง คอฟฟี่</div>
+        <div class="card-title-en">MeeHang Coffee</div>
+      </div>
+      <div class="card-desc" data-th="ธุรกิจร้านกาแฟในเครือ TKO Group" data-en="A TKO Group coffee shop business">ธุรกิจร้านกาแฟในเครือ TKO Group</div>
+      <div class="card-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    </a>
+
+  </div>
+
+  <footer>TKO GROUP &middot; <span>TECHNOLOGY</span> &middot; INNOVATION &middot; SUSTAINABILITY</footer>
+
+<script>
+function setLang(lang){
+  document.querySelectorAll('[data-th]').forEach(function(el){
+    el.textContent = lang==='en' ? el.getAttribute('data-en') : el.getAttribute('data-th');
+  });
+  document.getElementById('btn-th').classList.toggle('active', lang==='th');
+  document.getElementById('btn-en').classList.toggle('active', lang==='en');
+  document.documentElement.lang = lang;
+  try{ localStorage.setItem('tko_lang', lang); }catch(e){}
+}
+(function(){
+  var saved = 'th';
+  try{ saved = localStorage.getItem('tko_lang') || 'th'; }catch(e){}
+  setLang(saved);
+})();
+</script>
+
 </body>
 </html>
