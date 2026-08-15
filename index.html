@@ -51,6 +51,23 @@ body{
 .langbar button.active{background:linear-gradient(135deg,var(--orange),var(--orange2)); color:#0b0f16; box-shadow:0 0 14px var(--orange-glow)}
 .langbar button:not(.active):hover{color:var(--text)}
 
+/* ===== Module 08 · Mobile App — standalone badge, top-right corner ===== */
+.mobile-badge{position:fixed; top:66px; right:18px; z-index:19; display:flex; align-items:center; gap:10px;
+  background:rgba(16,27,48,.82); border:1px solid var(--border); border-radius:16px; padding:8px 14px 8px 8px;
+  text-decoration:none; backdrop-filter:blur(8px); box-shadow:0 8px 22px -8px rgba(0,0,0,.5); transition:.25s}
+.mobile-badge:hover{border-color:var(--card-a,var(--amber2)); box-shadow:0 10px 26px -6px var(--card-a,var(--amber2))}
+.mobile-badge-icon{width:38px; height:38px; border-radius:11px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px;
+  background:linear-gradient(150deg, var(--card-b,var(--sky)) 0%, var(--card-a,var(--amber2)) 100%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.12) inset}
+.mobile-badge-code{font-family:'Orbitron',sans-serif; font-size:8px; letter-spacing:1.6px; color:var(--text3); font-weight:700}
+.mobile-badge-title{font-family:'Orbitron','Noto Sans Thai',sans-serif; font-size:11.5px; font-weight:700; color:var(--text); line-height:1.2}
+.mobile-badge-cta{display:flex; align-items:center; gap:4px; font-size:9.5px; font-weight:700; color:var(--card-a,var(--amber2));
+  font-family:'Orbitron',sans-serif; letter-spacing:.4px; margin-top:2px}
+.mobile-badge-cta .arrow{transition:.25s}
+.mobile-badge:hover .mobile-badge-cta .arrow{transform:translateX(3px)}
+
+@media(max-width:520px){ .mobile-badge{top:56px; right:10px; padding:6px 10px 6px 6px; gap:7px} .mobile-badge-icon{width:32px; height:32px; font-size:15px} .mobile-badge-title{font-size:10px} }
+
 @keyframes spin{from{transform:rotate(0deg)} to{transform:rotate(360deg)}}
 @keyframes spinrev{from{transform:rotate(360deg)} to{transform:rotate(0deg)}}
 @keyframes pulse{0%,100%{opacity:.6; transform:scale(1)} 50%{opacity:1; transform:scale(1.05)}}
@@ -196,6 +213,15 @@ footer span{color:var(--orange2)}
     <button id="btn-th" class="active" onclick="setLang('th')">TH</button>
     <button id="btn-en" onclick="setLang('en')">EN</button>
   </div>
+
+  <a class="mobile-badge" href="/TKO_iMATOMs MobileAPP/" style="--card-a:var(--amber2); --card-b:var(--sky)">
+    <div class="mobile-badge-icon">📱</div>
+    <div class="mobile-badge-text">
+      <div class="mobile-badge-code">08 &middot; APP</div>
+      <div class="mobile-badge-title" data-th="แอปพลิเคชันมือถือ" data-en="Mobile Application">แอปพลิเคชันมือถือ</div>
+      <div class="mobile-badge-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    </div>
+  </a>
 
   <div class="page-title">
     <h1 data-th="เลือกแพลตฟอร์มที่ต้องการเข้าใช้งาน" data-en="Choose Your Platform">เลือกแพลตฟอร์มที่ต้องการเข้าใช้งาน</h1>
