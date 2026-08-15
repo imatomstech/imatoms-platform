@@ -627,7 +627,6 @@ function render(){
   else if(ST.screen === 'splash') html = screenSplash();
   else html = screenMain();
   document.getElementById('app-root').innerHTML = html;
-  document.getElementById('wr-fab').classList && null;
   updateFab();
   bindFormHandlers();
   document.documentElement.lang = ST.lang;
