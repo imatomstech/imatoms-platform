@@ -41,7 +41,6 @@ a{color:inherit;text-decoration:none}
 .blueprint>.corner::after{top:5px;left:0;width:100%;height:1px}
 .blueprint>.corner.tl{top:-6px;left:-6px} .blueprint>.corner.tr{top:-6px;right:-6px}
 .blueprint>.corner.bl{bottom:-6px;left:-6px} .blueprint>.corner.br{bottom:-6px;right:-6px}
-.corners{}
 
 /* ---- buttons ---- */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-family:var(--font-heading);font-weight:600;font-size:14px;color:var(--color-text);background:transparent;border:1px solid var(--color-divider);padding:9px 16px;border-radius:0}
@@ -50,7 +49,6 @@ a{color:inherit;text-decoration:none}
 .btn-primary:not(:disabled):hover{background:var(--color-accent-600)}
 .btn-secondary:not(:disabled):hover{background:rgba(29,31,32,.06)}
 .btn-block{width:100%;margin-top:6px}
-.btn svg{display:block}
 
 /* ---- forms ---- */
 .field>label{display:block;font-size:12px;margin-bottom:5px;color:rgba(29,31,32,.7)}
@@ -58,7 +56,6 @@ a{color:inherit;text-decoration:none}
 .input{width:100%;min-height:38px;padding:8px 10px;font:inherit;font-size:14px;color:var(--color-text);background:var(--color-surface);border:1px solid var(--color-divider);border-radius:0}
 .input:focus-visible{outline:none;border-color:var(--color-accent)}
 textarea.input{min-height:80px;resize:vertical}
-select.input{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--color-text) 50%),linear-gradient(135deg,var(--color-text) 50%,transparent 50%);background-position:calc(100% - 16px) center,calc(100% - 11px) center;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
 
 /* ---- seg control ---- */
 .seg{display:inline-flex;overflow:hidden;border:1px solid var(--color-divider)}
@@ -71,16 +68,6 @@ select.input{appearance:none;background-image:linear-gradient(45deg,transparent 
 .tag-accent{background:var(--color-accent-100);color:var(--color-accent-800)}
 .tag-neutral{background:var(--color-neutral-100);color:var(--color-neutral-800)}
 .tag-outline{border:1px solid var(--color-accent);color:var(--color-accent)}
-.tag-danger{background:#fdecea;color:#a83226}
-
-/* ---- table ---- */
-.table{width:100%;border-collapse:collapse;font-size:13px}
-.table th{text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:rgba(29,31,32,.6);padding:6px;border-bottom:1px solid var(--color-divider)}
-.table td{padding:6px;border-bottom:1px solid rgba(29,31,32,.08)}
-
-/* ---- switch ---- */
-.switch-track{width:38px;height:22px;border-radius:11px;display:flex;align-items:center;padding:2px;box-sizing:border-box;cursor:pointer;border:1px solid var(--color-divider)}
-.switch-knob{width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:margin-left .15s ease}
 
 /* ---- atom logo ---- */
 .atom{position:relative}
@@ -94,7 +81,6 @@ select.input{appearance:none;background-image:linear-gradient(45deg,transparent 
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;flex-shrink:0}
 .topbar .brand{font-family:var(--font-heading);font-weight:600;font-size:18px}
 .icon-btn{width:32px;height:32px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;cursor:pointer}
-.back-nav{display:flex;align-items:center;gap:4px;font-family:var(--font-heading);font-size:14px;cursor:pointer}
 
 /* ---- bottom tab bar ---- */
 .tabbar{display:flex;border-top:1px solid var(--color-divider);flex-shrink:0;padding:8px 8px calc(10px + env(safe-area-inset-bottom));background:var(--color-bg)}
@@ -122,59 +108,14 @@ select.input{appearance:none;background-image:linear-gradient(45deg,transparent 
 .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#1d1f20;color:#fff;padding:10px 18px;font-size:13px;border-radius:4px;opacity:0;pointer-events:none;transition:.25s;z-index:999;max-width:88%;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.empty-state{padding:18px;text-align:center;color:var(--color-neutral-600);font-size:13px}
 .msg{font-size:12.5px;margin-top:2px;min-height:16px}
 .msg.ok{color:#1a7a3c}
 .msg.err{color:var(--danger)}
-
-/* ---- sheet ---- */
-.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;z-index:400;opacity:0;pointer-events:none;transition:.2s}
-.sheet-overlay.show{opacity:1;pointer-events:auto}
-.sheet{background:var(--color-bg);width:100%;max-width:480px;max-height:88vh;overflow:auto;border-radius:10px 10px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));transform:translateY(20px);transition:.25s}
-.sheet-overlay.show .sheet{transform:translateY(0)}
-.sheet-handle{width:36px;height:4px;background:var(--color-divider);border-radius:2px;margin:0 auto 14px}
-.fab{position:fixed;right:calc(50% - 240px + 20px);bottom:88px;width:52px;height:52px;border-radius:50%;background:var(--color-accent);color:#fff;font-size:26px;border:none;display:none;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(89,128,166,.4);cursor:pointer;z-index:200}
-@media(max-width:480px){ .fab{right:20px} }
-.fab.show{display:flex}
 </style>
 </head>
 <body>
 
 <div id="app-root"></div>
-
-<div class="sheet-overlay" id="wr-sheet-overlay">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <h3 id="wr-sheet-title" style="margin-bottom:14px">New Work Request</h3>
-    <form id="wr-form">
-      <div class="field"><label id="lbl-wr-title">Title</label><input type="text" class="input" id="wr-title" required></div>
-      <div class="field"><label id="lbl-wr-desc">Description</label><textarea class="input" id="wr-desc"></textarea></div>
-      <div class="field"><label id="lbl-wr-asset">Asset (optional)</label><select class="input" id="wr-asset"><option value="">—</option></select></div>
-      <div style="display:flex;gap:10px">
-        <div class="field" style="flex:1"><label id="lbl-wr-type">Type</label>
-          <select class="input" id="wr-type">
-            <option value="corrective">Corrective</option>
-            <option value="preventive">Preventive</option>
-            <option value="emergency">Emergency</option>
-          </select>
-        </div>
-        <div class="field" style="flex:1"><label id="lbl-wr-priority">Priority</label>
-          <select class="input" id="wr-priority">
-            <option value="low">Low</option>
-            <option value="medium" selected>Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-          </select>
-        </div>
-      </div>
-      <div style="display:flex;gap:10px;margin-top:6px">
-        <button type="button" class="btn btn-secondary" style="flex:1" id="wr-cancel">Cancel</button>
-        <button type="submit" class="btn btn-primary" style="flex:1" id="wr-submit">Submit</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
@@ -194,7 +135,7 @@ async function api(path, opts){
   const res = await fetch(API_BASE + path, Object.assign({}, opts, { headers }));
   let data = null;
   try{ data = await res.json(); }catch(e){}
-  if(res.status === 401){ clearSession(); ST.screen='login'; ST.tab='home'; ST.opsDetail=null; render(); throw new Error((data && data.error) || 'Session expired — please sign in again'); }
+  if(res.status === 401){ clearSession(); ST.screen='login'; ST.tab='home'; render(); throw new Error((data && data.error) || 'Session expired — please sign in again'); }
   if(!res.ok) throw new Error((data && data.error) || ('Request failed (' + res.status + ')'));
   return data;
 }
@@ -207,123 +148,73 @@ const ST = {
   screen: (getToken() && getUser()) ? 'main' : 'login',
   authMode: 'login',
   tab: 'home',
-  opsDetail: null,
   lifestyleSub: 'market',
   showPassword: false,
   loginBusy:false, loginMsg:'', loginErr:false,
   regBusy:false, regMsg:'', regErr:false,
   dash: null,
-  wr: [], wrLoaded:false,
 };
 
 function setLang(l){ ST.lang = l; try{ localStorage.setItem(LS.lang, l); }catch(e){} render(); }
+
+/* module -> real webapp URL. FM has a live app; the rest are still
+   "Coming Soon" placeholder pages until their backend/app exists. */
+const MODULE_URLS = {
+  fm: '/TKO_iMATOMsFM/',
+  iot: '/TKO_iMATOMsIoT/',
+  mv: '/TKO_iMATOMsMV/',
+  advisory: '/TKO_iMATOMsadV/',
+  bot: '/TKO_iMATOMsBOT/',
+};
 
 /* ============== copy ============== */
 function L(){
   const th = ST.lang === 'th';
   return th ? {
-    backToPlatform:'← กลับสู่แพลตฟอร์ม', back:'ย้อนกลับ', navHome:'หน้าหลัก', navOps:'ระบบงาน', navLifestyle:'ไลฟ์สไตล์', navProfile:'โปรไฟล์',
+    backToPlatform:'← กลับสู่แพลตฟอร์ม', navHome:'หน้าหลัก', navOps:'ระบบงาน', navLifestyle:'ไลฟ์สไตล์', navProfile:'โปรไฟล์',
     homeGreeting:'สวัสดี, ' + ((getUser()&&(getUser().full_name||getUser().username)) || 'คุณผู้ใช้งาน'),
     homeRole:'TKO iMATOMs Platform · Facility & Energy',
-    platformsTitle:'แพลตฟอร์มในเครือ', platformsSub:'รวมทุกบริการและธุรกิจในเครือ TKO ไว้ในที่เดียว',
+    platformsTitle:'แพลตฟอร์มในเครือ', platformsSub:'กดเพื่อเข้าใช้งานเว็บแอปจริงของแต่ละระบบ',
     lifestyleTitle:'ไลฟ์สไตล์', open:'เปิดให้บริการ',
     marketName:'ตลาดอาหารอีสาน', marketTagline:'Isan Food Market', marketTab:'ตลาดอาหาร', marketCta:'เข้าสู่ร้านค้า',
     coffeeName:'มีแฮง คอฟฟี่', coffeeTagline:'MeeHang Coffee', coffeeTab:'คอฟฟี่', coffeeCta:'สั่งเครื่องดื่ม',
-    opsTitle:'ระบบปฏิบัติการ', opsSub:'7 แพลตฟอร์ม · TKO กรุ๊ป',
-    fmTitle:'iMATOMs FM', fmSub:'บริหารจัดการอาคาร (Hard FM)', fmRecent:'ใบแจ้งซ่อมล่าสุด', fmCta:'+ สร้างใบแจ้งซ่อมใหม่',
+    opsTitle:'ระบบปฏิบัติการ', opsSub:'กดเพื่อเข้าใช้งานเว็บแอปจริงของแต่ละระบบ',
     kOpen:'เปิดงาน', kProgress:'กำลังดำเนินการ', kPm:'PM ครบกำหนด (30 วัน)', kNotif:'แจ้งเตือนที่ยังไม่อ่าน',
-    iotTitle:'iMATOMs IoT', iotSub:'ระบบ IoT ตรวจสอบ & แจ้งเตือน', iotTrend:'แนวโน้มการใช้พลังงาน 24 ชม.', iotAlerts:'รายการแจ้งเตือน',
-    mvTitle:'iMATOMs M&V', mvSub:'วัดผลและทวนสอบพลังงาน', mvChart:'เปรียบเทียบพลังงานฐานและใช้จริง', mvBaseline:'ค่าฐาน', mvActual:'ใช้จริง', mvCta:'ดาวน์โหลดรายงาน',
-    advTitle:'iMATOMs Advisory', advSub:'ที่ปรึกษาพลังงาน & รางวัล', advAwards:'รางวัลและการรับรอง',
-    advFormTitle:'ขอรับคำปรึกษา', advName:'ชื่อ', advCompany:'บริษัท', advMsg:'รายละเอียด', advCta:'ส่งคำขอ',
-    botTitle:'iMATOMs BOT', botSub:'หุ่นยนต์ & ระบบอัตโนมัติ', botMap:'แผนที่อาคารแบบเรียลไทม์',
-    profileTitle:'โปรไฟล์', profileLang:'ภาษา', profileNotif:'การแจ้งเตือน', profileAccess:'สิทธิ์การเข้าใช้งาน', granted:'อนุญาต', signOut:'ออกจากระบบ',
+    profileTitle:'โปรไฟล์', profileLang:'ภาษา', profileAccess:'สิทธิ์การเข้าใช้งาน', granted:'อนุญาต', signOut:'ออกจากระบบ',
     loginTitle:'เข้าสู่ระบบ', loginSub:'สำหรับผู้ใช้งานที่ได้รับอนุมัติแล้วเท่านั้น',
     username:'ชื่อผู้ใช้งาน', password:'รหัสผ่าน', signIn:'Login',
     noAccount:'ยังไม่มีบัญชี?', registerLink:'ขอสิทธิ์เข้าใช้งาน', haveAccount:'มีบัญชีอยู่แล้ว?', loginLink:'เข้าสู่ระบบ',
     fullName:'ชื่อ-นามสกุล', email:'อีเมล', approvalNote:'คำขอของคุณจะถูกส่งให้ผู้ดูแลระบบตรวจสอบและอนุมัติก่อนจึงจะสามารถเข้าใช้งานได้', submitRequest:'ส่งคำขอเข้าใช้งาน',
-    splashSelect:'เลือกภาษา · Select your language', splashTh:'ภาษาไทย', splashEn:'English', continueBtn:'เข้าสู่ระบบต่อ',
+    splashSelect:'เลือกภาษา · Select your language', splashTh:'ภาษาไทย', splashEn:'English',
   } : {
-    backToPlatform:'← Back to Platform', back:'Back', navHome:'Home', navOps:'Operations', navLifestyle:'Lifestyle', navProfile:'Profile',
+    backToPlatform:'← Back to Platform', navHome:'Home', navOps:'Operations', navLifestyle:'Lifestyle', navProfile:'Profile',
     homeGreeting:'Welcome back, ' + ((getUser()&&(getUser().full_name||getUser().username)) || 'User'),
     homeRole:'TKO iMATOMs Platform · Facility & Energy',
-    platformsTitle:'Platforms', platformsSub:'All TKO services and businesses in one place',
+    platformsTitle:'Platforms', platformsSub:'Tap to open the real web app for each system',
     lifestyleTitle:'Lifestyle', open:'Open',
     marketName:'Isan Food Market', marketTagline:'ตลาดอาหารอีสาน', marketTab:'Food Market', marketCta:'Enter Store',
     coffeeName:'MeeHang Coffee', coffeeTagline:'มีแฮง คอฟฟี่', coffeeTab:'Coffee', coffeeCta:'Order Now',
-    opsTitle:'Operations', opsSub:'7 platforms · TKO Group',
-    fmTitle:'iMATOMs FM', fmSub:'Hard Facility Management', fmRecent:'Recent Work Requests', fmCta:'+ New Work Request',
+    opsTitle:'Operations', opsSub:'Tap to open the real web app for each system',
     kOpen:'Open', kProgress:'In Progress', kPm:'PM Due (30 days)', kNotif:'Unread Notifications',
-    iotTitle:'iMATOMs IoT', iotSub:'Sensors & Alerts', iotTrend:'24h Power Trend', iotAlerts:'Alerts Feed',
-    mvTitle:'iMATOMs M&V', mvSub:'Measurement & Verification', mvChart:'Baseline vs Actual', mvBaseline:'Baseline', mvActual:'Actual', mvCta:'Download Report',
-    advTitle:'iMATOMs Advisory', advSub:'Energy Consulting & Awards', advAwards:'Awards & Certifications',
-    advFormTitle:'Request a Consultation', advName:'Name', advCompany:'Company', advMsg:'Details', advCta:'Submit Request',
-    botTitle:'iMATOMs BOT', botSub:'Robotics & Automation', botMap:'Live Facility Map',
-    profileTitle:'Profile', profileLang:'Language', profileNotif:'Notifications', profileAccess:'Module Access', granted:'Granted', signOut:'Sign Out',
+    profileTitle:'Profile', profileLang:'Language', profileAccess:'Module Access', granted:'Granted', signOut:'Sign Out',
     loginTitle:'Sign In', loginSub:'Access is limited to approved users only.',
     username:'Username', password:'Password', signIn:'Login',
     noAccount:"Don't have an account?", registerLink:'Request Access', haveAccount:'Already have an account?', loginLink:'Sign In',
     fullName:'Full Name', email:'Email', approvalNote:'Your request will be reviewed and must be approved by an administrator before access is granted.', submitRequest:'Submit Request',
-    splashSelect:'เลือกภาษา · Select your language', splashTh:'ภาษาไทย', splashEn:'English', continueBtn:'Continue',
+    splashSelect:'เลือกภาษา · Select your language', splashTh:'ภาษาไทย', splashEn:'English',
   };
 }
 
 function opsModules(){
   const th = ST.lang==='th';
   return [
-    { key:'fm', code:'FM', name:'iMATOMs FM', tagline: th?'บริหารจัดการอาคาร':'Facility Management', status: th?'ออนไลน์':'Online', tagClass:'tag-accent' },
-    { key:'iot', code:'IoT', name:'iMATOMs IoT', tagline: th?'ตรวจสอบ & แจ้งเตือน':'Monitoring & Alerts', status: th?'3 แจ้งเตือน':'3 Alerts', tagClass:'tag-outline' },
-    { key:'mv', code:'M&V', name:'iMATOMs M&V', tagline: th?'วัดผลและทวนสอบพลังงาน':'Measurement & Verification', status: th?'ออนไลน์':'Online', tagClass:'tag-accent' },
-    { key:'advisory', code:'ADV', name:'iMATOMs Advisory', tagline: th?'ที่ปรึกษา & รางวัล':'Energy Consulting & Awards', status: th?'ออนไลน์':'Online', tagClass:'tag-accent' },
-    { key:'bot', code:'BOT', name:'iMATOMs BOT', tagline: th?'หุ่นยนต์ & ระบบอัตโนมัติ':'Automation Fleet', status: th?'5/6 ออนไลน์':'5/6 Online', tagClass:'tag-accent' },
+    { key:'fm', code:'FM', name:'iMATOMs FM', tagline: th?'บริหารจัดการอาคาร':'Facility Management', status: th?'พร้อมใช้งาน':'Available', tagClass:'tag-accent' },
+    { key:'iot', code:'IoT', name:'iMATOMs IoT', tagline: th?'ตรวจสอบ & แจ้งเตือน':'Monitoring & Alerts', status: th?'เร็วๆ นี้':'Coming Soon', tagClass:'tag-neutral' },
+    { key:'mv', code:'M&V', name:'iMATOMs M&V', tagline: th?'วัดผลและทวนสอบพลังงาน':'Measurement & Verification', status: th?'เร็วๆ นี้':'Coming Soon', tagClass:'tag-neutral' },
+    { key:'advisory', code:'ADV', name:'iMATOMs Advisory', tagline: th?'ที่ปรึกษา & รางวัล':'Energy Consulting & Awards', status: th?'เร็วๆ นี้':'Coming Soon', tagClass:'tag-neutral' },
+    { key:'bot', code:'BOT', name:'iMATOMs BOT', tagline: th?'หุ่นยนต์ & ระบบอัตโนมัติ':'Automation Fleet', status: th?'เร็วๆ นี้':'Coming Soon', tagClass:'tag-neutral' },
   ];
 }
-function demoSensors(){ const th=ST.lang==='th'; return th? [['อุณหภูมิ','24.6°C'],['ความชื้น','58%'],['พลังงาน','412kW'],['น้ำ','3.2 m³/h']] : [['Temperature','24.6°C'],['Humidity','58%'],['Power','412kW'],['Water','3.2 m³/h']]; }
-function demoAlerts(){ const th=ST.lang==='th'; return th? [
-    {sev:'วิกฤต',cls:'tag-outline',t:'5 นาทีที่แล้ว',d:'พลังงานเกินเกณฑ์ที่โซน B2'},
-    {sev:'เฝ้าระวัง',cls:'tag-neutral',t:'32 นาทีที่แล้ว',d:'เซนเซอร์ความชื้นค่าผิดปกติ ชั้น 4'},
-    {sev:'แจ้งเตือน',cls:'tag-accent',t:'1 ชม.ที่แล้ว',d:'อัปเดตเฟิร์มแวร์อุปกรณ์สำเร็จ'}
-  ] : [
-    {sev:'Critical',cls:'tag-outline',t:'5m ago',d:'Power draw exceeded threshold at Zone B2'},
-    {sev:'Warning',cls:'tag-neutral',t:'32m ago',d:'Humidity sensor reading anomaly, Floor 4'},
-    {sev:'Info',cls:'tag-accent',t:'1h ago',d:'Device firmware update completed'}
-  ];
-}
-function demoBars(n){ let out=''; for(let i=0;i<n;i++){ const h=30+((i*37+13)%65); out+='<div style="width:8px;height:'+h+'%;background:var(--color-accent-400)"></div>'; } return out; }
-function demoMv(){ const th=ST.lang==='th'; const labels= th?['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.']:['Jan','Feb','Mar','Apr','May','Jun'];
-  return labels.map(function(label,i){ const base=55+(i%3)*8; const actual=base-10-((i*3)%15);
-    return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end"><div style="width:100%;display:flex;gap:2px;align-items:flex-end;flex:1"><div style="flex:1;height:'+base+'%;border:1px solid var(--color-accent-400)"></div><div style="flex:1;height:'+actual+'%;background:var(--color-accent)"></div></div><span style="font-size:9px;color:var(--color-neutral-600)">'+label+'</span></div>'; }).join('');
-}
-function demoServices(){ const th=ST.lang==='th'; return th? [
-    ['บริการที่ 01','ตรวจสอบพลังงาน','ประเมินการใช้พลังงานเชิงลึกทั้งอาคาร'],
-    ['บริการที่ 02','สนับสนุน ISO 50001','จัดทำระบบและเตรียมความพร้อมสำหรับการรับรอง'],
-    ['บริการที่ 03','ที่ปรึกษาสิทธิประโยชน์ภาครัฐ','ยื่นขอรับการสนับสนุนและรางวัลด้านพลังงาน']
-  ] : [
-    ['Service 01','Energy Audit','In-depth facility-wide energy usage assessment'],
-    ['Service 02','ISO 50001 Support','System setup and certification readiness'],
-    ['Service 03','Government Incentive Advisory','Guidance on energy grants and awards']
-  ];
-}
-function demoAwards(){ const th=ST.lang==='th'; return th?['รางวัลพลังงานไทย 2568','รางวัลพลังงานอาเซียน','อาคารเขียวรับรอง']:['Thailand Energy Awards 2025','ASEAN Energy Award','Green Building Cert']; }
-function demoBots(){ const th=ST.lang==='th'; return th? [
-    ['BOT-01','ทำความสะอาด','ทำงาน','tag-accent',82],['BOT-02','ลาดตระเวนรักษาความปลอดภัย','ทำงาน','tag-accent',65],
-    ['BOT-03','จัดส่งเอกสาร','ชาร์จไฟ','tag-neutral',24],['BOT-04','ทำความสะอาด','ทำงาน','tag-accent',91],
-    ['BOT-05','ตรวจสอบอาคาร','ทำงาน','tag-accent',58],['BOT-06','ซ่อมบำรุง','ซ่อมบำรุง','tag-outline',10]
-  ] : [
-    ['BOT-01','Cleaning','Active','tag-accent',82],['BOT-02','Security Patrol','Active','tag-accent',65],
-    ['BOT-03','Delivery','Charging','tag-neutral',24],['BOT-04','Cleaning','Active','tag-accent',91],
-    ['BOT-05','Inspection','Active','tag-accent',58],['BOT-06','Maintenance','Service','tag-outline',10]
-  ];
-}
-function demoVendors(){ const th=ST.lang==='th'; return th? [
-    ['ร้านส้มตำมุมโปรด','ส้มตำไทย / ตำปูปลาร้า','฿45'],['ไก่ย่างบ้านสวน','ไก่ย่าง / ข้าวเหนียว','฿55'],
-    ['ข้าวเหนียวหมูปิ้ง','เซ็ตข้าวเหนียวหมูปิ้ง','฿40'],['ไส้กรอกอีสาน','ไส้กรอกอีสาน + ข้าวเหนียว','฿35']
-  ] : [
-    ['Som Tum Corner','Thai papaya salad','฿45'],['Grilled Chicken House','Isan grilled chicken','฿55'],
-    ['Sticky Rice Set','Grilled pork & sticky rice','฿40'],['Isan Sausage Stall','Sai krok Isan','฿35']
-  ];
-}
-function demoMenu(){ const th=ST.lang==='th'; return th? [['อเมริกาโน่','฿45'],['ชาไทยเย็น','฿40'],['โคลด์บรูว์','฿55'],['ครัวซองต์','฿35']] : [['Americano','฿45'],['Thai Milk Tea','฿40'],['Cold Brew','฿55'],['Croissant','฿35']]; }
 
 /* ============== atom logo html ============== */
 function atomHtml(size, ringW, ringH, dot){
@@ -386,7 +277,7 @@ function screenLogin(){
       +'</form>'
     ))
     +'<div style="display:flex;justify-content:center;margin-top:auto">'+segLangHtml()+'</div>'
-    +'<a class="back-to-platform" href="/">'+t.backToPlatform+'</a>'
+    +'<a class="back-to-platform" href="/?desktop=1">'+t.backToPlatform+'</a>'
     + footerLegalHtml()
     +'</div></div>';
 }
@@ -419,6 +310,15 @@ function statCard(label, value){
     +'<div style="font-family:var(--font-heading);font-size:24px;margin-top:2px">'+esc(value)+'</div></div>';
 }
 
+function moduleTile(m, compact){
+  const pad = compact ? '12px' : '14px';
+  return '<div class="blueprint tap" data-act="open-module" data-key="'+m.key+'" style="padding:'+pad+';display:flex;flex-direction:column;gap:8px;min-height:112px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    +'<div style="width:34px;height:34px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:11px;color:var(--color-accent-700)">'+m.code+'</div>'
+    +'<div style="font-family:var(--font-heading);font-size:14px;line-height:1.1">'+m.name+'</div>'
+    +'<div style="font-size:11px;color:var(--color-neutral-700);flex:1">'+m.tagline+'</div>'
+    +'<span class="tag '+m.tagClass+'">'+m.status+'</span></div>';
+}
+
 function screenHome(){
   const t = L();
   const d = ST.dash;
@@ -435,13 +335,7 @@ function screenHome(){
     +'</div>'
     +'<div><h3 style="font-size:17px;margin-bottom:2px">'+t.platformsTitle+'</h3><div style="font-size:12px;color:var(--color-neutral-700);margin-bottom:10px">'+t.platformsSub+'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + mods.map(function(m){
-      return '<div class="blueprint tap" data-act="open-module" data-key="'+m.key+'" style="padding:12px;display:flex;flex-direction:column;gap:8px;min-height:112px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-        +'<div style="width:34px;height:34px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:11px;color:var(--color-accent-700)">'+m.code+'</div>'
-        +'<div style="font-family:var(--font-heading);font-size:14px;line-height:1.1">'+m.name+'</div>'
-        +'<div style="font-size:11px;color:var(--color-neutral-700);flex:1">'+m.tagline+'</div>'
-        +'<span class="tag '+m.tagClass+'">'+m.status+'</span></div>';
-    }).join('')
+    + mods.map(function(m){ return moduleTile(m, true); }).join('')
     +'</div></div>'
     +'<div><h3 style="font-size:17px;margin-bottom:10px">'+t.lifestyleTitle+'</h3><div style="display:flex;flex-direction:column;gap:10px">'
     +'<div class="blueprint tap" data-act="goto-market" style="padding:12px;display:flex;justify-content:space-between;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
@@ -456,91 +350,13 @@ function screenOpsList(){
   const t = L(); const mods = opsModules();
   return '<div class="stack">'
     +'<div><h2 style="font-size:22px;margin-bottom:2px">'+t.opsTitle+'</h2><div style="font-size:12px;color:var(--color-neutral-700)">'+t.opsSub+'</div></div>'
+    +'<div style="display:flex;flex-direction:column;gap:10px">'
     + mods.map(function(m){
       return '<div class="blueprint tap" data-act="open-module" data-key="'+m.key+'" style="padding:14px;display:flex;gap:12px;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
         +'<div style="width:40px;height:40px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:12px;color:var(--color-accent-700);flex-shrink:0">'+m.code+'</div>'
         +'<div style="flex:1"><div style="font-family:var(--font-heading);font-size:15px">'+m.name+'</div><div style="font-size:11px;color:var(--color-neutral-700)">'+m.tagline+'</div></div>'
         +'<span class="tag '+m.tagClass+'">'+m.status+'</span></div>';
     }).join('')
-    +'</div>';
-}
-
-function screenFm(){
-  const t = L(); const d = ST.dash;
-  const wo = (d && d.work_orders) || [];
-  const openCnt = (wo.find(function(r){return r.status==='open';})||{}).cnt || 0;
-  const ipCnt = (wo.find(function(r){return r.status==='in_progress';})||{}).cnt || 0;
-  const pm = d ? (d.pm_due_30days||0) : '–';
-  const rows = ST.wr.slice(0,6);
-  const STATUS_COLOR = { open:'#B45309', in_progress:'#1D4ED8', completed:'#15803D', verified:'#15803D', closed:'#64748B' };
-  return '<div class="stack">'
-    +'<div><h2 style="font-size:20px;margin-bottom:2px">'+t.fmTitle+'</h2><div style="font-size:12px;color:var(--color-neutral-700)">'+t.fmSub+'</div></div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
-    +'<div class="blueprint" style="padding:10px 8px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-family:var(--font-heading);font-size:20px">'+openCnt+'</div><div style="font-size:9px;color:var(--color-neutral-700);text-transform:uppercase">'+t.kOpen+'</div></div>'
-    +'<div class="blueprint" style="padding:10px 8px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-family:var(--font-heading);font-size:20px">'+ipCnt+'</div><div style="font-size:9px;color:var(--color-neutral-700);text-transform:uppercase">'+t.kProgress+'</div></div>'
-    +'<div class="blueprint" style="padding:10px 8px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-family:var(--font-heading);font-size:20px">'+pm+'</div><div style="font-size:9px;color:var(--color-neutral-700);text-transform:uppercase">'+t.kPm+'</div></div>'
-    +'</div>'
-    +'<div><h4 style="font-size:14px;margin-bottom:8px">'+t.fmRecent+'</h4>'
-    + (ST.wrLoaded ? (rows.length ? rows.map(function(r){
-        const date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) : '';
-        return '<div class="blueprint" style="padding:10px 12px;margin-bottom:8px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-          +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:12px">'+esc(r.wo_no||'')+'</span><span class="tag" style="background:'+(STATUS_COLOR[r.status]||'#94A3B8')+';color:#fff">'+esc(String(r.status||'').replace(/_/g,' '))+'</span></div>'
-          +'<div style="font-size:13px;margin-top:4px">'+esc(r.title||'')+'</div><div style="font-size:10px;color:var(--color-neutral-600);margin-top:2px">'+date+'</div></div>';
-      }).join('') : '<div class="empty-state">'+(ST.lang==='th'?'ยังไม่มีใบแจ้งซ่อม':'No work requests yet')+'</div>') : '<div class="empty-state">'+(ST.lang==='th'?'กำลังโหลด...':'Loading…')+'</div>')
-    +'</div>'
-    +'<button class="btn btn-primary btn-block" data-act="new-wr">'+t.fmCta+'</button>'
-    +'</div>';
-}
-
-function screenIot(){
-  const t = L();
-  return '<div class="stack">'
-    +'<div><h2 style="font-size:20px;margin-bottom:2px">'+t.iotTitle+'</h2><div style="font-size:12px;color:var(--color-neutral-700)">'+t.iotSub+'</div></div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-    + demoSensors().map(function(s){ return '<div class="blueprint" style="padding:10px 12px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:10px;color:var(--color-accent-700);text-transform:uppercase">'+s[0]+'</div><div style="font-family:var(--font-heading);font-size:19px;margin-top:2px">'+s[1]+'</div></div>'; }).join('')
-    +'</div>'
-    +'<div><h4 style="font-size:14px;margin-bottom:8px">'+t.iotTrend+'</h4><div class="blueprint" style="padding:12px;display:flex;align-items:flex-end;gap:5px;height:90px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'+demoBars(12)+'</div></div>'
-    +'<div><h4 style="font-size:14px;margin-bottom:8px">'+t.iotAlerts+'</h4><div style="display:flex;flex-direction:column;gap:8px">'
-    + demoAlerts().map(function(a){ return '<div class="blueprint" style="padding:10px 12px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="display:flex;justify-content:space-between;align-items:center"><span class="tag '+a.cls+'">'+a.sev+'</span><span style="font-size:10px;color:var(--color-neutral-600)">'+a.t+'</span></div><div style="font-size:13px;margin-top:6px">'+a.d+'</div></div>'; }).join('')
-    +'</div></div></div>';
-}
-
-function screenMv(){
-  const t = L();
-  return '<div class="stack">'
-    +'<div><h2 style="font-size:20px;margin-bottom:2px">'+t.mvTitle+'</h2><div style="font-size:12px;color:var(--color-neutral-700)">'+t.mvSub+'</div></div>'
-    +'<div><h4 style="font-size:14px;margin-bottom:8px">'+t.mvChart+'</h4><div class="blueprint" style="padding:12px;display:flex;align-items:flex-end;gap:10px;height:110px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'+demoMv()+'</div>'
-    +'<div style="display:flex;gap:14px;margin-top:6px;font-size:10px;color:var(--color-neutral-700)"><span>▢ '+t.mvBaseline+'</span><span style="color:var(--color-accent-700)">■ '+t.mvActual+'</span></div></div>'
-    +'<div style="display:flex;flex-wrap:wrap;gap:6px">'+ (ST.lang==='th'? ['ISO 50001','ตรวจสอบแล้ว','รางวัลพลังงาน MEA']:['ISO 50001','MEA Verified','Energy Award']).map(function(c){return '<span class="tag tag-outline">'+c+'</span>';}).join('') +'</div>'
-    +'<button class="btn btn-secondary btn-block">'+t.mvCta+'</button>'
-    +'</div>';
-}
-
-function screenAdvisory(){
-  const t = L();
-  return '<div class="stack">'
-    +'<div><h2 style="font-size:20px;margin-bottom:2px">'+t.advTitle+'</h2><div style="font-size:12px;color:var(--color-neutral-700)">'+t.advSub+'</div></div>'
-    +'<div style="display:flex;flex-direction:column;gap:8px">'
-    + demoServices().map(function(s){ return '<div class="blueprint" style="padding:12px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-accent)">'+s[0]+'</div><div style="font-family:var(--font-heading);font-size:15px;margin-top:2px">'+s[1]+'</div><div style="font-size:12px;color:var(--color-neutral-700);margin-top:2px">'+s[2]+'</div></div>'; }).join('')
-    +'</div>'
-    +'<div><h4 style="font-size:14px;margin-bottom:8px">'+t.advAwards+'</h4><div style="display:flex;flex-wrap:wrap;gap:6px">'
-    + demoAwards().map(function(a){return '<span class="tag tag-outline">'+a+'</span>';}).join('') +'</div></div>'
-    +'<div class="blueprint" style="padding:14px;display:flex;flex-direction:column;gap:10px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-    +'<div style="font-family:var(--font-heading);font-size:15px">'+t.advFormTitle+'</div>'
-    +'<div class="field"><label>'+t.advName+'</label><input class="input"></div>'
-    +'<div class="field"><label>'+t.advCompany+'</label><input class="input"></div>'
-    +'<div class="field"><label>'+t.advMsg+'</label><textarea class="input" rows="3"></textarea></div>'
-    +'<button class="btn btn-primary btn-block">'+t.advCta+'</button></div>'
-    +'</div>';
-}
-
-function screenBot(){
-  const t = L();
-  return '<div class="stack">'
-    +'<div><h2 style="font-size:20px;margin-bottom:2px">'+t.botTitle+'</h2><div style="font-size:12px;color:var(--color-neutral-700)">'+t.botSub+'</div></div>'
-    +'<div class="blueprint" style="height:90px;display:flex;align-items:center;justify-content:center;background-image:linear-gradient(var(--color-divider) 1px,transparent 1px),linear-gradient(90deg,var(--color-divider) 1px,transparent 1px);background-size:14px 14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><span style="font-size:11px;color:var(--color-neutral-600);background:var(--color-bg);padding:2px 8px">'+t.botMap+'</span></div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + demoBots().map(function(b){ return '<div class="blueprint" style="padding:10px 12px;display:flex;flex-direction:column;gap:6px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+b[0]+'</span><span class="tag '+b[3]+'">'+b[2]+'</span></div><div style="font-size:11px;color:var(--color-neutral-700)">'+b[1]+'</div><div style="height:5px;background:var(--color-neutral-200)"><div style="width:'+b[4]+'%;height:100%;background:var(--color-accent)"></div></div></div>'; }).join('')
     +'</div></div>';
 }
 
@@ -551,15 +367,9 @@ function screenLifestyle(){
     +'<div class="seg" style="width:100%"><div class="seg-opt tap '+(isMarket?'active':'')+'" data-act="lifestyle-market" style="flex:1;justify-content:center">'+t.marketTab+'</div><div class="seg-opt tap '+(!isMarket?'active':'')+'" data-act="lifestyle-coffee" style="flex:1;justify-content:center">'+t.coffeeTab+'</div></div></div>'
     + (isMarket ? (
       '<div class="blueprint" style="padding:14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-family:var(--font-heading);font-size:17px">'+t.marketName+'</div><div style="font-size:12px;color:var(--color-neutral-700)">'+t.marketTagline+'</div></div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-      + demoVendors().map(function(v){ return '<div class="blueprint" style="padding:10px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:12.5px;font-family:var(--font-heading)">'+v[0]+'</div><div style="font-size:11px;color:var(--color-neutral-700);margin:4px 0">'+v[1]+'</div><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:14px;color:var(--color-accent-700)">'+v[2]+'</span><span class="tag tag-accent">'+t.open+'</span></div></div>'; }).join('')
-      +'</div>'
       +'<button class="btn btn-secondary btn-block" data-act="goto-market">'+t.marketCta+'</button>'
     ) : (
       '<div class="blueprint" style="padding:14px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-family:var(--font-heading);font-size:17px">'+t.coffeeName+'</div><div style="font-size:12px;color:var(--color-neutral-700)">'+t.coffeeTagline+'</div></div>'
-      +'<div style="display:flex;flex-direction:column;gap:8px">'
-      + demoMenu().map(function(mi){ return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--color-divider)"><span style="font-size:13px">'+mi[0]+'</span><span style="font-family:var(--font-heading);font-size:13px;color:var(--color-accent-700)">'+mi[1]+'</span></div>'; }).join('')
-      +'</div>'
       +'<button class="btn btn-primary btn-block" data-act="goto-coffee">'+t.coffeeCta+'</button>'
     ))
     +'</div>';
@@ -585,27 +395,15 @@ function screenProfile(){
 /* ============== main app frame ============== */
 function screenMain(){
   const t = L();
-  const showBack = ST.tab==='ops' && !!ST.opsDetail;
   let inner = '';
   if(ST.tab === 'home') inner = screenHome();
-  else if(ST.tab === 'ops'){
-    if(!ST.opsDetail) inner = screenOpsList();
-    else if(ST.opsDetail==='fm') inner = screenFm();
-    else if(ST.opsDetail==='iot') inner = screenIot();
-    else if(ST.opsDetail==='mv') inner = screenMv();
-    else if(ST.opsDetail==='advisory') inner = screenAdvisory();
-    else if(ST.opsDetail==='bot') inner = screenBot();
-  } else if(ST.tab === 'lifestyle') inner = screenLifestyle();
+  else if(ST.tab === 'ops') inner = screenOpsList();
+  else if(ST.tab === 'lifestyle') inner = screenLifestyle();
   else if(ST.tab === 'profile') inner = screenProfile();
-
-  const navHomeC = ST.tab==='home' ? 'var(--color-accent-700)' : 'var(--color-neutral-500)';
-  const navOpsC = ST.tab==='ops' ? 'var(--color-accent-700)' : 'var(--color-neutral-500)';
-  const navLifeC = ST.tab==='lifestyle' ? 'var(--color-accent-700)' : 'var(--color-neutral-500)';
-  const navProfC = ST.tab==='profile' ? 'var(--color-accent-700)' : 'var(--color-neutral-500)';
 
   return '<div style="display:flex;flex-direction:column;min-height:100vh">'
     +'<div class="topbar">'
-    + (showBack ? '<div class="back-nav tap" data-act="ops-back"><svg width="9" height="15" viewBox="0 0 8 14"><path d="M7 1L1 7l6 6" stroke="var(--color-text)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>'+t.back+'</div>' : '<div class="brand">iMATOMs</div>')
+    +'<div class="brand">iMATOMs</div>'
     +'<div style="display:flex;align-items:center;gap:10px">'
     +'<div class="icon-btn tap" data-act="logout" title="'+t.signOut+'"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path></svg></div>'
     + segLangHtml()
@@ -621,26 +419,13 @@ function screenMain(){
 
 /* ============== render + events ============== */
 function render(){
-  const root = document.getElementById('root') || document.getElementById('app-root');
   let html = '';
   if(ST.screen === 'login') html = screenLogin();
   else if(ST.screen === 'splash') html = screenSplash();
   else html = screenMain();
   document.getElementById('app-root').innerHTML = html;
-  updateFab();
   bindFormHandlers();
   document.documentElement.lang = ST.lang;
-}
-function updateFab(){
-  let fab = document.getElementById('wr-fab');
-  const shouldShow = ST.screen==='main' && ST.tab==='ops' && ST.opsDetail==='fm';
-  if(!fab){
-    fab = document.createElement('button');
-    fab.id = 'wr-fab'; fab.className = 'fab'; fab.textContent = '+';
-    fab.addEventListener('click', function(){ openWrSheet(); });
-    document.body.appendChild(fab);
-  }
-  fab.classList.toggle('show', !!shouldShow);
 }
 
 function bindFormHandlers(){
@@ -661,17 +446,15 @@ document.addEventListener('click', function(e){
   else if(act==='to-login'){ ST.authMode='login'; ST.loginMsg=''; render(); }
   else if(act==='splash-th'){ ST.lang='th'; try{localStorage.setItem(LS.lang,'th');}catch(err){} ST.screen='main'; render(); }
   else if(act==='splash-en'){ ST.lang='en'; try{localStorage.setItem(LS.lang,'en');}catch(err){} ST.screen='main'; render(); }
-  else if(act==='tab-home'){ ST.tab='home'; ST.opsDetail=null; render(); if(!ST.dash) loadDashboard(); }
-  else if(act==='tab-ops'){ ST.tab='ops'; ST.opsDetail=null; render(); }
+  else if(act==='tab-home'){ ST.tab='home'; render(); if(!ST.dash) loadDashboard(); }
+  else if(act==='tab-ops'){ ST.tab='ops'; render(); }
   else if(act==='tab-lifestyle'){ ST.tab='lifestyle'; render(); }
   else if(act==='tab-profile'){ ST.tab='profile'; render(); }
-  else if(act==='ops-back'){ ST.opsDetail=null; render(); }
-  else if(act==='open-module'){ const key = el.getAttribute('data-key'); ST.tab='ops'; ST.opsDetail=key; render(); if(key==='fm') loadWorkOrders(); }
+  else if(act==='open-module'){ const key = el.getAttribute('data-key'); const url = MODULE_URLS[key]; if(url) window.location.href = url; }
   else if(act==='lifestyle-market'){ ST.lifestyleSub='market'; render(); }
   else if(act==='lifestyle-coffee'){ ST.lifestyleSub='coffee'; render(); }
   else if(act==='goto-market'){ window.location.href = '/TKO_IsanFoodMarket/'; }
   else if(act==='goto-coffee'){ window.location.href = '/TKO_MeeHangCoffee/'; }
-  else if(act==='new-wr'){ openWrSheet(); }
   else if(act==='logout'){ doLogout(); }
 });
 
@@ -710,7 +493,7 @@ async function onRegisterSubmit(e){
 async function doLogout(){
   try{ await api('/auth/logout', { method:'POST', body: JSON.stringify({ refresh_token: localStorage.getItem(LS.refresh) }) }); }catch(e){}
   clearSession();
-  ST.screen='login'; ST.tab='home'; ST.opsDetail=null; ST.authMode='login'; ST.dash=null; ST.wr=[]; ST.wrLoaded=false;
+  ST.screen='login'; ST.tab='home'; ST.authMode='login'; ST.dash=null;
   render();
 }
 
@@ -718,67 +501,11 @@ async function doLogout(){
 async function loadDashboard(){
   try{ ST.dash = await api('/dashboard'); render(); }catch(err){ /* non-fatal */ }
 }
-async function loadWorkOrders(){
-  ST.wrLoaded = false;
-  try{ ST.wr = await api('/work-orders'); }catch(err){ ST.wr = []; }
-  ST.wrLoaded = true; render();
-}
-async function loadAssetOptions(){
-  try{
-    const rows = await api('/assets');
-    const sel = document.getElementById('wr-asset');
-    if(!sel) return;
-    rows.forEach(function(a){ const opt=document.createElement('option'); opt.value=a.id; opt.textContent=(a.asset_no?(a.asset_no+' — '):'')+(a.name||''); sel.appendChild(opt); });
-  }catch(err){}
-}
-
-/* ============== WR sheet ============== */
-const wrOverlay = document.getElementById('wr-sheet-overlay');
-function openWrSheet(){
-  const th = ST.lang==='th';
-  document.getElementById('wr-sheet-title').textContent = th? 'สร้างใบแจ้งซ่อมใหม่' : 'New Work Request';
-  document.getElementById('lbl-wr-title').textContent = th? 'หัวข้อ' : 'Title';
-  document.getElementById('lbl-wr-desc').textContent = th? 'รายละเอียด' : 'Description';
-  document.getElementById('lbl-wr-asset').textContent = th? 'ทรัพย์สิน (ถ้ามี)' : 'Asset (optional)';
-  document.getElementById('lbl-wr-type').textContent = th? 'ประเภท' : 'Type';
-  document.getElementById('lbl-wr-priority').textContent = th? 'ความสำคัญ' : 'Priority';
-  document.getElementById('wr-cancel').textContent = th? 'ยกเลิก' : 'Cancel';
-  document.getElementById('wr-submit').textContent = th? 'ส่งคำขอ' : 'Submit';
-  document.getElementById('wr-form').reset();
-  wrOverlay.classList.add('show');
-  loadAssetOptions();
-}
-document.getElementById('wr-cancel').addEventListener('click', function(){ wrOverlay.classList.remove('show'); });
-wrOverlay.addEventListener('click', function(e){ if(e.target === wrOverlay) wrOverlay.classList.remove('show'); });
-document.getElementById('wr-form').addEventListener('submit', async function(e){
-  e.preventDefault();
-  const btn = document.getElementById('wr-submit');
-  const th = ST.lang==='th';
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
-  try{
-    const body = {
-      title: document.getElementById('wr-title').value.trim(),
-      description: document.getElementById('wr-desc').value.trim(),
-      asset_id: document.getElementById('wr-asset').value || null,
-      wo_type: document.getElementById('wr-type').value,
-      priority: document.getElementById('wr-priority').value,
-      module: 'office',
-    };
-    const created = await api('/work-orders', { method:'POST', body: JSON.stringify(body) });
-    wrOverlay.classList.remove('show');
-    toast((th?'ส่งใบแจ้งซ่อม ':'Work request ') + (created.wo_no||'') + (th?' สำเร็จ':' submitted'));
-    loadWorkOrders(); loadDashboard();
-  }catch(err){
-    toast(err.message || (th?'ส่งไม่สำเร็จ':'Failed to submit'));
-  }finally{
-    btn.disabled = false; btn.textContent = th? 'ส่งคำขอ' : 'Submit';
-  }
-});
 
 /* ============== boot ============== */
 (function boot(){
   render();
-  if(ST.screen === 'main'){ loadDashboard(); if(ST.tab==='ops' && ST.opsDetail==='fm') loadWorkOrders(); }
+  if(ST.screen === 'main') loadDashboard();
 })();
 </script>
 </body>

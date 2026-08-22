@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TKO iMATOMs Tech Platform V3.0</title>
+<script>
+(function(){
+  try{
+    if(/desktop=1/.test(location.search)) return;
+    var isPhone = /iPhone|iPod|Android.*Mobile|Windows Phone|BlackBerry|Opera Mini/i.test(navigator.userAgent||'');
+    if(isPhone) location.replace('/TKO_iMATOMsMobileAPP/');
+  }catch(e){}
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
