@@ -34,13 +34,16 @@ a{color:inherit;text-decoration:none}
 @media(min-width:481px){ body{background:#dfe1e4} #app-root{min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.08)} }
 
 /* ---- blueprint card ---- */
-.blueprint{position:relative;border:1px solid var(--color-divider)}
-.blueprint>.corner{position:absolute;width:11px;height:11px;color:rgba(29,31,32,.55)}
-.blueprint>.corner::before,.blueprint>.corner::after{content:"";position:absolute;background:currentColor}
-.blueprint>.corner::before{left:5px;top:0;width:1px;height:100%}
-.blueprint>.corner::after{top:5px;left:0;width:100%;height:1px}
-.blueprint>.corner.tl{top:-6px;left:-6px} .blueprint>.corner.tr{top:-6px;right:-6px}
-.blueprint>.corner.bl{bottom:-6px;left:-6px} .blueprint>.corner.br{bottom:-6px;right:-6px}
+.blueprint{position:relative;border:1px solid var(--color-divider);border-radius:6px;overflow:hidden}
+.blueprint>.corner{display:none}
+
+/* tappable card hover/press: raised (embossed) feel + accent strip */
+.blueprint.tap{transition:transform .15s ease, box-shadow .15s ease, background-color .15s ease, border-color .15s ease}
+.blueprint.tap::after{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--color-accent);transform:scaleY(0);transform-origin:top;transition:transform .15s ease}
+.blueprint.tap:hover{transform:translateY(-3px);box-shadow:0 10px 20px -6px rgba(29,31,32,.25),0 1px 0 rgba(255,255,255,.6) inset;background-color:#fff;border-color:var(--color-accent)}
+.blueprint.tap:hover::after{transform:scaleY(1)}
+.blueprint.tap:hover *{text-shadow:0 1px 0 rgba(255,255,255,.8)}
+.blueprint.tap:active{transform:translateY(-1px);box-shadow:0 4px 10px -4px rgba(29,31,32,.25)}
 
 /* ---- buttons ---- */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-family:var(--font-heading);font-weight:600;font-size:14px;color:var(--color-text);background:transparent;border:1px solid var(--color-divider);padding:9px 16px;border-radius:0}
