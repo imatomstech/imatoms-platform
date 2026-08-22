@@ -37,13 +37,14 @@ a{color:inherit;text-decoration:none}
 .blueprint{position:relative;border:1px solid var(--color-divider);border-radius:6px;overflow:hidden}
 .blueprint>.corner{display:none}
 
-/* tappable card hover/press: raised (embossed) feel + accent strip */
+/* tappable card hover/press: raised (embossed) feel + accent strip.
+   Uses :hover for mouse (desktop/tablet) AND :active for touch (phones
+   have no hover state), so the effect works on tap too. */
 .blueprint.tap{transition:transform .15s ease, box-shadow .15s ease, background-color .15s ease, border-color .15s ease}
 .blueprint.tap::after{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--color-accent);transform:scaleY(0);transform-origin:top;transition:transform .15s ease}
-.blueprint.tap:hover{transform:translateY(-3px);box-shadow:0 10px 20px -6px rgba(29,31,32,.25),0 1px 0 rgba(255,255,255,.6) inset;background-color:#fff;border-color:var(--color-accent)}
-.blueprint.tap:hover::after{transform:scaleY(1)}
-.blueprint.tap:hover *{text-shadow:0 1px 0 rgba(255,255,255,.8)}
-.blueprint.tap:active{transform:translateY(-1px);box-shadow:0 4px 10px -4px rgba(29,31,32,.25)}
+.blueprint.tap:hover,.blueprint.tap:active{transform:translateY(-3px);box-shadow:0 10px 20px -6px rgba(29,31,32,.25),0 1px 0 rgba(255,255,255,.6) inset;background-color:#fff;border-color:var(--color-accent)}
+.blueprint.tap:hover::after,.blueprint.tap:active::after{transform:scaleY(1)}
+.blueprint.tap:hover *,.blueprint.tap:active *{text-shadow:0 1px 0 rgba(255,255,255,.8)}
 
 /* ---- buttons ---- */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-family:var(--font-heading);font-weight:600;font-size:14px;color:var(--color-text);background:transparent;border:1px solid var(--color-divider);padding:9px 16px;border-radius:0}
