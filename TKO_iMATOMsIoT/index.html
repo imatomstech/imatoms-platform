@@ -183,12 +183,16 @@ DASHBOARDS.forEach(function(d, i){
   tab.addEventListener('click', function(){ switchDashboard(d.key); });
   tabsEl.appendChild(tab);
 
+  const note = d.key === 'gds'
+    ? 'หากไม่แสดงผล เจ้าของรายงานต้องเปิดใช้งาน "Enable embedding" ก่อน (ใน Looker/Data Studio: File → Embed report → เปิด Enable embedding) — ระหว่างนี้กดปุ่ม "เปิดในแท็บใหม่" ด้านบนแทน'
+    : 'หากไม่แสดงผล เว็บนี้อาจไม่อนุญาตให้ฝังในหน้าอื่น — กดปุ่ม "เปิดในแท็บใหม่" ด้านบนแทน';
+
   const board = document.createElement('div');
   board.className = 'dboard' + (i===0 ? ' active' : '');
   board.dataset.key = d.key;
   board.innerHTML = '<div class="dboard-bar"><span>' + d.name + '</span><a href="' + d.url + '" target="_blank" rel="noopener">เปิดในแท็บใหม่ ↗</a></div>'
     + '<iframe data-src="' + d.url + '" referrerpolicy="no-referrer-when-downgrade"></iframe>'
-    + '<div class="dboard-fallback">หากไม่แสดงผล เว็บนี้อาจไม่อนุญาตให้ฝังในหน้าอื่น — กดปุ่ม "เปิดในแท็บใหม่" ด้านบนแทน</div>';
+    + '<div class="dboard-fallback" style="display:block">' + note + '</div>';
   boardsEl.appendChild(board);
 });
 
@@ -197,14 +201,6 @@ function loadDashboardIframe(key){
   const iframe = board.querySelector('iframe');
   if(iframe.src) return;
   iframe.src = iframe.dataset.src;
-  let loaded = false;
-  iframe.addEventListener('load', function(){ loaded = true; });
-  setTimeout(function(){
-    if(!loaded){
-      const fb = board.querySelector('.dboard-fallback');
-      if(fb) fb.style.display = 'block';
-    }
-  }, 4000);
 }
 
 function switchDashboard(key){
