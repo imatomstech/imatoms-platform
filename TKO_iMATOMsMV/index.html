@@ -213,12 +213,13 @@
   .table-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:12px; padding: 16px; }
   table{ border-collapse: separate; border-spacing: 8px 9px; width:100%; font-size: 12.5px; }
   thead th{
-    position: sticky; top:0; background: var(--bg); color: var(--text-muted);
+    position: sticky; top:0; background: var(--surface); color: var(--text-muted);
     text-align:left; font-weight:600; font-size:10.5px; letter-spacing:0.02em; text-transform:uppercase;
     padding: 6px 12px 10px; white-space:nowrap; border-bottom: 1px solid var(--border);
   }
-  thead th.blank{ color: transparent; border-bottom: none; }
-  tbody td{ padding: 0; vertical-align: top; max-width: 420px; }
+  thead th.blank{ color: transparent; background: transparent; border-bottom: none; }
+  tbody td{ padding: 0; vertical-align: top; max-width: 620px; }
+  tbody td .cell-input, tbody td .cell-input-num{ max-width: 100%; }
   tbody td .cell-input, tbody td .cell-input-num{ padding: 8px 12px; }
   tbody td.filled .cell-input, tbody td.filled .cell-input-num{
     background: var(--surface-2); border-color: var(--border);
@@ -2402,6 +2403,24 @@ PB = ค่าใช้จ่ายในการตรวจวัดและ
     else input.classList.remove('edited');
   }
 
+  // keep a table-cell box wide enough for whatever the user actually typed, so text is
+  // never visually clipped. Measured with canvas (not the CSS "ch" unit, which is based on
+  // the "0" glyph and badly underestimates width for Thai script) so it's accurate for any text.
+  var measureCanvas = document.createElement('canvas');
+  var measureCtx = measureCanvas.getContext('2d');
+  function measureTextWidth(text, font){
+    measureCtx.font = font;
+    return measureCtx.measureText(text || '').width;
+  }
+  function autosizeInput(input){
+    if (!(input.classList.contains('cell-input') || input.classList.contains('cell-input-num'))) return;
+    var cs = getComputedStyle(input);
+    var font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+    var w = measureTextWidth(input.value, font);
+    var px = Math.max(56, Math.min(640, Math.ceil(w) + 30));
+    input.style.width = px + 'px';
+  }
+
   // load any previously saved values from localStorage
   allInputs.forEach(function(input){
     var key = input.getAttribute('data-key');
@@ -2411,6 +2430,7 @@ PB = ค่าใช้จ่ายในการตรวจวัดและ
       setVal(input, stored);
       markEditedState(input);
     }
+    autosizeInput(input);
   });
 
   var saveTimer = null;
@@ -2421,6 +2441,7 @@ PB = ค่าใช้จ่ายในการตรวจวัดและ
       if (!key) return;
       localStorage.setItem(STORAGE_PREFIX + key, getVal(input));
       markEditedState(input);
+      autosizeInput(input);
       pendingSaves = true;
       clearTimeout(saveTimer);
       flashSaving();
@@ -2469,7 +2490,7 @@ PB = ค่าใช้จ่ายในการตรวจวัดและ
         allInputs.forEach(function(input){ byKey[input.getAttribute('data-key')] = input; });
         Object.keys(values).forEach(function(key){
           var input = byKey[key];
-          if (input) { setVal(input, values[key]); markEditedState(input); }
+          if (input) { setVal(input, values[key]); markEditedState(input); autosizeInput(input); }
         });
         showToast('นำเข้าข้อมูล ' + count + ' ช่องเรียบร้อย');
       } catch (err) {
@@ -2489,6 +2510,7 @@ PB = ค่าใช้จ่ายในการตรวจวัดและ
       localStorage.removeItem(STORAGE_PREFIX + key);
       setVal(input, input.getAttribute('data-original') || '');
       input.classList.remove('edited');
+      autosizeInput(input);
     });
     showToast('ล้างข้อมูลที่บันทึกไว้แล้ว');
   });
