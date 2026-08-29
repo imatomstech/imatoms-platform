@@ -141,7 +141,7 @@
   .nav-count{ font-size:10px; color: var(--text-muted); font-family:"IBM Plex Mono", monospace; flex:none; }
   .nav-link.hide{ display:none; }
 
-  .main{ padding: 30px 40px 100px; max-width: none; width: 100%; }
+  .main{ padding: 30px 40px 100px; max-width: none; width: 100%; min-width: 0; }
   .page-head, .kpi-grid, .lede{ max-width: 1180px; }
   .page-head{ margin-bottom: 30px; }
   .kicker{ font-size:12px; font-weight:700; letter-spacing:0.08em; color: var(--accent-solid); text-transform:uppercase; }
@@ -164,7 +164,7 @@
   .section-divider::after{ content:""; flex:1; height:1px; background: var(--border); }
 
   .sheet-card{ background: var(--surface); border:1px solid var(--border); border-radius: 14px; margin-bottom: 18px; box-shadow: var(--shadow); scroll-margin-top: 80px; }
-  .sheet-card > summary{ list-style:none; cursor:pointer; user-select:none; display:flex; align-items:center; justify-content:space-between; gap:14px; padding: 17px 20px; }
+  .sheet-card > summary{ list-style:none; cursor:pointer; user-select:none; display:flex; align-items:center; justify-content:flex-start; gap:14px; padding: 17px 20px; }
   .sheet-card > summary::-webkit-details-marker{ display:none; }
   .sheet-card > summary::before{ content:"›"; display:inline-block; font-size:18px; color: var(--text-muted); transform: rotate(0deg); transition: transform .15s ease; margin-right:4px; flex:none; }
   .sheet-card[open] > summary::before{ transform: rotate(90deg); }
@@ -172,7 +172,7 @@
   .sheet-summary-main{ display:flex; align-items:baseline; gap:10px; min-width:0; }
   .sheet-summary-main h3{ font-size:14.5px; margin:0; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color: var(--text); }
   .sheet-chip{ flex:none; font-size:10px; font-weight:700; letter-spacing:0.03em; background: var(--surface-2); color: var(--text-muted); border:1px solid var(--border); padding: 2px 8px; border-radius: 999px; white-space:nowrap; }
-  .sheet-dims{ flex:none; font-size:11px; color: var(--text-muted); font-family:"IBM Plex Mono", monospace; }
+  .sheet-dims{ flex:none; margin-left:auto; padding-left:14px; font-size:11px; color: var(--text-muted); font-family:"IBM Plex Mono", monospace; }
   .sheet-body{ padding: 18px 20px 22px; }
 
   /* ---- editable cell inputs: shared base for every fillable field in the report ---- */
