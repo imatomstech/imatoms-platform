@@ -1,0 +1,5 @@
+# TKO_iMATOMsadV — เก็บเฉพาะหน้าเว็บ (index.html) ไว้ deploy
+# ไฟล์เอกสารต้นฉบับ (xlsx/pptx/docx/pdf/รูปภาพ) ในโฟลเดอร์นี้มีจำนวนมาก (2,600+ ไฟล์)
+# และมีขนาดรวมใหญ่เกินกว่าจะ push ขึ้น GitHub ได้ตามปกติ จึงไม่นำเข้า git
+TKO_iMATOMsadV/*
+!TKO_iMATOMsadV/index.html
