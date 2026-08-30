@@ -167,6 +167,35 @@
   .calc .out b{ color: var(--accent-solid); font-family:"IBM Plex Mono", monospace; }
   .calc .out .line{ display:flex; justify-content:space-between; margin-bottom:5px; }
 
+  /* Module 2 — energy conservation groups & data table */
+  .m2-dash{ display:grid; grid-template-columns: repeat(4,1fr); gap:14px; margin: 0 0 26px; max-width:1180px; }
+  .m2-dash .kpi-card{ padding:14px 16px; }
+  .m2-bars{ max-width:1180px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:26px; box-shadow:var(--shadow); }
+  .m2-bars h4{ font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px; }
+  .m2-bar-row{ display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:11.5px; }
+  .m2-bar-row .lb{ width:64px; flex:none; color:var(--text-muted); }
+  .m2-bar-row .track{ flex:1; height:8px; border-radius:5px; background:var(--surface-2); overflow:hidden; }
+  .m2-bar-row .fill{ height:100%; background:linear-gradient(90deg,var(--accent-a),var(--accent-b)); }
+  .m2-bar-row .n{ width:36px; flex:none; text-align:right; font-family:"IBM Plex Mono",monospace; color:var(--text); }
+
+  .grp-summary{ display:flex; flex-wrap:wrap; gap:18px; padding:10px 0 14px; font-size:11.5px; color:var(--text-muted); border-bottom:1px solid var(--border); margin-bottom:10px; }
+  .grp-summary b{ color:var(--text); font-family:"IBM Plex Mono",monospace; }
+  .eg-table-wrap{ overflow-x:auto; }
+  table.eg-table{ width:100%; border-collapse:collapse; font-size:11.5px; min-width:820px; }
+  table.eg-table th{ text-align:left; padding:7px 8px; color:var(--text-muted); font-weight:600; font-size:10px; letter-spacing:.03em; text-transform:uppercase; border-bottom:1px solid var(--border); white-space:nowrap; position:sticky; top:0; background:var(--surface); }
+  table.eg-table td{ padding:7px 8px; border-bottom:1px solid var(--border); vertical-align:top; color:var(--text); }
+  table.eg-table td.mut{ color:var(--text-muted); }
+  table.eg-table td.num{ font-family:"IBM Plex Mono",monospace; text-align:right; white-space:nowrap; }
+  table.eg-table tr.na{ opacity:.35; }
+  table.eg-table tr.na td{ text-decoration:line-through; }
+  table.eg-table tr.done td{ background: rgba(52,211,153,.05); }
+  .eg-chk{ width:15px; height:15px; cursor:pointer; accent-color:var(--accent-solid); }
+  .badge-inv{ font-size:9.5px; font-weight:700; padding:2px 8px; border-radius:20px; white-space:nowrap; display:inline-block; }
+  .badge-inv.I{ background:rgba(239,68,68,.14); color:#f87171; }
+  .badge-inv.N{ background:rgba(52,211,153,.12); color:var(--good); }
+  .prog-mini{ display:inline-block; width:44px; height:6px; border-radius:4px; background:var(--surface-2); overflow:hidden; vertical-align:middle; margin-right:6px; }
+  .prog-mini i{ display:block; height:100%; background:var(--info); }
+
   /* award timeline inside sheet-body */
   .tl-status{ display:inline-block; font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:20px; margin:6px 0 10px; }
   .st-win{ background: var(--warn-bg); color: var(--warn); }
@@ -238,12 +267,28 @@
       </ul></div>
 
       <div class="nav-group" data-mod="2"><div class="nav-group-title">Module 2 · Energy Conservation Project</div><ul>
-        <li><a href="#ecm-vsd" class="nav-link">VSD มอเตอร์/พัดลม/ปั๊ม <span class="nav-count">คำนวณ</span></a></li>
-        <li><a href="#ecm-light" class="nav-link">เปลี่ยนหลอด LED <span class="nav-count">คำนวณ</span></a></li>
-        <li><a href="#ecm-chiller" class="nav-link">Chiller / HVAC <span class="nav-count">คำนวณ</span></a></li>
-        <li><a href="#ecm-envelope" class="nav-link">เปลือกอาคาร (OTTV/BEC) <span class="nav-count">อ้างอิง</span></a></li>
-        <li><a href="#ecm-solar" class="nav-link">Solar PV <span class="nav-count">คำนวณ</span></a></li>
-        <li><a href="#ecm-invest" class="nav-link">สรุปงบลงทุน/ROI <span class="nav-count">คำนวณ</span></a></li>
+        <li><a href="#m2-dashboard" class="nav-link">📊 Dashboard สรุปผล <span class="nav-count">รวม</span></a></li>
+        <li><a href="#grp-A" class="nav-link">A. Energy Management <span class="nav-count">10</span></a></li>
+        <li><a href="#grp-B" class="nav-link">B. Air Condition (รวม B1-B9) <span class="nav-count">รวม</span></a></li>
+        <li><a href="#grp-B1" class="nav-link">B1. Chiller Machine <span class="nav-count">21</span></a></li>
+        <li><a href="#grp-B2" class="nav-link">B2. Chiller Water Pump <span class="nav-count">6</span></a></li>
+        <li><a href="#grp-B3" class="nav-link">B3. Condenser Water Pump <span class="nav-count">6</span></a></li>
+        <li><a href="#grp-B4" class="nav-link">B4. Cooling Tower <span class="nav-count">6</span></a></li>
+        <li><a href="#grp-B5" class="nav-link">B5. Air Handling Unit <span class="nav-count">7</span></a></li>
+        <li><a href="#grp-B6" class="nav-link">B6. Fan Coil Unit <span class="nav-count">4</span></a></li>
+        <li><a href="#grp-B7" class="nav-link">B7. Outside Air Unit <span class="nav-count">6</span></a></li>
+        <li><a href="#grp-B8" class="nav-link">B8. Split Type A/C <span class="nav-count">6</span></a></li>
+        <li><a href="#grp-B9" class="nav-link">B9. Air Compressor <span class="nav-count">5</span></a></li>
+        <li><a href="#grp-C" class="nav-link">C. Ventilation <span class="nav-count">3</span></a></li>
+        <li><a href="#grp-D" class="nav-link">D. Exhaust <span class="nav-count">2</span></a></li>
+        <li><a href="#grp-E" class="nav-link">E. Electrical (TR+MDB) <span class="nav-count">4</span></a></li>
+        <li><a href="#grp-F" class="nav-link">F. Electrical (Lighting) <span class="nav-count">7</span></a></li>
+        <li><a href="#grp-G" class="nav-link">G. Waste Water Treatment <span class="nav-count">2</span></a></li>
+        <li><a href="#grp-H" class="nav-link">H. Motor & Pump <span class="nav-count">5</span></a></li>
+        <li><a href="#grp-I" class="nav-link">I. Hot Water <span class="nav-count">2</span></a></li>
+        <li><a href="#grp-J" class="nav-link">J. Transportation <span class="nav-count">5</span></a></li>
+        <li><a href="#grp-K" class="nav-link">K. Building Envelope <span class="nav-count">4</span></a></li>
+        <li><a href="#grp-L" class="nav-link">L. IoT Main Equipment <span class="nav-count">27</span></a></li>
       </ul></div>
 
       <div class="nav-group" data-mod="3"><div class="nav-group-title">Module 3 · Energy Awards &amp; Contest</div><ul>
@@ -399,88 +444,10 @@
 
       <div class="module-panel" data-mod="2">
       <div class="section-divider">Module 2 · Energy Conservation Project</div>
-      <div class="section-lede">สร้างโครงการประหยัดพลังงาน คำนวณผลประหยัดและลดต้นทุน แยกตามประเภทย่อยของพลังงาน — กรอกตัวเลขในเครื่องคำนวณเพื่อดูผลประหยัดแบบสด</div>
+      <div class="section-lede">โครงการอนุรักษ์พลังงานตามไฟล์ "Energy conservation of TKO_iMATOMsavD" แยกตามระบบ (Group A–L) แต่ละหัวข้อระบุ Investment / No investment, Saving % และ Payback — ติ๊ก "N/A" หน้าหัวข้อที่อาคารนั้นไม่มีระบบดังกล่าวหรือไม่ได้ดำเนินการ เพื่อไม่ให้นับรวมใน Dashboard</div>
 
-      <details class="sheet-card" id="ecm-vsd" open>
-        <summary><div class="sheet-summary-main"><span class="sheet-chip">ECM</span><h3>⚙️ มาตรการติดตั้ง VSD (มอเตอร์/พัดลม/ปั๊ม)</h3></div><span class="sheet-dims">Affine Law</span></summary>
-        <div class="sheet-body">
-          ลดความเร็วรอบมอเตอร์ตามภาระงานจริง (Affine Law: P ∝ N³) ใช้กับ AHU / Exhaust Fan / ปั๊มน้ำ
-          <div class="doc-note">อ้างอิง: VSD calculation ViMUT 2023.xlsx, Presentation VSD_HVAC.pdf</div>
-          <div class="calc" data-calc="vsd">
-            <div class="row"><label>กำลังมอเตอร์เดิม (kW)</label><input data-k="kw" type="number" step="any" value="7.5"></div>
-            <div class="row"><label>ลดความเร็วรอบเหลือ (%)</label><input data-k="speedRatio" type="number" step="any" value="70"></div>
-            <div class="row"><label>ชั่วโมงทำงาน/ปี</label><input data-k="hrs" type="number" step="any" value="6000"></div>
-            <div class="row"><label>ค่าไฟฟ้า (บาท/kWh)</label><input data-k="rate" type="number" step="any" value="4.5"></div>
-            <div class="out"></div>
-          </div>
-        </div>
-      </details>
-
-      <details class="sheet-card" id="ecm-light">
-        <summary><div class="sheet-summary-main"><span class="sheet-chip">ECM</span><h3>💡 มาตรการเปลี่ยนหลอดไฟประหยัดพลังงาน (LED)</h3></div><span class="sheet-dims">Lighting Retrofit</span></summary>
-        <div class="sheet-body">
-          เปลี่ยนหลอดไฟเดิมเป็น LED เพื่อลดกำลังไฟฟ้าที่ใช้ต่อดวง โดยให้แสงสว่างเทียบเท่าหรือดีกว่าเดิม
-          <div class="calc" data-calc="light">
-            <div class="row"><label>กำลังไฟหลอดเดิม (W/ดวง)</label><input data-k="wOld" type="number" step="any" value="36"></div>
-            <div class="row"><label>กำลังไฟหลอดใหม่ LED (W/ดวง)</label><input data-k="wNew" type="number" step="any" value="18"></div>
-            <div class="row"><label>จำนวนดวง</label><input data-k="qty" type="number" step="any" value="100"></div>
-            <div class="row"><label>ชั่วโมงใช้งาน/ปี</label><input data-k="hrs" type="number" step="any" value="4000"></div>
-            <div class="row"><label>ค่าไฟฟ้า (บาท/kWh)</label><input data-k="rate" type="number" step="any" value="4.5"></div>
-            <div class="out"></div>
-          </div>
-        </div>
-      </details>
-
-      <details class="sheet-card" id="ecm-chiller">
-        <summary><div class="sheet-summary-main"><span class="sheet-chip">ECM</span><h3>❄️ มาตรการปรับปรุงประสิทธิภาพ Chiller / HVAC</h3></div><span class="sheet-dims">kW/RT</span></summary>
-        <div class="sheet-body">
-          ปรับปรุง/บำรุงรักษาระบบทำความเย็นให้มีค่า kW/RT ลดลง (M&amp;V ตามมาตรฐาน ASHRAE Guideline 14)
-          <div class="doc-note">อ้างอิง: ENPI analysis (Chiller/HVAC).xlsx</div>
-          <div class="calc" data-calc="chiller">
-            <div class="row"><label>kW/RT เดิม</label><input data-k="kwrtOld" type="number" step="any" value="0.75"></div>
-            <div class="row"><label>kW/RT หลังปรับปรุง</label><input data-k="kwrtNew" type="number" step="any" value="0.65"></div>
-            <div class="row"><label>ขนาดโหลดเฉลี่ย (RT)</label><input data-k="ton" type="number" step="any" value="400"></div>
-            <div class="row"><label>ชั่วโมงทำงาน/ปี</label><input data-k="hrs" type="number" step="any" value="6000"></div>
-            <div class="row"><label>ค่าไฟฟ้า (บาท/kWh)</label><input data-k="rate" type="number" step="any" value="4.5"></div>
-            <div class="out"></div>
-          </div>
-        </div>
-      </details>
-
-      <details class="sheet-card" id="ecm-envelope">
-        <summary><div class="sheet-summary-main"><span class="sheet-chip">ECM</span><h3>🏢 มาตรการเปลือกอาคาร (OTTV / BEC)</h3></div><span class="sheet-dims">Building Envelope</span></summary>
-        <div class="sheet-body">
-          ปรับปรุงฉนวนกันความร้อน กระจก และค่าการบังแดด เพื่อลดค่า OTTV ของอาคารตามเกณฑ์ พพ.
-          <div class="doc-note">อ้างอิง: รายงานประเมินอาคาร BEC.pdf</div>
-        </div>
-      </details>
-
-      <details class="sheet-card" id="ecm-solar">
-        <summary><div class="sheet-summary-main"><span class="sheet-chip">ECM</span><h3>☀️ มาตรการพลังงานทดแทน (Solar PV)</h3></div><span class="sheet-dims">Solar Rooftop</span></summary>
-        <div class="sheet-body">
-          ติดตั้งระบบผลิตไฟฟ้าจากแสงอาทิตย์ (Solar Rooftop) เพื่อลดการซื้อไฟฟ้าจากการไฟฟ้าฯ
-          <div class="calc" data-calc="solar">
-            <div class="row"><label>ขนาดติดตั้ง (kWp)</label><input data-k="kwp" type="number" step="any" value="100"></div>
-            <div class="row"><label>Specific Yield (kWh/kWp/ปี)</label><input data-k="syield" type="number" step="any" value="1400"></div>
-            <div class="row"><label>ค่าไฟฟ้า (บาท/kWh)</label><input data-k="rate" type="number" step="any" value="4.5"></div>
-            <div class="row"><label>งบลงทุน (บาท)</label><input data-k="invest" type="number" step="any" value="3500000"></div>
-            <div class="out"></div>
-          </div>
-        </div>
-      </details>
-
-      <details class="sheet-card" id="ecm-invest">
-        <summary><div class="sheet-summary-main"><span class="sheet-chip">ECM</span><h3>💰 สรุปงบลงทุนและผลตอบแทน (Investment Summary)</h3></div><span class="sheet-dims">Payback / ROI</span></summary>
-        <div class="sheet-body">
-          ภาพรวมงบลงทุนทุกมาตรการเทียบผลประหยัดสะสมและระยะเวลาคืนทุน
-          <div class="doc-note">อ้างอิง: saving energy investment plan2023.xlsx, ViMUT Investment of ENERGY Sep-2023.pptx</div>
-          <div class="calc" data-calc="invest">
-            <div class="row"><label>งบลงทุนรวม (บาท)</label><input data-k="invest" type="number" step="any" value="1200000"></div>
-            <div class="row"><label>ผลประหยัด/ปี (บาท)</label><input data-k="savingYr" type="number" step="any" value="450000"></div>
-            <div class="out"></div>
-          </div>
-        </div>
-      </details>
+      <div id="m2-dashboard"></div>
+      <div id="m2-groups"></div>
 
       </div>
 
@@ -575,6 +542,341 @@
       a.classList.toggle('hide', q.length > 0 && txt.indexOf(q) === -1);
     });
   });
+
+  /* ================================================================
+     Module 2 — Energy Conservation Project
+     Data transcribed from "Energy conservation of TKO_iMATOMsavD.xlsx"
+     Row format (pipe-delimited): task|focus|detail|type(I/N)|cost|assigned|progress|start|end|wd|td|savingPct|thb
+     ================================================================ */
+  var GROUP_DEFS = [
+    { code:'A', name:'Energy Management (การบริหารจัดการด้านพลังงาน)', kwh:656250, invest:0, saving:0, thb:0, start:'1-ม.ค.-25', end:'31-ธ.ค.-25', totalDay:364, rows:`
+Manager|Main equipment|1.จัดแผนการเดินเครื่องจักรและอุปกรณ์ที่มีประสิทธิภาพสูงสุด|N|0|VMH+PTS|100|8-ม.ค.-25|15-ม.ค.-25|2|7|0|0
+Manager|On Peak|2.พิจารณาหาทางหลบเลี่ยงการเดินเครื่องจักรที่มีการใช้พลังงานไฟฟ้าสูงในช่วง On Peak หลีกเลี่ยงการเพิ่มของความต้องการพลังไฟฟ้าสูงสุด|N|0|VMH+PTS|100|15-ม.ค.-25|22-ม.ค.-25|2|7|0|0
+PM|PM plan|3.จัดทำ Preventive Maintenance เครื่องจักรที่มีประสิทธิภาพการทำงานสูงที่สุด|N|0|VMH+PTS|100|22-ม.ค.-25|29-ม.ค.-25|2|7|0|0
+OP|BOD|4.ควบคุมระบบบำบัดน้ำเสียให้ค่า DO ไม่เกิน 4mg/l จากการเติมอากาศที่มากเกินไป|N|0|VMH+PTS|100|29-ม.ค.-25|5-ก.พ.-25|2|7|0|0
+OP|On-Off|5.จัดทำแผนงานควบคุมการเปิด-ปิดระบบแสงสว่างให้เหมาะสม และถูกต้องกับการใช้งานจริง|N|0|VMH+PTS|100|5-ก.พ.-25|12-ก.พ.-25|2|7|0|0
+OP|Chiller plant|6.ให้ความสนใจเป็นพิเศษในการควบคุมการทำงานระบบปรับอากาศซึ่งเป็นระบบที่ใช้พลังงานไฟฟ้ามาก ให้ถือเป็นลำดับแรกในการทำ|N|0|VMH+PTS|100|12-ก.พ.-25|19-ก.พ.-25|2|7|0|0
+OP|Record data|7.จัดทำบันทึกค่า Consumption ของค่าไฟฟ้า ค่าน้ำประปา และทำการวิเคราะห์เปรียบเทียบทุกวัน|N|0|VMH+PTS|100|19-ก.พ.-25|26-ก.พ.-25|2|7|0|0
+Manager|Control & Monitor|8.มอบหมายงานให้ทีมงานหรือผู้ใต้บังคับบัญชาปฏิบัติและติดตามผลอย่างสม่ำเสมอ|N|0|VMH+PTS|100|26-ก.พ.-25|5-มี.ค.-25|2|7|0|0
+Manager|Co-operate with Owner|9.ประสานงานกับหน้างาน เพื่อหาแนวทางประหยัดพลังงานบางพื้นที่ หรือบางระบบ ซึ่งอาจต้องการความร่วมมือกับผู้ใช้อาคาร|N|0|VMH+PTS|100|5-มี.ค.-25|12-มี.ค.-25|2|7|0|0
+Manager|Energy committee|10.ประชุม FMS ประจำเดือน คณะกรรมการ Energy Saving Committee ขึ้นเพื่อร่วมดำเนินกิจการให้มีประสิทธิภาพมากขึ้น|N|0|VMH+PTS|100|1-ม.ค.-25|31-ธ.ค.-25|12|364|0|0` },
+
+    { code:'B', name:'Air Condition — ภาพรวม B1–B9', kwh:317261, invest:0, saving:17, thb:0, start:'5-มี.ค.-25', end:'4-เม.ย.-25', totalDay:30, note:'ผลรวมของระบบปรับอากาศทั้งหมด B1–B9 ด้านล่าง — ดูรายละเอียดแยกรายระบบในแต่ละกลุ่มย่อย', rows:`` },
+
+    { code:'B1', name:'Chiller Machine (CH)', kwh:164982, invest:506000, saving:10.5, thb:17323.1, start:'5-มี.ค.-25', end:'4-เม.ย.-25', totalDay:30, rows:`
+CH01|Con approach tenp|1.Chiller Condenser approach >4.0F ในขณะโหลด 90% ควรทำการแยงท่อด้าน condenser (ทำการแยงท่อเมื่อวันที่ 8/2/65)|I|65000|VMH+PTS|0|5-มี.ค.-25|12-มี.ค.-25|7|7|1.5|2474.7
+CH01|Refil chemical|2.Chiller Evapr approach > 3.0F ในขณะโหลด 90% ควรทำการเติมน้ำยาป้องกันเมือกหรือฟิล์มในท่อน้ำเย็น|I|1500|VMH+PTS|0|5-มี.ค.-25|12-มี.ค.-25|7|7|0.5|824.9
+CH01|Set % Current|3.ตั้งค่า %Current rate = 90% เพราะค่า kw/TR ดีที่สุด|N|0|VMH+PTS|100|5-มี.ค.-25|5-มี.ค.-26|365|365|0|0
+CH01|Set point|4.Set point Chiller = 47.0-47.5F และ Chiller return 53-55F (set 47.5 เมื่อ OT<25C)|N|0|VMH+PTS|100|5-มี.ค.-25|4-เม.ย.-25|30|30|0|0
+CH02|Con approach tenp|5.Chiller Condenser approach >3.9F ในขณะโหลด 90% ควรทำการแยงท่อด้าน condenser (ทำการแยงท่อเมื่อวันที่ 10/2/65)|I|65000|VMH+PTS|0|5-มี.ค.-25|4-เม.ย.-25|30|30|1.5|2474.7
+CH02|Refil chemical|6.Chiller Evapr approach > 0.5F ในขณะโหลด 90% ควรทำการเติมน้ำยาป้องกันเมือกหรือฟิล์มในท่อน้ำเย็น|I|1500|VMH+PTS|0|5-มี.ค.-25|4-เม.ย.-25|30|30|0.5|824.9
+CH02|Set % Current|7.ตั้งค่า %Current rate = 90% เพราะค่า kw/TR ดีที่สุด|N|0|VMH+PTS|100|5-มี.ค.-25|4-เม.ย.-25|30|30|0|0
+CH02|Set point|8.Set point Chiller = 47.0-47.5F และ Chiller return 53-55F (set 47.5 เมื่อ OT<25C)|N|0|VMH+PTS|100|5-มี.ค.-25|4-เม.ย.-25|30|30|0|0
+CH03|Con approach tenp|9.Chiller Condenser approach >6.5F ในขณะโหลด 90% ควรทำการแยงท่อด้าน condenser|I|35000|VMH+PTS|0|5-มี.ค.-25|4-เม.ย.-25|30|30|1.5|2474.7
+CH03|Refil chemical|10.Chiller Evapr approach > 3.3F ในขณะโหลด 90% ควรทำการเติมน้ำยาป้องกันเมือกหรือฟิล์มในท่อน้ำเย็น|I|1500|VMH+PTS|0|5-มี.ค.-25|4-เม.ย.-25|30|30|0.5|824.9
+CH03|Set % Current|11.ตั้งค่า %Current rate = 90% เพราะค่า kw/TR ดีที่สุด|N|0|VMH+PTS|100|5-มี.ค.-25|4-เม.ย.-25|30|30|0|0
+CH03|Set point|12.Set point Chiller = 47.0-47.5F และ Chiller return 53-55F (set 47.5 เมื่อ OT<25C)|N|0|VMH+PTS|100|5-มี.ค.-25|4-เม.ย.-25|30|30|0|0
+CH04|Con approach tenp|13.Chiller Condenser approach >11.0F ในขณะโหลด 90% ควรทำการแยงท่อด้าน condenser|I|35000|VMH+PTS|0|5-มี.ค.-25|4-เม.ย.-25|30|30|1.5|2474.7
+CH04|Refil chemical|14.Chiller Evapr approach > 3.3F ในขณะโหลด 90% ควรทำการเติมน้ำยาป้องกันเมือกหรือฟิล์มในท่อน้ำเย็น|I|1500|VMH+PTS|0|5-มี.ค.-25|4-เม.ย.-25|30|30|0.5|824.9
+CH04|Set % Current|15.ตั้งค่า %Current rate = 90% เพราะค่า kw/TR ดีที่สุด|N|0|VMH+PTS|100|5-มี.ค.-25|4-เม.ย.-25|30|30|0|0
+CH04|Set point|16.Set point Chiller = 47.0-47.5F และ Chiller return 53-55F (set 47.5 เมื่อ OT<25C)|N|0|VMH+PTS|100|5-มี.ค.-25|4-เม.ย.-25|30|30|0|0
+CH01-04|On-off|สลับ Chiller 1-2 เป็น Chiller 3-4 เวลา 6.00น. และ 18.00น.|N|0|VMH+PTS|100|5-มี.ค.-25|4-เม.ย.-25|30|30|0|0
+CH01-04|On-off|ปรับเวลารัน chiller no.2 (850TR) 6.00-17.00น. เดิม 6.00-19.00น. (Load เหลือ<50%)|N|0|VMH+PTS|100|5-มี.ค.-25|5-เม.ย.-25|31|31|0|0
+CH01-04|Efficiency|17.วัดประสิทธิภาพ kW/TR ของ Chiller เพื่อประเมินประสิทธิภาพเครื่องจักร (0.62-0.65 kW/TR) หรือรวมทั้ง Plant (0.75-0.85 kW/TR)|N|0|VMH+PTS|100|5-มี.ค.-25|4-เม.ย.-25|30|30|0|0
+CH01-04|Trial run|19.ทำการทดลองรัน Chiller no.3-4 1 ตัว 425 Ton จ่ายน้ำเย็นทั้งอาคาร หลังแยงท่อ condenser เวลา 18.00น.|N|0|VMH+PTS|100|5-มี.ค.-25|4-เม.ย.-25|30|30|0|0
+CH01-04|Power factor|20.ติดตั้ง Capacitor bank ในตู้เมน Chiller+CHP+CDP+Cooling เพื่อเพิ่ม power factor 0.97-0.99 เดิม 0.95 (MDB03)|I|300000|VMH+PTS|0|5-มี.ค.-25|4-เม.ย.-25|30|30|2.5|4124.6` },
+
+    { code:'B2', name:'Chiller Water Pump (CHP)', kwh:17733, invest:100000, saving:15, thb:2660, start:'4-เม.ย.-25', end:'4-พ.ค.-25', totalDay:30, rows:`
+CHP01-04|Flow(gpm)|1.วัดอัตราการไหลของน้ำเย็น เทียบกับสเปค Chiller ด้าน Evap (2,040gpm) เพื่อปรับอัตราการไหลที่เหมาะสม (std: 2,352.7 GPM)|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+CHP01-04|Btu.hr(TR)|2.วัดอัตราการไหลของน้ำเย็น เทียบกับสเปค Chiller ด้าน Evap (850TR) เพื่อตันความเย็นของ Chiller (std: 850TR)|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+CHP01-04|Clean Strainner|3.ล้างทำความสะอาดสเตรนเนอร์ทุก 6 เดือน|N|0|VMH+PTS|25|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+CHP01-04|VSD|4.ปรับ VSD ในมอเตอร์ปั๊มน้ำเย็น เพื่ออัตราการไหลของน้ำเย็นเหมาะสมกับสเปค chiller (2,040gpm) มีการติดตั้งแล้วแต่ set 40Hz เหลือ 38Hz|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|15|2660
+Main supply|Main supply to Building|5.ติดตั้ง GPM meter เพื่อวัดอัตราการไหลของเมนท่อน้ำเย็น (ติดตั้งแล้ว)|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+CHP01-04|Power factor|20.ติดตั้ง Capacitor bank ในตู้เมน CHP เพื่อเพิ่ม power factor 0.97-0.99 เดิม 0.95 (MDB03)|I|100000|VMH+PTS|0|4-เม.ย.-25|4-พ.ค.-25|30|30|0|0` },
+
+    { code:'B3', name:'Condenser Water Pump (CDP)', kwh:17733, invest:100000, saving:15, thb:2660, start:'4-เม.ย.-25', end:'4-พ.ค.-25', totalDay:30, rows:`
+CDP01-04|Flow(gpm)|1.วัดอัตราการไหลของน้ำร้อน เทียบกับสเปค Chiller ด้าน Con (2,550gpm) เพื่อปรับอัตราการไหลที่เหมาะสม (วัดได้ 2,142 GPM)|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+CDP01-04|Btu.hr(TR)|2.วัดอัตราการไหลของน้ำร้อน เทียบกับสเปค Chiller ด้าน Con (500TR/Set) เพื่อตันความเย็นของ Chiller (รัน 3x500TR ต่อวัน)|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+CDP01-04|Clean Strainner|3.ล้างทำความสะอาดสเตรนเนอร์ทุก 3 เดือน|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+CDP01-04|VSD|4.ปรับ VSD ในมอเตอร์ปั๊ม เพื่ออัตราการไหลของน้ำร้อนเหมาะสมกับสเปค chiller (2,550gpm) มีการติดตั้งแล้วแต่ set 40Hz เหลือ 37Hz|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|15|2660
+Main supply|Main supply to Cooling|5.ติดตั้ง GPM meter เพื่อวัดอัตราการไหลของเมนท่อน้ำหล่อเย็น (ติดตั้งแล้ว)|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+CHP01-04|Power factor|20.ติดตั้ง Capacitor bank ในตู้เมน CHP เพื่อเพิ่ม power factor 0.97-0.99 เดิม 0.95 (MDB03)|I|100000|VMH+PTS|0|4-เม.ย.-25|4-พ.ค.-25|30|30|0|0` },
+
+    { code:'B4', name:'Cooling Tower (CT)', kwh:19145, invest:300000, saving:27, thb:5169, start:'4-เม.ย.-25', end:'19-เม.ย.-25', totalDay:15, rows:`
+CT01-04|Temp|1.การลดอุณหภูมิน้ำด้านระบายความร้อนให้ต่ำลง (Cooling return temp <80F) run cooling 3 set|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+CT01-04|Cleanning|2.การล้างทำความสะอาดตะไคร่และตะกรันใน Cooling ทุก 3 เดือน (Filling+ถาดน้ำ)|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+CT01-04|Conductivity|3.ควบคุมค่า Conductivity < 1,500 ไมโครซีเมนต่อตารางเซนติเมตร|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+CT01-04|Bleed off|4.เดรนน้ำ (Bleed off) เพื่อควบคุมค่า Conductivity < 1,500 ไมโครซีเมนต่อตารางเซนติเมตร|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+CT01-04|VSD|5.ติดตั้ง VSD ใน cooling fan CT02A,02B,04 เพื่อลดตามอุณหภูมิน้ำร้อนที่ระบายได้ (80F)|I|300000|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|22|4211.8
+CT01-04|Water supply|6.ติดตั้งถังเก็บน้ำเย็นทิ้ง condensate temp 20C นำไประบายใน cooling เพื่อลดการเติมน้ำและลดอุณหภูมิใน cooling|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|5|957.2` },
+
+    { code:'B5', name:'Air Handling Unit (AHU)', kwh:52969, invest:300000, saving:4, thb:2118.7, start:'19-เม.ย.-25', end:'4-พ.ค.-25', totalDay:15, rows:`
+AHU|Cleanning|1.การล้างทำความสะอาดเครื่องปรับอากาศด้านคอยล์เย็น ทุก 6 เดือน|N|0|VMH+PTS|100|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+AHU|Cleanning Strainner|2.การล้างทำความสะอาด Strainner เครื่องปรับอากาศด้านคอยล์เย็น ทุก 6 เดือน|N|0|VMH+PTS|100|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+AHU|Pre filter|3.ติดตั้ง filter ใยสังเคราะห์ ดักฝุ่นและลดการอุดตันของ coil เย็น|I|7000|VMH+PTS|0|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+AHU|Room temp|4.การเพิ่มอุณหภูมิเครื่องปรับอากาศ (AHU+FCU) ขึ้น 1 องศาเซลเซียส (25-26C) และลดเวลาทำงานของแอร์ทางเดินส่วนกลาง|N|0|VMH+PTS|75|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+AHU|On-off|AHU ปิดก่อนเวลาประมาณ 1 ชั่วโมง|N|0|VMH+PTS|75|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+AHU|VSD|5.ติดตั้ง VSD 6 ชุด ปรับลดความเร็วมอเตอร์พัดลม ตามอุณหภูมิลมกลับ (return Air) ของ AHU+FCU ที่ 24-25 องศาเซลเซียส|N|300000|VMH+PTS|0|19-เม.ย.-25|4-พ.ค.-25|15|15|4|2118.7
+AHU|Temp off coil|6.การเพิ่มอุณหภูมิหลัง off coil ของ AHU+FCU เป็น 19 องศาเซลเซียส เพื่อควบคุม motorize valve|N|0|VMH+PTS|50|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0` },
+
+    { code:'B6', name:'Fan Coil Unit (FCU)', kwh:25033, invest:7000, saving:0, thb:0, start:'19-เม.ย.-25', end:'4-พ.ค.-25', totalDay:15, rows:`
+FCU|Cleanning|1.การล้างทำความสะอาดเครื่องปรับอากาศด้านคอยล์เย็น ทุก 6 เดือน|N|0|VMH+PTS|100|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+FCU|Cleanning Strainner|2.การล้างทำความสะอาด Strainner เครื่องปรับอากาศด้านคอยล์เย็น ทุก 6 เดือน|N|0|VMH+PTS|100|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+FCU|Pre filter|3.ติดตั้ง filter ใยสังเคราะห์ ดักฝุ่นและลดการอุดตันของ coil เย็น|I|7000|VMH+PTS|0|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+FCU|Room temp|4.การเพิ่มอุณหภูมิเครื่องปรับอากาศ ขึ้น 1 องศาเซลเซียส (25-26C) และลดเวลาทำงานของแอร์ทางเดินส่วนกลาง|N|0|VMH+PTS|75|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0` },
+
+    { code:'B7', name:'Outside Air Unit (OAU)', kwh:15891, invest:0, saving:0, thb:0, start:'19-เม.ย.-25', end:'4-พ.ค.-25', totalDay:15, rows:`
+OAU1-10|Flow(gpm)|1.ล้างทำความสะอาด Pre filter ทุก 6 เดือน|N|0|VMH+PTS|100|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+OAU1-10|Btu.hr(TR)|2.ล้างทำความสะอาด Medium filter ทุก 6 เดือน|N|0|VMH+PTS|100|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+OAU1-10|Clean Strainner|3.ล้างทำความสะอาดสเตรนเนอร์ทุก 6 เดือน|N|0|VMH+PTS|100|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+OAU1-10|VSD|4.ควรรันระบบ VSD ในมอเตอร์ <70% เพื่ออัตราการไหลของน้ำเย็นเหมาะสมกับโหลดอาคาร|N|0|VMH+PTS|100|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+OAU1-10|VSD|5.รัน OAU01-02 เพื่อลดความชื้นในห้อง X-ray เดินระบบเวลาเดิม 6.00-21.00 น. เวลาใหม่ 6.00-8.30 น.|N|0|VMH+PTS|100|19-เม.ย.-25|5-พ.ค.-25|16|16|0|0
+OAU1-10|Setpoint|5.ปรับ setpoint 23-25C ในพื้นที่ทางเดิน และ 20-22C ในพื้นที่ Critical care|N|0|VMH+PTS|75|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0` },
+
+    { code:'B8', name:'Split Type Air Conditioner (SPT)', kwh:3776, invest:0, saving:0, thb:0, start:'4-พ.ค.-25', end:'19-พ.ค.-25', totalDay:15, rows:`
+SPT|Cleaning|1.การล้างทำความสะอาดเครื่องปรับอากาศด้านคอยล์ร้อนและคอยล์เย็น|N|0|VMH+PTS|100|4-พ.ค.-25|19-พ.ค.-25|15|15|0|0
+SPT|Room temp|2.การเพิ่มอุณหภูมิเครื่องปรับอากาศ (AHU+FCU) ขึ้น 1 องศาเซลเซียส (25-26C) และลดเวลาทำงานของแอร์ทางเดินส่วนกลาง|N|0|VMH+PTS|0|4-พ.ค.-25|19-พ.ค.-25|15|15|0|0
+SPT|Cleaning condenser|3.การลดอุณหภูมิเครื่องปรับอากาศระบายความร้อนให้ต่ำลง (Condenser Unit) 1C=2%|N|0|VMH+PTS|0|4-พ.ค.-25|19-พ.ค.-25|15|15|0|0
+SPT|Operation|4.พิจารณาจัดการ Operate ระบบปรับอากาศให้เหมาะสมกับการใช้งานจริง เช่น การเปิด-ปิด SPT ตามชั้นต่าง ๆ และให้เหมาะสมกับ Cooling Load|N|0|VMH+PTS|0|4-พ.ค.-25|19-พ.ค.-25|15|15|0|0
+SPT|Heat loss|5.ควบคุมระบบการระบายความร้อนของคอยล์ร้อนให้มีประสิทธิภาพและลดการไหลเวียนกลับของอากาศร้อนเข้าคอยล์|N|0|VMH+PTS|0|4-พ.ค.-25|19-พ.ค.-25|15|15|0|0
+SPT|Heat loss|6.นำน้ำ drain แอร์ระบายความร้อนให้ท่อ Discharge ของ condenser|I|0|VMH+PTS|0|4-พ.ค.-25|19-พ.ค.-25|15|15|0|0` },
+
+    { code:'B9', name:'Air Compressor (ACP)', kwh:6899, invest:0, saving:0, thb:0, start:'4-พ.ค.-25', end:'19-พ.ค.-25', totalDay:15, rows:`
+ACP|Cleaning|1.การล้างทำความสะอาดกรองอากาศ|N|0|VMH+PTS|0|4-พ.ค.-25|19-พ.ค.-25|15|15|0|0
+ACP|Room temp|2.การเพิ่มอุณหภูมิเครื่องปรับอากาศ (AHU+FCU) ขึ้น 1 องศาเซลเซียส (25-26C) และลดเวลาทำงานของแอร์ทางเดินส่วนกลาง|N|0|VMH+PTS|0|4-พ.ค.-25|19-พ.ค.-25|15|15|0|0
+ACP|Cleaning condenser|3.การลดอุณหภูมิเครื่องอัดอากาศระบายความร้อนให้ต่ำลง (Condenser Unit) 1C=2%|N|0|VMH+PTS|0|4-พ.ค.-25|19-พ.ค.-25|15|15|0|0
+ACP|Operation|4.พิจารณาจัดการ Operate ระบบปรับอากาศให้เหมาะสมกับการใช้งานจริง เช่น การเปิด-ปิด และ set pressure ให้เหมาะสม|N|0|VMH+PTS|0|4-พ.ค.-25|19-พ.ค.-25|15|15|0|0
+ACP|Heat loss|5.ควบคุมระบบการระบายความร้อนของคอยล์ร้อนให้มีประสิทธิภาพและลดการไหลเวียนกลับของอากาศร้อนเข้าคอยล์|N|0|VMH+PTS|0|4-พ.ค.-25|19-พ.ค.-25|15|15|0|0` },
+
+    { code:'C', name:'Ventilation (Fresh Air + Outside Air)', kwh:16546, invest:100000, saving:5, thb:827.3, start:'19-พ.ค.-25', end:'3-มิ.ย.-25', totalDay:15, rows:`
+FA|VSD|1.ติดตั้ง Temp Control เพื่อปรับลดระบบ VSD ชุดเติมอากาศ จำนวน 10 ชุด|I|100000|VMH+PTS|0|19-พ.ค.-25|3-มิ.ย.-25|15|15|0|0
+FA|VSD|2.ปรับ %VSD ในมอเตอร์ Fresh Air โดยแปรผันตามค่า Temp|N|0|VMH+PTS|100|19-พ.ค.-25|3-มิ.ย.-25|15|15|5|827.3
+FA|On-Off|3.เพิ่มลดเวลาการทำงานของ Fresh Air โดยแปรผันตารางการทำงานของการเปิดแอร์|N|0|VMH+PTS|100|19-พ.ค.-25|3-มิ.ย.-25|15|15|0|0` },
+
+    { code:'D', name:'Exhaust (Kitchen fan + Exhaust fan)', kwh:37181, invest:100000, saving:48.5, thb:18032.7, start:'19-พ.ค.-25', end:'3-มิ.ย.-25', totalDay:15, rows:`
+KEF|VSD|1.ติดตั้ง VSD ในมอเตอร์ Exhaust Air โดยแปรผันตามค่า Temp|I|100000|VMH+PTS|0|19-พ.ค.-25|3-มิ.ย.-25|15|15|48.5|18032.7
+KEF|On-Off|2.เพิ่มลดเวลาการทำงานของ Exhaust Air โดยแปรผันตารางการทำงานของห้องครัว|N|0|VMH+PTS|100|19-พ.ค.-25|3-มิ.ย.-25|15|15|0|0` },
+
+    { code:'E', name:'Electrical (TR+MDB)', kwh:25847, invest:0, saving:15, thb:3877.0, start:'4-เม.ย.-25', end:'19-เม.ย.-25', totalDay:15, rows:`
+MDB|Set Pf>0.95|เพิ่มคุณภาพไฟฟ้า (Power factor) >0.95 โดยการ Manual หรือ Auto|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+MDB|Capacitor bank|วัดค่ากระแส Cap bank เพื่อตรวจสอบ Cap ที่รันได้ปกติ ส่วนที่ชำรุดให้ถอดฟิวส์ออก|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+MDB|Solar cell|ทำความสะอาดแผงระบบผลิตไฟฟ้าจาก Solar cell on grid|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|15|3877.0
+MDB|Air condition|อุณหภูมิห้องไฟฟ้าไม่เกิน 25C เพื่อป้องกันอุปกรณ์อิเล็กทรอนิกส์ชำรุด (ใช้พัดลมระบายอากาศแทนการติดตั้งแอร์ หรือติดตั้งแบบตั้งพื้น)|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0` },
+
+    { code:'F', name:'Electrical (Lighting)', kwh:36185, invest:65000, saving:11, thb:3980.4, start:'4-เม.ย.-25', end:'19-เม.ย.-25', totalDay:15, rows:`
+Carpark+ทางเดิน|Photo sensor|1.ติดตั้ง Photo sensor ควบคุมการเปิดปิดไฟแสงสว่างในลานจอดรถ|I|50000|VMH+PTS|0|4-เม.ย.-25|19-เม.ย.-25|15|15|2|723.7
+Carpark+ทางเดิน|On-Off|2.เปิด-ปิด ระบบแสงสว่างใน Car Park ให้เหมาะสมกับฤดูกาลและสภาพแสงสว่างภายนอก|N|0|VMH+PTS|75|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+Carpark|On-Off|3.พิจารณาลดระดับแสงสว่างที่จอดรถ และเพิ่มแสงสว่างตามความเหมาะสม|N|0|VMH+PTS|75|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+Corridoor|On-Off|4.เปิด-ปิด ระบบแสงสว่างในอาคารให้เหมาะสมกับสภาพแสงภายนอกอาคาร (BAS)|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|5|1809.3
+Corridoor|On-Off|5.ควบคุมแสงสว่างใน Corridor เช่น ลดโคมไฟที่ไม่จำเป็นหรือลดกำลังไฟฟ้าของหลอด โดยต้องอยู่ในระดับที่เหมาะสมไม่ก่อให้เกิดความไม่ปลอดภัย|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|1|361.9
+Corridoor|On-Off|6.ควบคุมการเปิด-ปิดไฟแสงสว่างในส่วนกลางให้เหมาะสมตามเวลาและตามความจำเป็นของแสงสว่างที่เหมาะสม|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|2|723.7
+Machine room|On-Off|7.รักษาระดับแสงสว่างในห้องเครื่องจักรให้เหมาะสมไม่มากเกินไป หรืออาจปิดถ้าพิจารณาแล้วจะไม่ก่อให้เกิดความไม่ปลอดภัย|I|15000|VMH+PTS|0|4-เม.ย.-25|19-เม.ย.-25|15|15|1|361.9` },
+
+    { code:'G', name:'Waste Water Treatment (Root blower + Air jet + Aerotor tank)', kwh:10171, invest:300000, saving:2, thb:203.4, start:'4-เม.ย.-25', end:'19-เม.ย.-25', totalDay:15, rows:`
+Waste Water plant|DO,TSD,SV30,Clorine|1.ติดตั้งชุดวัดค่า DO,TDS,pH,Temp,Free CL ในบ่อ EQ,Areotor,Effluent|I|300000|VMH+PTS|0|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+Root blower|VSD|2.ควบคุมค่า VSD ในปั๊มเติมอากาศ เพื่อลดรอบการทำงานลง เมื่อค่า DO เกิน 4mg/l|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|2|203.4` },
+
+    { code:'H', name:'Motor & Pump (Transfer pump + Booster pump + Submers pump)', kwh:37516, invest:160000, saving:5, thb:1875.8, start:'4-เม.ย.-25', end:'19-เม.ย.-25', totalDay:15, rows:`
+Booster pump|Pump|1.ติดตั้ง soft Start เพื่อปรับลดอัตราการไหลและลดการกระชากจากการสตาร์ทมอเตอร์ ลดค่า Peak|I|150000|VMH+PTS|0|4-เม.ย.-25|19-เม.ย.-25|15|15|5|1875.8
+Booster pump|Pressure|2.เปลี่ยน pressure sw แบบ analog เป็น digital เพื่อความแม่นยำในการตัดต่อ|I|10000|VMH+PTS|0|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+Booster pump|Humidity|3.ปิดฝาบ่อทุกครั้งเพื่อลดความชื้นในห้องปั๊ม ป้องกันอุปกรณ์ไฟฟ้าและมอเตอร์มีความชื้นและชำรุด|N|0|VMH+PTS|75|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+Transfer pump|Humidity|4.หลบเลี่ยงการเดิน Water Transfer Pump ขึ้น Roof Tank ในเวลากลางวัน (9.00-22.00) หรือเวลาเดียวกับการ Operate เครื่องจักรอื่น|N|0|VMH+PTS|75|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0
+Transfer pump|Humidity|5.ควรหาแนวทางในการเดินเครื่องเวลากลางคืน (22.00-08.59) โดยการเดินแบบ Manual เพื่อเก็บน้ำให้เต็ม Roof tank|N|0|VMH+PTS|75|4-เม.ย.-25|19-เม.ย.-25|15|15|0|0` },
+
+    { code:'I', name:'Hot Water (Heat pump + Solar heat)', kwh:9857, invest:50000, saving:7, thb:690.0, start:'4-เม.ย.-25', end:'19-เม.ย.-25', totalDay:15, rows:`
+Hot tank|Temp|1.ปรับลดอุณหภูมิน้ำร้อนลด 5-10C เดิมจากการใช้งาน 55-63C เหลือ <45-50C|N|0|VMH+PTS|100|4-เม.ย.-25|19-เม.ย.-25|15|15|5|492.8
+Hot tank|Temp|2.นำความร้อนทิ้งจากเครื่อง Air condition จ่ายให้ห้องเครื่องลิฟท์|I|50000|VMH+PTS|0|4-เม.ย.-25|19-เม.ย.-25|15|15|2|197.1` },
+
+    { code:'J', name:'Transportation (Elevator + Escalator)', kwh:6003, invest:0, saving:2, thb:120.1, start:'19-เม.ย.-25', end:'4-พ.ค.-25', totalDay:15, rows:`
+Elevator|VSD-AHU|1.ควบคุม VSD ใน AHU จำนวน 4 ชุด|N|0|VMH+PTS|100|19-เม.ย.-25|4-พ.ค.-25|15|15|2|120.1
+Elevator & Escalator|Start-Stop|2.ลดความเร็วมอเตอร์ลิฟท์|N|0|VMH+PTS|0|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+Elevator & Escalator|Walking Up-Down|3.รณรงค์การเดินใช้บันไดระหว่างชั้น|N|0|VMH+PTS|0|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+Elevator & Escalator|On-Off|4.จัดการบริหารเวลาการใช้ลิฟท์ให้เหมาะสมกับเวลาเปิดและช่วงปิดอาคาร|N|0|VMH+PTS|0|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+Elevator & Escalator|Start-Stop|5.ลดระยะเวลาการเดินความเร็วต่ำให้หยุดเร็วที่สุดหลังลูกค้าใช้งาน ไม่ควรเกิน 10 วินาที|N|0|VMH+PTS|0|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0` },
+
+    { code:'K', name:'Building (Entrance Door + Glass wall + Roof + Air curtain)', kwh:5169, invest:130000, saving:0, thb:0, start:'19-เม.ย.-25', end:'4-พ.ค.-25', totalDay:15, rows:`
+Door|Air curtain|1.ติดตั้งม่านอากาศ เพื่อป้องกันความร้อนและฝุ่นเข้าอาคาร ทำให้โหลดอาคารเพิ่มขึ้น (Positive pressure)|I|130000|VMH+PTS|0|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+Door|Speed door|2.ปรับตั้งความเร็วในการเปิด-ปิดประตู Auto|N|0|VMH+PTS|100|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+Door|Heat loss|3.ร่วมกันดูแลและสร้างจิตสำนึกป้องกันไม่ให้เกิด loss ในระบบปรับอากาศ เช่น ไม่เปิดประตูหน้าต่างพื้นที่ปรับอากาศทิ้งไว้และปิดจุดรั่วของอากาศ|N|0|VMH+PTS|100|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0
+Glass wall|Film & canopy|4.ติดฟิล์มลดความร้อนในผนังกระจกอาคาร และปิดจุดรั่วไหลของอากาศร้อนเข้าอาคารจากฝ้าเพดานที่ชำรุด|I|0|VMH+PTS|75|19-เม.ย.-25|4-พ.ค.-25|15|15|0|0` },
+
+    { code:'L', name:'IoT (Internet of Things) Main Equipment', kwh:0, invest:555000, saving:1.95, thb:12796.9, start:'19-เม.ย.-25', end:'4-ธ.ค.-25', totalDay:229, rows:`
+HVAC|Chiller plant|HVAC:1.ATOM_CHW_(Chiller Water Cool)|I|90000|VMH+PTS|0|19-เม.ย.-25|4-พ.ค.-25|15|15|0.15|984.4
+HVAC|Chiller plant|HVAC:2.ATOM_CHA_(CHP/CDP water pump)|I|80000|VMH+PTS|0|4-พ.ค.-25|19-พ.ค.-25|15|15|0.15|984.4
+HVAC|Chiller plant|HVAC:3.ATOM_CT_(Cooling tower)|I|20000|VMH+PTS|0|19-พ.ค.-25|3-มิ.ย.-25|15|15|0.15|984.4
+HVAC|OAU|HVAC:4.ATOM_OAU_(Outside Air Unit)|I|30000|VMH+PTS|0|3-มิ.ย.-25|18-มิ.ย.-25|15|15|0.15|984.4
+HVAC|Exhaust Fan|HVAC:5.ATOM_EF_(Fresh / Exhaust fan)|I|15000|VMH+PTS|0|18-มิ.ย.-25|3-ก.ค.-25|15|15|0.05|328.1
+HVAC|Air compressor|HVAC:6.ATOM_AC_(Air compressor)|I|10000|VMH+PTS|0|3-ก.ค.-25|10-ก.ค.-25|7|7|0.05|328.1
+HVAC|Vacuum pump|HVAC:7.ATOM_VC_(Vacuum pump)|I|10000|VMH+PTS|0|10-ก.ค.-25|17-ก.ค.-25|7|7|0.05|328.1
+HVAC|Freeze & Refrigerant|HVAC:8.ATOM_PR_(Freeze & Refrigerant)|I|10000|VMH+PTS|0|17-ก.ค.-25|24-ก.ค.-25|7|7|0.05|328.1
+SN|U-R Water supply|SN:9.ATOM_CW_(U-R Water supply tank)|I|10000|VMH+PTS|0|24-ก.ค.-25|31-ก.ค.-25|7|7|0.05|328.1
+SN|Hot Water|SN:10.ATOM_HWS_(Hot water system)|I|10000|VMH+PTS|0|31-ก.ค.-25|7-ส.ค.-25|7|7|0.05|328.1
+SN|Cold & Booster pump|SN:11.ATOM_CWBP_(Cold water booster pump)|I|10000|VMH+PTS|0|7-ส.ค.-25|14-ส.ค.-25|7|7|0.05|328.1
+EE|Transformer|EE:12.ATOM_TRFM_(Transformer)|I|10000|VMH+PTS|0|14-ส.ค.-25|21-ส.ค.-25|7|7|0.05|328.1
+EE|Capacitor bank|EE:13.ATOM_CAP_(Capacitor bank)|I|10000|VMH+PTS|0|21-ส.ค.-25|28-ส.ค.-25|7|7|0.05|328.1
+EE|UPS|EE:14.ATOM_UPS_(Un-Interruption Power Sup)|I|10000|VMH+PTS|0|28-ส.ค.-25|4-ก.ย.-25|7|7|0.05|328.1
+EE|Fire pump|EE:15.ATOM_FP_(Fire engine pump)|I|10000|VMH+PTS|0|4-ก.ย.-25|11-ก.ย.-25|7|7|0.05|328.1
+EE|Jocky pump|EE:16.ATOM_JP_(Jockey pump)|I|10000|VMH+PTS|0|11-ก.ย.-25|18-ก.ย.-25|7|7|0.05|328.1
+MP|Sewage pump|MP:17.ATOM_JP_(Sewage pump)|I|10000|VMH+PTS|0|18-ก.ย.-25|25-ก.ย.-25|7|7|0.05|328.1
+WWT|Waste Water treatment|WWT:18.ATOM_WWT_(Waste water treatment)|I|10000|VMH+PTS|0|25-ก.ย.-25|2-ต.ค.-25|7|7|0.05|328.1
+BS|LPG|BS:19.ATOM_LPG_(Valve control LPG)|I|10000|VMH+PTS|0|2-ต.ค.-25|9-ต.ค.-25|7|7|0.05|328.1
+TR|Elevator|TR:20.ATOM_ELV_(Elevator)|I|10000|VMH+PTS|0|9-ต.ค.-25|16-ต.ค.-25|7|7|0.05|328.1
+IC|Positive room|IC:21.Positive pressure room|I|15000|VMH+PTS|0|16-ต.ค.-25|23-ต.ค.-25|7|7|0.05|328.1
+IC|Negative room|IC:22.Negative pressure room|I|15000|VMH+PTS|0|23-ต.ค.-25|30-ต.ค.-25|7|7|0.05|328.1
+HVAC|OR|HVAC:23.OR room monitor|I|100000|VMH+PTS|0|30-ต.ค.-25|6-พ.ย.-25|7|7|0.05|328.1
+HVAC|OR Sterize|HVAC:24.OR Sterize room monitor|I|10000|VMH+PTS|0|6-พ.ย.-25|13-พ.ย.-25|7|7|0.05|328.1
+HVAC|Cathlab|HVAC:25.Cathlab room monitor|I|10000|VMH+PTS|0|13-พ.ย.-25|20-พ.ย.-25|7|7|0.05|328.1
+HVAC|CT|HVAC:26.CT room monitor|I|10000|VMH+PTS|0|20-พ.ย.-25|27-พ.ย.-25|7|7|0.15|984.4
+HVAC|MRI|HVAC:27.MRI room monitor|I|10000|VMH+PTS|0|27-พ.ย.-25|4-ธ.ค.-25|7|7|0.15|984.4` },
+  ];
+
+  /* ---- parse rows + N/A state (persisted in localStorage) ---- */
+  var NA_KEY = 'imatoms_adv_m2_na';
+  var naSet = {};
+  try{ naSet = JSON.parse(localStorage.getItem(NA_KEY) || '{}'); }catch(e){ naSet = {}; }
+  function saveNA(){ try{ localStorage.setItem(NA_KEY, JSON.stringify(naSet)); }catch(e){} }
+
+  GROUP_DEFS.forEach(function(g){
+    g.items = g.rows.trim() ? g.rows.trim().split('\n').map(function(line, idx){
+      var f = line.split('|');
+      return {
+        id: g.code+'-'+idx,
+        task:f[0], focus:f[1], detail:f[2], type:f[3], cost:+f[4]||0, assigned:f[5],
+        progress:+f[6]||0, start:f[7], end:f[8], wd:+f[9]||0, td:+f[10]||0,
+        savingPct:+f[11]||0, thb:+f[12]||0
+      };
+    }) : [];
+  });
+
+  function fmtNum(n, d){ return n.toLocaleString(undefined,{maximumFractionDigits:(d===undefined?0:d)}); }
+
+  /* ---- Dashboard ---- */
+  var dashEl = document.getElementById('m2-dashboard');
+  function renderDashboard(){
+    var allItems = [];
+    GROUP_DEFS.forEach(function(g){ if(g.code!=='B') allItems = allItems.concat(g.items); });
+    var active = allItems.filter(function(it){ return !naSet[it.id]; });
+    var invItems = active.filter(function(it){ return it.type==='I'; });
+    var noInvItems = active.filter(function(it){ return it.type==='N'; });
+    var totalInvestCost = invItems.reduce(function(s,it){ return s+it.cost; },0);
+    var totalThb = active.reduce(function(s,it){ return s+it.thb; },0);
+    var totalKwhBase = GROUP_DEFS.filter(function(g){return g.code!=='B';}).reduce(function(s,g){return s+g.kwh;},0);
+    var progBuckets = {100:0,75:0,50:0,25:0,10:0,0:0};
+    active.forEach(function(it){
+      var p = it.progress;
+      var bucket = p>=100?100:p>=75?75:p>=50?50:p>=25?25:p>=10?10:0;
+      progBuckets[bucket]++;
+    });
+    var naCount = allItems.length - active.length;
+
+    dashEl.innerHTML =
+      '<div class="m2-dash">'
+      + '<div class="kpi-card"><div class="kpi-label">โครงการทั้งหมด (ไม่รวม N/A)</div><div class="kpi-value">'+active.length+'<small>/ '+allItems.length+' รายการ</small></div><div class="kpi-delta">'+naCount+' รายการทำเครื่องหมาย N/A</div></div>'
+      + '<div class="kpi-card"><div class="kpi-label">ต้องลงทุน / ไม่ต้องลงทุน</div><div class="kpi-value">'+invItems.length+'<small> / '+noInvItems.length+'</small></div><div class="kpi-delta">งบลงทุนรวม ฿ '+fmtNum(totalInvestCost)+'</div></div>'
+      + '<div class="kpi-card"><div class="kpi-label">ผลประหยัดรวม (บาท/ปี)</div><div class="kpi-value">฿'+fmtNum(totalThb)+'</div><div class="kpi-delta good">Payback เฉลี่ย '+(totalThb>0?(totalInvestCost/totalThb).toFixed(2):'—')+' ปี</div></div>'
+      + '<div class="kpi-card"><div class="kpi-label">Baseline การใช้พลังงาน</div><div class="kpi-value">'+fmtNum(totalKwhBase)+'<small>kWh</small></div><div class="kpi-delta">รวมทุกระบบ A, C–L</div></div>'
+      + '</div>'
+      + '<div class="m2-bars"><h4>ความคืบหน้าโครงการ (Progress)</h4>'
+      + [100,75,50,25,10,0].map(function(p){
+          var n = progBuckets[p]; var pct = active.length? (n/active.length*100):0;
+          return '<div class="m2-bar-row"><div class="lb">'+p+'%</div><div class="track"><div class="fill" style="width:'+pct+'%"></div></div><div class="n">'+n+'</div></div>';
+        }).join('')
+      + '</div>';
+  }
+
+  /* ---- Groups ---- */
+  var groupsEl = document.getElementById('m2-groups');
+  function investBadge(type, cost){
+    return type==='I'
+      ? '<span class="badge-inv I">Investment ฿'+fmtNum(cost)+'</span>'
+      : '<span class="badge-inv N">No investment</span>';
+  }
+  function renderGroups(){
+    groupsEl.innerHTML = '';
+    GROUP_DEFS.forEach(function(g, gi){
+      var card = document.createElement('details');
+      card.className = 'sheet-card';
+      card.id = 'grp-'+g.code;
+      if(gi<2) card.open = true;
+
+      var activeItems = g.items.filter(function(it){ return !naSet[it.id]; });
+      var thbSum = activeItems.reduce(function(s,it){return s+it.thb;},0);
+
+      var summary = document.createElement('summary');
+      summary.innerHTML = '<div class="sheet-summary-main"><span class="sheet-chip">'+g.code+'</span><h3>'+g.name+'</h3></div>'
+        + '<span class="sheet-dims">'+(g.items.length? g.items.length+' รายการ · ':'')+'saving '+g.saving+'% · ฿'+fmtNum(g.thb)+'</span>';
+      card.appendChild(summary);
+
+      var body = document.createElement('div');
+      body.className = 'sheet-body';
+
+      var sumLine = document.createElement('div');
+      sumLine.className = 'grp-summary';
+      sumLine.innerHTML = '<span>Baseline: <b>'+fmtNum(g.kwh)+' kWh</b></span>'
+        + '<span>งบลงทุนกลุ่ม: <b>฿'+fmtNum(g.invest)+'</b></span>'
+        + '<span>%Saving (ไฟล์ต้นฉบับ): <b>'+g.saving+'%</b></span>'
+        + '<span>ผลประหยัด (ไฟล์ต้นฉบับ): <b>฿'+fmtNum(g.thb)+'</b></span>'
+        + '<span>ช่วงดำเนินการ: <b>'+g.start+' – '+g.end+'</b> ('+g.totalDay+' วัน)</span>';
+      body.appendChild(sumLine);
+
+      if(g.note){
+        var note = document.createElement('div');
+        note.className = 'doc-note';
+        note.textContent = g.note;
+        body.appendChild(note);
+      }
+
+      if(g.items.length){
+        var wrap = document.createElement('div');
+        wrap.className = 'eg-table-wrap';
+        var table = document.createElement('table');
+        table.className = 'eg-table';
+        table.innerHTML = '<thead><tr><th>N/A</th><th>Task</th><th>Focus</th><th>Detail</th><th>Investment</th><th>Assigned</th><th>Progress</th><th>%Saving</th><th>THB/ปี</th></tr></thead>';
+        var tbody = document.createElement('tbody');
+        g.items.forEach(function(it){
+          var tr = document.createElement('tr');
+          tr.id = 'item-'+it.id;
+          if(naSet[it.id]) tr.classList.add('na');
+          else if(it.progress>=100) tr.classList.add('done');
+          tr.innerHTML = '<td><input type="checkbox" class="eg-chk" data-id="'+it.id+'" '+(naSet[it.id]?'checked':'')+'></td>'
+            + '<td class="mut">'+it.task+'</td>'
+            + '<td class="mut">'+it.focus+'</td>'
+            + '<td>'+it.detail+'</td>'
+            + '<td>'+investBadge(it.type, it.cost)+'</td>'
+            + '<td class="mut">'+it.assigned+'</td>'
+            + '<td class="mut"><span class="prog-mini"><i style="width:'+it.progress+'%"></i></span>'+it.progress+'%</td>'
+            + '<td class="num">'+(it.savingPct?it.savingPct+'%':'—')+'</td>'
+            + '<td class="num">'+(it.thb?fmtNum(it.thb,1):'—')+'</td>';
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        wrap.appendChild(table);
+        body.appendChild(wrap);
+
+        var grpThbLine = document.createElement('div');
+        grpThbLine.className = 'doc-note';
+        grpThbLine.textContent = 'ผลประหยัดรวมของกลุ่มนี้ (ไม่รวมรายการที่ติ๊ก N/A): ฿ ' + fmtNum(thbSum,1) + ' /ปี';
+        body.appendChild(grpThbLine);
+      }
+
+      card.appendChild(body);
+      groupsEl.appendChild(card);
+    });
+
+    groupsEl.querySelectorAll('.eg-chk').forEach(function(chk){
+      chk.addEventListener('change', function(){
+        var id = chk.getAttribute('data-id');
+        if(chk.checked) naSet[id] = true; else delete naSet[id];
+        saveNA();
+        var row = document.getElementById('item-'+id);
+        if(row) row.classList.toggle('na', chk.checked);
+        renderDashboard();
+      });
+    });
+  }
+
+  renderDashboard();
+  renderGroups();
 
   /* ---- ECM calculators ---- */
   var CALCS = {
