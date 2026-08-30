@@ -109,12 +109,17 @@
   .sidebar-search svg{ flex:none; opacity:0.6; }
 
   .nav-group{ margin-bottom: 22px; }
-  .nav-group-title{ font-size: 10.5px; font-weight:700; letter-spacing: 0.06em; text-transform:uppercase; color: var(--text-muted); padding: 6px 8px 8px; }
+  .nav-group-title{ font-size: 10.5px; font-weight:700; letter-spacing: 0.06em; text-transform:uppercase; color: var(--text-muted); padding: 6px 8px 8px; cursor:pointer; border-radius:6px; }
+  .nav-group-title:hover{ color: var(--text); }
+  .nav-group.active .nav-group-title{ color: var(--accent-solid); }
   .nav-group ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
   .nav-link{ display:flex; align-items:center; justify-content:space-between; gap:8px; text-decoration:none; font-size: 12.8px; color: var(--text); padding: 8px 9px; border-radius: 7px; line-height:1.35; }
   .nav-link:hover{ background: var(--surface-2); }
+  .nav-link.active{ background: var(--surface-2); color: var(--accent-solid); font-weight:600; }
   .nav-count{ font-size:10px; color: var(--text-muted); font-family:"IBM Plex Mono", monospace; flex:none; }
   .nav-link.hide{ display:none; }
+  .module-panel{ display:none; }
+  .module-panel.active{ display:block; }
 
   .main{ padding: 30px 40px 100px; max-width: none; width: 100%; min-width: 0; }
   .page-head, .kpi-grid, .lede{ max-width: 1180px; }
@@ -221,7 +226,7 @@
         <input id="navFilter" type="text" placeholder="ค้นหาหัวข้อ…" autocomplete="off">
       </div>
 
-      <div class="nav-group"><div class="nav-group-title">Module 1 · 8 Steps Energy Consultant</div><ul>
+      <div class="nav-group active" data-mod="1"><div class="nav-group-title">Module 1 · 8 Steps Energy Consultant</div><ul>
         <li><a href="#step-1" class="nav-link">1. คณะทำงานด้านการจัดการพลังงาน <span class="nav-count">ขั้น 1</span></a></li>
         <li><a href="#step-2" class="nav-link">2. ประเมินสถานภาพเบื้องต้น <span class="nav-count">ขั้น 2</span></a></li>
         <li><a href="#step-3" class="nav-link">3. นโยบายอนุรักษ์พลังงาน <span class="nav-count">ขั้น 3</span></a></li>
@@ -232,7 +237,7 @@
         <li><a href="#step-8" class="nav-link">8. ทบทวนและแก้ไขข้อบกพร่อง <span class="nav-count">ขั้น 8</span></a></li>
       </ul></div>
 
-      <div class="nav-group"><div class="nav-group-title">Module 2 · Energy Conservation Project</div><ul>
+      <div class="nav-group" data-mod="2"><div class="nav-group-title">Module 2 · Energy Conservation Project</div><ul>
         <li><a href="#ecm-vsd" class="nav-link">VSD มอเตอร์/พัดลม/ปั๊ม <span class="nav-count">คำนวณ</span></a></li>
         <li><a href="#ecm-light" class="nav-link">เปลี่ยนหลอด LED <span class="nav-count">คำนวณ</span></a></li>
         <li><a href="#ecm-chiller" class="nav-link">Chiller / HVAC <span class="nav-count">คำนวณ</span></a></li>
@@ -241,7 +246,7 @@
         <li><a href="#ecm-invest" class="nav-link">สรุปงบลงทุน/ROI <span class="nav-count">คำนวณ</span></a></li>
       </ul></div>
 
-      <div class="nav-group"><div class="nav-group-title">Module 3 · Energy Awards &amp; Contest</div><ul>
+      <div class="nav-group" data-mod="3"><div class="nav-group-title">Module 3 · Energy Awards &amp; Contest</div><ul>
         <li><a href="#award-mea" class="nav-link">MEA Energy Awards <span class="nav-count">2024</span></a></li>
         <li><a href="#award-tea" class="nav-link">Thailand Energy Awards <span class="nav-count">2025</span></a></li>
         <li><a href="#award-asean" class="nav-link">ASEAN Energy Awards <span class="nav-count">แผน</span></a></li>
@@ -278,6 +283,7 @@
         </div>
       </div>
 
+      <div class="module-panel active" data-mod="1">
       <div class="section-divider">Module 1 · 8 Steps — Energy Consultant &amp; Report</div>
       <div class="section-lede">Platform สำหรับให้คำปรึกษาและจัดทำรายงานพลังงาน ครบตามมาตรฐาน 8 ขั้นตอนของกฎกระทรวงกำหนดมาตรฐาน หลักเกณฑ์ และวิธีการจัดการพลังงานในอาคารควบคุม พ.ศ. 2552 (พพ./DEDE)</div>
 
@@ -389,6 +395,9 @@
         </div>
       </details>
 
+      </div>
+
+      <div class="module-panel" data-mod="2">
       <div class="section-divider">Module 2 · Energy Conservation Project</div>
       <div class="section-lede">สร้างโครงการประหยัดพลังงาน คำนวณผลประหยัดและลดต้นทุน แยกตามประเภทย่อยของพลังงาน — กรอกตัวเลขในเครื่องคำนวณเพื่อดูผลประหยัดแบบสด</div>
 
@@ -473,6 +482,9 @@
         </div>
       </details>
 
+      </div>
+
+      <div class="module-panel" data-mod="3">
       <div class="section-divider">Module 3 · Energy Awards &amp; Contest</div>
       <div class="section-lede">ติดตามการเข้าร่วมประกวดพลังงานทั้งในประเทศและต่างประเทศ พร้อมสถานะและเอกสารอ้างอิงจากผลงานจริง</div>
 
@@ -502,6 +514,8 @@
         </div>
       </details>
 
+      </div>
+
       <footer class="report-footer">
         <div>TKO GROUP · TECHNOLOGY · INNOVATION · SUSTAINABILITY</div>
         <div>อ้างอิงมาตรฐานการจัดการพลังงาน 8 ขั้นตอน ตามกฎกระทรวงฯ พ.ศ. 2552 (พพ./DEDE)</div>
@@ -525,6 +539,32 @@
   var cards = function(){ return document.querySelectorAll('.sheet-card'); };
   expandBtn.addEventListener('click', function(){ cards().forEach(function(c){ c.open = true; }); });
   collapseBtn.addEventListener('click', function(){ cards().forEach(function(c){ c.open = false; }); });
+
+  /* ---- module switching: sidebar controls which module-panel shows on the right ---- */
+  var navGroups = document.querySelectorAll('.nav-group[data-mod]');
+  var modulePanels = document.querySelectorAll('.module-panel[data-mod]');
+  function switchModule(mod, targetId){
+    navGroups.forEach(function(g){ g.classList.toggle('active', g.getAttribute('data-mod')===mod); });
+    modulePanels.forEach(function(p){ p.classList.toggle('active', p.getAttribute('data-mod')===mod); });
+    document.querySelectorAll('.nav-link').forEach(function(a){ a.classList.remove('active'); });
+    if(targetId){
+      var t = document.getElementById(targetId);
+      if(t){ t.open = true; requestAnimationFrame(function(){ t.scrollIntoView({behavior:'smooth', block:'start'}); }); }
+    } else {
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+  }
+  navGroups.forEach(function(g){
+    var mod = g.getAttribute('data-mod');
+    g.querySelector('.nav-group-title').addEventListener('click', function(){ switchModule(mod, null); });
+    g.querySelectorAll('.nav-link').forEach(function(a){
+      a.addEventListener('click', function(ev){
+        ev.preventDefault();
+        a.classList.add('active');
+        switchModule(mod, a.getAttribute('href').slice(1));
+      });
+    });
+  });
 
   var filterInput = document.getElementById('navFilter');
   var links = document.querySelectorAll('.nav-link');
