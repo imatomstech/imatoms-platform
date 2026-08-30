@@ -3,395 +3,578 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TKO iMATOMs adV — Energy Consultant &amp; Awards</title>
+<title>TKO iMATOMs adV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0b0f1a; --panel:#121826; --panel2:#171f30; --border:#232c40;
-  --text:#e6edf7; --text2:#8fa1bd; --text3:#5b6c88;
-  --accent:#f97316; --accent2:#fb923c; --gold:#eab308; --blue:#3b82f6; --sky:#38bdf8;
-  --green:#22c55e; --amber:#f59e0b; --red:#ef4444;
-}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-a{color:inherit;text-decoration:none}
+  :root{
+    --bg: #0f1117;
+    --surface: #161a24;
+    --surface-2: #1e2330;
+    --border: #2d3748;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --accent-a: #f97316;
+    --accent-b: #ef4444;
+    --accent-solid: #f97316;
+    --info: #60a5fa;
+    --good: #34d399;
+    --good-bg: rgba(52,211,153,0.12);
+    --bad: #f87171;
+    --bad-bg: rgba(248,113,113,0.14);
+    --warn: #eab308;
+    --warn-bg: rgba(234,179,8,0.14);
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 10px 28px rgba(0,0,0,0.4);
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: "IBM Plex Sans Thai", "IBM Plex Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a{ color: inherit; }
+  ::selection{ background: var(--accent-a); color:#1a0e00; }
+  button{ font-family: inherit; }
 
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:30;flex-wrap:wrap;gap:10px}
-.brand{display:flex;align-items:center;gap:10px}
-.brand .icon{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--red));display:flex;align-items:center;justify-content:center;font-size:19px}
-.brand h1{font-size:17px}
-.brand .sub{font-size:11px;color:var(--text2)}
-.back{font-size:12.5px;color:var(--sky);border:1px solid var(--border);padding:7px 12px;border-radius:8px}
-.back:hover{background:var(--panel2)}
+  /* ================= HOME VIEW ================= */
+  #view-home{
+    min-height: 100vh; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:16px; text-align:center; padding: 24px;
+  }
+  #view-home .icon{
+    width:64px; height:64px; border-radius:16px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    display:flex; align-items:center; justify-content:center; font-size:32px;
+    box-shadow: var(--shadow);
+  }
+  #view-home h1{ font-size:26px; color:#fff; margin:0; }
+  #view-home .sub{ font-size:14px; color: var(--text-muted); }
+  #view-home .badge{
+    padding:6px 16px; border-radius:20px; background: var(--surface-2); border:1px solid var(--border);
+    color: var(--accent-solid); font-size:12px; font-weight:700; letter-spacing:1px; margin-top:8px;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  #view-home .badge .dot{ width:6px; height:6px; border-radius:50%; background: var(--good); box-shadow:0 0 0 3px var(--good-bg); }
+  #view-home .cta-row{ display:flex; gap:12px; margin-top:8px; flex-wrap:wrap; justify-content:center; }
+  .cta-primary{
+    appearance:none; border:none; cursor:pointer;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b)); color:#fff;
+    font-weight:700; font-size:13.5px; padding:11px 22px; border-radius:10px;
+    box-shadow: var(--shadow);
+  }
+  .cta-primary:hover{ filter: brightness(1.06); }
+  a.back{ margin-top:14px; color: var(--info); text-decoration:none; font-size:13px; }
+  a.back:hover{ text-decoration:underline; }
+  .home-stats{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:6px; max-width:640px; }
+  .home-stat{ background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding: 10px 14px; min-width: 128px; }
+  .home-stat .v{ font-family:"IBM Plex Mono", monospace; font-size:16px; font-weight:600; color:#fff; }
+  .home-stat .l{ font-size:10.5px; color: var(--text-muted); margin-top:2px; }
 
-.mtabs{display:flex;gap:8px;padding:14px 22px 0;max-width:1180px;margin:0 auto;overflow-x:auto}
-.mtab{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:11px 16px;font-size:13px;font-weight:600;border:1px solid var(--border);border-radius:10px 10px 0 0;background:var(--panel);color:var(--text2);cursor:pointer;white-space:nowrap}
-.mtab .n{width:20px;height:20px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:11px}
-.mtab.active{background:var(--panel2);color:#fff;border-bottom-color:var(--panel2)}
-.mtab.active .n{background:var(--accent);color:#0b0f1a}
+  /* ================= REPORT VIEW ================= */
+  #view-report{ display:none; }
+  #view-report.active{ display:block; }
+  #view-home.hidden{ display:none; }
 
-.wrap{max-width:1180px;margin:0 auto;padding:22px}
-.mpanel{display:none}
-.mpanel.active{display:block}
+  .app-shell{ display:grid; grid-template-columns: 300px 1fr; min-height: 100vh; }
 
-.mhead{margin-bottom:18px}
-.mhead h2{font-size:19px;margin-bottom:6px}
-.mhead p{font-size:12.5px;color:var(--text2);line-height:1.6}
+  .topbar{
+    grid-column: 1 / -1; display:flex; align-items:center; gap:14px;
+    padding: 14px 22px; border-bottom: 1px solid var(--border); background: var(--surface);
+    position: sticky; top:0; z-index: 40;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; text-decoration:none; cursor:pointer; border:none; background:none; padding:0; }
+  .brand-icon{
+    width:38px; height:38px; border-radius:11px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    display:flex; align-items:center; justify-content:center; box-shadow: var(--shadow); flex: none; font-size:18px;
+  }
+  .brand-text{ line-height:1.15; text-align:left; }
+  .brand-text .name{ font-weight:700; font-size:15px; color:#fff; }
+  .brand-text .tag{ font-size:11px; color: var(--text-muted); }
+  .crumb{ margin-left: 6px; padding-left: 14px; border-left: 1px solid var(--border); font-size: 13px; color: var(--text-muted); display:flex; align-items:center; gap:8px; }
+  .crumb b{ color: var(--text); font-weight:600; }
+  .topbar-spacer{ flex:1; }
+  .topbar-actions{ display:flex; gap:10px; align-items:center; }
+  .btn{ font: inherit; font-size: 12.5px; font-weight:600; padding: 8px 13px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor:pointer; }
+  .btn:hover{ border-color: var(--accent-solid); color: var(--accent-solid); }
+  .btn:focus-visible, a:focus-visible, input:focus-visible, button:focus-visible{ outline: 2px solid var(--info); outline-offset: 2px; }
 
-/* step cards (module 1) */
-.steps{display:flex;flex-direction:column;gap:10px}
-.step{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.step-h{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer}
-.step-h .num{width:30px;height:30px;flex-shrink:0;border-radius:8px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent2);font-size:13px}
-.step-h .ttl{flex:1;min-width:0}
-.step-h .ttl b{font-size:13.5px;display:block}
-.step-h .ttl span{font-size:11.5px;color:var(--text2)}
-.step-h .chev{color:var(--text3);transition:.15s;font-size:12px}
-.step.open .chev{transform:rotate(90deg)}
-.step-body{display:none;padding:0 16px 16px 58px;font-size:12.5px;color:var(--text2);line-height:1.7}
-.step.open .step-body{display:block}
-.step-body .deliv{margin:10px 0;padding-left:18px}
-.step-body .deliv li{margin-bottom:4px}
-.doclist{display:flex;flex-direction:column;gap:6px;margin-top:10px}
-.doclink{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--sky)}
-.doclink:hover{border-color:var(--sky)}
-.doclink .ico{flex-shrink:0}
-.tag-mini{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700}
-.tag-live{background:rgba(34,197,94,.15);color:var(--green)}
-.tag-pending{background:rgba(245,158,11,.12);color:var(--amber)}
+  .sidebar{ border-right: 1px solid var(--border); background: var(--surface); padding: 18px 14px 40px; height: calc(100vh - 66px); position: sticky; top: 66px; overflow-y: auto; }
+  .sidebar-search{ display:flex; align-items:center; gap:8px; background: var(--surface-2); border:1px solid var(--border); border-radius:9px; padding: 8px 10px; margin-bottom: 14px; }
+  .sidebar-search input{ border:none; background:transparent; color: var(--text); font: inherit; font-size:13px; outline:none; width:100%; }
+  .sidebar-search input::placeholder{ color: var(--text-muted); }
+  .sidebar-search svg{ flex:none; opacity:0.6; }
 
-/* module 2: ECM categories */
-.ecm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
-.ecm-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
-.ecm-card .eico{width:36px;height:36px;border-radius:9px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
-.ecm-card h3{font-size:14px;margin-bottom:4px}
-.ecm-card .edesc{font-size:11.5px;color:var(--text2);line-height:1.6;margin-bottom:10px}
-.calc{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:6px}
-.calc .row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.calc label{font-size:11px;color:var(--text2);flex:1}
-.calc input{width:92px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 8px;font-size:12px;text-align:right}
-.calc .out{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);font-size:12px}
-.calc .out b{color:var(--accent2)}
-.calc .out .line{display:flex;justify-content:space-between;margin-bottom:4px}
+  .nav-group{ margin-bottom: 22px; }
+  .nav-group-title{ font-size: 10.5px; font-weight:700; letter-spacing: 0.06em; text-transform:uppercase; color: var(--text-muted); padding: 6px 8px 8px; }
+  .nav-group ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+  .nav-link{ display:flex; align-items:center; justify-content:space-between; gap:8px; text-decoration:none; font-size: 12.8px; color: var(--text); padding: 8px 9px; border-radius: 7px; line-height:1.35; }
+  .nav-link:hover{ background: var(--surface-2); }
+  .nav-count{ font-size:10px; color: var(--text-muted); font-family:"IBM Plex Mono", monospace; flex:none; }
+  .nav-link.hide{ display:none; }
 
-/* module 3: awards */
-.award-tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.atab{padding:8px 13px;font-size:12px;border:1px solid var(--border);border-radius:8px;background:var(--panel);cursor:pointer;color:var(--text2)}
-.atab.active{background:var(--panel2);color:#fff;border-color:var(--gold)}
-.aboard{display:none}
-.aboard.active{display:block}
-.timeline{display:flex;flex-direction:column;gap:0}
-.tl-item{display:flex;gap:14px;position:relative;padding-bottom:22px}
-.tl-item:last-child{padding-bottom:0}
-.tl-dot-wrap{display:flex;flex-direction:column;align-items:center}
-.tl-dot{width:14px;height:14px;border-radius:50%;background:var(--gold);border:3px solid var(--panel2);flex-shrink:0;margin-top:4px}
-.tl-line{flex:1;width:2px;background:var(--border);margin-top:2px}
-.tl-item:last-child .tl-line{display:none}
-.tl-card{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
-.tl-card .yr{font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.05em}
-.tl-card h4{font-size:14px;margin:4px 0 6px}
-.tl-card .status{display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px}
-.st-win{background:rgba(234,179,8,.15);color:var(--gold)}
-.st-apply{background:rgba(59,130,246,.15);color:var(--blue)}
-.st-plan{background:rgba(148,163,184,.15);color:var(--text2)}
+  .main{ padding: 30px 40px 100px; max-width: none; width: 100%; min-width: 0; }
+  .page-head, .kpi-grid, .lede{ max-width: 1180px; }
+  .page-head{ margin-bottom: 30px; }
+  .kicker{ font-size:12px; font-weight:700; letter-spacing:0.08em; color: var(--accent-solid); text-transform:uppercase; }
+  h1.title{ font-size: 27px; margin: 6px 0 8px; letter-spacing:-0.01em; color:#fff; }
+  .lede{ color: var(--text-muted); font-size: 14px; max-width: 68ch; line-height:1.6; margin:0; }
 
-.footer-note{font-size:11.5px;color:var(--text3);text-align:center;padding:26px 0 34px;line-height:1.8}
-.notice{background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.3);border-radius:10px;padding:12px 14px;font-size:11.5px;color:#fdba74;margin-bottom:18px;line-height:1.7}
+  .kpi-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 24px 0 10px; }
+  .kpi-card{ background: var(--surface); border:1px solid var(--border); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow); }
+  .kpi-label{ font-size:11.5px; color: var(--text-muted); margin-bottom:8px; }
+  .kpi-value{ font-family:"IBM Plex Mono", monospace; font-size: 24px; font-weight:600; color:#fff; }
+  .kpi-value small{ font-size:13px; color: var(--text-muted); font-weight:500; margin-left:3px; }
+  .kpi-delta{ margin-top:6px; font-size:12px; font-weight:600; color: var(--text-muted); }
+  .kpi-delta.good{ color: var(--good); }
+  .kpi-delta.warn{ color: var(--warn); }
+
+  .section-divider{ display:flex; align-items:center; gap:12px; margin: 40px 0 18px; color: var(--text-muted); font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; }
+  .section-divider::after{ content:""; flex:1; height:1px; background: var(--border); }
+  .section-lede{ max-width:1180px; color:var(--text-muted); font-size:13px; line-height:1.6; margin:-8px 0 18px; }
+
+  .sheet-card{ background: var(--surface); border:1px solid var(--border); border-radius: 14px; margin-bottom: 16px; box-shadow: var(--shadow); scroll-margin-top: 80px; max-width:1180px; }
+  .sheet-card > summary{ list-style:none; cursor:pointer; user-select:none; display:flex; align-items:center; justify-content:flex-start; gap:14px; padding: 17px 20px; }
+  .sheet-card > summary::-webkit-details-marker{ display:none; }
+  .sheet-card > summary::before{ content:"›"; display:inline-block; font-size:18px; color: var(--text-muted); transform: rotate(0deg); transition: transform .15s ease; margin-right:4px; flex:none; }
+  .sheet-card[open] > summary::before{ transform: rotate(90deg); }
+  .sheet-card[open] > summary{ border-bottom: 1px solid var(--border); }
+  .sheet-summary-main{ display:flex; align-items:baseline; gap:10px; min-width:0; }
+  .sheet-summary-main h3{ font-size:14.5px; margin:0; font-weight:600; color: var(--text); }
+  .sheet-chip{ flex:none; font-size:10px; font-weight:700; letter-spacing:0.03em; background: var(--surface-2); color: var(--text-muted); border:1px solid var(--border); padding: 2px 8px; border-radius: 999px; white-space:nowrap; }
+  .sheet-chip.win{ background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+  .sheet-dims{ flex:none; margin-left:auto; padding-left:14px; font-size:11px; color: var(--text-muted); font-family:"IBM Plex Mono", monospace; }
+  .sheet-body{ padding: 4px 20px 22px; color: var(--text-muted); font-size:13px; line-height:1.75; }
+  .sheet-body b.lbl{ display:block; margin:14px 0 6px; color: var(--text); font-size:12.5px; font-weight:600; }
+  .sheet-body ul.deliv{ margin:0; padding-left:18px; }
+  .sheet-body ul.deliv li{ margin-bottom:4px; }
+  .doc-note{ margin-top:14px; padding:10px 12px; background: var(--surface-2); border:1px solid var(--border); border-radius:9px; font-size:11.5px; color: var(--text-muted); }
+
+  /* calculator widgets inside sheet-body */
+  .calc{ background: var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:14px; margin-top:14px; max-width:480px; }
+  .calc .row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .calc label{ font-size:11.5px; color: var(--text-muted); flex:1; }
+  .calc input{ width:100px; background: var(--bg); border:1px solid var(--border); border-radius:6px; color: var(--text); padding:6px 8px; font-size:12.5px; text-align:right; font-family:"IBM Plex Mono", monospace; }
+  .calc .out{ margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); font-size:12.5px; }
+  .calc .out b{ color: var(--accent-solid); font-family:"IBM Plex Mono", monospace; }
+  .calc .out .line{ display:flex; justify-content:space-between; margin-bottom:5px; }
+
+  /* award timeline inside sheet-body */
+  .tl-status{ display:inline-block; font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:20px; margin:6px 0 10px; }
+  .st-win{ background: var(--warn-bg); color: var(--warn); }
+  .st-apply{ background: rgba(96,165,250,.14); color: var(--info); }
+  .st-plan{ background: var(--surface-2); color: var(--text-muted); border:1px solid var(--border); }
+
+  footer.report-footer{ margin-top: 50px; padding-top:18px; border-top:1px solid var(--border); color: var(--text-muted); font-size:12px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; max-width:1180px; }
+
+  @media (max-width: 980px){
+    .app-shell{ grid-template-columns: 1fr; }
+    .sidebar{ position: static; height:auto; }
+    .kpi-grid{ grid-template-columns: repeat(2,1fr); }
+    .main{ padding: 20px 16px 70px; }
+  }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div class="brand">
-    <div class="icon">🏆</div>
-    <div>
-      <h1>TKO iMATOMs adV</h1>
-      <div class="sub">Energy Consultant &amp; Awards — TKO Technology</div>
-    </div>
+<div id="view-home">
+  <div class="icon">🏆</div>
+  <h1>TKO iMATOMs adV</h1>
+  <div class="sub">Energy Consultant &amp; Awards — TKO Technology</div>
+  <div class="badge"><span class="dot"></span> PLATFORM READY · 3 MODULES</div>
+  <div class="home-stats">
+    <div class="home-stat"><div class="v">8</div><div class="l">ขั้นตอนมาตรฐาน (พพ.)</div></div>
+    <div class="home-stat"><div class="v">6</div><div class="l">มาตรการ ECM + เครื่องคำนวณ</div></div>
+    <div class="home-stat"><div class="v">1</div><div class="l">รางวัล Platinum ที่ได้รับ</div></div>
+    <div class="home-stat"><div class="v">3</div><div class="l">สนามประกวดพลังงาน</div></div>
+  </div>
+  <div class="cta-row">
+    <button class="cta-primary" id="openReportBtn" type="button">Open Platform →</button>
   </div>
   <a class="back" href="/">← Back to Platform</a>
 </div>
 
-<div class="mtabs" id="mtabs"></div>
+<div id="view-report">
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="brand" id="homeBtn" type="button">
+        <span class="brand-icon">🏆</span>
+        <span class="brand-text">
+          <div class="name">TKO iMATOMs adV</div>
+          <div class="tag">Energy Consultant &amp; Awards — TKO Technology</div>
+        </span>
+      </button>
+      <span class="crumb">Platform <span>›</span> <b>adV</b></span>
+      <div class="topbar-spacer"></div>
+      <div class="topbar-actions">
+        <button class="btn" id="expandAllBtn" type="button">Expand all</button>
+        <button class="btn" id="collapseAllBtn" type="button">Collapse all</button>
+      </div>
+    </header>
 
-<div class="wrap">
-  <div class="notice">
-    หน้านี้แสดงโครงสร้าง 3 โมดูลและเครื่องคำนวณทั้งหมดพร้อมใช้งานแล้ว ส่วนลิงก์เอกสารอ้างอิงจริง (ผลงานย้อนหลัง 3 ปีของ ViMUT Hospital) จะเปิดใช้งานในรอบถัดไป หลังเชื่อมระบบจัดเก็บเอกสารแบบแยกสิทธิ์ต่อลูกค้า (multi-tenant document storage)
+    <nav class="sidebar" aria-label="adV sections">
+      <div class="sidebar-search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="navFilter" type="text" placeholder="ค้นหาหัวข้อ…" autocomplete="off">
+      </div>
+
+      <div class="nav-group"><div class="nav-group-title">Module 1 · 8 Steps Energy Consultant</div><ul>
+        <li><a href="#step-1" class="nav-link">1. คณะทำงานด้านการจัดการพลังงาน <span class="nav-count">ขั้น 1</span></a></li>
+        <li><a href="#step-2" class="nav-link">2. ประเมินสถานภาพเบื้องต้น <span class="nav-count">ขั้น 2</span></a></li>
+        <li><a href="#step-3" class="nav-link">3. นโยบายอนุรักษ์พลังงาน <span class="nav-count">ขั้น 3</span></a></li>
+        <li><a href="#step-4" class="nav-link">4. ประเมินศักยภาพอนุรักษ์พลังงาน <span class="nav-count">ขั้น 4</span></a></li>
+        <li><a href="#step-5" class="nav-link">5. เป้าหมายและแผนอนุรักษ์พลังงาน <span class="nav-count">ขั้น 5</span></a></li>
+        <li><a href="#step-6" class="nav-link">6. ดำเนินการตามแผน <span class="nav-count">ขั้น 6</span></a></li>
+        <li><a href="#step-7" class="nav-link">7. ตรวจสอบและวิเคราะห์ (M&amp;V) <span class="nav-count">ขั้น 7</span></a></li>
+        <li><a href="#step-8" class="nav-link">8. ทบทวนและแก้ไขข้อบกพร่อง <span class="nav-count">ขั้น 8</span></a></li>
+      </ul></div>
+
+      <div class="nav-group"><div class="nav-group-title">Module 2 · Energy Conservation Project</div><ul>
+        <li><a href="#ecm-vsd" class="nav-link">VSD มอเตอร์/พัดลม/ปั๊ม <span class="nav-count">คำนวณ</span></a></li>
+        <li><a href="#ecm-light" class="nav-link">เปลี่ยนหลอด LED <span class="nav-count">คำนวณ</span></a></li>
+        <li><a href="#ecm-chiller" class="nav-link">Chiller / HVAC <span class="nav-count">คำนวณ</span></a></li>
+        <li><a href="#ecm-envelope" class="nav-link">เปลือกอาคาร (OTTV/BEC) <span class="nav-count">อ้างอิง</span></a></li>
+        <li><a href="#ecm-solar" class="nav-link">Solar PV <span class="nav-count">คำนวณ</span></a></li>
+        <li><a href="#ecm-invest" class="nav-link">สรุปงบลงทุน/ROI <span class="nav-count">คำนวณ</span></a></li>
+      </ul></div>
+
+      <div class="nav-group"><div class="nav-group-title">Module 3 · Energy Awards &amp; Contest</div><ul>
+        <li><a href="#award-mea" class="nav-link">MEA Energy Awards <span class="nav-count">2024</span></a></li>
+        <li><a href="#award-tea" class="nav-link">Thailand Energy Awards <span class="nav-count">2025</span></a></li>
+        <li><a href="#award-asean" class="nav-link">ASEAN Energy Awards <span class="nav-count">แผน</span></a></li>
+      </ul></div>
+    </nav>
+
+    <main class="main" id="top">
+      <div class="page-head">
+        <div class="kicker">Energy Consultant &amp; Awards Platform</div>
+        <h1 class="title">TKO iMATOMs adV — Energy Management Platform</h1>
+        <p class="lede">แพลตฟอร์มให้คำปรึกษาและบริหารจัดการด้านพลังงาน ครอบคลุม 3 โมดูลหลัก: มาตรฐาน 8 ขั้นตอนการจัดการพลังงาน (พพ./DEDE), โครงการอนุรักษ์พลังงานพร้อมเครื่องคำนวณผลประหยัด และการติดตามผลงานประกวดพลังงานทั้งในและต่างประเทศ — คลิกหัวข้อด้านซ้ายเพื่อไปยังรายละเอียด หรือค้นหาจากแถบด้านซ้าย</p>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">มาตรฐานการจัดการพลังงาน</div>
+          <div class="kpi-value">8<small>ขั้นตอน</small></div>
+          <div class="kpi-delta">ตามกฎกระทรวงฯ พพ./DEDE</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">มาตรการอนุรักษ์พลังงาน</div>
+          <div class="kpi-value">6<small>กลุ่ม ECM</small></div>
+          <div class="kpi-delta">พร้อมเครื่องคำนวณผลประหยัด</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">ผลรางวัลล่าสุด</div>
+          <div class="kpi-value">Platinum<small>MEA 2024</small></div>
+          <div class="kpi-delta good">▲ ได้รับรางวัลระดับสูงสุด</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">สนามประกวดที่ติดตาม</div>
+          <div class="kpi-value">3<small>รายการ</small></div>
+          <div class="kpi-delta warn">Thailand Energy Awards 2025 · ยื่นแล้ว</div>
+        </div>
+      </div>
+
+      <div class="section-divider">Module 1 · 8 Steps — Energy Consultant &amp; Report</div>
+      <div class="section-lede">Platform สำหรับให้คำปรึกษาและจัดทำรายงานพลังงาน ครบตามมาตรฐาน 8 ขั้นตอนของกฎกระทรวงกำหนดมาตรฐาน หลักเกณฑ์ และวิธีการจัดการพลังงานในอาคารควบคุม พ.ศ. 2552 (พพ./DEDE)</div>
+
+      <details class="sheet-card" id="step-1" open>
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">ขั้น 1</span><h3>คณะทำงานด้านการจัดการพลังงาน</h3></div><span class="sheet-dims">Energy Management Team</span></summary>
+        <div class="sheet-body">
+          แต่งตั้งคณะทำงานที่มีอำนาจหน้าที่รับผิดชอบด้านการจัดการพลังงานขององค์กร ครอบคลุมทุกหน่วยงานที่เกี่ยวข้อง
+          <b class="lbl">เอกสารที่ต้องส่งมอบ</b>
+          <ul class="deliv">
+            <li>คำสั่งแต่งตั้งคณะทำงานด้านพลังงาน (ผู้บริหารระดับสูงลงนาม)</li>
+            <li>โครงสร้างและบทบาทหน้าที่ของคณะทำงานแต่ละคน</li>
+            <li>ผังองค์กรด้านพลังงาน (Energy Organization Chart)</li>
+          </ul>
+          <div class="doc-note">อ้างอิง: โครงสร้างคณะทำงานการจัดการด้านพลังงาน.docx, คณะทำงานการจัดการด้านพลังงาน.docx (โฟลเดอร์ TKO_iMATOMsadV)</div>
+        </div>
+      </details>
+
+      <details class="sheet-card" id="step-2">
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">ขั้น 2</span><h3>ประเมินสถานภาพการจัดการพลังงานเบื้องต้น</h3></div><span class="sheet-dims">Preliminary Review</span></summary>
+        <div class="sheet-body">
+          ประเมินระดับความพร้อมด้านการจัดการพลังงานขององค์กรตามเกณฑ์ พพ. ก่อนเริ่มวางแผนอนุรักษ์พลังงานอย่างเป็นระบบ
+          <b class="lbl">เอกสารที่ต้องส่งมอบ</b>
+          <ul class="deliv">
+            <li>แบบประเมินสถานภาพการจัดการพลังงานเบื้องต้น (Energy Management Matrix)</li>
+            <li>รายงานสรุปจุดแข็ง/จุดอ่อนของระบบจัดการพลังงานปัจจุบัน</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="sheet-card" id="step-3">
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">ขั้น 3</span><h3>นโยบายอนุรักษ์พลังงาน</h3></div><span class="sheet-dims">Energy Policy</span></summary>
+        <div class="sheet-body">
+          จัดทำและประกาศนโยบายอนุรักษ์พลังงานที่ผู้บริหารสูงสุดลงนาม เผยแพร่ให้พนักงานทุกระดับรับทราบ
+          <b class="lbl">เอกสารที่ต้องส่งมอบ</b>
+          <ul class="deliv">
+            <li>ประกาศนโยบายอนุรักษ์พลังงาน (ลงนามโดยผู้บริหารสูงสุด)</li>
+            <li>แผนการเผยแพร่นโยบายภายในองค์กร</li>
+          </ul>
+          <div class="doc-note">อ้างอิง: นโยบายพลังงานและประกาศผู้อำนวยการโรงพยาบาล.docx</div>
+        </div>
+      </details>
+
+      <details class="sheet-card" id="step-4">
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">ขั้น 4</span><h3>ประเมินศักยภาพการอนุรักษ์พลังงาน</h3></div><span class="sheet-dims">Energy Audit</span></summary>
+        <div class="sheet-body">
+          ตรวจวัดและวิเคราะห์การใช้พลังงานของระบบไฟฟ้า เครื่องจักร และเปลือกอาคาร (OTTV/BEC) เพื่อค้นหามาตรการที่มีศักยภาพในการประหยัด
+          <b class="lbl">เอกสารที่ต้องส่งมอบ</b>
+          <ul class="deliv">
+            <li>รายงานผลการตรวจวัดการใช้พลังงาน (Energy Audit Report)</li>
+            <li>ผลประเมินค่า OTTV ด้วยโปรแกรม BEC</li>
+            <li>บัญชีรายชื่อมาตรการอนุรักษ์พลังงานที่มีศักยภาพ (ECM List)</li>
+          </ul>
+          <div class="doc-note">อ้างอิง: รายงานประเมินอาคารโดยใช้โปรแกรม BEC.pdf, ศออ02_EEC Reply.pdf</div>
+        </div>
+      </details>
+
+      <details class="sheet-card" id="step-5">
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">ขั้น 5</span><h3>เป้าหมายและแผนอนุรักษ์พลังงาน</h3></div><span class="sheet-dims">Target &amp; Action Plan</span></summary>
+        <div class="sheet-body">
+          กำหนดเป้าหมายการลดใช้พลังงาน (% หรือหน่วยพลังงาน) พร้อมจัดทำแผนปฏิบัติการและงบลงทุนสำหรับแต่ละมาตรการ
+          <b class="lbl">เอกสารที่ต้องส่งมอบ</b>
+          <ul class="deliv">
+            <li>Energy Master Plan พร้อมเป้าหมายรายปี</li>
+            <li>Matrix มาตรการอนุรักษ์พลังงาน (มาตรการ/ผลประหยัด/งบลงทุน/Payback)</li>
+            <li>แผนงบประมาณด้านพลังงาน</li>
+          </ul>
+          <div class="doc-note">อ้างอิง: Energy Master Plan of ViMUT-2023.xlsx, Matrix Energy Conservation Plan Apr 2023.xlsx, saving energy investment plan2023.xlsx</div>
+        </div>
+      </details>
+
+      <details class="sheet-card" id="step-6">
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">ขั้น 6</span><h3>การดำเนินการตามแผนอนุรักษ์พลังงาน</h3></div><span class="sheet-dims">Implementation</span></summary>
+        <div class="sheet-body">
+          ขออนุมัติงบประมาณและดำเนินมาตรการตามแผนที่วางไว้ ติดตามความคืบหน้าของแต่ละโครงการ
+          <b class="lbl">เอกสารที่ต้องส่งมอบ</b>
+          <ul class="deliv">
+            <li>หนังสือขออนุมัติงบประมาณโครงการ</li>
+            <li>เอกสารประกอบการดำเนินโครงการ (Proposal / EEMs)</li>
+          </ul>
+          <div class="doc-note">อ้างอิง: Proposal energy saving in VMH (EEMs).docx, ขออนุมัติจัดทำโครงการและของบประมาณ.docx</div>
+        </div>
+      </details>
+
+      <details class="sheet-card" id="step-7">
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">ขั้น 7</span><h3>ตรวจสอบและวิเคราะห์การปฏิบัติตามเป้าหมาย (M&amp;V)</h3></div><span class="sheet-dims">Monitoring &amp; Verification</span></summary>
+        <div class="sheet-body">
+          ตรวจวัดผลประหยัดพลังงานจริงหลังดำเนินมาตรการ เปรียบเทียบกับ Baseline (ENPI) เพื่อยืนยันผลประหยัดที่เกิดขึ้นจริง — ผูกกับโมดูล <a href="/TKO_iMATOMsMV/" style="color:var(--info)">TKO iMATOMs M&amp;V</a> สำหรับรายงานฉบับเต็ม
+          <b class="lbl">เอกสารที่ต้องส่งมอบ</b>
+          <ul class="deliv">
+            <li>รายงานผล ENPI (Energy Performance Indicator) ก่อน-หลัง</li>
+            <li>ผลคำนวณประหยัดพลังงานจากมาตรการ VSD/Chiller</li>
+            <li>รายงาน M&amp;V ฉบับสมบูรณ์</li>
+          </ul>
+          <div class="doc-note">อ้างอิง: ENPI analysis Apr 2023.xlsx, VSD calculation ViMUT 2023.xlsx, Presentation VSD_HVAC.pdf</div>
+        </div>
+      </details>
+
+      <details class="sheet-card" id="step-8">
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">ขั้น 8</span><h3>ทบทวน วิเคราะห์ และแก้ไขข้อบกพร่อง</h3></div><span class="sheet-dims">Management Review</span></summary>
+        <div class="sheet-body">
+          ผู้บริหารทบทวนผลการดำเนินงานประจำปี วิเคราะห์ข้อบกพร่อง และสื่อสารผลลัพธ์ให้พนักงานรับทราบผ่านบอร์ดพลังงาน
+          <b class="lbl">เอกสารที่ต้องส่งมอบ</b>
+          <ul class="deliv">
+            <li>รายงานสรุปผลประจำปีเสนอผู้บริหาร (Executive Summary)</li>
+            <li>สื่อประชาสัมพันธ์ / บอร์ดพลังงาน</li>
+            <li>แผนปรับปรุงสำหรับปีถัดไป</li>
+          </ul>
+          <div class="doc-note">อ้างอิง: Executive Summary of Energy Conservation Plan 2023.pdf, บอร์ดพลังงาน VMH.xlsx, ปลูกจิตใต้สำนึกฯ (Training Staff).pptx</div>
+        </div>
+      </details>
+
+      <div class="section-divider">Module 2 · Energy Conservation Project</div>
+      <div class="section-lede">สร้างโครงการประหยัดพลังงาน คำนวณผลประหยัดและลดต้นทุน แยกตามประเภทย่อยของพลังงาน — กรอกตัวเลขในเครื่องคำนวณเพื่อดูผลประหยัดแบบสด</div>
+
+      <details class="sheet-card" id="ecm-vsd" open>
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">ECM</span><h3>⚙️ มาตรการติดตั้ง VSD (มอเตอร์/พัดลม/ปั๊ม)</h3></div><span class="sheet-dims">Affine Law</span></summary>
+        <div class="sheet-body">
+          ลดความเร็วรอบมอเตอร์ตามภาระงานจริง (Affine Law: P ∝ N³) ใช้กับ AHU / Exhaust Fan / ปั๊มน้ำ
+          <div class="doc-note">อ้างอิง: VSD calculation ViMUT 2023.xlsx, Presentation VSD_HVAC.pdf</div>
+          <div class="calc" data-calc="vsd">
+            <div class="row"><label>กำลังมอเตอร์เดิม (kW)</label><input data-k="kw" type="number" step="any" value="7.5"></div>
+            <div class="row"><label>ลดความเร็วรอบเหลือ (%)</label><input data-k="speedRatio" type="number" step="any" value="70"></div>
+            <div class="row"><label>ชั่วโมงทำงาน/ปี</label><input data-k="hrs" type="number" step="any" value="6000"></div>
+            <div class="row"><label>ค่าไฟฟ้า (บาท/kWh)</label><input data-k="rate" type="number" step="any" value="4.5"></div>
+            <div class="out"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="sheet-card" id="ecm-light">
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">ECM</span><h3>💡 มาตรการเปลี่ยนหลอดไฟประหยัดพลังงาน (LED)</h3></div><span class="sheet-dims">Lighting Retrofit</span></summary>
+        <div class="sheet-body">
+          เปลี่ยนหลอดไฟเดิมเป็น LED เพื่อลดกำลังไฟฟ้าที่ใช้ต่อดวง โดยให้แสงสว่างเทียบเท่าหรือดีกว่าเดิม
+          <div class="calc" data-calc="light">
+            <div class="row"><label>กำลังไฟหลอดเดิม (W/ดวง)</label><input data-k="wOld" type="number" step="any" value="36"></div>
+            <div class="row"><label>กำลังไฟหลอดใหม่ LED (W/ดวง)</label><input data-k="wNew" type="number" step="any" value="18"></div>
+            <div class="row"><label>จำนวนดวง</label><input data-k="qty" type="number" step="any" value="100"></div>
+            <div class="row"><label>ชั่วโมงใช้งาน/ปี</label><input data-k="hrs" type="number" step="any" value="4000"></div>
+            <div class="row"><label>ค่าไฟฟ้า (บาท/kWh)</label><input data-k="rate" type="number" step="any" value="4.5"></div>
+            <div class="out"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="sheet-card" id="ecm-chiller">
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">ECM</span><h3>❄️ มาตรการปรับปรุงประสิทธิภาพ Chiller / HVAC</h3></div><span class="sheet-dims">kW/RT</span></summary>
+        <div class="sheet-body">
+          ปรับปรุง/บำรุงรักษาระบบทำความเย็นให้มีค่า kW/RT ลดลง (M&amp;V ตามมาตรฐาน ASHRAE Guideline 14)
+          <div class="doc-note">อ้างอิง: ENPI analysis (Chiller/HVAC).xlsx</div>
+          <div class="calc" data-calc="chiller">
+            <div class="row"><label>kW/RT เดิม</label><input data-k="kwrtOld" type="number" step="any" value="0.75"></div>
+            <div class="row"><label>kW/RT หลังปรับปรุง</label><input data-k="kwrtNew" type="number" step="any" value="0.65"></div>
+            <div class="row"><label>ขนาดโหลดเฉลี่ย (RT)</label><input data-k="ton" type="number" step="any" value="400"></div>
+            <div class="row"><label>ชั่วโมงทำงาน/ปี</label><input data-k="hrs" type="number" step="any" value="6000"></div>
+            <div class="row"><label>ค่าไฟฟ้า (บาท/kWh)</label><input data-k="rate" type="number" step="any" value="4.5"></div>
+            <div class="out"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="sheet-card" id="ecm-envelope">
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">ECM</span><h3>🏢 มาตรการเปลือกอาคาร (OTTV / BEC)</h3></div><span class="sheet-dims">Building Envelope</span></summary>
+        <div class="sheet-body">
+          ปรับปรุงฉนวนกันความร้อน กระจก และค่าการบังแดด เพื่อลดค่า OTTV ของอาคารตามเกณฑ์ พพ.
+          <div class="doc-note">อ้างอิง: รายงานประเมินอาคาร BEC.pdf</div>
+        </div>
+      </details>
+
+      <details class="sheet-card" id="ecm-solar">
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">ECM</span><h3>☀️ มาตรการพลังงานทดแทน (Solar PV)</h3></div><span class="sheet-dims">Solar Rooftop</span></summary>
+        <div class="sheet-body">
+          ติดตั้งระบบผลิตไฟฟ้าจากแสงอาทิตย์ (Solar Rooftop) เพื่อลดการซื้อไฟฟ้าจากการไฟฟ้าฯ
+          <div class="calc" data-calc="solar">
+            <div class="row"><label>ขนาดติดตั้ง (kWp)</label><input data-k="kwp" type="number" step="any" value="100"></div>
+            <div class="row"><label>Specific Yield (kWh/kWp/ปี)</label><input data-k="syield" type="number" step="any" value="1400"></div>
+            <div class="row"><label>ค่าไฟฟ้า (บาท/kWh)</label><input data-k="rate" type="number" step="any" value="4.5"></div>
+            <div class="row"><label>งบลงทุน (บาท)</label><input data-k="invest" type="number" step="any" value="3500000"></div>
+            <div class="out"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="sheet-card" id="ecm-invest">
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">ECM</span><h3>💰 สรุปงบลงทุนและผลตอบแทน (Investment Summary)</h3></div><span class="sheet-dims">Payback / ROI</span></summary>
+        <div class="sheet-body">
+          ภาพรวมงบลงทุนทุกมาตรการเทียบผลประหยัดสะสมและระยะเวลาคืนทุน
+          <div class="doc-note">อ้างอิง: saving energy investment plan2023.xlsx, ViMUT Investment of ENERGY Sep-2023.pptx</div>
+          <div class="calc" data-calc="invest">
+            <div class="row"><label>งบลงทุนรวม (บาท)</label><input data-k="invest" type="number" step="any" value="1200000"></div>
+            <div class="row"><label>ผลประหยัด/ปี (บาท)</label><input data-k="savingYr" type="number" step="any" value="450000"></div>
+            <div class="out"></div>
+          </div>
+        </div>
+      </details>
+
+      <div class="section-divider">Module 3 · Energy Awards &amp; Contest</div>
+      <div class="section-lede">ติดตามการเข้าร่วมประกวดพลังงานทั้งในประเทศและต่างประเทศ พร้อมสถานะและเอกสารอ้างอิงจากผลงานจริง</div>
+
+      <details class="sheet-card" id="award-mea" open>
+        <summary><div class="sheet-summary-main"><span class="sheet-chip win">🏆 Platinum</span><h3>MEA Energy Awards 2024</h3></div><span class="sheet-dims">ในประเทศ</span></summary>
+        <div class="sheet-body">
+          <span class="tl-status st-win">🏆 ได้รับรางวัล Platinum</span>
+          <div>โครงการ IFEMs Building Sustainable (FMS ViMUT Hospital) ผ่านเข้ารอบ Innovation และได้รับรางวัลระดับ Platinum</div>
+          <div class="doc-note">อ้างอิง: ViMUT 022 Project — IFEMs Building Sustainable (Final).pdf, Presentation Innovation Round 44.pptx, CT Scan IAQ Improvement — Energy Saving (CQI).pdf</div>
+        </div>
+      </details>
+
+      <details class="sheet-card" id="award-tea">
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">📝 ยื่นสมัครแล้ว</span><h3>Thailand Energy Awards 2025</h3></div><span class="sheet-dims">ในประเทศ</span></summary>
+        <div class="sheet-body">
+          <span class="tl-status st-apply">📝 ยื่นใบสมัครแล้ว</span>
+          <div>จัดทำใบสมัครและภาคผนวกประกอบการสมัคร Thailand Energy Awards 2025 ครบทั้งเอกสาร OTTV, งบประมาณ และแผนอนุรักษ์พลังงาน</div>
+          <div class="doc-note">อ้างอิง: ใบสมัคร MEA ViMUT Hospital 2566.docx, รายงานประเมินอาคาร BEC.pdf, หนังสือขออนุมัติงบประมาณโครงการพลังงาน (ลงนาม).pdf</div>
+        </div>
+      </details>
+
+      <details class="sheet-card" id="award-asean">
+        <summary><div class="sheet-summary-main"><span class="sheet-chip">🗓 แผน</span><h3>ASEAN Energy Awards</h3></div><span class="sheet-dims">ต่างประเทศ</span></summary>
+        <div class="sheet-body">
+          <span class="tl-status st-plan">🗓 อยู่ในแผน</span>
+          <div>ต่อยอดจากผลงาน Thailand Energy Awards / MEA Platinum Award เตรียมแปลเอกสารเป็นภาษาอังกฤษเพื่อสมัครระดับอาเซียนในรอบถัดไป</div>
+        </div>
+      </details>
+
+      <footer class="report-footer">
+        <div>TKO GROUP · TECHNOLOGY · INNOVATION · SUSTAINABILITY</div>
+        <div>อ้างอิงมาตรฐานการจัดการพลังงาน 8 ขั้นตอน ตามกฎกระทรวงฯ พ.ศ. 2552 (พพ./DEDE)</div>
+      </footer>
+    </main>
   </div>
-
-  <div class="mpanel" id="mpanel-1"></div>
-  <div class="mpanel" id="mpanel-2"></div>
-  <div class="mpanel" id="mpanel-3"></div>
-
-  <div class="footer-note">TKO GROUP · TECHNOLOGY · INNOVATION · SUSTAINABILITY &nbsp;|&nbsp; iMATOMs adV Module<br>อ้างอิงมาตรฐานการจัดการพลังงาน 8 ขั้นตอน ตามกฎกระทรวงกำหนดมาตรฐาน หลักเกณฑ์ และวิธีการจัดการพลังงานในอาคารควบคุม พ.ศ. 2552 (พพ./DEDE)</div>
 </div>
 
 <script>
-/* ---------- helper: build a safe relative link into the adV folder ---------- */
-function encPath(p){ return p.split('/').map(encodeURIComponent).join('/'); }
-function docLink(label, path, note){
-  var a = document.createElement('a');
-  a.className = 'doclink';
-  a.href = encPath(path);
-  a.target = '_blank';
-  a.rel = 'noopener';
-  a.innerHTML = '<span class="ico">📄</span><span>' + label + (note ? ' <span style="color:var(--text3)">— '+note+'</span>' : '') + '</span>';
-  return a;
-}
-/* เอกสารอ้างอิงยังไม่เปิดใช้งานบนเว็บจริง (รอระบบจัดเก็บเอกสารแบบ multi-tenant)
-   docListInto ถูกปิดไว้ชั่วคราว — ข้อมูลเอกสารยังอยู่ครบใน STEPS/ECM/AWARDS
-   พร้อมเปิดใช้ทันทีเมื่อเชื่อมระบบ storage จริงแล้ว */
-function docListInto(container, items){ return; }
+(function(){
+  var home = document.getElementById('view-home');
+  var report = document.getElementById('view-report');
+  function openReport(){ home.classList.add('hidden'); report.classList.add('active'); history.replaceState(null,'','#report'); window.scrollTo(0,0); }
+  function openHome(){ report.classList.remove('active'); home.classList.remove('hidden'); history.replaceState(null,'','#'); window.scrollTo(0,0); }
+  document.getElementById('openReportBtn').addEventListener('click', openReport);
+  document.getElementById('homeBtn').addEventListener('click', openHome);
+  if (window.location.hash === '#report') openReport();
 
-/* ================= MODULE TABS ================= */
-var MODULES = [
-  { key:1, label:'8 Steps — Energy Consultant & Report' },
-  { key:2, label:'Energy Conservation Project' },
-  { key:3, label:'Energy Awards & Contest' },
-];
-var mtabsEl = document.getElementById('mtabs');
-MODULES.forEach(function(m, i){
-  var t = document.createElement('div');
-  t.className = 'mtab' + (i===0?' active':'');
-  t.dataset.key = m.key;
-  t.innerHTML = '<span class="n">'+m.key+'</span><span>'+m.label+'</span>';
-  t.addEventListener('click', function(){ switchModule(m.key); });
-  mtabsEl.appendChild(t);
-});
-function switchModule(key){
-  document.querySelectorAll('.mtab').forEach(function(t){ t.classList.toggle('active', +t.dataset.key===key); });
-  document.querySelectorAll('.mpanel').forEach(function(p){ p.classList.toggle('active', p.id==='mpanel-'+key); });
-}
+  var expandBtn = document.getElementById('expandAllBtn');
+  var collapseBtn = document.getElementById('collapseAllBtn');
+  var cards = function(){ return document.querySelectorAll('.sheet-card'); };
+  expandBtn.addEventListener('click', function(){ cards().forEach(function(c){ c.open = true; }); });
+  collapseBtn.addEventListener('click', function(){ cards().forEach(function(c){ c.open = false; }); });
 
-/* ================= MODULE 1 : 8 STEPS ================= */
-var STEPS = [
-  {
-    n:1, th:'คณะทำงานด้านการจัดการพลังงาน', en:'Energy Management Team',
-    desc:'แต่งตั้งคณะทำงานที่มีอำนาจหน้าที่รับผิดชอบด้านการจัดการพลังงานขององค์กร ครอบคลุมทุกหน่วยงานที่เกี่ยวข้อง',
-    deliv:['คำสั่งแต่งตั้งคณะทำงานด้านพลังงาน (ผู้บริหารระดับสูงลงนาม)','โครงสร้างและบทบาทหน้าที่ของคณะทำงานแต่ละคน','ผังองค์กรด้านพลังงาน (Energy Organization Chart)'],
-    docs:[
-      ['โครงสร้างคณะทำงานการจัดการด้านพลังงาน.docx','2.6 Energy Board_บอร์ดพลังงาน/14.บอร์ดพลังงาน/คณะทำงาน/โครงสร้างคณะทำงานการจัดการด้านพลังงาน.docx'],
-      ['คณะทำงานการจัดการด้านพลังงาน.docx','2.6 Energy Board_บอร์ดพลังงาน/14.บอร์ดพลังงาน/คณะทำงาน/คณะทำงานการจัดการด้านพลังงาน.docx'],
-    ]
-  },
-  {
-    n:2, th:'ประเมินสถานภาพการจัดการพลังงานเบื้องต้น', en:'Preliminary Energy Management Review',
-    desc:'ประเมินระดับความพร้อมด้านการจัดการพลังงานขององค์กรตามเกณฑ์ พพ. ก่อนเริ่มวางแผนอนุรักษ์พลังงานอย่างเป็นระบบ',
-    deliv:['แบบประเมินสถานภาพการจัดการพลังงานเบื้องต้น (Energy Management Matrix)','รายงานสรุปจุดแข็ง/จุดอ่อนของระบบจัดการพลังงานปัจจุบัน'],
-    docs:[]
-  },
-  {
-    n:3, th:'นโยบายอนุรักษ์พลังงาน', en:'Energy Policy',
-    desc:'จัดทำและประกาศนโยบายอนุรักษ์พลังงานที่ผู้บริหารสูงสุดลงนาม เผยแพร่ให้พนักงานทุกระดับรับทราบ',
-    deliv:['ประกาศนโยบายอนุรักษ์พลังงาน (ลงนามโดยผู้บริหารสูงสุด)','แผนการเผยแพร่นโยบายภายในองค์กร'],
-    docs:[
-      ['นโยบายพลังงานและประกาศผู้อำนวยการโรงพยาบาล.docx','2.6 Energy Board_บอร์ดพลังงาน/14.บอร์ดพลังงาน/Policy/นโยบายพลังงานและประกาศผู้อำนวยการโรงพยาบาล.docx'],
-    ]
-  },
-  {
-    n:4, th:'ประเมินศักยภาพการอนุรักษ์พลังงาน', en:'Energy Audit / Potential Assessment',
-    desc:'ตรวจวัดและวิเคราะห์การใช้พลังงานของระบบไฟฟ้า เครื่องจักร และเปลือกอาคาร (OTTV/BEC) เพื่อค้นหามาตรการที่มีศักยภาพในการประหยัด',
-    deliv:['รายงานผลการตรวจวัดการใช้พลังงาน (Energy Audit Report)','ผลประเมินค่า OTTV ด้วยโปรแกรม BEC','บัญชีรายชื่อมาตรการอนุรักษ์พลังงานที่มีศักยภาพ (ECM List)'],
-    docs:[
-      ['รายงานประเมินอาคารโดยใช้โปรแกรม BEC.pdf','2.23 Thailand Energy Award/เอกสารประกอบ/OTTV/รายงานประเมินอาคารโดยใช้โปรแกรม BEC.pdf','OTTV'],
-      ['ศออ02_EEC Reply.pdf','2.23 Thailand Energy Award/เอกสารประกอบ/OTTV/ศออ02_EEC Reply.pdf'],
-    ]
-  },
-  {
-    n:5, th:'เป้าหมายและแผนอนุรักษ์พลังงาน', en:'Target & Action Plan',
-    desc:'กำหนดเป้าหมายการลดใช้พลังงาน (% หรือหน่วยพลังงาน) พร้อมจัดทำแผนปฏิบัติการและงบลงทุนสำหรับแต่ละมาตรการ',
-    deliv:['Energy Master Plan พร้อมเป้าหมายรายปี','Matrix มาตรการอนุรักษ์พลังงาน (มาตรการ/ผลประหยัด/งบลงทุน/Payback)','แผนงบประมาณด้านพลังงาน'],
-    docs:[
-      ['Energy Master plan of ViMUT-2023.xlsx','12.Energy conservation plan/data backup/4.Energy Master plan of ViMUT-2023.xlsx'],
-      ['Matrix Energy Conservation Plan Apr 2023.xlsx','12.Energy conservation plan/23.energy plan/ViMUT_Matrix Energy Conservation Plan in  Apr\'2023_Re#00.xlsx'],
-      ['saving energy investment plan2023_Re01.xlsx','12.Energy conservation plan/Budget/saving energy investment plan2023_Re01.xlsx','งบลงทุน'],
-    ]
-  },
-  {
-    n:6, th:'การดำเนินการตามแผนอนุรักษ์พลังงาน', en:'Implementation',
-    desc:'ขออนุมัติงบประมาณและดำเนินมาตรการตามแผนที่วางไว้ ติดตามความคืบหน้าของแต่ละโครงการ',
-    deliv:['หนังสือขออนุมัติงบประมาณโครงการ','เอกสารประกอบการดำเนินโครงการ (Proposal / EEMs)'],
-    docs:[
-      ['Proposal energy saving in VMH (EEMs).docx','12.Energy conservation plan/data backup/2.Proposal energy saving  in VMH(EEMs)_05_05_23.docx'],
-      ['ขออนุมัติจัดทำโครงการและของบประมาณ.docx','12.Energy conservation plan/3.Proposal energy project/ขออนุมัติจัดทำโครงการและของบประมาณโครงก.docx'],
-    ]
-  },
-  {
-    n:7, th:'ตรวจสอบและวิเคราะห์การปฏิบัติตามเป้าหมาย (M&V)', en:'Monitoring & Verification',
-    desc:'ตรวจวัดผลประหยัดพลังงานจริงหลังดำเนินมาตรการ เปรียบเทียบกับ Baseline (ENPI) เพื่อยืนยันผลประหยัดที่เกิดขึ้นจริง',
-    deliv:['รายงานผล ENPI (Energy Performance Indicator) ก่อน-หลัง','ผลคำนวณประหยัดพลังงานจากมาตรการ VSD/Chiller','รายงาน M&V ฉบับสมบูรณ์'],
-    docs:[
-      ['ENPI analysis Apr 2023.xlsx','12.Energy conservation plan/23.energy plan/ViMUT_Final_ENPI analysis in Apr\'2023_rev#00.xlsx'],
-      ['VSD calculation ViMUT 2023 (re#02).xlsx','12.Energy conservation plan/2.VSD Cal_jun\'2023/VSD Analysis/VSD calculation_ViMUT\'2023_re#02.xlsx'],
-      ['Presentation VSD_HVAC.pdf','12.Energy conservation plan/2.VSD Cal_jun\'2023/Presentation VSD_HVAC.pdf'],
-    ]
-  },
-  {
-    n:8, th:'ทบทวน วิเคราะห์ และแก้ไขข้อบกพร่อง', en:'Management Review',
-    desc:'ผู้บริหารทบทวนผลการดำเนินงานประจำปี วิเคราะห์ข้อบกพร่อง และสื่อสารผลลัพธ์ให้พนักงานรับทราบผ่านบอร์ดพลังงาน',
-    deliv:['รายงานสรุปผลประจำปีเสนอผู้บริหาร (Executive Summary)','สื่อประชาสัมพันธ์ / บอร์ดพลังงาน','แผนปรับปรุงสำหรับปีถัดไป'],
-    docs:[
-      ['Executive Summary of Energy Conservation Plan 2023.pdf','12.Energy conservation plan/data backup/ViMUT_Executive Summary of Energy conservation plan 2023 re#00.pdf'],
-      ['บอร์ดพลังงาน VMH.xlsx','2.6 Energy Board_บอร์ดพลังงาน/14.บอร์ดพลังงาน/บอร์ดพลังงาน/บอร์ดพลังงานVMH.xlsx'],
-      ['ปลูกจิตใต้สำนึกฯ ลดใช้พลังงาน 10-15% (Training Staff).pptx','13.ปลูกจิตใต้สำนึกและกลยุทธ์พิชิตเป้าหมายลดการใช้พลังงาน 10-15%(Training Staff).pptx'],
-    ]
-  },
-];
-
-var p1 = document.getElementById('mpanel-1');
-p1.innerHTML = '<div class="mhead"><h2>8 ขั้นตอนการจัดการพลังงาน — Energy Consultant &amp; Report Platform</h2>'
-  + '<p>Platform สำหรับให้คำปรึกษาและจัดทำรายงานพลังงาน ครบตามมาตรฐาน 8 ขั้นตอนของกฎกระทรวงฯ (พพ./DEDE) แต่ละขั้นตอนมีคำอธิบาย รายการเอกสารที่ต้องส่งมอบ และเอกสารอ้างอิงจริงจากผลงานที่ผ่านมา</p></div>';
-var stepsWrap = document.createElement('div');
-stepsWrap.className = 'steps';
-STEPS.forEach(function(s){
-  var el = document.createElement('div');
-  el.className = 'step';
-  var head = document.createElement('div');
-  head.className = 'step-h';
-  head.innerHTML = '<div class="num">'+s.n+'</div><div class="ttl"><b>'+s.th+'</b><span>'+s.en+'</span></div>'
-    + '<span class="tag-mini '+(s.docs.length?'tag-live':'tag-pending')+'">'+(s.docs.length?'มีเอกสารอ้างอิง':'รอเพิ่มเอกสาร')+'</span>'
-    + '<span class="chev">▶</span>';
-  head.addEventListener('click', function(){ el.classList.toggle('open'); });
-  var body = document.createElement('div');
-  body.className = 'step-body';
-  var deliv = '<div style="color:var(--text)">'+s.desc+'</div><b style="display:block;margin-top:10px;color:var(--text)">เอกสารที่ต้องส่งมอบ:</b><ul class="deliv">' + s.deliv.map(function(d){return '<li>'+d+'</li>';}).join('') + '</ul>';
-  body.innerHTML = deliv;
-  if(s.docs.length) docListInto(body, s.docs);
-  el.appendChild(head); el.appendChild(body);
-  stepsWrap.appendChild(el);
-});
-p1.appendChild(stepsWrap);
-
-/* ================= MODULE 2 : ECM ================= */
-var p2 = document.getElementById('mpanel-2');
-p2.innerHTML = '<div class="mhead"><h2>Energy Conservation Project — มาตรการและผลประหยัดพลังงาน</h2>'
-  + '<p>สร้างโครงการประหยัดพลังงาน คำนวณผลประหยัดและลดต้นทุน แยกตามประเภทย่อยของพลังงาน แต่ละมาตรการมีเครื่องคำนวณเบื้องต้นและเอกสารอ้างอิงจากโครงการจริง</p></div>';
-var ecmGrid = document.createElement('div');
-ecmGrid.className = 'ecm-grid';
-p2.appendChild(ecmGrid);
-
-var ECM = [
-  { key:'vsd', ico:'⚙️', th:'มาตรการติดตั้ง VSD (มอเตอร์/พัดลม/ปั๊ม)', desc:'ลดความเร็วรอบมอเตอร์ตามภาระงานจริง (Affine Law: P ∝ N³) ใช้กับ AHU / Exhaust Fan / ปั๊มน้ำ',
-    docs:[['VSD calculation ViMUT 2023.xlsx','12.Energy conservation plan/2.VSD Cal_jun\'2023/VSD Analysis/VSD calculation_ViMUT\'2023.xlsx'],['Presentation VSD_HVAC.pdf','12.Energy conservation plan/2.VSD Cal_jun\'2023/Presentation VSD_HVAC.pdf']],
-    calc:{ inputs:[['kw','กำลังมอเตอร์เดิม (kW)',7.5],['speedRatio','ลดความเร็วรอบเหลือ (%)',70],['hrs','ชั่วโมงทำงาน/ปี',6000],['rate','ค่าไฟฟ้า (บาท/kWh)',4.5]],
-      fn:function(v){ var newKw = v.kw*Math.pow(v.speedRatio/100,3); var savedKw = v.kw-newKw; var kwhYr = savedKw*v.hrs; var cost = kwhYr*v.rate; return [['ผลประหยัดกำลังไฟฟ้า', savedKw.toFixed(2)+' kW'],['ผลประหยัดพลังงาน/ปี', kwhYr.toLocaleString(undefined,{maximumFractionDigits:0})+' kWh'],['ประหยัดค่าไฟ/ปี', '฿ '+cost.toLocaleString(undefined,{maximumFractionDigits:0})]]; } }
-  },
-  { key:'light', ico:'💡', th:'มาตรการเปลี่ยนหลอดไฟประหยัดพลังงาน (LED)', desc:'เปลี่ยนหลอดไฟเดิมเป็น LED เพื่อลดกำลังไฟฟ้าที่ใช้ต่อดวง โดยให้แสงสว่างเทียบเท่าหรือดีกว่าเดิม',
-    docs:[],
-    calc:{ inputs:[['wOld','กำลังไฟหลอดเดิม (W/ดวง)',36],['wNew','กำลังไฟหลอดใหม่ LED (W/ดวง)',18],['qty','จำนวนดวง',100],['hrs','ชั่วโมงใช้งาน/ปี',4000],['rate','ค่าไฟฟ้า (บาท/kWh)',4.5]],
-      fn:function(v){ var savedW=(v.wOld-v.wNew)*v.qty; var kwhYr=savedW*v.hrs/1000; var cost=kwhYr*v.rate; return [['ผลประหยัดกำลังไฟฟ้ารวม', savedW.toFixed(0)+' W'],['ผลประหยัดพลังงาน/ปี', kwhYr.toLocaleString(undefined,{maximumFractionDigits:0})+' kWh'],['ประหยัดค่าไฟ/ปี', '฿ '+cost.toLocaleString(undefined,{maximumFractionDigits:0})]]; } }
-  },
-  { key:'chiller', ico:'❄️', th:'มาตรการปรับปรุงประสิทธิภาพ Chiller / HVAC', desc:'ปรับปรุง/บำรุงรักษาระบบทำความเย็นให้มีค่า kW/RT ลดลง (M&V ตามมาตรฐาน ASHRAE Guideline 14)',
-    docs:[['ENPI analysis (Chiller/HVAC).xlsx','12.Energy conservation plan/23.energy plan/Final_ENPI analysis in Mar\'2023 of VMH_rev#00_17_04_23(for print).xlsx']],
-    calc:{ inputs:[['kwrtOld','kW/RT เดิม',0.75],['kwrtNew','kW/RT หลังปรับปรุง',0.65],['ton','ขนาดโหลดเฉลี่ย (RT)',400],['hrs','ชั่วโมงทำงาน/ปี',6000],['rate','ค่าไฟฟ้า (บาท/kWh)',4.5]],
-      fn:function(v){ var savedKw=(v.kwrtOld-v.kwrtNew)*v.ton; var kwhYr=savedKw*v.hrs; var cost=kwhYr*v.rate; return [['ผลประหยัดกำลังไฟฟ้าเฉลี่ย', savedKw.toFixed(1)+' kW'],['ผลประหยัดพลังงาน/ปี', kwhYr.toLocaleString(undefined,{maximumFractionDigits:0})+' kWh'],['ประหยัดค่าไฟ/ปี', '฿ '+cost.toLocaleString(undefined,{maximumFractionDigits:0})]]; } }
-  },
-  { key:'envelope', ico:'🏢', th:'มาตรการเปลือกอาคาร (OTTV / BEC)', desc:'ปรับปรุงฉนวนกันความร้อน กระจก และค่าการบังแดด เพื่อลดค่า OTTV ของอาคารตามเกณฑ์ พพ.',
-    docs:[['รายงานประเมินอาคาร BEC.pdf','2.23 Thailand Energy Award/เอกสารประกอบ/OTTV/รายงานประเมินอาคารโดยใช้โปรแกรม BEC.pdf']],
-    calc:null
-  },
-  { key:'solar', ico:'☀️', th:'มาตรการพลังงานทดแทน (Solar PV)', desc:'ติดตั้งระบบผลิตไฟฟ้าจากแสงอาทิตย์ (Solar Rooftop) เพื่อลดการซื้อไฟฟ้าจากการไฟฟ้าฯ',
-    docs:[],
-    calc:{ inputs:[['kwp','ขนาดติดตั้ง (kWp)',100],['yield','Specific Yield (kWh/kWp/ปี)',1400],['rate','ค่าไฟฟ้า (บาท/kWh)',4.5],['invest','งบลงทุน (บาท)',3500000]],
-      fn:function(v){ var kwhYr=v.kwp*v.yield; var cost=kwhYr*v.rate; var payback=v.invest/cost; return [['ผลผลิตไฟฟ้า/ปี', kwhYr.toLocaleString(undefined,{maximumFractionDigits:0})+' kWh'],['ประหยัดค่าไฟ/ปี', '฿ '+cost.toLocaleString(undefined,{maximumFractionDigits:0})],['ระยะเวลาคืนทุน', payback.toFixed(1)+' ปี']]; } }
-  },
-  { key:'invest', ico:'💰', th:'สรุปงบลงทุนและผลตอบแทน (Investment Summary)', desc:'ภาพรวมงบลงทุนทุกมาตรการเทียบผลประหยัดสะสมและระยะเวลาคืนทุน',
-    docs:[['saving energy investment plan2023.xlsx','12.Energy conservation plan/Budget/saving energy investment plan2023_Re01.xlsx'],['ViMUT Investment of ENERGY Sep-2023.pptx','ViMUT_Investment of ENERGY in Sep-2023_Re#02(final).pptx']],
-    calc:{ inputs:[['invest','งบลงทุนรวม (บาท)',1200000],['savingYr','ผลประหยัด/ปี (บาท)',450000]],
-      fn:function(v){ var payback=v.invest/v.savingYr; var roi=(v.savingYr/v.invest*100); return [['ระยะเวลาคืนทุน', payback.toFixed(2)+' ปี'],['ผลตอบแทนต่อปี (ROI)', roi.toFixed(1)+' %']]; } }
-  },
-];
-
-ECM.forEach(function(e){
-  var card = document.createElement('div');
-  card.className = 'ecm-card';
-  card.innerHTML = '<div class="eico">'+e.ico+'</div><h3>'+e.th+'</h3><div class="edesc">'+e.desc+'</div>';
-  if(e.docs.length) docListInto(card, e.docs);
-  if(e.calc){
-    var calc = document.createElement('div');
-    calc.className = 'calc';
-    var ins = {};
-    e.calc.inputs.forEach(function(inp){
-      var row = document.createElement('div'); row.className='row';
-      var lab = document.createElement('label'); lab.textContent = inp[1];
-      var input = document.createElement('input'); input.type='number'; input.value = inp[2]; input.step='any';
-      ins[inp[0]] = input;
-      row.appendChild(lab); row.appendChild(input);
-      calc.appendChild(row);
+  var filterInput = document.getElementById('navFilter');
+  var links = document.querySelectorAll('.nav-link');
+  filterInput.addEventListener('input', function(){
+    var q = filterInput.value.trim().toLowerCase();
+    links.forEach(function(a){
+      var txt = a.textContent.toLowerCase();
+      a.classList.toggle('hide', q.length > 0 && txt.indexOf(q) === -1);
     });
-    var out = document.createElement('div'); out.className = 'out';
-    calc.appendChild(out);
+  });
+
+  /* ---- ECM calculators ---- */
+  var CALCS = {
+    vsd: function(v){
+      var newKw = v.kw*Math.pow(v.speedRatio/100,3), savedKw = v.kw-newKw, kwhYr = savedKw*v.hrs, cost = kwhYr*v.rate;
+      return [['ผลประหยัดกำลังไฟฟ้า', savedKw.toFixed(2)+' kW'],['ผลประหยัดพลังงาน/ปี', kwhYr.toLocaleString(undefined,{maximumFractionDigits:0})+' kWh'],['ประหยัดค่าไฟ/ปี', '฿ '+cost.toLocaleString(undefined,{maximumFractionDigits:0})]];
+    },
+    light: function(v){
+      var savedW=(v.wOld-v.wNew)*v.qty, kwhYr=savedW*v.hrs/1000, cost=kwhYr*v.rate;
+      return [['ผลประหยัดกำลังไฟฟ้ารวม', savedW.toFixed(0)+' W'],['ผลประหยัดพลังงาน/ปี', kwhYr.toLocaleString(undefined,{maximumFractionDigits:0})+' kWh'],['ประหยัดค่าไฟ/ปี', '฿ '+cost.toLocaleString(undefined,{maximumFractionDigits:0})]];
+    },
+    chiller: function(v){
+      var savedKw=(v.kwrtOld-v.kwrtNew)*v.ton, kwhYr=savedKw*v.hrs, cost=kwhYr*v.rate;
+      return [['ผลประหยัดกำลังไฟฟ้าเฉลี่ย', savedKw.toFixed(1)+' kW'],['ผลประหยัดพลังงาน/ปี', kwhYr.toLocaleString(undefined,{maximumFractionDigits:0})+' kWh'],['ประหยัดค่าไฟ/ปี', '฿ '+cost.toLocaleString(undefined,{maximumFractionDigits:0})]];
+    },
+    solar: function(v){
+      var kwhYr=v.kwp*v.syield, cost=kwhYr*v.rate, payback=v.invest/cost;
+      return [['ผลผลิตไฟฟ้า/ปี', kwhYr.toLocaleString(undefined,{maximumFractionDigits:0})+' kWh'],['ประหยัดค่าไฟ/ปี', '฿ '+cost.toLocaleString(undefined,{maximumFractionDigits:0})],['ระยะเวลาคืนทุน', payback.toFixed(1)+' ปี']];
+    },
+    invest: function(v){
+      var payback=v.invest/v.savingYr, roi=(v.savingYr/v.invest*100);
+      return [['ระยะเวลาคืนทุน', payback.toFixed(2)+' ปี'],['ผลตอบแทนต่อปี (ROI)', roi.toFixed(1)+' %']];
+    }
+  };
+  document.querySelectorAll('.calc[data-calc]').forEach(function(box){
+    var key = box.getAttribute('data-calc');
+    var fn = CALCS[key];
+    if(!fn) return;
+    var inputs = box.querySelectorAll('input[data-k]');
+    var out = box.querySelector('.out');
     function recompute(){
-      var v = {}; Object.keys(ins).forEach(function(k){ v[k] = parseFloat(ins[k].value)||0; });
-      var res = e.calc.fn(v);
+      var v = {};
+      inputs.forEach(function(i){ v[i.getAttribute('data-k')] = parseFloat(i.value)||0; });
+      var res = fn(v);
       out.innerHTML = res.map(function(r){ return '<div class="line"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>'; }).join('');
     }
-    Object.keys(ins).forEach(function(k){ ins[k].addEventListener('input', recompute); });
+    inputs.forEach(function(i){ i.addEventListener('input', recompute); });
     recompute();
-    card.appendChild(calc);
-  }
-  ecmGrid.appendChild(card);
-});
-
-/* ================= MODULE 3 : AWARDS ================= */
-var p3 = document.getElementById('mpanel-3');
-p3.innerHTML = '<div class="mhead"><h2>Energy Awards &amp; Contest — การประกวดพลังงาน</h2>'
-  + '<p>ติดตามการเข้าร่วมประกวดพลังงานทั้งในประเทศและต่างประเทศ พร้อมเอกสารใบสมัครและผลงานที่เคยส่งจริง</p></div>';
-
-var atabsEl = document.createElement('div'); atabsEl.className='award-tabs'; atabsEl.id='atabs';
-var aboardsEl = document.createElement('div'); aboardsEl.id='aboards';
-p3.appendChild(atabsEl); p3.appendChild(aboardsEl);
-
-var AWARDS = [
-  { key:'mea', label:'MEA Energy Awards', group:'ในประเทศ', items:[
-      { yr:'2024', title:'MEA Energy Awards 2024 — Platinum Award', status:'st-win', statusLabel:'🏆 ได้รับรางวัล Platinum',
-        desc:'โครงการ IFEMs Building Sustainable (FMS ViMUT Hospital) ผ่านเข้ารอบ Innovation และได้รับรางวัลระดับ Platinum',
-        docs:[['ViMUT 022 Project — IFEMs Building Sustainable (Final).pdf','2.24 MEA_Patinum Award2024/Final_Premuim Award/Presentation innovation ROUND 44 team/ViMUT_ 022 Project_IFEMs BUILDING SUSTAINABLE (FMS_ViMUT Hospital)-Final_26_1_24.pdf'],
-              ['Presentation Innovation Round 44.pptx','2.24 MEA_Patinum Award2024/Final_Premuim Award/Presentation innovation ROUND 44 team/Presentation_022 Project_IFEMs BUILDING SUSTAINABLE (FMS_ViMUT Hospital)-Final_26_1_24.pptx'],
-              ['CT Scan IAQ Improvement — Energy Saving (CQI).pdf','2.24 MEA_Patinum Award2024/Final_Premuim Award/HA Forum/3_CQI 67_CT Scan_IAQ improvement (ปรับปรุงระบบปรับอากาศขนาดใหญ่)_Energy saving\'2023(Final).pdf'] ] },
-    ] },
-  { key:'tea', label:'Thailand Energy Awards', group:'ในประเทศ', items:[
-      { yr:'2025', title:'Thailand Energy Awards 2025 — อยู่ระหว่างสมัคร', status:'st-apply', statusLabel:'📝 ยื่นใบสมัครแล้ว',
-        desc:'จัดทำใบสมัครและภาคผนวกประกอบการสมัคร Thailand Energy Awards 2025 ครบทั้งเอกสาร OTTV, งบประมาณ และแผนอนุรักษ์พลังงาน',
-        docs:[['ใบสมัคร MEA ViMUT Hospital 2566.docx','2.23 Thailand Energy Award/Apply_Thailand energy Award 2025/สำเนา_ภาคผนวก_Application-2025/1.File/A0.ใบสมัคร MEA Vimut Hospital_2566 final_update re#02_19_9_66.docx'],
-              ['รายงานประเมินอาคาร BEC.pdf','2.23 Thailand Energy Award/Apply_Thailand energy Award 2025/ภาคผนวก_Thailand Energy_2025/19.Data_รายงานประเมินอาคารโดยใช้โปรแกรม BEC.pdf'],
-              ['หนังสือขออนุมัติงบประมาณโครงการพลังงาน (ลงนาม).pdf','2.23 Thailand Energy Award/Apply_Thailand energy Award 2025/ภาคผนวก_Thailand Energy_2025/6.Data_VH-991-2023 ขออนุมัติงบประมาณสำหรับการจัดทำโครงการพลังงาน(ลงนาม).pdf'] ] },
-    ] },
-  { key:'asean', label:'ASEAN Energy Awards', group:'ต่างประเทศ', items:[
-      { yr:'วางแผน', title:'ASEAN Energy Awards — อยู่ในแผนสมัครรอบถัดไป', status:'st-plan', statusLabel:'🗓 อยู่ในแผน',
-        desc:'ต่อยอดจากผลงาน Thailand Energy Awards / MEA Platinum Award เตรียมแปลเอกสารเป็นภาษาอังกฤษเพื่อสมัครระดับอาเซียนในรอบถัดไป',
-        docs:[] },
-    ] },
-];
-
-AWARDS.forEach(function(a,i){
-  var t = document.createElement('div');
-  t.className = 'atab'+(i===0?' active':'');
-  t.textContent = a.group+' — '+a.label;
-  t.dataset.key = a.key;
-  t.addEventListener('click', function(){ switchAward(a.key); });
-  atabsEl.appendChild(t);
-
-  var board = document.createElement('div');
-  board.className = 'aboard'+(i===0?' active':'');
-  board.dataset.key = a.key;
-  var tl = document.createElement('div'); tl.className='timeline';
-  a.items.forEach(function(it, idx){
-    var row = document.createElement('div'); row.className='tl-item';
-    var dotWrap = document.createElement('div'); dotWrap.className='tl-dot-wrap';
-    dotWrap.innerHTML = '<div class="tl-dot"></div>' + (idx<a.items.length-1?'<div class="tl-line"></div>':'');
-    var card = document.createElement('div'); card.className='tl-card';
-    card.innerHTML = '<div class="yr">'+it.yr+'</div><h4>'+it.title+'</h4><span class="status '+it.status+'">'+it.statusLabel+'</span><div style="font-size:12px;color:var(--text2);line-height:1.7">'+it.desc+'</div>';
-    if(it.docs.length) docListInto(card, it.docs);
-    row.appendChild(dotWrap); row.appendChild(card);
-    tl.appendChild(row);
   });
-  board.appendChild(tl);
-  aboardsEl.appendChild(board);
-});
-function switchAward(key){
-  document.querySelectorAll('.atab').forEach(function(t){ t.classList.toggle('active', t.dataset.key===key); });
-  document.querySelectorAll('.aboard').forEach(function(b){ b.classList.toggle('active', b.dataset.key===key); });
-}
+})();
 </script>
 
 </body>
