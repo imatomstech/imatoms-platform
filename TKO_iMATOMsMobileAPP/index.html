@@ -157,6 +157,10 @@ const ST = {
   loginBusy:false, loginMsg:'', loginErr:false,
   regBusy:false, regMsg:'', regErr:false,
   dash: null,
+  activeModule: null,
+  modData: {},   // per-module light data cache: { fm:{}, iot:{}, mv:{}, advisory:{}, bot:{} }
+  modLoading: {},
+  fromTab: 'ops', // tab to return to when leaving a module screen
 };
 
 function setLang(l){ ST.lang = l; try{ localStorage.setItem(LS.lang, l); }catch(e){} render(); }
@@ -190,6 +194,14 @@ function L(){
     noAccount:'ยังไม่มีบัญชี?', registerLink:'ขอสิทธิ์เข้าใช้งาน', haveAccount:'มีบัญชีอยู่แล้ว?', loginLink:'เข้าสู่ระบบ',
     fullName:'ชื่อ-นามสกุล', email:'อีเมล', approvalNote:'คำขอของคุณจะถูกส่งให้ผู้ดูแลระบบตรวจสอบและอนุมัติก่อนจึงจะสามารถเข้าใช้งานได้', submitRequest:'ส่งคำขอเข้าใช้งาน',
     splashSelect:'เลือกภาษา · Select your language', splashTh:'ภาษาไทย', splashEn:'English',
+    modBack:'← ย้อนกลับ', openFullApp:'เปิดเว็บแอปฉบับเต็ม', comingSoon:'เร็วๆ นี้', loadingData:'กำลังโหลดข้อมูล…', loadFailed:'โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง', retry:'ลองอีกครั้ง',
+    fmTitle:'ภาพรวมงานบำรุงรักษา', fmWoTitle:'งานล่าสุด', fmNoWo:'ไม่มีรายการงานล่าสุด',
+    iotTitle:'อุปกรณ์ตรวจวัด', iotNoDevice:'ยังไม่มีอุปกรณ์เชื่อมต่อ',
+    mvTitle:'สรุปผลการวัดและทวนสอบพลังงาน', mvKwh:'พลังงานรวม (kWh/ปี)', mvAc:'สัดส่วนระบบปรับอากาศ', mvSaving:'ศักยภาพประหยัดที่พบ (kWh/ปี)', mvSheets:'จำนวนชีทข้อมูล',
+    advTitle:'ที่ปรึกษาพลังงาน & รางวัล', advM1:'8 ขั้นตอนการจัดการพลังงาน', advM1d:'มาตรฐาน พพ. ครบ 8 ขั้นตอน',
+    advM2:'โครงการอนุรักษ์พลังงาน', advM2d:'21 กลุ่มมาตรการ พร้อม Dashboard ผลประหยัด',
+    advM3:'รางวัลพลังงาน', advM3d:'MEA / Thailand Energy Awards / ASEAN Energy Awards',
+    botTitle:'ระบบหุ่นยนต์ & อัตโนมัติ', botDesc:'โมดูลนี้อยู่ระหว่างการพัฒนา จะเปิดให้ใช้งานเร็วๆ นี้',
   } : {
     backToPlatform:'← Back to Platform', navHome:'Home', navOps:'Operations', navLifestyle:'Lifestyle', navProfile:'Profile',
     homeGreeting:'Welcome back, ' + ((getUser()&&(getUser().full_name||getUser().username)) || 'User'),
@@ -206,6 +218,14 @@ function L(){
     noAccount:"Don't have an account?", registerLink:'Request Access', haveAccount:'Already have an account?', loginLink:'Sign In',
     fullName:'Full Name', email:'Email', approvalNote:'Your request will be reviewed and must be approved by an administrator before access is granted.', submitRequest:'Submit Request',
     splashSelect:'เลือกภาษา · Select your language', splashTh:'ภาษาไทย', splashEn:'English',
+    modBack:'← Back', openFullApp:'Open Full Web App', comingSoon:'Coming Soon', loadingData:'Loading data…', loadFailed:'Failed to load data. Please try again.', retry:'Retry',
+    fmTitle:'Maintenance Overview', fmWoTitle:'Recent Work Orders', fmNoWo:'No recent work orders',
+    iotTitle:'Monitored Devices', iotNoDevice:'No devices connected yet',
+    mvTitle:'Measurement & Verification Summary', mvKwh:'Total Energy (kWh/yr)', mvAc:'AC System Share', mvSaving:'Savings Potential Found (kWh/yr)', mvSheets:'Source Sheets',
+    advTitle:'Energy Consulting & Awards', advM1:'8-Step Energy Management', advM1d:'Full DEDE 8-step legal standard',
+    advM2:'Energy Conservation Project', advM2d:'21 measure groups with savings dashboard',
+    advM3:'Energy Awards', advM3d:'MEA / Thailand Energy Awards / ASEAN Energy Awards',
+    botTitle:'Robotics & Automation', botDesc:'This module is under development and will be available soon.',
   };
 }
 
@@ -399,15 +419,130 @@ function screenProfile(){
     +'</div>';
 }
 
+/* ============== module detail screens (native, light) ============== */
+function modHeader(title, key){
+  const t = L();
+  return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
+    +'<div class="tap" data-act="module-back" style="font-size:13px;color:var(--color-accent-700);font-weight:600">'+t.modBack+'</div>'
+    +'<a class="tap" data-act="open-full-app" data-key="'+key+'" style="font-size:11px;color:var(--color-neutral-700);border:1px solid var(--color-divider);padding:5px 9px">'+t.openFullApp+' ↗</a>'
+    +'</div>'
+    +'<h2 style="font-size:20px;margin-bottom:2px">'+esc(title)+'</h2>';
+}
+function modLoadingBlock(key){
+  const t = L();
+  if(ST.modLoading[key]) return '<div style="text-align:center;padding:30px 0;color:var(--color-neutral-600);font-size:13px">'+t.loadingData+'</div>';
+  return '';
+}
+function modErrorBlock(key){
+  const t = L();
+  const err = ST.modData[key] && ST.modData[key].__error;
+  if(!err) return '';
+  return '<div class="blueprint" style="padding:14px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    +'<div style="font-size:12px;color:var(--danger);margin-bottom:8px">'+t.loadFailed+'</div>'
+    +'<button class="btn btn-secondary" data-act="retry-module" data-key="'+key+'">'+t.retry+'</button></div>';
+}
+
+function screenModuleFM(){
+  const t = L(); const mods = opsModules(); const m = mods.find(function(x){return x.key==='fm';});
+  const d = ST.dash;
+  const wo = (d && d.work_orders) || [];
+  const openCnt = (wo.find(function(r){return r.status==='open';})||{}).cnt || 0;
+  const ipCnt = (wo.find(function(r){return r.status==='in_progress';})||{}).cnt || 0;
+  const pm = d ? (d.pm_due_30days||0) : '–';
+  const notif = d ? (d.unread_notif||0) : '–';
+  const recent = (d && d.recent_work_orders) || [];
+  return '<div class="stack">'
+    + modHeader(m.name, 'fm')
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + statCard(t.kOpen, openCnt) + statCard(t.kProgress, ipCnt) + statCard(t.kPm, pm) + statCard(t.kNotif, notif)
+    +'</div>'
+    +'<div><h4 style="font-size:14px;margin-bottom:8px">'+t.fmWoTitle+'</h4>'
+    + (recent.length ? '<div style="display:flex;flex-direction:column;gap:8px">' + recent.slice(0,6).map(function(w){
+        return '<div class="blueprint" style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+          +'<div style="font-size:12px">'+esc(w.title||w.subject||('WO#'+(w.id||'')))+'</div>'
+          +'<span class="tag '+(w.status==='open'?'tag-neutral':'tag-accent')+'">'+esc(w.status||'')+'</span></div>';
+      }).join('') + '</div>' : '<div style="font-size:12px;color:var(--color-neutral-700)">'+t.fmNoWo+'</div>')
+    +'</div></div>';
+}
+
+function screenModuleIoT(){
+  const t = L(); const mods = opsModules(); const m = mods.find(function(x){return x.key==='iot';});
+  const devices = (ST.modData.iot && ST.modData.iot.devices) || [];
+  return '<div class="stack">'
+    + modHeader(m.name, 'iot')
+    + modLoadingBlock('iot') + modErrorBlock('iot')
+    + (!ST.modLoading.iot && !((ST.modData.iot||{}).__error) ? (
+        devices.length ? '<div style="display:flex;flex-direction:column;gap:10px">' + devices.map(function(dev){
+          return '<div class="blueprint" style="padding:12px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+            +'<div style="font-family:var(--font-heading);font-size:14px;margin-bottom:6px">'+esc(dev.name||dev.device||'Sensor')+'</div>'
+            +'<div style="display:flex;gap:16px">'
+            + (dev.temperature!=null ? '<div><div style="font-size:10px;color:var(--color-neutral-700)">TEMP</div><div style="font-size:18px;font-family:var(--font-heading)">'+esc(dev.temperature)+'°C</div></div>' : '')
+            + (dev.humidity!=null ? '<div><div style="font-size:10px;color:var(--color-neutral-700)">RH</div><div style="font-size:18px;font-family:var(--font-heading)">'+esc(dev.humidity)+'%</div></div>' : '')
+            +'</div></div>';
+        }).join('') + '</div>' : '<div style="font-size:12px;color:var(--color-neutral-700)">'+t.iotNoDevice+'</div>'
+      ) : '')
+    +'</div>';
+}
+
+function screenModuleMV(){
+  const t = L(); const mods = opsModules(); const m = mods.find(function(x){return x.key==='mv';});
+  return '<div class="stack">'
+    + modHeader(m.name, 'mv')
+    +'<div><h4 style="font-size:14px;margin-bottom:8px">'+t.mvTitle+'</h4>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + statCard(t.mvKwh, '9.90M') + statCard(t.mvAc, '53.6%') + statCard(t.mvSaving, '351,973') + statCard(t.mvSheets, '47')
+    +'</div></div></div>';
+}
+
+function screenModuleAdvisory(){
+  const t = L(); const mods = opsModules(); const m = mods.find(function(x){return x.key==='advisory';});
+  const items = [
+    { code:'01', name:t.advM1, d:t.advM1d },
+    { code:'02', name:t.advM2, d:t.advM2d },
+    { code:'03', name:t.advM3, d:t.advM3d },
+  ];
+  return '<div class="stack">'
+    + modHeader(m.name, 'advisory')
+    +'<div style="font-size:12px;color:var(--color-neutral-700);margin-bottom:4px">'+t.advTitle+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:10px">'
+    + items.map(function(it){
+      return '<div class="blueprint" style="padding:12px;display:flex;gap:12px;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+        +'<div style="width:36px;height:36px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:12px;color:var(--color-accent-700);flex-shrink:0">'+it.code+'</div>'
+        +'<div><div style="font-family:var(--font-heading);font-size:14px">'+esc(it.name)+'</div><div style="font-size:11px;color:var(--color-neutral-700)">'+esc(it.d)+'</div></div></div>';
+    }).join('')
+    +'</div></div>';
+}
+
+function screenModuleBOT(){
+  const t = L(); const mods = opsModules(); const m = mods.find(function(x){return x.key==='bot';});
+  return '<div class="stack">'
+    + modHeader(m.name, 'bot')
+    +'<div class="blueprint" style="padding:22px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    +'<div style="font-family:var(--font-heading);font-size:16px;margin-bottom:6px">'+t.comingSoon+'</div>'
+    +'<div style="font-size:12px;color:var(--color-neutral-700)">'+t.botDesc+'</div></div></div>';
+}
+
+function screenModuleDetail(){
+  const key = ST.activeModule;
+  if(key==='fm') return screenModuleFM();
+  if(key==='iot') return screenModuleIoT();
+  if(key==='mv') return screenModuleMV();
+  if(key==='advisory') return screenModuleAdvisory();
+  if(key==='bot') return screenModuleBOT();
+  return '';
+}
+
 /* ============== main app frame ============== */
 function screenMain(){
-  const t = L();
   let inner = '';
   if(ST.tab === 'home') inner = screenHome();
   else if(ST.tab === 'ops') inner = screenOpsList();
   else if(ST.tab === 'lifestyle') inner = screenLifestyle();
   else if(ST.tab === 'profile') inner = screenProfile();
-
+  return screenMainWithBody(inner);
+}
+function screenMainWithBody(inner){
+  const t = L();
   return '<div style="display:flex;flex-direction:column;min-height:100vh">'
     +'<div class="topbar">'
     +'<div class="brand">iMATOMs</div>'
@@ -429,6 +564,7 @@ function render(){
   let html = '';
   if(ST.screen === 'login') html = screenLogin();
   else if(ST.screen === 'splash') html = screenSplash();
+  else if(ST.screen === 'module') html = screenMainWithBody(screenModuleDetail());
   else html = screenMain();
   document.getElementById('app-root').innerHTML = html;
   bindFormHandlers();
@@ -453,11 +589,14 @@ document.addEventListener('click', function(e){
   else if(act==='to-login'){ ST.authMode='login'; ST.loginMsg=''; render(); }
   else if(act==='splash-th'){ ST.lang='th'; try{localStorage.setItem(LS.lang,'th');}catch(err){} ST.screen='main'; render(); }
   else if(act==='splash-en'){ ST.lang='en'; try{localStorage.setItem(LS.lang,'en');}catch(err){} ST.screen='main'; render(); }
-  else if(act==='tab-home'){ ST.tab='home'; render(); if(!ST.dash) loadDashboard(); }
-  else if(act==='tab-ops'){ ST.tab='ops'; render(); }
-  else if(act==='tab-lifestyle'){ ST.tab='lifestyle'; render(); }
-  else if(act==='tab-profile'){ ST.tab='profile'; render(); }
-  else if(act==='open-module'){ const key = el.getAttribute('data-key'); const url = MODULE_URLS[key]; if(url) window.location.href = url; }
+  else if(act==='tab-home'){ ST.tab='home'; ST.screen='main'; ST.activeModule=null; render(); if(!ST.dash) loadDashboard(); }
+  else if(act==='tab-ops'){ ST.tab='ops'; ST.screen='main'; ST.activeModule=null; render(); }
+  else if(act==='tab-lifestyle'){ ST.tab='lifestyle'; ST.screen='main'; ST.activeModule=null; render(); }
+  else if(act==='tab-profile'){ ST.tab='profile'; ST.screen='main'; ST.activeModule=null; render(); }
+  else if(act==='open-module'){ const key = el.getAttribute('data-key'); ST.activeModule = key; ST.fromTab = ST.tab; ST.screen = 'module'; render(); loadModuleData(key); }
+  else if(act==='module-back'){ ST.screen = 'main'; ST.tab = ST.fromTab || 'ops'; ST.activeModule = null; render(); }
+  else if(act==='open-full-app'){ e.preventDefault(); const key = el.getAttribute('data-key'); const url = MODULE_URLS[key]; if(url) window.location.href = url; }
+  else if(act==='retry-module'){ const key = el.getAttribute('data-key'); loadModuleData(key); }
   else if(act==='lifestyle-market'){ ST.lifestyleSub='market'; render(); }
   else if(act==='lifestyle-coffee'){ ST.lifestyleSub='coffee'; render(); }
   else if(act==='goto-market'){ window.location.href = '/TKO_IsanFoodMarket/'; }
@@ -507,6 +646,26 @@ async function doLogout(){
 /* ============== data loads ============== */
 async function loadDashboard(){
   try{ ST.dash = await api('/dashboard'); render(); }catch(err){ /* non-fatal */ }
+}
+
+/* light per-module data fetch — FM/M&V reuse the shared dashboard;
+   only IoT needs its own call (bas.imatomstech.com sensor gateway). */
+async function loadModuleData(key){
+  if(key==='fm'){ if(!ST.dash) loadDashboard(); return; }
+  if(key==='iot'){
+    ST.modLoading.iot = true; ST.modData.iot = {}; render();
+    try{
+      const res = await fetch('https://bas.imatomstech.com/api/sensor');
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data && data.devices) || (data ? [data] : []);
+      ST.modData.iot = { devices: list };
+    }catch(err){
+      ST.modData.iot = { __error: true };
+    }
+    ST.modLoading.iot = false; render();
+    return;
+  }
+  /* mv / advisory / bot are static-summary screens for now — no fetch needed */
 }
 
 /* ============== boot ============== */
