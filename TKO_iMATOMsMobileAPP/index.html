@@ -162,6 +162,7 @@ const ST = {
   modLoading: {},
   fromTab: 'ops', // tab to return to when leaving a module screen
   fmSub: 'overview', // FM module sub-tab: overview | wr | om | ppm | ma | inv
+  wrSub: 'overview', // WR sub-tab within FM: overview|new|inprogress|closed|evaluate|summarize|maintain|sla|repeated|reopt|history
 };
 
 function setLang(l){ ST.lang = l; try{ localStorage.setItem(LS.lang, l); }catch(e){} render(); }
@@ -447,7 +448,18 @@ function modErrorBlock(key){
    localStorage store the webapp itself uses (key prefix 'tko_v2_') —
    this is a genuine live connection, not a copy: WR/PPM/MA/Inventory
    edits made in the webapp appear here immediately, and vice versa. */
-function fmDB(k){ try{ const v = localStorage.getItem('tko_v2_'+k); return v ? JSON.parse(v) : []; }catch(e){ return []; } }
+function fmDB(k){
+  /* the webapp mirrors wr/assets/ppm/ma/inv/contract/operation from its
+     'tko_v2_' store into an 'alm_' store for the richer Reliability
+     module (Evaluate&Approve, SLA, Maintainability, Repeated Repairs...).
+     Prefer 'alm_' since it carries the fuller status workflow
+     (open/inprogress/arrived/closed/approved), fall back to 'tko_v2_'. */
+  try{
+    const a = localStorage.getItem('alm_'+k);
+    if(a){ const parsed = JSON.parse(a); if(Array.isArray(parsed) && parsed.length) return parsed; }
+  }catch(e){}
+  try{ const v = localStorage.getItem('tko_v2_'+k); return v ? JSON.parse(v) : []; }catch(e){ return []; }
+}
 function fmMoney(n){ return '฿' + Math.round(n||0).toLocaleString(); }
 function fmChip(label, kind){
   const colors = { red:'var(--danger)', orange:'var(--orange)', green:'var(--green)', sky:'var(--sky)', gray:'var(--color-neutral-600)' };
@@ -489,21 +501,214 @@ function fmOverview(){
     +'</div>';
 }
 
+/* ══ WR (Work Request) — mirrors the Reliability Module's WR dashboard:
+   Overview / New WR / In Progress-Pending / Closed / Evaluate & Approve /
+   Summarize WR / Maintainability / SLA / Repeated Repairs / Re-OPT / Asset History ══ */
+const WR_STATUS_MAP = { open:['เปิดงาน','Open','orange'], inprogress:['กำลังดำเนินการ','In Progress','sky'], arrived:['ถึงหน้างาน','Arrived','sky'], closed:['ปิดงานแล้ว','Closed','green'], approved:['อนุมัติแล้ว','Approved','green'], cancelled:['ยกเลิก','Cancelled','gray'] };
+const WR_PRIORITY_MAP = { critical:['วิกฤต','Critical','red'], urgently:['เร่งด่วน','Urgent','orange'], high:['สูง','High','orange'], normal:['ปกติ','Normal','green'] };
+const SLA_TARGETS_MIN = { critical:5, urgently:15, high:15, normal:480 };
+const WR_TYPE_TARGET_H = { ER:4, CM:8, PJ:72 }; // hours — used for Maintainability = 1-e^(-target/mttr)
+
+function wrCardHtml(w, th){
+  const st = WR_STATUS_MAP[w.status] || [w.status,w.status,'gray'];
+  const pr = WR_PRIORITY_MAP[w.priority] || [w.priority,w.priority,'gray'];
+  return fmCard(
+    '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(w.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
+    +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc((w.desc||'').slice(0,70))+'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip(th?pr[0]:pr[1], pr[2])+(w.assetId?fmChip(w.assetId,'gray'):'')+(w.assign?fmChip(w.assign,'gray'):'')+(w.mttr?fmChip('MTTR '+w.mttr+'h','gray'):'')+'</div>'
+  );
+}
+function wrListHtml(list, th, emptyMsg){
+  if(!list.length) return fmEmpty(emptyMsg || (th?'ไม่มีข้อมูล':'No data'));
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + list.slice(0,30).map(function(w){ return wrCardHtml(w, th); }).join('') + '</div>';
+}
+function wrSpark(values, color){
+  if(!values.length) return '';
+  const w=280,h=54,pad=4;
+  const max=Math.max.apply(null, values), min=Math.min.apply(null, values);
+  const range = (max-min)||1;
+  const step = values.length>1 ? (w-pad*2)/(values.length-1) : 0;
+  const pts = values.map(function(v,i){ const x=pad+step*i; const y=h-pad-((v-min)/range)*(h-pad*2); return x+','+y; }).join(' ');
+  return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none"><polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2"/></svg>';
+}
+function wrBar(segments){ // [{pct, color}]
+  return '<div style="display:flex;height:8px;border-radius:5px;overflow:hidden;background:var(--color-neutral-200)">'
+    + segments.map(function(s){ return '<div style="width:'+s.pct+'%;background:'+s.color+'"></div>'; }).join('')
+    +'</div>';
+}
+
+function wrSubTabs(active){
+  const th = ST.lang==='th';
+  const tabs = [
+    { k:'overview', label: th?'ภาพรวม':'Overview' },
+    { k:'new', label: th?'แจ้งใหม่':'New WR' },
+    { k:'inprogress', label: th?'กำลังทำ':'In Progress' },
+    { k:'closed', label: th?'ปิดงาน':'Closed' },
+    { k:'evaluate', label: th?'ประเมิน':'Evaluate' },
+    { k:'summarize', label: th?'สรุปผล':'Summarize' },
+    { k:'maintain', label: th?'Maintainability':'Maintainability' },
+    { k:'sla', label:'SLA' },
+    { k:'repeated', label: th?'ซ่อมซ้ำ':'Repeated' },
+    { k:'reopt', label:'Re-OPT' },
+    { k:'history', label: th?'ประวัติ':'History' },
+  ];
+  return '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch">'
+    + tabs.map(function(x){
+        return '<div class="tap" data-act="wr-sub" data-sub="'+x.k+'" style="flex-shrink:0;font-size:11px;font-weight:600;padding:6px 11px;border-radius:20px;border:1px solid '+(active===x.k?'var(--color-accent)':'var(--color-divider)')+';background:'+(active===x.k?'var(--color-accent)':'transparent')+';color:'+(active===x.k?'#fff':'var(--color-text)')+'">'+esc(x.label)+'</div>';
+      }).join('')
+    +'</div>';
+}
+
+function wrOverview(){
+  const th = ST.lang==='th';
+  const wr = fmDB('wr');
+  const open = wr.filter(function(w){return w.status==='open';});
+  const ip = wr.filter(function(w){return w.status==='inprogress'||w.status==='arrived';});
+  const closed = wr.filter(function(w){return w.status==='closed'||w.status==='approved';});
+  const cancelled = wr.filter(function(w){return w.status==='cancelled';});
+  const mttrVals = closed.filter(function(w){return w.mttr;}).map(function(w){return w.mttr;});
+  const avgMttr = mttrVals.length ? Math.round(mttrVals.reduce(function(s,v){return s+v;},0)/mttrVals.length*10)/10 : null;
+  const allCost = wr.reduce(function(s,w){return s+(w.totalCost||0);},0);
+  const total = wr.length || 1;
+  const trendSrc = closed.slice().sort(function(a,b){ return new Date(a.closeDate||a.date||0) - new Date(b.closeDate||b.date||0); }).slice(-10).filter(function(w){return w.mttr;});
+
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + statCard(th?'แจ้งซ่อม':'List WR', open.length) + statCard(th?'กำลังทำ':'In Progress', ip.length)
+    + statCard(th?'ปิดงาน':'Closed', closed.length) + statCard(th?'MTTR เฉลี่ย (ชม.)':'Avg MTTR (hrs)', avgMttr!=null?avgMttr:'—')
+    +'</div>'
+    +'<div style="margin-top:2px">'+statCard(th?'ค่าใช้จ่าย WR ทั้งหมด':'All WR Cost', fmMoney(allCost))+'</div>'
+    +'<div style="margin-top:6px"><h4 style="font-size:13px;margin-bottom:6px">'+(th?'สถานะงาน':'WR Status Flow')+'</h4>'
+    + wrBar([
+        { pct: Math.round(open.length/total*100), color:'var(--orange)' },
+        { pct: Math.round(ip.length/total*100), color:'var(--sky)' },
+        { pct: Math.round(closed.length/total*100), color:'var(--green)' },
+        { pct: Math.round(cancelled.length/total*100), color:'var(--color-neutral-500)' },
+      ])
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;font-size:10px;color:var(--color-neutral-700)">'
+    +'<span>🟠 '+(th?'เปิด':'Open')+' '+open.length+'</span><span>🔵 '+(th?'กำลังทำ':'In Progress')+' '+ip.length+'</span><span>🟢 '+(th?'ปิด':'Closed')+' '+closed.length+'</span><span>⚪ '+(th?'ยกเลิก':'Cancelled')+' '+cancelled.length+'</span>'
+    +'</div></div>'
+    + (trendSrc.length ? '<div style="margin-top:10px">'+fmCard('<div style="font-size:12px;font-weight:600;margin-bottom:4px">'+(th?'แนวโน้ม MTTR (10 งานล่าสุด)':'MTTR Trend (last 10)')+'</div>'+wrSpark(trendSrc.map(function(w){return w.mttr;}), 'var(--color-accent)')) +'</div>' : '');
+}
+
+function wrNew(){ const th=ST.lang==='th'; return wrListHtml(fmDB('wr').filter(function(w){return w.status==='open';}).sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);}), th, th?'ไม่มีงานแจ้งใหม่':'No new work requests'); }
+function wrInProgress(){ const th=ST.lang==='th'; return wrListHtml(fmDB('wr').filter(function(w){return w.status==='inprogress'||w.status==='arrived';}).sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);}), th, th?'ไม่มีงานที่กำลังดำเนินการ':'Nothing in progress'); }
+function wrClosed(){ const th=ST.lang==='th'; return wrListHtml(fmDB('wr').filter(function(w){return w.status==='closed'||w.status==='approved';}).sort(function(a,b){return new Date(b.closeDate||b.date||0)-new Date(a.closeDate||a.date||0);}), th, th?'ยังไม่มีงานที่ปิดแล้ว':'No closed work requests'); }
+
+function wrEvaluate(){
+  const th = ST.lang==='th';
+  const wr = fmDB('wr');
+  const pending = wr.filter(function(w){ return w.status==='closed' && !w.approvedBy; });
+  const approved = wr.filter(function(w){ return w.status==='approved' || (w.status==='closed' && w.approvedBy); });
+  return '<div><h4 style="font-size:13px;margin-bottom:6px">'+(th?'รอตรวจสอบ/อนุมัติ':'Pending Review')+' ('+pending.length+')</h4>'
+    + wrListHtml(pending, th, th?'ไม่มีงานรอประเมิน':'Nothing pending evaluation')
+    +'</div><div style="margin-top:14px"><h4 style="font-size:13px;margin-bottom:6px">'+(th?'อนุมัติแล้ว':'Approved')+' ('+approved.length+')</h4>'
+    + wrListHtml(approved.slice(0,15), th, th?'ยังไม่มีงานที่อนุมัติ':'Nothing approved yet')
+    +'</div>';
+}
+
+function wrSummarize(){
+  const th = ST.lang==='th';
+  const wr = fmDB('wr');
+  const byPr = {};
+  wr.forEach(function(w){ const k=w.priority||'normal'; byPr[k]=(byPr[k]||0)+1; });
+  const prRows = Object.keys(byPr).map(function(k){ const pr=WR_PRIORITY_MAP[k]||[k,k,'gray']; return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px">'+esc(th?pr[0]:pr[1])+'</span>'+fmChip(String(byPr[k]),pr[2])+'</div>'); }).join('');
+  const byAsset = {};
+  wr.forEach(function(w){ if(!w.assetId) return; byAsset[w.assetId]=(byAsset[w.assetId]||0)+1; });
+  const topAssets = Object.keys(byAsset).map(function(k){return {assetId:k,cnt:byAsset[k]};}).sort(function(a,b){return b.cnt-a.cnt;}).slice(0,5);
+  return '<div>'+ wrOverview() +'</div>'
+    +'<div style="margin-top:14px"><h4 style="font-size:13px;margin-bottom:6px">'+(th?'แยกตามลำดับความสำคัญ':'By Priority')+'</h4>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'+ (prRows||fmEmpty(th?'ไม่มีข้อมูล':'No data')) +'</div></div>'
+    +'<div style="margin-top:14px"><h4 style="font-size:13px;margin-bottom:6px">'+(th?'Asset ที่แจ้งซ่อมบ่อยที่สุด (Top 5)':'Top 5 Most-Reported Assets')+'</h4>'
+    + (topAssets.length ? '<div style="display:flex;flex-direction:column;gap:8px">'+topAssets.map(function(a){ return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(a.assetId)+'</span>'+fmChip((th?'':'')+a.cnt+' '+(th?'ครั้ง':'times'), a.cnt>=2?'orange':'gray')+'</div>'); }).join('')+'</div>' : fmEmpty(th?'ไม่มีข้อมูล':'No data'))
+    +'</div>';
+}
+
+function wrMaintainability(){
+  const th = ST.lang==='th';
+  const closed = fmDB('wr').filter(function(w){ return (w.status==='closed'||w.status==='approved') && w.mttr; });
+  const withPct = closed.map(function(w){
+    const target = WR_TYPE_TARGET_H[w.type] || 8;
+    const pct = Math.round((1-Math.exp(-target/w.mttr))*100);
+    return { w:w, pct:pct };
+  });
+  const avg = withPct.length ? Math.round(withPct.reduce(function(s,x){return s+x.pct;},0)/withPct.length) : null;
+  return '<div>'+statCard(th?'Maintainability เฉลี่ย':'Avg Maintainability', avg!=null?avg+'%':'—')+'</div>'
+    +'<div style="font-size:11px;color:var(--color-neutral-700);margin:8px 0">Maintainability = 1 − e^(−Target/MTTR)</div>'
+    + (withPct.length ? '<div style="display:flex;flex-direction:column;gap:8px">' + withPct.slice(0,20).map(function(x){
+        return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(x.w.id)+'</span>'+fmChip(x.pct+'%', x.pct>=70?'green':x.pct>=40?'orange':'red')+'</div>'+'<div style="font-size:11px;color:var(--color-neutral-700)">MTTR '+x.w.mttr+'h · '+esc(x.w.type||'')+'</div>');
+      }).join('') + '</div>' : fmEmpty(th?'ยังไม่มีข้อมูลงานที่ปิดแล้ว':'No closed work requests yet'));
+}
+
+function wrSLA(){
+  const th = ST.lang==='th';
+  const wr = fmDB('wr').filter(function(w){ return w.responseTime!=null && w.priority; });
+  const met = wr.filter(function(w){ return w.responseTime <= (SLA_TARGETS_MIN[w.priority]||480); });
+  const breach = wr.filter(function(w){ return w.responseTime > (SLA_TARGETS_MIN[w.priority]||480); });
+  const pct = wr.length ? Math.round(met.length/wr.length*100) : null;
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + statCard(th?'ตรงเวลา':'SLA Met', met.length) + statCard(th?'เกินเวลา':'SLA Breached', breach.length)
+    +'</div><div style="margin-top:2px">'+statCard(th?'อัตราปฏิบัติตาม SLA':'SLA Compliance', pct!=null?pct+'%':'—')+'</div>'
+    +'<div style="margin-top:10px"><h4 style="font-size:13px;margin-bottom:6px">'+(th?'รายการที่เกินเวลา':'Breaches')+'</h4>'
+    + (breach.length ? '<div style="display:flex;flex-direction:column;gap:8px">'+breach.slice(0,15).map(function(w){
+        return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(w.id)+'</span>'+fmChip((w.responseTime||0)+' '+(th?'นาที':'min'),'red')+'</div>'+'<div style="font-size:11px;color:var(--color-neutral-700)">'+esc((WR_PRIORITY_MAP[w.priority]||[w.priority])[th?0:1])+' · '+(th?'เป้าหมาย ':'target ')+(SLA_TARGETS_MIN[w.priority]||480)+' '+(th?'นาที':'min')+'</div>');
+      }).join('')+'</div>' : fmEmpty(th?'ไม่มีการเกินเวลา':'No breaches'));
+}
+
+function wrRepeated(){
+  const th = ST.lang==='th';
+  const wr = fmDB('wr');
+  const byAsset = {};
+  wr.forEach(function(w){ if(!w.assetId) return; (byAsset[w.assetId]=byAsset[w.assetId]||[]).push(w); });
+  const repeated = Object.keys(byAsset).map(function(k){ return {assetId:k, items:byAsset[k]}; }).filter(function(x){return x.items.length>=2;}).sort(function(a,b){return b.items.length-a.items.length;});
+  const totalCost = repeated.reduce(function(s,r){ return s + r.items.reduce(function(ss,w){return ss+(w.totalCost||0);},0); },0);
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + statCard(th?'Asset ซ่อมซ้ำ':'Repeated Assets', repeated.length) + statCard(th?'WR ซ้ำทั้งหมด':'Total Repeat WR', repeated.reduce(function(s,r){return s+r.items.length;},0))
+    +'</div><div style="margin-top:2px">'+statCard(th?'มูลค่าซ่อมสะสม':'Cumulative Repair Cost', fmMoney(totalCost))+'</div>'
+    +'<div style="font-size:11px;color:var(--color-neutral-700);margin:8px 0">'+(th?'Asset ที่ซ่อมซ้ำ ≥ 2 ครั้ง → แนะนำสร้างแผน PM':'Assets repaired ≥ 2 times → recommend creating a PM plan')+'</div>'
+    + (repeated.length ? '<div style="display:flex;flex-direction:column;gap:8px">'+repeated.map(function(r){
+        return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(r.assetId)+'</span>'+fmChip(r.items.length+'x','red')+'</div>'+'<div style="font-size:11px;color:var(--color-neutral-700)">'+(th?'มูลค่ารวม ':'total cost ')+fmMoney(r.items.reduce(function(s,w){return s+(w.totalCost||0);},0))+'</div>');
+      }).join('')+'</div>' : fmEmpty(th?'ยังไม่พบการซ่อมซ้ำ':'No repeated repairs found'));
+}
+
+function wrReOpt(){
+  const th = ST.lang==='th';
+  const logs = fmDB('reoptlogs');
+  if(!logs.length) return fmEmpty(th?'ยังไม่มีบันทึก Re-OPT':'No Re-OPT logs yet');
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + logs.slice(-15).reverse().map(function(r){
+    return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(r.assetId||'')+'</span>'+(r.wrRef?fmChip(r.wrRef,'gray'):'')+'</div>'
+      +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc(r.param||'')+': '+esc(r.before||'—')+' → '+esc(r.after||'—')+' '+esc(r.unit||'')+'</div>'
+      +(r.reason?'<div style="font-size:11px;color:var(--color-neutral-700)">'+esc(r.reason)+'</div>':''));
+  }).join('') + '</div>';
+}
+
+function wrHistory(){
+  const th = ST.lang==='th';
+  const wr = fmDB('wr');
+  const byAsset = {};
+  wr.forEach(function(w){ if(!w.assetId) return; (byAsset[w.assetId]=byAsset[w.assetId]||[]).push(w); });
+  const rows = Object.keys(byAsset).map(function(k){ const items=byAsset[k]; return { assetId:k, cnt:items.length, cost: items.reduce(function(s,w){return s+(w.totalCost||0);},0) }; }).sort(function(a,b){return b.cnt-a.cnt;});
+  if(!rows.length) return fmEmpty(th?'ยังไม่มีประวัติ':'No history yet');
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + rows.slice(0,25).map(function(r){
+    return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(r.assetId)+'</span>'+fmChip((th?'WR ':'')+r.cnt+(th?' ครั้ง':' WR'),'gray')+'</div>'+'<div style="font-size:11px;color:var(--color-neutral-700)">'+(th?'ค่าใช้จ่ายสะสม ':'total cost ')+fmMoney(r.cost)+'</div>');
+  }).join('') + '</div>';
+}
+
 function fmWR(){
   const th = ST.lang==='th';
-  const wr = fmDB('wr').slice().sort(function(a,b){ return new Date(b.date||0) - new Date(a.date||0); });
-  const stMap = { open:['เปิดงาน','Open','orange'], inprogress:['กำลังดำเนินการ','In Progress','sky'], arrived:['ถึงหน้างาน','Arrived','sky'], closed:['ปิดงานแล้ว','Closed','green'], cancelled:['ยกเลิก','Cancelled','gray'] };
-  const prMap = { critical:['วิกฤต','Critical','red'], high:['สูง','High','orange'], normal:['ปกติ','Normal','green'] };
-  if(!wr.length) return fmEmpty(th?'ไม่มีข้อมูลงานแจ้งซ่อม':'No work requests');
-  return '<div style="display:flex;flex-direction:column;gap:8px">' + wr.slice(0,20).map(function(w){
-    const st = stMap[w.status] || [w.status,w.status,'gray'];
-    const pr = prMap[w.priority] || [w.priority,w.priority,'gray'];
-    return fmCard(
-      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(w.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
-      +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc((w.desc||'').slice(0,70))+'</div>'
-      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip(th?pr[0]:pr[1], pr[2])+(w.assetId?fmChip(w.assetId,'gray'):'')+(w.assign?fmChip(w.assign,'gray'):'')+'</div>'
-    );
-  }).join('') + '</div>';
+  const sub = ST.wrSub || 'overview';
+  let body = '';
+  if(sub==='overview') body = wrOverview();
+  else if(sub==='new') body = wrNew();
+  else if(sub==='inprogress') body = wrInProgress();
+  else if(sub==='closed') body = wrClosed();
+  else if(sub==='evaluate') body = wrEvaluate();
+  else if(sub==='summarize') body = wrSummarize();
+  else if(sub==='maintain') body = wrMaintainability();
+  else if(sub==='sla') body = wrSLA();
+  else if(sub==='repeated') body = wrRepeated();
+  else if(sub==='reopt') body = wrReOpt();
+  else if(sub==='history') body = wrHistory();
+  return '<div style="display:flex;flex-direction:column;gap:10px">' + wrSubTabs(sub) + body + '</div>';
 }
 
 function fmOM(){
@@ -704,11 +909,12 @@ document.addEventListener('click', function(e){
   else if(act==='tab-ops'){ ST.tab='ops'; ST.screen='main'; ST.activeModule=null; render(); }
   else if(act==='tab-lifestyle'){ ST.tab='lifestyle'; ST.screen='main'; ST.activeModule=null; render(); }
   else if(act==='tab-profile'){ ST.tab='profile'; ST.screen='main'; ST.activeModule=null; render(); }
-  else if(act==='open-module'){ const key = el.getAttribute('data-key'); ST.activeModule = key; ST.fromTab = ST.tab; ST.screen = 'module'; if(key==='fm') ST.fmSub='overview'; render(); loadModuleData(key); }
+  else if(act==='open-module'){ const key = el.getAttribute('data-key'); ST.activeModule = key; ST.fromTab = ST.tab; ST.screen = 'module'; if(key==='fm'){ ST.fmSub='overview'; ST.wrSub='overview'; } render(); loadModuleData(key); }
   else if(act==='module-back'){ ST.screen = 'main'; ST.tab = ST.fromTab || 'ops'; ST.activeModule = null; render(); }
   else if(act==='open-full-app'){ e.preventDefault(); const key = el.getAttribute('data-key'); const url = MODULE_URLS[key]; if(url) window.location.href = url; }
   else if(act==='retry-module'){ const key = el.getAttribute('data-key'); loadModuleData(key); }
-  else if(act==='fm-sub'){ ST.fmSub = el.getAttribute('data-sub'); render(); }
+  else if(act==='fm-sub'){ ST.fmSub = el.getAttribute('data-sub'); if(ST.fmSub!=='wr') ST.wrSub='overview'; render(); }
+  else if(act==='wr-sub'){ ST.wrSub = el.getAttribute('data-sub'); render(); }
   else if(act==='lifestyle-market'){ ST.lifestyleSub='market'; render(); }
   else if(act==='lifestyle-coffee'){ ST.lifestyleSub='coffee'; render(); }
   else if(act==='goto-market'){ window.location.href = '/TKO_IsanFoodMarket/'; }
