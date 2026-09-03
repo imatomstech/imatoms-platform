@@ -161,6 +161,7 @@ const ST = {
   modData: {},   // per-module light data cache: { fm:{}, iot:{}, mv:{}, advisory:{}, bot:{} }
   modLoading: {},
   fromTab: 'ops', // tab to return to when leaving a module screen
+  fmSub: 'overview', // FM module sub-tab: overview | wr | om | ppm | ma | inv
 };
 
 function setLang(l){ ST.lang = l; try{ localStorage.setItem(LS.lang, l); }catch(e){} render(); }
@@ -442,27 +443,137 @@ function modErrorBlock(key){
     +'<button class="btn btn-secondary" data-act="retry-module" data-key="'+key+'">'+t.retry+'</button></div>';
 }
 
+/* FM shares its real operating data with the webapp via the same-origin
+   localStorage store the webapp itself uses (key prefix 'tko_v2_') —
+   this is a genuine live connection, not a copy: WR/PPM/MA/Inventory
+   edits made in the webapp appear here immediately, and vice versa. */
+function fmDB(k){ try{ const v = localStorage.getItem('tko_v2_'+k); return v ? JSON.parse(v) : []; }catch(e){ return []; } }
+function fmMoney(n){ return '฿' + Math.round(n||0).toLocaleString(); }
+function fmChip(label, kind){
+  const colors = { red:'var(--danger)', orange:'var(--orange)', green:'var(--green)', sky:'var(--sky)', gray:'var(--color-neutral-600)' };
+  const c = colors[kind] || colors.gray;
+  return '<span style="font-size:10px;font-weight:600;color:'+c+';border:1px solid '+c+';padding:2px 7px;border-radius:20px;white-space:nowrap">'+esc(label)+'</span>';
+}
+function fmCard(rows){
+  return '<div class="blueprint" style="padding:11px 12px;display:flex;flex-direction:column;gap:4px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'+rows+'</div>';
+}
+function fmEmpty(msg){ return '<div style="font-size:12px;color:var(--color-neutral-700);text-align:center;padding:18px 0">'+esc(msg)+'</div>'; }
+
+function fmSubTabs(active){
+  const th = ST.lang==='th';
+  const tabs = [
+    { k:'overview', label: th?'ภาพรวม':'Overview' },
+    { k:'wr', label:'WR' },
+    { k:'om', label:'OM' },
+    { k:'ppm', label:'PPM' },
+    { k:'ma', label: th?'สัญญา MA':'MA' },
+    { k:'inv', label: th?'คลังพัสดุ':'Inventory' },
+  ];
+  return '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch">'
+    + tabs.map(function(x){
+        return '<div class="tap" data-act="fm-sub" data-sub="'+x.k+'" style="flex-shrink:0;font-size:12px;font-weight:600;padding:7px 12px;border-radius:20px;border:1px solid '+(active===x.k?'var(--color-accent)':'var(--color-divider)')+';background:'+(active===x.k?'var(--color-accent)':'transparent')+';color:'+(active===x.k?'#fff':'var(--color-text)')+'">'+esc(x.label)+'</div>';
+      }).join('')
+    +'</div>';
+}
+
+function fmOverview(){
+  const t = L();
+  const wr = fmDB('wr'), ppm = fmDB('ppm'), ma = fmDB('ma');
+  const openCnt = wr.filter(function(w){return w.status==='open';}).length;
+  const ipCnt = wr.filter(function(w){return w.status==='inprogress'||w.status==='arrived';}).length;
+  const now = new Date();
+  const pmDue = ppm.filter(function(p){ if(p.status==='done'||!p.planDate) return false; const d=(new Date(p.planDate)-now)/86400000; return d<=30; }).length;
+  const maExp = ma.filter(function(m){return m.status==='expiring'||m.status==='expired';}).length;
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + statCard(t.kOpen, openCnt) + statCard(t.kProgress, ipCnt) + statCard(t.kPm, pmDue) + statCard(ST.lang==='th'?'สัญญาใกล้/หมดอายุ':'MA Expiring/Expired', maExp)
+    +'</div>';
+}
+
+function fmWR(){
+  const th = ST.lang==='th';
+  const wr = fmDB('wr').slice().sort(function(a,b){ return new Date(b.date||0) - new Date(a.date||0); });
+  const stMap = { open:['เปิดงาน','Open','orange'], inprogress:['กำลังดำเนินการ','In Progress','sky'], arrived:['ถึงหน้างาน','Arrived','sky'], closed:['ปิดงานแล้ว','Closed','green'], cancelled:['ยกเลิก','Cancelled','gray'] };
+  const prMap = { critical:['วิกฤต','Critical','red'], high:['สูง','High','orange'], normal:['ปกติ','Normal','green'] };
+  if(!wr.length) return fmEmpty(th?'ไม่มีข้อมูลงานแจ้งซ่อม':'No work requests');
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + wr.slice(0,20).map(function(w){
+    const st = stMap[w.status] || [w.status,w.status,'gray'];
+    const pr = prMap[w.priority] || [w.priority,w.priority,'gray'];
+    return fmCard(
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(w.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
+      +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc((w.desc||'').slice(0,70))+'</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip(th?pr[0]:pr[1], pr[2])+(w.assetId?fmChip(w.assetId,'gray'):'')+(w.assign?fmChip(w.assign,'gray'):'')+'</div>'
+    );
+  }).join('') + '</div>';
+}
+
+function fmOM(){
+  const th = ST.lang==='th';
+  return fmCard(
+    '<div style="font-family:var(--font-heading);font-size:14px">'+(th?'ระบบ Operation (OM)':'Operation System (OM)')+'</div>'
+    +'<div style="font-size:12px;color:var(--color-neutral-700);margin-top:2px">'+(th?'Checklist ตรวจสอบความพร้อมใช้งานรายวัน — ดูรายละเอียดฉบับเต็มในเว็บแอป':'Daily readiness checklists — view full detail in the web app')+'</div>'
+  );
+}
+
+function fmPPM(){
+  const th = ST.lang==='th';
+  const ppm = fmDB('ppm').slice().sort(function(a,b){ return new Date(a.planDate||0) - new Date(b.planDate||0); });
+  const stMap = { planned:['กำหนดการ','Planned','orange'], done:['เสร็จสิ้น','Done','green'], overdue:['เกินกำหนด','Overdue','red'], inprogress:['กำลังทำ','In Progress','sky'] };
+  if(!ppm.length) return fmEmpty(th?'ไม่มีแผนงาน PM':'No PM plans');
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + ppm.slice(0,20).map(function(p){
+    const overdue = p.planDate && new Date(p.planDate) < new Date() && p.status!=='done';
+    const st = stMap[overdue ? 'overdue' : p.status] || [p.status,p.status,'gray'];
+    return fmCard(
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(p.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
+      +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc(p.name||'')+'</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+(p.sys?fmChip(p.sys,'gray'):'')+(p.planDate?fmChip(p.planDate,'gray'):'')+(p.assign?fmChip(p.assign,'gray'):'')+'</div>'
+    );
+  }).join('') + '</div>';
+}
+
+function fmMA(){
+  const th = ST.lang==='th';
+  const ma = fmDB('ma');
+  const stMap = { active:[th?'ใช้งานอยู่':'Active','green'], expiring:[th?'ใกล้หมดอายุ':'Expiring','orange'], expired:[th?'หมดอายุ':'Expired','red'] };
+  if(!ma.length) return fmEmpty(th?'ยังไม่มีสัญญา MA':'No MA contracts');
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + ma.map(function(m){
+    const st = stMap[m.status] || [m.status,'gray'];
+    return fmCard(
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(m.id)+'</span>'+fmChip(st[0], st[1])+'</div>'
+      +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc(m.vendor||'')+'</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+(m.end?fmChip((th?'ถึง ':'to ')+m.end,'gray'):'')+fmChip(fmMoney(m.value),'gray')+'</div>'
+    );
+  }).join('') + '</div>';
+}
+
+function fmInv(){
+  const th = ST.lang==='th';
+  const inv = fmDB('inv');
+  if(!inv.length) return fmEmpty(th?'ไม่มีรายการในคลัง':'No inventory items');
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + inv.slice(0,25).map(function(i){
+    const low = (i.qty||0) < (i.min||0);
+    return fmCard(
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(i.code||i.id)+'</span>'+fmChip(low?(th?'ใกล้หมด':'Low'):(th?'ปกติ':'OK'), low?'red':'green')+'</div>'
+      +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc(i.name||'')+'</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip((th?'คงเหลือ ':'Qty ')+(i.qty||0)+' '+(i.unit||''),'gray')+fmChip(fmMoney((i.qty||0)*(i.price||0)),'gray')+'</div>'
+    );
+  }).join('') + '</div>';
+}
+
 function screenModuleFM(){
   const t = L(); const mods = opsModules(); const m = mods.find(function(x){return x.key==='fm';});
-  const d = ST.dash;
-  const wo = (d && d.work_orders) || [];
-  const openCnt = (wo.find(function(r){return r.status==='open';})||{}).cnt || 0;
-  const ipCnt = (wo.find(function(r){return r.status==='in_progress';})||{}).cnt || 0;
-  const pm = d ? (d.pm_due_30days||0) : '–';
-  const notif = d ? (d.unread_notif||0) : '–';
-  const recent = (d && d.recent_work_orders) || [];
+  const sub = ST.fmSub || 'overview';
+  let body = '';
+  if(sub==='overview') body = fmOverview();
+  else if(sub==='wr') body = fmWR();
+  else if(sub==='om') body = fmOM();
+  else if(sub==='ppm') body = fmPPM();
+  else if(sub==='ma') body = fmMA();
+  else if(sub==='inv') body = fmInv();
   return '<div class="stack">'
     + modHeader(m.name, 'fm')
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-      + statCard(t.kOpen, openCnt) + statCard(t.kProgress, ipCnt) + statCard(t.kPm, pm) + statCard(t.kNotif, notif)
-    +'</div>'
-    +'<div><h4 style="font-size:14px;margin-bottom:8px">'+t.fmWoTitle+'</h4>'
-    + (recent.length ? '<div style="display:flex;flex-direction:column;gap:8px">' + recent.slice(0,6).map(function(w){
-        return '<div class="blueprint" style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-          +'<div style="font-size:12px">'+esc(w.title||w.subject||('WO#'+(w.id||'')))+'</div>'
-          +'<span class="tag '+(w.status==='open'?'tag-neutral':'tag-accent')+'">'+esc(w.status||'')+'</span></div>';
-      }).join('') + '</div>' : '<div style="font-size:12px;color:var(--color-neutral-700)">'+t.fmNoWo+'</div>')
-    +'</div></div>';
+    + fmSubTabs(sub)
+    + body
+    +'</div>';
 }
 
 function screenModuleIoT(){
@@ -593,10 +704,11 @@ document.addEventListener('click', function(e){
   else if(act==='tab-ops'){ ST.tab='ops'; ST.screen='main'; ST.activeModule=null; render(); }
   else if(act==='tab-lifestyle'){ ST.tab='lifestyle'; ST.screen='main'; ST.activeModule=null; render(); }
   else if(act==='tab-profile'){ ST.tab='profile'; ST.screen='main'; ST.activeModule=null; render(); }
-  else if(act==='open-module'){ const key = el.getAttribute('data-key'); ST.activeModule = key; ST.fromTab = ST.tab; ST.screen = 'module'; render(); loadModuleData(key); }
+  else if(act==='open-module'){ const key = el.getAttribute('data-key'); ST.activeModule = key; ST.fromTab = ST.tab; ST.screen = 'module'; if(key==='fm') ST.fmSub='overview'; render(); loadModuleData(key); }
   else if(act==='module-back'){ ST.screen = 'main'; ST.tab = ST.fromTab || 'ops'; ST.activeModule = null; render(); }
   else if(act==='open-full-app'){ e.preventDefault(); const key = el.getAttribute('data-key'); const url = MODULE_URLS[key]; if(url) window.location.href = url; }
   else if(act==='retry-module'){ const key = el.getAttribute('data-key'); loadModuleData(key); }
+  else if(act==='fm-sub'){ ST.fmSub = el.getAttribute('data-sub'); render(); }
   else if(act==='lifestyle-market'){ ST.lifestyleSub='market'; render(); }
   else if(act==='lifestyle-coffee'){ ST.lifestyleSub='coffee'; render(); }
   else if(act==='goto-market'){ window.location.href = '/TKO_IsanFoodMarket/'; }
@@ -651,7 +763,7 @@ async function loadDashboard(){
 /* light per-module data fetch — FM/M&V reuse the shared dashboard;
    only IoT needs its own call (bas.imatomstech.com sensor gateway). */
 async function loadModuleData(key){
-  if(key==='fm'){ if(!ST.dash) loadDashboard(); return; }
+  if(key==='fm'){ return; } /* FM reads live from shared localStorage — no fetch needed */
   if(key==='iot'){
     ST.modLoading.iot = true; ST.modData.iot = {}; render();
     try{
