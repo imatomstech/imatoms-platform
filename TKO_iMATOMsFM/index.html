@@ -8421,40 +8421,68 @@ function exportCSV(){
 function pbadge(p){const m={critical:'<span class="p-crit">🔴 Critical</span>',high:'<span class="p-high">🟡 High</span>',normal:'<span class="p-norm">🟢 Normal</span>'};return m[p]||'<span class="p-norm">'+p+'</span>';}
 function wrbdg(s){const m={open:'<span class="badge badge-yellow">⏳ Open</span>',inprogress:'<span class="badge badge-blue">🔵 Progress</span>',arrived:'<span class="badge badge-orange">📍 Arrived</span>',closed:'<span class="badge badge-green">✅ Closed</span>',cancelled:'<span class="badge badge-gray">❌ Cancelled</span>'};return m[s]||s;}
 function tbdg(t){const m={ER:'<span class="wr-er">ER</span>',CM:'<span class="wr-cm">CM</span>',PJ:'<span class="wr-pj">PJ</span>'};return m[t]||'<span class="tag">'+t+'</span>';}
+/* WR is wired to the real backend (/api/work-orders on api.imatomstech.com)
+   so it stays in sync with the Mobile App and across devices — no longer
+   a localStorage-only prototype. Each API row is normalized into the
+   same shape the render/UI code below already expects. */
+function normalizeWO(r){
+  return { id:r.wo_no, _dbId:r.id, assetId:r.asset_no||r.asset_name||(r.asset_id?('#'+r.asset_id):null),
+    desc:r.description, type:r.wo_type, priority:r.priority, reporter:r.reporter_name||r.requested_name,
+    phone:r.reporter_phone, date:r.created_at, status:r.status, assign:r.assigned_name,
+    mttr:r.mttr_hours!=null?parseFloat(r.mttr_hours):null, totalCost:r.total_cost!=null?parseFloat(r.total_cost):null,
+    responseTime:r.response_time_min!=null?Math.round(parseFloat(r.response_time_min)):null,
+    reviewed:r.reviewed, approvedBy:r.approved_name, closeDate:r.actual_end };
+}
 function fWR(f,el){wrF=f;document.querySelectorAll('#view-workrequest .tab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');renderWR();}
-function renderWR(){
-  WR=DB.get('wr',[]);
-  const op=WR.filter(w=>w.status==='open').length;const ip=WR.filter(w=>w.status==='inprogress').length;const cl=WR.filter(w=>w.status==='closed').length;const cr=WR.filter(w=>w.priority==='critical'&&w.status!=='closed').length;
+async function renderWR(){
+  try{ WR=(await API.get('/work-orders')).map(normalizeWO); }catch(e){ console.warn('WR load error:',e); WR=DB.get('wr',[]); }
+  const op=WR.filter(w=>w.status==='open').length;const ip=WR.filter(w=>w.status==='inprogress').length;const cl=WR.filter(w=>w.status==='closed'||w.status==='approved').length;const cr=WR.filter(w=>w.priority==='critical'&&w.status!=='closed').length;
   const ml=WR.filter(w=>w.mttr).map(w=>w.mttr);const am=ml.length?Math.round(ml.reduce((s,v)=>s+v,0)/ml.length*10)/10:null;
   document.getElementById('wk-op').textContent=op;document.getElementById('wk-ip').textContent=ip;document.getElementById('wk-cl').textContent=cl;document.getElementById('wk-mt').textContent=am||'—';document.getElementById('wk-cr').textContent=cr;
   const nb=document.getElementById('nb-wr');if(nb){nb.textContent=op+ip;nb.style.display=(op+ip>0)?'inline':'none';}
   const ss=(document.getElementById('wr-s')?.value||'').toLowerCase();const pf=document.getElementById('wr-fp')?.value||'';
-  let list=bFilter(WR).filter(w=>{if(wrF==='open')return w.status==='open';if(wrF==='inprogress')return w.status==='inprogress'||w.status==='arrived';if(wrF==='closed')return w.status==='closed';if(wrF==='cancelled')return w.status==='cancelled';return true;}).filter(w=>{if(ss&&!JSON.stringify(w).toLowerCase().includes(ss))return false;if(pf&&w.priority!==pf)return false;return true;});
-  document.getElementById('wr-tbody').innerHTML=list.length?list.map(w=>`<tr><td><span class="tag ffm">${w.id}</span></td><td><span class="tag">${w.assetId||'—'}</span></td><td>${tbdg(w.type)}</td><td style="max-width:160px;font-size:12px">${w.desc?.substring(0,40)||'—'}${w.desc?.length>40?'...':''}</td><td>${pbadge(w.priority)}</td><td style="font-size:12px">${w.reporter||'—'}</td><td style="font-size:11px">${w.date?new Date(w.date).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'}):'-'}</td><td style="font-size:12px">${w.assign||'—'}</td><td class="ffm tt" style="font-size:12px">${w.mttr?w.mttr+'h':'—'}</td><td class="ffm tg" style="font-size:12px">${w.totalCost?'฿'+w.totalCost.toLocaleString():'—'}</td><td>${wrbdg(w.status)}</td><td><div class="flex g6">${w.status==='open'?`<button class="btn btn-blue btn-xs" onclick="acceptWR('${w.id}')">รับงาน</button>`:''}${w.status==='inprogress'?`<button class="btn btn-success btn-xs" onclick="closeWR('${w.id}')">Complete</button>`:''}${w.status!=='cancelled'&&w.status!=='closed'?`<button class="btn btn-danger btn-xs" onclick="cancelWR('${w.id}')">✕</button>`:''}</div></td></tr>`).join(''):'<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล WR</td></tr>';
+  let list=bFilter(WR).filter(w=>{if(wrF==='open')return w.status==='open';if(wrF==='inprogress')return w.status==='inprogress'||w.status==='arrived';if(wrF==='closed')return w.status==='closed'||w.status==='approved';if(wrF==='cancelled')return w.status==='cancelled';return true;}).filter(w=>{if(ss&&!JSON.stringify(w).toLowerCase().includes(ss))return false;if(pf&&w.priority!==pf)return false;return true;});
+  document.getElementById('wr-tbody').innerHTML=list.length?list.map(w=>`<tr><td><span class="tag ffm">${w.id}</span></td><td><span class="tag">${w.assetId||'—'}</span></td><td>${tbdg(w.type)}</td><td style="max-width:160px;font-size:12px">${w.desc?.substring(0,40)||'—'}${w.desc?.length>40?'...':''}</td><td>${pbadge(w.priority)}</td><td style="font-size:12px">${w.reporter||'—'}</td><td style="font-size:11px">${w.date?new Date(w.date).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'}):'-'}</td><td style="font-size:12px">${w.assign||'—'}</td><td class="ffm tt" style="font-size:12px">${w.mttr?w.mttr+'h':'—'}</td><td class="ffm tg" style="font-size:12px">${w.totalCost?'฿'+w.totalCost.toLocaleString():'—'}</td><td>${wrbdg(w.status)}</td><td><div class="flex g6">${w.status==='open'?`<button class="btn btn-blue btn-xs" onclick="acceptWR('${w._dbId}')">รับงาน</button>`:''}${w.status==='inprogress'?`<button class="btn btn-success btn-xs" onclick="closeWR('${w._dbId}')">Complete</button>`:''}${w.status!=='cancelled'&&w.status!=='closed'?`<button class="btn btn-danger btn-xs" onclick="cancelWR('${w._dbId}')">✕</button>`:''}</div></td></tr>`).join(''):'<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล WR</td></tr>';
 }
-function saveWR(){
+async function saveWR(){
   const dc=document.getElementById('wri-dc').value.trim();if(!dc){alert('กรุณากรอกรายละเอียด');return;}
   const pr=document.querySelector('input[name="wri-pr"]:checked')?.value||'normal';
-  WR=DB.get('wr',[]);const id=`WR-${String(WR.length+1).padStart(4,'0')}`;
-  WR.push({id,assetId:document.getElementById('wri-as').value,desc:dc,type:document.getElementById('wri-tp').value,priority:pr,reporter:document.getElementById('wri-rp').value,phone:document.getElementById('wri-ph').value,date:new Date().toISOString(),status:'open',assign:null,mttr:null,laborCost:0,partsCost:0,totalCost:0,acceptTime:null,responseTime:null,businessGroup:myBG()});
-  DB.set('wr',WR);closeModal('m-wr');renderWR();
-  if(pr==='critical'){showToast(`🚨 CRITICAL: ${id} — ตอบสนองภายใน 5 นาที!`);lineNotify(`🚨 CRITICAL WR: ${id}\n${dc}`);}
-  else showToast(`✅ แจ้งซ่อม ${id} สำเร็จ`);
+  try{
+    const wo=await API.post('/work-orders',{
+      asset_id:document.getElementById('wri-as').value||null, wo_type:document.getElementById('wri-tp').value,
+      title:dc.slice(0,80), description:dc, priority:pr,
+      reporter_name:document.getElementById('wri-rp').value||null, reporter_phone:document.getElementById('wri-ph').value||null,
+      module:'reliability'
+    });
+    closeModal('m-wr');renderWR();
+    if(pr==='critical'){showToast(`🚨 CRITICAL: ${wo.wo_no} — ตอบสนองภายใน 5 นาที!`);lineNotify(`🚨 CRITICAL WR: ${wo.wo_no}\n${dc}`);}
+    else showToast(`✅ แจ้งซ่อม ${wo.wo_no} สำเร็จ`);
+  }catch(e){ alert('บันทึกไม่สำเร็จ: '+(e.message||e)); }
 }
-function acceptWR(id){
+async function acceptWR(dbId){
   const tech=prompt('ชื่อช่างที่รับงาน:');if(!tech)return;
-  WR=DB.get('wr',[]);const i=WR.findIndex(w=>w.id===id);if(i<0)return;
-  WR[i].status='inprogress';WR[i].assign=tech;WR[i].acceptTime=new Date().toISOString();
-  WR[i].responseTime=Math.round((new Date()-new Date(WR[i].date))/60000);
-  DB.set('wr',WR);renderWR();showToast(`✅ รับงาน ${id} — ${tech}`);
+  try{
+    const r=await fetch(API_BASE+'/work-orders/'+dbId+'/status',{method:'PATCH',headers:API.headers(),body:JSON.stringify({status:'inprogress'})});
+    await API._handle(r);
+    renderWR();showToast(`✅ รับงาน — ${tech}`);
+  }catch(e){ alert('รับงานไม่สำเร็จ: '+(e.message||e)); }
 }
-function closeWR(id){
-  WR=DB.get('wr',[]);const i=WR.findIndex(w=>w.id===id);if(i<0)return;
+async function closeWR(dbId){
   const lb=parseFloat(prompt('ค่าแรง (฿):','0'))||0;const pb=parseFloat(prompt('ค่าอะไหล่ (฿):','0'))||0;const mt=parseFloat(prompt('MTTR (ชั่วโมง):','1'))||1;
-  WR[i].status='closed';WR[i].closeDate=new Date().toISOString();WR[i].laborCost=lb;WR[i].partsCost=pb;WR[i].totalCost=lb+pb;WR[i].mttr=mt;
-  DB.set('wr',WR);renderWR();showToast(`✅ ปิดงาน ${id}`);
+  try{
+    const r=await fetch(API_BASE+'/work-orders/'+dbId+'/status',{method:'PATCH',headers:API.headers(),body:JSON.stringify({status:'closed',labor_hours:lb,parts_cost:pb,mttr_hours:mt})});
+    await API._handle(r);
+    renderWR();showToast(`✅ ปิดงาน`);
+  }catch(e){ alert('ปิดงานไม่สำเร็จ: '+(e.message||e)); }
 }
-function cancelWR(id){if(!confirm('ยกเลิก?'))return;WR=DB.get('wr',[]);const i=WR.findIndex(w=>w.id===id);if(i<0)return;WR[i].status='cancelled';DB.set('wr',WR);renderWR();}
+async function cancelWR(dbId){
+  if(!confirm('ยกเลิก?'))return;
+  try{
+    const r=await fetch(API_BASE+'/work-orders/'+dbId+'/status',{method:'PATCH',headers:API.headers(),body:JSON.stringify({status:'cancelled'})});
+    await API._handle(r);
+    renderWR();
+  }catch(e){ alert('ยกเลิกไม่สำเร็จ: '+(e.message||e)); }
+}
 
 // ══ PPM ══
 function fPPM(f,el){ppmF=f;document.querySelectorAll('#view-ppm .tab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');renderPPM();}

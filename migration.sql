@@ -150,6 +150,20 @@ CREATE TABLE IF NOT EXISTS work_orders (
   updated_at      TIMESTAMP DEFAULT NOW()
 );
 
+-- ============================================================
+-- ALTER TABLE work_orders — เพิ่ม columns สำหรับ Work Request (WR)
+-- workflow เต็มรูปแบบ: accept → close → evaluate/approve, SLA, MTTR
+-- ============================================================
+ALTER TABLE work_orders
+  ADD COLUMN IF NOT EXISTS accepted_at    TIMESTAMP,
+  ADD COLUMN IF NOT EXISTS mttr_hours     NUMERIC(6,2),
+  ADD COLUMN IF NOT EXISTS approved_by    INTEGER REFERENCES users(id),
+  ADD COLUMN IF NOT EXISTS approved_at    TIMESTAMP,
+  ADD COLUMN IF NOT EXISTS reviewed       BOOLEAN DEFAULT false,
+  ADD COLUMN IF NOT EXISTS reject_reason  TEXT,
+  ADD COLUMN IF NOT EXISTS reporter_name  VARCHAR(100),
+  ADD COLUMN IF NOT EXISTS reporter_phone VARCHAR(30);
+
 CREATE TABLE IF NOT EXISTS spare_parts (
   id            SERIAL PRIMARY KEY,
   building_id   INTEGER NOT NULL REFERENCES buildings(id) ON DELETE CASCADE,

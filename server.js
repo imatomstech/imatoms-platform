@@ -352,11 +352,14 @@ app.get('/api/work-orders', authMiddleware, async (req, res) => {
   const { status, wo_type, module, search } = req.query;
   try {
     let q = `SELECT wo.*, a.name as asset_name, a.asset_no,
-               u1.full_name as assigned_name, u2.full_name as requested_name
+               u1.full_name as assigned_name, u2.full_name as requested_name,
+               u3.full_name as approved_name,
+               EXTRACT(EPOCH FROM (wo.accepted_at - wo.created_at))/60 AS response_time_min
              FROM work_orders wo
              LEFT JOIN assets a ON a.id = wo.asset_id
              LEFT JOIN users u1 ON u1.id = wo.assigned_to
              LEFT JOIN users u2 ON u2.id = wo.requested_by
+             LEFT JOIN users u3 ON u3.id = wo.approved_by
              WHERE wo.building_id=$1`;
     const params = [req.user.building_id];
     let i = 2;
@@ -381,11 +384,11 @@ app.post('/api/work-orders', authMiddleware, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `INSERT INTO work_orders (building_id, wo_no, asset_id, wo_type, title, description, priority,
-         planned_start, planned_end, assigned_to, module, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+         planned_start, planned_end, assigned_to, module, created_by, reporter_name, reporter_phone)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
       [req.user.building_id, woNo, f.asset_id||null, f.wo_type||'corrective', f.title, f.description,
        f.priority||'medium', f.planned_start||null, f.planned_end||null, f.assigned_to||null,
-       f.module||'office', req.user.id]
+       f.module||'office', req.user.id, f.reporter_name||null, f.reporter_phone||null]
     );
     await audit(req.user.id, 'CREATE_WO', 'work_orders', rows[0].id, null, rows[0], req.ip);
     res.status(201).json(rows[0]);
@@ -393,23 +396,46 @@ app.post('/api/work-orders', authMiddleware, async (req, res) => {
 });
 
 app.patch('/api/work-orders/:id/status', authMiddleware, async (req, res) => {
-  const { status, action_taken, root_cause, labor_hours, parts_cost } = req.body;
+  const { status, action_taken, root_cause, labor_hours, parts_cost, mttr_hours, assigned_to } = req.body;
   try {
-    const extra = {};
-    if (status === 'in_progress') extra.actual_start = 'NOW()';
-    if (['completed','verified'].includes(status)) extra.actual_end = 'NOW()';
     const { rows } = await pool.query(
       `UPDATE work_orders SET status=$1, action_taken=COALESCE($2,action_taken),
          root_cause=COALESCE($3,root_cause), labor_hours=COALESCE($4,labor_hours),
          parts_cost=COALESCE($5,parts_cost),
-         actual_start=CASE WHEN $1='in_progress' AND actual_start IS NULL THEN NOW() ELSE actual_start END,
-         actual_end=CASE WHEN $1 IN ('completed','verified') THEN NOW() ELSE actual_end END,
+         total_cost=COALESCE($4,labor_cost,0)+COALESCE($5,parts_cost,0),
+         mttr_hours=COALESCE($8,mttr_hours),
+         assigned_to=COALESCE($9,assigned_to),
+         accepted_at=CASE WHEN $1 IN ('in_progress','inprogress') AND accepted_at IS NULL THEN NOW() ELSE accepted_at END,
+         actual_start=CASE WHEN $1 IN ('in_progress','arrived') AND actual_start IS NULL THEN NOW() ELSE actual_start END,
+         actual_end=CASE WHEN $1 IN ('completed','closed','verified') AND actual_end IS NULL THEN NOW() ELSE actual_end END,
          updated_at=NOW()
        WHERE id=$6 AND building_id=$7 RETURNING *`,
-      [status, action_taken, root_cause, labor_hours, parts_cost, req.params.id, req.user.building_id]
+      [status, action_taken, root_cause, labor_hours, parts_cost, req.params.id, req.user.building_id, mttr_hours, assigned_to]
     );
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    await audit(req.user.id, 'UPDATE_WO_STATUS', 'work_orders', rows[0].id, null, rows[0], req.ip);
     res.json(rows[0]);
-  } catch (e) { res.status(500).json({ error: 'Server error' }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+// Evaluate & Approve — reviews a closed WR; approve or send back for rework
+app.patch('/api/work-orders/:id/evaluate', authMiddleware, async (req, res) => {
+  const { approved, reject_reason } = req.body;
+  try {
+    const { rows } = await pool.query(
+      approved
+        ? `UPDATE work_orders SET status='approved', reviewed=true, approved_by=$1, approved_at=NOW(),
+             reject_reason=NULL, updated_at=NOW()
+           WHERE id=$2 AND building_id=$3 RETURNING *`
+        : `UPDATE work_orders SET status='in_progress', reviewed=false, approved_by=NULL, approved_at=NULL,
+             reject_reason=$4, updated_at=NOW()
+           WHERE id=$2 AND building_id=$3 RETURNING *`,
+      approved ? [req.user.id, req.params.id, req.user.building_id] : [null, req.params.id, req.user.building_id, reject_reason||null]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    await audit(req.user.id, approved?'APPROVE_WO':'REJECT_WO', 'work_orders', rows[0].id, null, rows[0], req.ip);
+    res.json(rows[0]);
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
 });
 
 // ══════════════════════════════════════════════════════════════

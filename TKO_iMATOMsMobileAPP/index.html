@@ -471,6 +471,32 @@ function fmCard(rows){
 }
 function fmEmpty(msg){ return '<div style="font-size:12px;color:var(--color-neutral-700);text-align:center;padding:18px 0">'+esc(msg)+'</div>'; }
 
+/* WR is wired to the real backend (/api/work-orders on api.imatomstech.com) —
+   the same endpoint the FM webapp's WR module now writes to — so this is a
+   genuine live connection across devices, not a localStorage copy. */
+function normalizeWO(r){
+  return { id:r.wo_no, assetId:r.asset_no||r.asset_name||(r.asset_id?('#'+r.asset_id):null),
+    desc:r.description, type:r.wo_type, priority:r.priority, reporter:r.reporter_name||r.requested_name,
+    date:r.created_at, status:r.status, assign:r.assigned_name,
+    mttr:r.mttr_hours!=null?parseFloat(r.mttr_hours):null, totalCost:r.total_cost!=null?parseFloat(r.total_cost):null,
+    responseTime:r.response_time_min!=null?Math.round(parseFloat(r.response_time_min)):null,
+    approvedBy:r.approved_name, closeDate:r.actual_end };
+}
+function wrData(){ return (ST.modData.fm && ST.modData.fm.wr) || []; }
+async function loadFmWR(){
+  ST.modLoading.wr = true; render();
+  try{
+    const rows = await api('/work-orders');
+    ST.modData.fm = ST.modData.fm || {};
+    ST.modData.fm.wr = (rows||[]).map(normalizeWO);
+    ST.modData.fm.wrError = false;
+  }catch(err){
+    ST.modData.fm = ST.modData.fm || {};
+    ST.modData.fm.wrError = true;
+  }
+  ST.modLoading.wr = false; render();
+}
+
 function fmSubTabs(active){
   const th = ST.lang==='th';
   const tabs = [
@@ -490,7 +516,7 @@ function fmSubTabs(active){
 
 function fmOverview(){
   const t = L();
-  const wr = fmDB('wr'), ppm = fmDB('ppm'), ma = fmDB('ma');
+  const wr = wrData(), ppm = fmDB('ppm'), ma = fmDB('ma');
   const openCnt = wr.filter(function(w){return w.status==='open';}).length;
   const ipCnt = wr.filter(function(w){return w.status==='inprogress'||w.status==='arrived';}).length;
   const now = new Date();
@@ -561,7 +587,7 @@ function wrSubTabs(active){
 
 function wrOverview(){
   const th = ST.lang==='th';
-  const wr = fmDB('wr');
+  const wr = wrData();
   const open = wr.filter(function(w){return w.status==='open';});
   const ip = wr.filter(function(w){return w.status==='inprogress'||w.status==='arrived';});
   const closed = wr.filter(function(w){return w.status==='closed'||w.status==='approved';});
@@ -590,13 +616,13 @@ function wrOverview(){
     + (trendSrc.length ? '<div style="margin-top:10px">'+fmCard('<div style="font-size:12px;font-weight:600;margin-bottom:4px">'+(th?'แนวโน้ม MTTR (10 งานล่าสุด)':'MTTR Trend (last 10)')+'</div>'+wrSpark(trendSrc.map(function(w){return w.mttr;}), 'var(--color-accent)')) +'</div>' : '');
 }
 
-function wrNew(){ const th=ST.lang==='th'; return wrListHtml(fmDB('wr').filter(function(w){return w.status==='open';}).sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);}), th, th?'ไม่มีงานแจ้งใหม่':'No new work requests'); }
-function wrInProgress(){ const th=ST.lang==='th'; return wrListHtml(fmDB('wr').filter(function(w){return w.status==='inprogress'||w.status==='arrived';}).sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);}), th, th?'ไม่มีงานที่กำลังดำเนินการ':'Nothing in progress'); }
-function wrClosed(){ const th=ST.lang==='th'; return wrListHtml(fmDB('wr').filter(function(w){return w.status==='closed'||w.status==='approved';}).sort(function(a,b){return new Date(b.closeDate||b.date||0)-new Date(a.closeDate||a.date||0);}), th, th?'ยังไม่มีงานที่ปิดแล้ว':'No closed work requests'); }
+function wrNew(){ const th=ST.lang==='th'; return wrListHtml(wrData().filter(function(w){return w.status==='open';}).sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);}), th, th?'ไม่มีงานแจ้งใหม่':'No new work requests'); }
+function wrInProgress(){ const th=ST.lang==='th'; return wrListHtml(wrData().filter(function(w){return w.status==='inprogress'||w.status==='arrived';}).sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);}), th, th?'ไม่มีงานที่กำลังดำเนินการ':'Nothing in progress'); }
+function wrClosed(){ const th=ST.lang==='th'; return wrListHtml(wrData().filter(function(w){return w.status==='closed'||w.status==='approved';}).sort(function(a,b){return new Date(b.closeDate||b.date||0)-new Date(a.closeDate||a.date||0);}), th, th?'ยังไม่มีงานที่ปิดแล้ว':'No closed work requests'); }
 
 function wrEvaluate(){
   const th = ST.lang==='th';
-  const wr = fmDB('wr');
+  const wr = wrData();
   const pending = wr.filter(function(w){ return w.status==='closed' && !w.approvedBy; });
   const approved = wr.filter(function(w){ return w.status==='approved' || (w.status==='closed' && w.approvedBy); });
   return '<div><h4 style="font-size:13px;margin-bottom:6px">'+(th?'รอตรวจสอบ/อนุมัติ':'Pending Review')+' ('+pending.length+')</h4>'
@@ -608,7 +634,7 @@ function wrEvaluate(){
 
 function wrSummarize(){
   const th = ST.lang==='th';
-  const wr = fmDB('wr');
+  const wr = wrData();
   const byPr = {};
   wr.forEach(function(w){ const k=w.priority||'normal'; byPr[k]=(byPr[k]||0)+1; });
   const prRows = Object.keys(byPr).map(function(k){ const pr=WR_PRIORITY_MAP[k]||[k,k,'gray']; return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px">'+esc(th?pr[0]:pr[1])+'</span>'+fmChip(String(byPr[k]),pr[2])+'</div>'); }).join('');
@@ -625,7 +651,7 @@ function wrSummarize(){
 
 function wrMaintainability(){
   const th = ST.lang==='th';
-  const closed = fmDB('wr').filter(function(w){ return (w.status==='closed'||w.status==='approved') && w.mttr; });
+  const closed = wrData().filter(function(w){ return (w.status==='closed'||w.status==='approved') && w.mttr; });
   const withPct = closed.map(function(w){
     const target = WR_TYPE_TARGET_H[w.type] || 8;
     const pct = Math.round((1-Math.exp(-target/w.mttr))*100);
@@ -641,7 +667,7 @@ function wrMaintainability(){
 
 function wrSLA(){
   const th = ST.lang==='th';
-  const wr = fmDB('wr').filter(function(w){ return w.responseTime!=null && w.priority; });
+  const wr = wrData().filter(function(w){ return w.responseTime!=null && w.priority; });
   const met = wr.filter(function(w){ return w.responseTime <= (SLA_TARGETS_MIN[w.priority]||480); });
   const breach = wr.filter(function(w){ return w.responseTime > (SLA_TARGETS_MIN[w.priority]||480); });
   const pct = wr.length ? Math.round(met.length/wr.length*100) : null;
@@ -656,7 +682,7 @@ function wrSLA(){
 
 function wrRepeated(){
   const th = ST.lang==='th';
-  const wr = fmDB('wr');
+  const wr = wrData();
   const byAsset = {};
   wr.forEach(function(w){ if(!w.assetId) return; (byAsset[w.assetId]=byAsset[w.assetId]||[]).push(w); });
   const repeated = Object.keys(byAsset).map(function(k){ return {assetId:k, items:byAsset[k]}; }).filter(function(x){return x.items.length>=2;}).sort(function(a,b){return b.items.length-a.items.length;});
@@ -683,7 +709,7 @@ function wrReOpt(){
 
 function wrHistory(){
   const th = ST.lang==='th';
-  const wr = fmDB('wr');
+  const wr = wrData();
   const byAsset = {};
   wr.forEach(function(w){ if(!w.assetId) return; (byAsset[w.assetId]=byAsset[w.assetId]||[]).push(w); });
   const rows = Object.keys(byAsset).map(function(k){ const items=byAsset[k]; return { assetId:k, cnt:items.length, cost: items.reduce(function(s,w){return s+(w.totalCost||0);},0) }; }).sort(function(a,b){return b.cnt-a.cnt;});
@@ -696,6 +722,8 @@ function wrHistory(){
 function fmWR(){
   const th = ST.lang==='th';
   const sub = ST.wrSub || 'overview';
+  if(ST.modLoading.wr) return wrSubTabs(sub) + '<div style="text-align:center;padding:30px 0;color:var(--color-neutral-600);font-size:13px">'+(th?'กำลังโหลดข้อมูล…':'Loading data…')+'</div>';
+  if(ST.modData.fm && ST.modData.fm.wrError) return wrSubTabs(sub) + '<div class="blueprint" style="padding:14px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:12px;color:var(--danger);margin-bottom:8px">'+(th?'โหลดข้อมูลไม่สำเร็จ':'Failed to load data')+'</div><button class="btn btn-secondary" data-act="retry-wr">'+(th?'ลองอีกครั้ง':'Retry')+'</button></div>';
   let body = '';
   if(sub==='overview') body = wrOverview();
   else if(sub==='new') body = wrNew();
@@ -913,8 +941,9 @@ document.addEventListener('click', function(e){
   else if(act==='module-back'){ ST.screen = 'main'; ST.tab = ST.fromTab || 'ops'; ST.activeModule = null; render(); }
   else if(act==='open-full-app'){ e.preventDefault(); const key = el.getAttribute('data-key'); const url = MODULE_URLS[key]; if(url) window.location.href = url; }
   else if(act==='retry-module'){ const key = el.getAttribute('data-key'); loadModuleData(key); }
-  else if(act==='fm-sub'){ ST.fmSub = el.getAttribute('data-sub'); if(ST.fmSub!=='wr') ST.wrSub='overview'; render(); }
+  else if(act==='fm-sub'){ ST.fmSub = el.getAttribute('data-sub'); if(ST.fmSub!=='wr') ST.wrSub='overview'; render(); if(ST.fmSub==='wr' && !wrData().length && !(ST.modData.fm&&ST.modData.fm.wrError)) loadFmWR(); }
   else if(act==='wr-sub'){ ST.wrSub = el.getAttribute('data-sub'); render(); }
+  else if(act==='retry-wr'){ loadFmWR(); }
   else if(act==='lifestyle-market'){ ST.lifestyleSub='market'; render(); }
   else if(act==='lifestyle-coffee'){ ST.lifestyleSub='coffee'; render(); }
   else if(act==='goto-market'){ window.location.href = '/TKO_IsanFoodMarket/'; }
@@ -969,7 +998,7 @@ async function loadDashboard(){
 /* light per-module data fetch — FM/M&V reuse the shared dashboard;
    only IoT needs its own call (bas.imatomstech.com sensor gateway). */
 async function loadModuleData(key){
-  if(key==='fm'){ return; } /* FM reads live from shared localStorage — no fetch needed */
+  if(key==='fm'){ loadFmWR(); return; } /* WR now comes from the real /api/work-orders backend */
   if(key==='iot'){
     ST.modLoading.iot = true; ST.modData.iot = {}; render();
     try{
