@@ -578,10 +578,13 @@ function wrSubTabs(active){
     { k:'reopt', label:'Re-OPT' },
     { k:'history', label: th?'ประวัติ':'History' },
   ];
-  return '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch">'
+  return '<div style="display:flex;align-items:center;gap:6px">'
+    +'<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;flex:1">'
     + tabs.map(function(x){
         return '<div class="tap" data-act="wr-sub" data-sub="'+x.k+'" style="flex-shrink:0;font-size:11px;font-weight:600;padding:6px 11px;border-radius:20px;border:1px solid '+(active===x.k?'var(--color-accent)':'var(--color-divider)')+';background:'+(active===x.k?'var(--color-accent)':'transparent')+';color:'+(active===x.k?'#fff':'var(--color-text)')+'">'+esc(x.label)+'</div>';
       }).join('')
+    +'</div>'
+    +'<div class="tap" data-act="refresh-wr" title="'+(th?'รีเฟรชข้อมูล':'Refresh')+'" style="flex-shrink:0;width:30px;height:30px;border-radius:50%;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;'+(ST.modLoading.wr?'opacity:.5':'')+'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7"></path><path d="M21 3v6h-6"></path></svg></div>'
     +'</div>';
 }
 
@@ -941,7 +944,8 @@ document.addEventListener('click', function(e){
   else if(act==='module-back'){ ST.screen = 'main'; ST.tab = ST.fromTab || 'ops'; ST.activeModule = null; render(); }
   else if(act==='open-full-app'){ e.preventDefault(); const key = el.getAttribute('data-key'); const url = MODULE_URLS[key]; if(url) window.location.href = url; }
   else if(act==='retry-module'){ const key = el.getAttribute('data-key'); loadModuleData(key); }
-  else if(act==='fm-sub'){ ST.fmSub = el.getAttribute('data-sub'); if(ST.fmSub!=='wr') ST.wrSub='overview'; render(); if(ST.fmSub==='wr' && !wrData().length && !(ST.modData.fm&&ST.modData.fm.wrError)) loadFmWR(); }
+  else if(act==='fm-sub'){ ST.fmSub = el.getAttribute('data-sub'); if(ST.fmSub!=='wr') ST.wrSub='overview'; render(); if(ST.fmSub==='wr') loadFmWR(); }
+  else if(act==='refresh-wr'){ loadFmWR(); }
   else if(act==='wr-sub'){ ST.wrSub = el.getAttribute('data-sub'); render(); }
   else if(act==='retry-wr'){ loadFmWR(); }
   else if(act==='lifestyle-market'){ ST.lifestyleSub='market'; render(); }
