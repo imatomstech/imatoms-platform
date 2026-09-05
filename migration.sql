@@ -162,7 +162,11 @@ ALTER TABLE work_orders
   ADD COLUMN IF NOT EXISTS reviewed       BOOLEAN DEFAULT false,
   ADD COLUMN IF NOT EXISTS reject_reason  TEXT,
   ADD COLUMN IF NOT EXISTS reporter_name  VARCHAR(100),
-  ADD COLUMN IF NOT EXISTS reporter_phone VARCHAR(30);
+  ADD COLUMN IF NOT EXISTS reporter_phone VARCHAR(30),
+  ADD COLUMN IF NOT EXISTS assigned_name_text VARCHAR(150), -- technician name when not a system user account
+  ADD COLUMN IF NOT EXISTS meta JSONB DEFAULT '{}'::jsonb;   -- lossless bucket for extra client-side WR fields
+-- wo_no already has a UNIQUE constraint from the original CREATE TABLE, so
+-- ON CONFLICT (wo_no) in the sync endpoint below works without a new index.
 
 CREATE TABLE IF NOT EXISTS spare_parts (
   id            SERIAL PRIMARY KEY,

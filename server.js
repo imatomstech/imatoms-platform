@@ -352,7 +352,8 @@ app.get('/api/work-orders', authMiddleware, async (req, res) => {
   const { status, wo_type, module, search } = req.query;
   try {
     let q = `SELECT wo.*, a.name as asset_name, a.asset_no,
-               u1.full_name as assigned_name, u2.full_name as requested_name,
+               COALESCE(u1.full_name, wo.assigned_name_text) as assigned_name,
+               u2.full_name as requested_name,
                u3.full_name as approved_name,
                EXTRACT(EPOCH FROM (wo.accepted_at - wo.created_at))/60 AS response_time_min
              FROM work_orders wo
@@ -416,6 +417,59 @@ app.patch('/api/work-orders/:id/status', authMiddleware, async (req, res) => {
     await audit(req.user.id, 'UPDATE_WO_STATUS', 'work_orders', rows[0].id, null, rows[0], req.ip);
     res.json(rows[0]);
   } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+// Bulk sync — used by the Reliability Module (client-side WR prototype) to
+// upsert its whole in-memory WR list into the real database by wo_no, so it
+// stays connected to the same backend as the simpler WR view and Mobile App.
+app.post('/api/work-orders/sync', authMiddleware, async (req, res) => {
+  const items = Array.isArray(req.body.items) ? req.body.items : [];
+  const out = [];
+  try {
+    for (const it of items) {
+      let assetDbId = null;
+      if (it.assetId) {
+        const { rows: ar } = await pool.query(
+          `SELECT id FROM assets WHERE building_id=$1 AND (asset_no=$2 OR id::text=$2) LIMIT 1`,
+          [req.user.building_id, String(it.assetId)]
+        );
+        assetDbId = ar[0] ? ar[0].id : null;
+      }
+      const title = (it.desc || it.title || it.id || 'Work Request').slice(0, 200);
+      // Everything not already mapped to a typed column is preserved
+      // losslessly in `meta`, so client-only fields (signatures, eval notes,
+      // location snapshot, etc.) survive a round trip through the backend.
+      const KNOWN = ['id','assetId','desc','type','priority','reporter','phone','status',
+        'assign','laborCost','partsCost','totalCost','mttr','acceptTime','closeDate',
+        'reviewed','evalRejectReason','date','title'];
+      const meta = {};
+      for (const key in it) { if (!KNOWN.includes(key)) meta[key] = it[key]; }
+      const { rows } = await pool.query(
+        `INSERT INTO work_orders (
+           building_id, wo_no, asset_id, wo_type, title, description, priority, status,
+           reporter_name, reporter_phone, assigned_name_text, labor_cost, parts_cost, total_cost,
+           mttr_hours, accepted_at, actual_end, reviewed, reject_reason, module, created_by, created_at, meta
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,'reliability',$20,COALESCE($21,NOW()),$22)
+         ON CONFLICT (wo_no) DO UPDATE SET
+           asset_id=EXCLUDED.asset_id, wo_type=EXCLUDED.wo_type, title=EXCLUDED.title,
+           description=EXCLUDED.description, priority=EXCLUDED.priority, status=EXCLUDED.status,
+           reporter_name=EXCLUDED.reporter_name, reporter_phone=EXCLUDED.reporter_phone,
+           assigned_name_text=EXCLUDED.assigned_name_text, labor_cost=EXCLUDED.labor_cost,
+           parts_cost=EXCLUDED.parts_cost, total_cost=EXCLUDED.total_cost, mttr_hours=EXCLUDED.mttr_hours,
+           accepted_at=COALESCE(work_orders.accepted_at, EXCLUDED.accepted_at),
+           actual_end=EXCLUDED.actual_end, reviewed=EXCLUDED.reviewed, reject_reason=EXCLUDED.reject_reason,
+           meta=EXCLUDED.meta, updated_at=NOW()
+         RETURNING *`,
+        [req.user.building_id, it.id, assetDbId, it.type||'CM', title, it.desc||null,
+         it.priority||'normal', it.status||'open', it.reporter||null, it.phone||null, it.assign||null,
+         it.laborCost||0, it.partsCost||0, it.totalCost||0, it.mttr||null,
+         it.acceptTime||null, it.closeDate||null, !!it.reviewed, it.evalRejectReason||null,
+         req.user.id, it.date||null, JSON.stringify(meta)]
+      );
+      out.push(rows[0]);
+    }
+    res.json(out);
+  } catch (e) { console.error('WR sync error:', e); res.status(500).json({ error: 'Sync failed' }); }
 });
 
 // Evaluate & Approve — reviews a closed WR; approve or send back for rework

@@ -2697,6 +2697,7 @@ body.embedded #content {
 // ═══════════════════════════════════════════════════════════
 //  DATA STORE
 // ═══════════════════════════════════════════════════════════
+const RWR_API_BASE = 'https://api.imatomstech.com/api';
 const DB = {
   get: (k, d=[]) => { try { return JSON.parse(localStorage.getItem('alm_'+k)) ?? d; } catch { return d; } },
   set: (k, v) => {
@@ -2704,8 +2705,52 @@ const DB = {
     // Mirror กลับไปให้ Asset Core (index.html หลัก) เห็นข้อมูลชุดเดียวกัน — sync 2 ทาง
     const sync=['wr','assets','ppm','ma','maVisits','inv','invtx','contract','operation','omRecords','omTemplates','omSchedule','omShiftTimes','ppmTemplates'];
     if(sync.includes(k)){ try{ localStorage.setItem('tko_v2_'+k, JSON.stringify(v)); }catch(e){} }
+    // WR is also pushed to the real backend (/api/work-orders/sync) so it
+    // stays connected to the FM webapp's simpler WR view and the Mobile App
+    // — same-origin login token (imatoms_jwt) is reused, no separate login.
+    if (k === 'wr') syncWRToBackend(v);
   },
 };
+
+let _wrSyncTimer = null;
+function syncWRToBackend(items){
+  clearTimeout(_wrSyncTimer);
+  _wrSyncTimer = setTimeout(async () => {
+    try{
+      const token = localStorage.getItem('imatoms_jwt');
+      if (!token) return; // not logged in via index.html in this browser yet
+      await fetch(RWR_API_BASE + '/work-orders/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ items: items || [] })
+      });
+    }catch(e){ console.warn('WR backend sync failed (kept locally):', e); }
+  }, 600); // debounce — avoid a network call per keystroke/rapid update
+}
+
+// Pull the latest WR data from the real backend on load, so this page picks
+// up work requests created elsewhere (webapp WR tab, Mobile App) too.
+async function loadWRFromBackend(){
+  try{
+    const token = localStorage.getItem('imatoms_jwt');
+    if (!token) return null;
+    const res = await fetch(RWR_API_BASE + '/work-orders', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    // meta first (client-only fields like signatures/eval notes), then the
+    // real DB columns layered on top so the database is always authoritative
+    // for any field it actually tracks.
+    return rows.map(r => Object.assign({}, r.meta || {}, {
+      id: r.wo_no, assetId: r.asset_no || r.asset_id || null, desc: r.description, type: r.wo_type,
+      priority: r.priority, reporter: r.reporter_name || r.requested_name, phone: r.reporter_phone,
+      date: r.created_at, status: r.status, assign: r.assigned_name, mttr: r.mttr_hours!=null?parseFloat(r.mttr_hours):null,
+      laborCost: r.labor_cost!=null?parseFloat(r.labor_cost):0, partsCost: r.parts_cost!=null?parseFloat(r.parts_cost):0,
+      totalCost: r.total_cost!=null?parseFloat(r.total_cost):0, closeDate: r.actual_end, acceptTime: r.accepted_at,
+      reviewed: r.reviewed, approvedBy: r.approved_name || (r.meta && r.meta.approvedBy) || null, evalRejectReason: r.reject_reason,
+      responseTime: r.response_time_min!=null?Math.round(parseFloat(r.response_time_min)):null,
+    }));
+  }catch(e){ console.warn('WR backend load failed, using local cache:', e); return null; }
+}
 
 // ═══════════════════════════════════════════════════════════
 //  SCHEMA BRIDGE — รองรับ Asset ทั้ง schema เก่า (dept/cost/buyDate/life/
@@ -2795,6 +2840,18 @@ function suggestAssetIdOld(){
 
 let assets = DB.get('assets', []).map(normalizeAsset);
 let workRequests = DB.get('wr', []);
+// Refresh from the real backend once the page has loaded so this dashboard
+// picks up WR created from the webapp's simpler WR tab or the Mobile App.
+(async () => {
+  const fresh = await loadWRFromBackend();
+  if (fresh) {
+    workRequests = fresh;
+    localStorage.setItem('alm_wr', JSON.stringify(workRequests)); // update cache only, skip re-sync loop
+    localStorage.setItem('tko_v2_wr', JSON.stringify(workRequests));
+    if (typeof renderWR === 'function') renderWR();
+    if (typeof refreshDashboard === 'function') refreshDashboard();
+  }
+})();
 let ppmList = DB.get('ppm', []);
 let ppmTemplates = DB.get('ppmTemplates', []);
 let maList = DB.get('ma', []);
