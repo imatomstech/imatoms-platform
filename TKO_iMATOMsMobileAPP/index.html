@@ -729,7 +729,7 @@ function wrOverview(){
 
 function wrNew(){
   const th=ST.lang==='th';
-  const btn = '<div class="tap" data-act="wr-new-open" style="font-size:12px;font-weight:700;padding:9px 14px;border-radius:10px;background:var(--color-accent);color:#fff;text-align:center;margin-bottom:8px">+ '+(th?'แจ้งงานใหม่':'New WR')+'</div>';
+  const btn = '<div style="display:flex"><div class="tap" data-act="wr-new-open" style="font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'แจ้งงานใหม่':'New WR')+'</div></div>';
   return btn + wrListHtml(wrData().filter(function(w){return w.status==='open';}).sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);}), th, th?'ไม่มีงานแจ้งใหม่':'No new work requests');
 }
 function wrInProgress(){ const th=ST.lang==='th'; return wrListHtml(wrData().filter(function(w){return w.status==='inprogress'||w.status==='arrived';}).sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);}), th, th?'ไม่มีงานที่กำลังดำเนินการ':'Nothing in progress'); }
@@ -834,7 +834,12 @@ function wrHistory(){
   }).join('') + '</div>';
 }
 
-const WR_TYPE_OPTIONS = ['BD','RM','CM','OM','PM','MA','Sub','PJ','OTH'];
+const WR_TYPE_OPTIONS = [ ['ER','🚨 Emergency (ER)'], ['CM','🔧 Corrective (CM)'], ['PJ','📋 Project (PJ)'] ];
+const WR_PRIORITY_FORM_OPTIONS = [
+  ['critical','🔴', 'ภายใน 5 นาที (Critical)', 'Within 5 min (Critical)'],
+  ['urgently','🟡', 'ภายใน 15 นาที (Urgently)', 'Within 15 min (Urgently)'],
+  ['normal','🟢', 'ภายใน 1 วัน (Normal)', 'Within 1 day (Normal)'],
+];
 
 function wrOverlayShell(inner){
   return '<div style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:flex-end;justify-content:center">'
@@ -888,6 +893,11 @@ function wrDetailOverlay(){
   );
 }
 
+function wrFormField(labelTh, labelEn, th, innerHtml){
+  return '<div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:600;color:var(--color-neutral-700);display:block;margin-bottom:4px">'+(th?labelTh:labelEn)+'</label>'+innerHtml+'</div>';
+}
+const wrInputStyle = 'width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);color:var(--color-text);font-size:12.5px;box-sizing:border-box';
+
 function wrFormOverlay(){
   if(!ST.wrFormOpen) return '';
   const th = ST.lang==='th';
@@ -895,29 +905,49 @@ function wrFormOverlay(){
   const user = getUser();
   return wrOverlayShell(
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
-    +'<span style="font-family:var(--font-heading);font-size:16px">'+(th?'แจ้งงานใหม่':'New Work Request')+'</span>'
-    +'<div class="tap" data-act="wr-new-close" style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--color-surface)">✕</div></div>'
+    +'<span style="font-family:var(--font-heading);font-size:15px">🔧 '+(th?'แจ้งงาน Work Request':'New Work Request')+'</span>'
+    +'<div class="tap" data-act="wr-new-close" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--color-surface);flex-shrink:0">✕</div></div>'
     +'<div style="display:flex;flex-direction:column;gap:10px">'
-    +'<div><label style="font-size:11px;color:var(--color-neutral-700)">'+(th?'อุปกรณ์ / Asset':'Asset')+'</label>'
-      +'<select id="wr-f-asset" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px">'
-      +'<option value="">'+(th?'— เลือกอุปกรณ์ —':'— Select asset —')+'</option>'
-      + assets.map(function(a){ return '<option value="'+a.id+'">'+esc((a.asset_no||'')+' — '+(a.name||''))+'</option>'; }).join('')
-      +'</select></div>'
-    +'<div><label style="font-size:11px;color:var(--color-neutral-700)">'+(th?'อาการ/ปัญหา':'Problem description')+'</label>'
-      +'<textarea id="wr-f-desc" rows="3" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px;box-sizing:border-box" placeholder="'+(th?'อธิบายปัญหาที่พบ':'Describe the problem')+'"></textarea></div>'
-    +'<div><label style="font-size:11px;color:var(--color-neutral-700)">'+(th?'ประเภทงาน':'Work type')+'</label>'
-      +'<select id="wr-f-type" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px">'
-      + WR_TYPE_OPTIONS.map(function(t){ return '<option value="'+t+'"'+(t==='CM'?' selected':'')+'>'+t+'</option>'; }).join('')
-      +'</select></div>'
-    +'<div><label style="font-size:11px;color:var(--color-neutral-700)">'+(th?'ความเร่งด่วน':'Priority')+'</label>'
-      +'<select id="wr-f-priority" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px">'
-      +'<option value="critical">'+(th?'วิกฤต':'Critical')+'</option><option value="urgently">'+(th?'เร่งด่วน':'Urgent')+'</option><option value="high">'+(th?'สูง':'High')+'</option><option value="normal" selected>'+(th?'ปกติ':'Normal')+'</option>'
-      +'</select></div>'
-    +'<div><label style="font-size:11px;color:var(--color-neutral-700)">'+(th?'ชื่อผู้แจ้ง':'Reporter name')+'</label>'
-      +'<input id="wr-f-reporter" type="text" value="'+esc((user&&(user.full_name||user.username))||'')+'" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px;box-sizing:border-box"></div>'
-    +'<div><label style="font-size:11px;color:var(--color-neutral-700)">'+(th?'เบอร์ติดต่อ':'Phone')+'</label>'
-      +'<input id="wr-f-phone" type="tel" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px;box-sizing:border-box"></div>'
-    +'<div class="tap" data-act="wr-new-submit" style="margin-top:6px;font-size:14px;font-weight:700;padding:12px;border-radius:10px;text-align:center;background:var(--color-accent);color:#fff'+(ST.wrFormBusy?';opacity:.6':'')+'">'+(ST.wrFormBusy?(th?'กำลังส่ง...':'Submitting...'):(th?'✅ ส่งแจ้งงาน':'✅ Submit'))+'</div>'
+
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+      + wrFormField('Asset ID *','Asset ID *', th, '<select id="wr-f-asset" style="'+wrInputStyle+'">'
+        +'<option value="">-- '+(th?'เลือก Asset':'Select asset')+' --</option>'
+        + assets.map(function(a){ return '<option value="'+a.id+'">'+esc((a.asset_no||'')+' — '+(a.name||''))+'</option>'; }).join('')
+        +'</select>')
+      + wrFormField('ประเภทงาน *','Work type *', th, '<select id="wr-f-type" style="'+wrInputStyle+'">'
+        + WR_TYPE_OPTIONS.map(function(t){ return '<option value="'+t[0]+'">'+t[1]+'</option>'; }).join('')
+        +'</select>')
+    +'</div>'
+
+    + wrFormField('ตำแหน่งที่พบปัญหาจริง (ระบุเพิ่มเติม)','Exact location (optional)', th,
+        '<input id="wr-f-loc" type="text" style="'+wrInputStyle+'" placeholder="'+(th?'เช่น มุมห้องฝั่งซ้าย, ใกล้ประตูทางเข้า':'e.g. left corner, near entrance')+'">')
+
+    + wrFormField('ลำดับความเร่งด่วน *','Priority *', th,
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">'
+        + WR_PRIORITY_FORM_OPTIONS.map(function(p, i){
+            return '<label style="cursor:pointer;text-align:center;border:1px solid var(--color-divider);border-radius:8px;padding:8px 4px;font-size:10px;line-height:1.3;display:flex;flex-direction:column;align-items:center;gap:3px">'
+              +'<input type="radio" name="wr-f-priority" value="'+p[0]+'"'+(i===2?' checked':'')+' style="margin:0">'
+              +'<span>'+p[1]+' '+(th?p[2]:p[3])+'</span></label>';
+          }).join('')
+        +'</div>')
+
+    + wrFormField('อาการปัญหา / รายละเอียด *','Problem description *', th,
+        '<textarea id="wr-f-desc" rows="3" style="'+wrInputStyle+';resize:vertical" placeholder="'+(th?'อธิบายอาการที่พบ เช่น เครื่องสั่น มีเสียงผิดปกติ...':'Describe the problem...')+'"></textarea>')
+
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+      + wrFormField('ผู้แจ้ง *','Reporter *', th, '<input id="wr-f-reporter" type="text" value="'+esc((user&&(user.full_name||user.username))||'')+'" style="'+wrInputStyle+'" placeholder="'+(th?'ชื่อผู้แจ้ง':'Reporter name')+'">')
+      + wrFormField('เบอร์โทรติดต่อผู้แจ้ง *','Phone *', th, '<input id="wr-f-phone" type="tel" style="'+wrInputStyle+'" placeholder="08x-xxx-xxxx">')
+    +'</div>'
+
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+      + wrFormField('วันที่/เวลาแจ้ง','Reported at', th, '<input id="wr-f-date" type="datetime-local" style="'+wrInputStyle+'">')
+      + wrFormField('ช่วงเวลาที่เข้าดำเนินการได้','Available time', th, '<input id="wr-f-avail" type="text" style="'+wrInputStyle+'" placeholder="'+(th?'เช่น จ-ศ 08:00-17:00 หรือ ตลอดเวลา':'e.g. Mon-Fri 8-5, or anytime')+'">')
+    +'</div>'
+
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">'
+      +'<div class="tap" data-act="wr-new-close" style="font-size:12.5px;font-weight:600;padding:10px 16px;border-radius:8px;text-align:center;border:1px solid var(--color-divider)">'+(th?'ยกเลิก':'Cancel')+'</div>'
+      +'<div class="tap" data-act="wr-new-submit" style="font-size:12.5px;font-weight:700;padding:10px 16px;border-radius:8px;text-align:center;background:var(--color-accent);color:#fff'+(ST.wrFormBusy?';opacity:.6':'')+'">'+(ST.wrFormBusy?(th?'กำลังส่ง...':'Submitting...'):(th?'📤 แจ้งงาน WR':'📤 Submit WR'))+'</div>'
+    +'</div>'
     +'</div>'
   );
 }
@@ -927,17 +957,36 @@ async function wrCreateSubmit(){
   const descEl = document.getElementById('wr-f-desc');
   const desc = descEl ? descEl.value.trim() : '';
   if(!desc){ toast(th?'กรุณากรอกรายละเอียดปัญหา':'Please describe the problem'); return; }
-  const assetId = document.getElementById('wr-f-asset').value || null;
+  const assetSel = document.getElementById('wr-f-asset');
+  const assetDbId = assetSel.value || null;
+  const assetObj = assetDbId ? (ST.modData.fm.assets||[]).find(function(a){ return String(a.id)===String(assetDbId); }) : null;
   const woType = document.getElementById('wr-f-type').value;
-  const priority = document.getElementById('wr-f-priority').value;
+  const priorityEl = document.querySelector('input[name="wr-f-priority"]:checked');
+  const priority = priorityEl ? priorityEl.value : 'normal';
   const reporter = document.getElementById('wr-f-reporter').value.trim();
   const phone = document.getElementById('wr-f-phone').value.trim();
+  const locDetail = document.getElementById('wr-f-loc').value.trim();
+  const availTime = document.getElementById('wr-f-avail').value.trim();
+  const dateVal = document.getElementById('wr-f-date').value;
   ST.wrFormBusy = true; render();
   try{
     const wo = await api('/work-orders', { method:'POST', body: JSON.stringify({
-      asset_id: assetId, wo_type: woType, title: desc.slice(0,80), description: desc,
+      asset_id: assetDbId, wo_type: woType, title: desc.slice(0,80), description: desc,
       priority: priority, reporter_name: reporter || null, reporter_phone: phone || null, module: 'mobile'
     }) });
+    // Merge the extra fields (location detail / available time) that the typed
+    // work_orders columns don't have their own slot for — the sync endpoint
+    // buckets anything unrecognized into `meta`, same as the Reliability Module.
+    if (locDetail || availTime) {
+      try{
+        await api('/work-orders/sync', { method:'POST', body: JSON.stringify({ items: [{
+          id: wo.wo_no, assetId: (assetObj&&assetObj.asset_no)||assetDbId, desc: desc, type: woType,
+          priority: priority, reporter: reporter||null, phone: phone||null, status: wo.status||'open',
+          locationDetail: locDetail||undefined, availableTime: availTime||undefined,
+          date: dateVal ? new Date(dateVal).toISOString() : wo.created_at
+        }] }) });
+      }catch(e){ /* WR itself is already saved; the extra detail merge is best-effort */ }
+    }
     ST.wrFormOpen = false; ST.wrFormBusy = false;
     toast(th?('✅ แจ้งซ่อม '+(wo.wo_no||'')+' สำเร็จ'):('✅ Submitted '+(wo.wo_no||'')));
     loadFmWR();
