@@ -314,7 +314,12 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       <div id="auth-login">
         <div id="l-err" class="l-err"></div>
         <div class="form-group"><label class="form-label">Username</label><input class="form-control" id="l-user" placeholder="Username" onkeydown="if(event.key==='Enter')doLogin()"></div>
-        <div class="form-group"><label class="form-label">Password</label><input class="form-control" id="l-pass" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="form-group"><label class="form-label">Password</label>
+          <div style="position:relative">
+            <input class="form-control" id="l-pass" type="password" placeholder="Password" style="padding-right:40px" onkeydown="if(event.key==='Enter')doLogin()">
+            <span onclick="togglePwVisibility('l-pass', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;user-select:none" title="แสดง/ซ่อนรหัสผ่าน">👁</span>
+          </div>
+        </div>
         <button class="btn btn-primary wf" style="justify-content:center;padding:10px;margin-bottom:10px" onclick="doLogin()">🚀 เข้าสู่ระบบ</button>
 
       </div>
@@ -379,7 +384,12 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
         <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.8px;margin:12px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)">🔐 บัญชีผู้ใช้</div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Username *</label><input class="form-control" id="r-user" placeholder="username (ไม่มีช่องว่าง)"></div>
-          <div class="form-group"><label class="form-label">Password *</label><input class="form-control" id="r-pass" type="password" placeholder="อย่างน้อย 6 ตัว"></div>
+          <div class="form-group"><label class="form-label">Password *</label>
+            <div style="position:relative">
+              <input class="form-control" id="r-pass" type="password" placeholder="อย่างน้อย 6 ตัว" style="padding-right:40px">
+              <span onclick="togglePwVisibility('r-pass', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;user-select:none" title="แสดง/ซ่อนรหัสผ่าน">👁</span>
+            </div>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Strategy Module ที่ต้องการ (Admin กำหนดสิทธิ์)</label>
@@ -7443,6 +7453,13 @@ function switchAuthTab(t){
   document.getElementById('auth-register').style.display=t==='register'?'block':'none';
   document.getElementById('atab-login').classList.toggle('active',t==='login');
   document.getElementById('atab-register').classList.toggle('active',t==='register');
+}
+function togglePwVisibility(inputId, iconEl){
+  const el = document.getElementById(inputId);
+  if(!el) return;
+  const show = el.type === 'password';
+  el.type = show ? 'text' : 'password';
+  if(iconEl) iconEl.textContent = show ? '🙈' : '👁';
 }
 function doLogin(){
   const u=document.getElementById('l-user').value.trim();
