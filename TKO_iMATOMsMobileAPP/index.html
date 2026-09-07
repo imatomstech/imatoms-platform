@@ -163,6 +163,9 @@ const ST = {
   fromTab: 'ops', // tab to return to when leaving a module screen
   fmSub: 'overview', // FM module sub-tab: overview | wr | om | ppm | ma | inv
   wrSub: 'overview', // WR sub-tab within FM: overview|new|inprogress|closed|evaluate|summarize|maintain|sla|repeated|reopt|history
+  wrDetailId: null,  // dbId of the WR currently shown in the detail overlay
+  wrFormOpen: false, // whether the "New WR" create-form overlay is open
+  wrFormBusy: false,
 };
 
 function setLang(l){ ST.lang = l; try{ localStorage.setItem(LS.lang, l); }catch(e){} render(); }
@@ -489,7 +492,8 @@ function normalizeWO(r){
   });
 }
 function wrLocationText(w){
-  const parts = [w.building, w.floor, w.zone, w.room].filter(Boolean);
+  const asset = fmAssetFor(w.assetId);
+  const parts = [w.building||(asset&&asset.building), w.floor||(asset&&asset.floor), w.zone||(asset&&asset.zone), w.room||(asset&&asset.room)].filter(Boolean);
   let s = parts.join(' / ');
   if (w.locationDetail) s = s ? (s + ' — ' + w.locationDetail) : w.locationDetail;
   return s;
@@ -524,6 +528,25 @@ async function loadFmKind(kind){
     // keep whatever was loaded before (or null, so fmDB() fallback is used)
   }
   ST.modLoading[kind] = false; render();
+}
+
+/* Asset registry — loaded once per module-open so WR cards can show the
+   building/floor/zone/room and equipment name for the asset each WR refers
+   to (the WR record itself only stores the asset's code, not its details). */
+async function loadFmAssets(){
+  try{
+    const rows = await api('/assets');
+    ST.modData.fm = ST.modData.fm || {};
+    const byNo = {};
+    (rows||[]).forEach(function(a){ if(a.asset_no) byNo[a.asset_no] = a; byNo['#'+a.id] = a; });
+    ST.modData.fm.assets = rows || [];
+    ST.modData.fm.assetsByNo = byNo;
+    render();
+  }catch(err){ /* keep working without asset detail if this fails */ }
+}
+function fmAssetFor(assetId){
+  const byNo = ST.modData.fm && ST.modData.fm.assetsByNo;
+  return (byNo && assetId && byNo[assetId]) || null;
 }
 
 function fmSubTabs(active){
@@ -581,19 +604,23 @@ function wrCardHtml(w, th){
     }
   }
   const loc = wrLocationText(w);
+  const asset = fmAssetFor(w.assetId);
+  const equipName = asset && asset.name;
   const reportedAt = w.date ? new Date(w.date).toLocaleString(th?'th-TH':'en-US',{dateStyle:'short',timeStyle:'short'}) : null;
-  return fmCard(
-    '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(w.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
+  const tapAttrs = w._dbId ? ' class="tap blueprint" data-act="wr-detail" data-id="'+w._dbId+'"' : ' class="blueprint"';
+  return '<div'+tapAttrs+' style="padding:11px 12px;display:flex;flex-direction:column;gap:4px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(w.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
+    + (equipName ? '<div style="font-size:12px;font-weight:600;color:var(--color-text)">'+esc(equipName)+(w.assetId?' <span style="font-weight:400;color:var(--color-neutral-600)">('+esc(w.assetId)+')</span>':'')+'</div>' : '')
     +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc((w.desc||'').slice(0,70))+'</div>'
-    + (loc ? '<div style="font-size:11px;color:var(--color-neutral-700)">📍 '+esc(loc)+'</div>' : '')
-    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip(th?pr[0]:pr[1], pr[2])+(w.type?fmChip(w.type,'gray'):'')+(w.assetId?fmChip(w.assetId,'gray'):'')+(w.assign?fmChip(w.assign,'gray'):'')+(w.mttr?fmChip('MTTR '+w.mttr+'h','gray'):'')+'</div>'
+    + (loc ? '<div style="font-size:11px;color:var(--color-neutral-700)">📍 '+esc(loc)+'</div>' : (w.assetId?'<div style="font-size:11px;color:var(--color-neutral-700)">📍 '+esc(w.assetId)+'</div>':''))
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip(th?pr[0]:pr[1], pr[2])+(w.type?fmChip(w.type,'gray'):'')+(!equipName&&w.assetId?fmChip(w.assetId,'gray'):'')+(w.assign?fmChip(w.assign,'gray'):'')+(w.mttr?fmChip('MTTR '+w.mttr+'h','gray'):'')+'</div>'
     + (w.reporter||w.phone||reportedAt||w.availableTime ? '<div style="font-size:11px;color:var(--color-neutral-700);margin-top:2px;display:flex;flex-direction:column;gap:1px">'
-        + (w.reporter ? '<span>'+(th?'ผู้แจ้ง: ':'Reporter: ')+esc(w.reporter)+(w.phone?' · <a href="tel:'+esc(w.phone)+'" style="color:var(--color-accent-700)">📞 '+esc(w.phone)+'</a>':'')+'</span>' : (w.phone?'<span><a href="tel:'+esc(w.phone)+'" style="color:var(--color-accent-700)">📞 '+esc(w.phone)+'</a></span>':''))
+        + (w.reporter ? '<span>'+(th?'ผู้แจ้ง: ':'Reporter: ')+esc(w.reporter)+(w.phone?' · <a href="tel:'+esc(w.phone)+'" style="color:var(--color-accent-700)" data-act="noop">📞 '+esc(w.phone)+'</a>':'')+'</span>' : (w.phone?'<span><a href="tel:'+esc(w.phone)+'" style="color:var(--color-accent-700)" data-act="noop">📞 '+esc(w.phone)+'</a></span>':''))
         + (reportedAt ? '<span>'+(th?'เวลาที่แจ้ง: ':'Reported: ')+esc(reportedAt)+'</span>' : '')
         + (w.availableTime ? '<span>'+(th?'ช่วงเวลาเข้าดำเนินการ: ':'Available: ')+esc(w.availableTime)+'</span>' : '')
       +'</div>' : '')
     + (actions ? '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">'+actions+'</div>' : '')
-  );
+    +'</div>';
 }
 async function wrAccept(dbId){
   const th = ST.lang==='th';
@@ -700,7 +727,11 @@ function wrOverview(){
     + (trendSrc.length ? '<div style="margin-top:10px">'+fmCard('<div style="font-size:12px;font-weight:600;margin-bottom:4px">'+(th?'แนวโน้ม MTTR (10 งานล่าสุด)':'MTTR Trend (last 10)')+'</div>'+wrSpark(trendSrc.map(function(w){return w.mttr;}), 'var(--color-accent)')) +'</div>' : '');
 }
 
-function wrNew(){ const th=ST.lang==='th'; return wrListHtml(wrData().filter(function(w){return w.status==='open';}).sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);}), th, th?'ไม่มีงานแจ้งใหม่':'No new work requests'); }
+function wrNew(){
+  const th=ST.lang==='th';
+  const btn = '<div class="tap" data-act="wr-new-open" style="font-size:12px;font-weight:700;padding:9px 14px;border-radius:10px;background:var(--color-accent);color:#fff;text-align:center;margin-bottom:8px">+ '+(th?'แจ้งงานใหม่':'New WR')+'</div>';
+  return btn + wrListHtml(wrData().filter(function(w){return w.status==='open';}).sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);}), th, th?'ไม่มีงานแจ้งใหม่':'No new work requests');
+}
 function wrInProgress(){ const th=ST.lang==='th'; return wrListHtml(wrData().filter(function(w){return w.status==='inprogress'||w.status==='arrived';}).sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);}), th, th?'ไม่มีงานที่กำลังดำเนินการ':'Nothing in progress'); }
 function wrClosed(){ const th=ST.lang==='th'; return wrListHtml(wrData().filter(function(w){return w.status==='closed'||w.status==='approved';}).sort(function(a,b){return new Date(b.closeDate||b.date||0)-new Date(a.closeDate||a.date||0);}), th, th?'ยังไม่มีงานที่ปิดแล้ว':'No closed work requests'); }
 
@@ -803,6 +834,119 @@ function wrHistory(){
   }).join('') + '</div>';
 }
 
+const WR_TYPE_OPTIONS = ['BD','RM','CM','OM','PM','MA','Sub','PJ','OTH'];
+
+function wrOverlayShell(inner){
+  return '<div style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:flex-end;justify-content:center">'
+    +'<div style="width:100%;max-width:480px;max-height:88vh;overflow-y:auto;background:var(--color-bg);border-radius:16px 16px 0 0;padding:16px;box-sizing:border-box">'
+    + inner
+    +'</div></div>';
+}
+
+function wrDetailOverlay(){
+  if(!ST.wrDetailId) return '';
+  const th = ST.lang==='th';
+  const w = wrData().find(function(x){ return String(x._dbId)===String(ST.wrDetailId); });
+  if(!w) return '';
+  const st = WR_STATUS_MAP[w.status] || [w.status,w.status,'gray'];
+  const pr = WR_PRIORITY_MAP[w.priority] || [w.priority,w.priority,'gray'];
+  const loc = wrLocationText(w);
+  const asset = fmAssetFor(w.assetId);
+  const reportedAt = w.date ? new Date(w.date).toLocaleString(th?'th-TH':'en-US',{dateStyle:'medium',timeStyle:'short'}) : '—';
+  const closedAt = w.closeDate ? new Date(w.closeDate).toLocaleString(th?'th-TH':'en-US',{dateStyle:'medium',timeStyle:'short'}) : null;
+  const rows = [
+    [th?'สถานะ':'Status', fmChip(th?st[0]:st[1], st[2])],
+    [th?'ความเร่งด่วน':'Priority', fmChip(th?pr[0]:pr[1], pr[2])],
+    [th?'ประเภทงาน':'Type', w.type||'—'],
+    [th?'อุปกรณ์':'Asset', (asset?asset.name+' ':'')+(w.assetId||'—')],
+    [th?'ตำแหน่ง':'Location', loc||'—'],
+    [th?'ผู้แจ้ง':'Reporter', w.reporter||'—'],
+    [th?'โทรศัพท์':'Phone', w.phone?('<a href="tel:'+esc(w.phone)+'" style="color:var(--color-accent-700)">'+esc(w.phone)+'</a>'):'—'],
+    [th?'เวลาที่แจ้ง':'Reported', reportedAt],
+    [th?'ช่วงเวลาเข้าดำเนินการ':'Available time', w.availableTime||'—'],
+    [th?'ผู้รับผิดชอบ':'Assigned to', w.assign||'—'],
+    [th?'MTTR':'MTTR', w.mttr?(w.mttr+' h'):'—'],
+    [th?'ค่าใช้จ่ายรวม':'Total cost', w.totalCost?fmMoney(w.totalCost):'—'],
+  ];
+  if (closedAt) rows.push([th?'เวลาปิดงาน':'Closed', closedAt]);
+  if (w.approvedBy) rows.push([th?'อนุมัติโดย':'Approved by', esc(w.approvedBy)]);
+  let actions = '';
+  if (w._dbId) {
+    if (w.status === 'open') actions += '<div class="tap" data-act="wr-accept" data-id="'+w._dbId+'" style="flex:1;font-size:13px;font-weight:700;padding:11px;border-radius:10px;text-align:center;background:var(--color-accent);color:#fff">'+(th?'รับงาน':'Accept')+'</div>';
+    if (w.status === 'inprogress' || w.status === 'arrived') actions += '<div class="tap" data-act="wr-close" data-id="'+w._dbId+'" style="flex:1;font-size:13px;font-weight:700;padding:11px;border-radius:10px;text-align:center;background:var(--green);color:#fff">'+(th?'ปิดงาน':'Complete')+'</div>';
+    if (w.status !== 'closed' && w.status !== 'approved' && w.status !== 'cancelled') actions += '<div class="tap" data-act="wr-cancel" data-id="'+w._dbId+'" style="flex:1;font-size:13px;font-weight:700;padding:11px;border-radius:10px;text-align:center;border:1px solid var(--danger);color:var(--danger)">'+(th?'ยกเลิก':'Cancel')+'</div>';
+  }
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+    +'<span style="font-family:var(--font-heading);font-size:16px">'+esc(w.id)+'</span>'
+    +'<div class="tap" data-act="wr-detail-close" style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--color-surface)">✕</div></div>'
+    +'<div style="font-size:13px;color:var(--color-text);margin-bottom:12px">'+esc(w.desc||'')+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+    + rows.map(function(r){ return '<div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;border-bottom:1px solid var(--color-divider);padding-bottom:6px"><span style="color:var(--color-neutral-600)">'+esc(r[0])+'</span><span style="text-align:right">'+r[1]+'</span></div>'; }).join('')
+    +'</div>'
+    + (actions ? '<div style="display:flex;gap:8px;margin-top:16px">'+actions+'</div>' : '')
+  );
+}
+
+function wrFormOverlay(){
+  if(!ST.wrFormOpen) return '';
+  const th = ST.lang==='th';
+  const assets = (ST.modData.fm && ST.modData.fm.assets) || [];
+  const user = getUser();
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    +'<span style="font-family:var(--font-heading);font-size:16px">'+(th?'แจ้งงานใหม่':'New Work Request')+'</span>'
+    +'<div class="tap" data-act="wr-new-close" style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--color-surface)">✕</div></div>'
+    +'<div style="display:flex;flex-direction:column;gap:10px">'
+    +'<div><label style="font-size:11px;color:var(--color-neutral-700)">'+(th?'อุปกรณ์ / Asset':'Asset')+'</label>'
+      +'<select id="wr-f-asset" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px">'
+      +'<option value="">'+(th?'— เลือกอุปกรณ์ —':'— Select asset —')+'</option>'
+      + assets.map(function(a){ return '<option value="'+a.id+'">'+esc((a.asset_no||'')+' — '+(a.name||''))+'</option>'; }).join('')
+      +'</select></div>'
+    +'<div><label style="font-size:11px;color:var(--color-neutral-700)">'+(th?'อาการ/ปัญหา':'Problem description')+'</label>'
+      +'<textarea id="wr-f-desc" rows="3" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px;box-sizing:border-box" placeholder="'+(th?'อธิบายปัญหาที่พบ':'Describe the problem')+'"></textarea></div>'
+    +'<div><label style="font-size:11px;color:var(--color-neutral-700)">'+(th?'ประเภทงาน':'Work type')+'</label>'
+      +'<select id="wr-f-type" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px">'
+      + WR_TYPE_OPTIONS.map(function(t){ return '<option value="'+t+'"'+(t==='CM'?' selected':'')+'>'+t+'</option>'; }).join('')
+      +'</select></div>'
+    +'<div><label style="font-size:11px;color:var(--color-neutral-700)">'+(th?'ความเร่งด่วน':'Priority')+'</label>'
+      +'<select id="wr-f-priority" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px">'
+      +'<option value="critical">'+(th?'วิกฤต':'Critical')+'</option><option value="urgently">'+(th?'เร่งด่วน':'Urgent')+'</option><option value="high">'+(th?'สูง':'High')+'</option><option value="normal" selected>'+(th?'ปกติ':'Normal')+'</option>'
+      +'</select></div>'
+    +'<div><label style="font-size:11px;color:var(--color-neutral-700)">'+(th?'ชื่อผู้แจ้ง':'Reporter name')+'</label>'
+      +'<input id="wr-f-reporter" type="text" value="'+esc((user&&(user.full_name||user.username))||'')+'" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px;box-sizing:border-box"></div>'
+    +'<div><label style="font-size:11px;color:var(--color-neutral-700)">'+(th?'เบอร์ติดต่อ':'Phone')+'</label>'
+      +'<input id="wr-f-phone" type="tel" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px;box-sizing:border-box"></div>'
+    +'<div class="tap" data-act="wr-new-submit" style="margin-top:6px;font-size:14px;font-weight:700;padding:12px;border-radius:10px;text-align:center;background:var(--color-accent);color:#fff'+(ST.wrFormBusy?';opacity:.6':'')+'">'+(ST.wrFormBusy?(th?'กำลังส่ง...':'Submitting...'):(th?'✅ ส่งแจ้งงาน':'✅ Submit'))+'</div>'
+    +'</div>'
+  );
+}
+
+async function wrCreateSubmit(){
+  const th = ST.lang==='th';
+  const descEl = document.getElementById('wr-f-desc');
+  const desc = descEl ? descEl.value.trim() : '';
+  if(!desc){ toast(th?'กรุณากรอกรายละเอียดปัญหา':'Please describe the problem'); return; }
+  const assetId = document.getElementById('wr-f-asset').value || null;
+  const woType = document.getElementById('wr-f-type').value;
+  const priority = document.getElementById('wr-f-priority').value;
+  const reporter = document.getElementById('wr-f-reporter').value.trim();
+  const phone = document.getElementById('wr-f-phone').value.trim();
+  ST.wrFormBusy = true; render();
+  try{
+    const wo = await api('/work-orders', { method:'POST', body: JSON.stringify({
+      asset_id: assetId, wo_type: woType, title: desc.slice(0,80), description: desc,
+      priority: priority, reporter_name: reporter || null, reporter_phone: phone || null, module: 'mobile'
+    }) });
+    ST.wrFormOpen = false; ST.wrFormBusy = false;
+    toast(th?('✅ แจ้งซ่อม '+(wo.wo_no||'')+' สำเร็จ'):('✅ Submitted '+(wo.wo_no||'')));
+    loadFmWR();
+  }catch(err){
+    ST.wrFormBusy = false; render();
+    toast((th?'ส่งไม่สำเร็จ: ':'Submit failed: ')+(err.message||err));
+  }
+}
+
 function fmWR(){
   const th = ST.lang==='th';
   const sub = ST.wrSub || 'overview';
@@ -820,7 +964,7 @@ function fmWR(){
   else if(sub==='repeated') body = wrRepeated();
   else if(sub==='reopt') body = wrReOpt();
   else if(sub==='history') body = wrHistory();
-  return '<div style="display:flex;flex-direction:column;gap:10px">' + wrSubTabs(sub) + body + '</div>';
+  return '<div style="display:flex;flex-direction:column;gap:10px">' + wrSubTabs(sub) + body + '</div>' + wrDetailOverlay() + wrFormOverlay();
 }
 
 function fmOM(){
@@ -1051,6 +1195,12 @@ document.addEventListener('click', function(e){
   else if(act==='wr-accept'){ wrAccept(el.getAttribute('data-id')); }
   else if(act==='wr-close'){ wrClose(el.getAttribute('data-id')); }
   else if(act==='wr-cancel'){ wrCancel(el.getAttribute('data-id')); }
+  else if(act==='wr-detail'){ ST.wrDetailId = el.getAttribute('data-id'); render(); }
+  else if(act==='wr-detail-close'){ ST.wrDetailId = null; render(); }
+  else if(act==='wr-new-open'){ ST.wrFormOpen = true; render(); if(!(ST.modData.fm && ST.modData.fm.assets)) loadFmAssets(); }
+  else if(act==='wr-new-close'){ ST.wrFormOpen = false; render(); }
+  else if(act==='wr-new-submit'){ if(!ST.wrFormBusy) wrCreateSubmit(); }
+  else if(act==='noop'){ /* let the browser handle it (e.g. tel: link) without navigating the app state */ }
   else if(act==='lifestyle-market'){ ST.lifestyleSub='market'; render(); }
   else if(act==='lifestyle-coffee'){ ST.lifestyleSub='coffee'; render(); }
   else if(act==='goto-market'){ window.location.href = '/TKO_IsanFoodMarket/'; }
@@ -1105,7 +1255,7 @@ async function loadDashboard(){
 /* light per-module data fetch — FM/M&V reuse the shared dashboard;
    only IoT needs its own call (bas.imatomstech.com sensor gateway). */
 async function loadModuleData(key){
-  if(key==='fm'){ loadFmWR(); loadFmKind('ppm'); loadFmKind('ma'); return; } /* WR/PPM/MA/Inv/OM now come from the real backend */
+  if(key==='fm'){ loadFmWR(); loadFmKind('ppm'); loadFmKind('ma'); loadFmAssets(); return; } /* WR/PPM/MA/Inv/OM now come from the real backend */
   if(key==='iot'){
     ST.modLoading.iot = true; ST.modData.iot = {}; render();
     try{
