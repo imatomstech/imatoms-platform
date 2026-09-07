@@ -168,6 +168,27 @@ ALTER TABLE work_orders
 -- wo_no already has a UNIQUE constraint from the original CREATE TABLE, so
 -- ON CONFLICT (wo_no) in the sync endpoint below works without a new index.
 
+-- ============================================================
+-- FM RECORDS — generic real-backend store for OM / PPM / MA
+-- Contracts / Inventory (+ their sub-lists), replacing the
+-- localStorage-only prototypes in TKO_iMATOMs_Reliability_Module_v1_3.html,
+-- TKO_iMATOMsFM/index.html and the Mobile App. One row per item;
+-- the item's exact shape is preserved losslessly in `data` (JSONB)
+-- so none of the existing UI code needs a rewrite — additive only.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS fm_records (
+  id            SERIAL PRIMARY KEY,
+  building_id   INTEGER NOT NULL REFERENCES buildings(id) ON DELETE CASCADE,
+  kind          VARCHAR(30) NOT NULL,   -- ppm | ma | maVisits | inv | invtx | contract | omRecords | omTemplates | omSchedule | omShiftTimes | ppmTemplates
+  item_id       VARCHAR(100) NOT NULL,  -- client-side id, e.g. 'ppm-172...'
+  data          JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_by    INTEGER REFERENCES users(id),
+  created_at    TIMESTAMP DEFAULT NOW(),
+  updated_at    TIMESTAMP DEFAULT NOW(),
+  UNIQUE(building_id, kind, item_id)
+);
+CREATE INDEX IF NOT EXISTS idx_fm_records_kind ON fm_records(building_id, kind);
+
 CREATE TABLE IF NOT EXISTS spare_parts (
   id            SERIAL PRIMARY KEY,
   building_id   INTEGER NOT NULL REFERENCES buildings(id) ON DELETE CASCADE,

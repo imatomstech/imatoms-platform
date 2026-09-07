@@ -2709,8 +2709,50 @@ const DB = {
     // stays connected to the FM webapp's simpler WR view and the Mobile App
     // — same-origin login token (imatoms_jwt) is reused, no separate login.
     if (k === 'wr') syncWRToBackend(v);
+    // OM / PPM / MA Contract / Inventory (+ sub-lists) are pushed to the same
+    // real backend via the generic fm-records endpoint, so this data is
+    // genuinely shared with the FM webapp and Mobile App too — not just
+    // mirrored between localStorage prefixes.
+    if (FM_RECORD_KINDS.includes(k)) syncKindToBackend(k, v);
   },
 };
+
+// Kinds backed by the generic /api/fm-records/:kind store on the server.
+const FM_RECORD_KINDS = ['ppm','ma','maVisits','inv','invtx',
+  'omRecords','omTemplates','omSchedule','ppmTemplates'];
+
+const _kindSyncTimers = {};
+function syncKindToBackend(kind, items){
+  clearTimeout(_kindSyncTimers[kind]);
+  _kindSyncTimers[kind] = setTimeout(async () => {
+    try{
+      const token = localStorage.getItem('imatoms_jwt');
+      if (!token) return;
+      await fetch(RWR_API_BASE + '/fm-records/' + kind + '/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ items: items || [] })
+      });
+    }catch(e){ console.warn('fm-records sync failed for '+kind+' (kept locally):', e); }
+  }, 600);
+}
+
+// Pull the latest data for one kind from the real backend, merging it into
+// localStorage under both prefixes so every view in this file (and index.html)
+// stays in sync. Returns the fresh array, or null if unavailable (offline /
+// not logged in) — caller should keep using the local cache in that case.
+async function loadKindFromBackend(kind){
+  try{
+    const token = localStorage.getItem('imatoms_jwt');
+    if (!token) return null;
+    const res = await fetch(RWR_API_BASE + '/fm-records/' + kind, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    localStorage.setItem('alm_'+kind, JSON.stringify(rows));
+    try{ localStorage.setItem('tko_v2_'+kind, JSON.stringify(rows)); }catch(e){}
+    return rows;
+  }catch(e){ console.warn('fm-records load failed for '+kind+', using local cache:', e); return null; }
+}
 
 let _wrSyncTimer = null;
 function syncWRToBackend(items){
@@ -2858,6 +2900,24 @@ let maList = DB.get('ma', []);
 let maVisits = DB.get('maVisits', []);
 let inventory = DB.get('inv', []);
 let invTx = DB.get('invtx', []);
+
+// Load PPM / MA / Inventory from the real backend on boot, so this page
+// picks up records created/edited elsewhere (FM webapp, Mobile App) too.
+(async () => {
+  const [freshPpm, freshPpmTpl, freshMa, freshMaVisits, freshInv, freshInvTx] = await Promise.all([
+    loadKindFromBackend('ppm'), loadKindFromBackend('ppmTemplates'), loadKindFromBackend('ma'),
+    loadKindFromBackend('maVisits'), loadKindFromBackend('inv'), loadKindFromBackend('invtx'),
+  ]);
+  if (freshPpm) ppmList = freshPpm;
+  if (freshPpmTpl) ppmTemplates = freshPpmTpl;
+  if (freshMa) maList = freshMa;
+  if (freshMaVisits) maVisits = freshMaVisits;
+  if (freshInv) inventory = freshInv;
+  if (freshInvTx) invTx = freshInvTx;
+  if (freshPpm || freshPpmTpl) { try{ renderPPM(); }catch(e){} }
+  if (freshMa || freshMaVisits) { try{ renderMA(); }catch(e){} }
+  if (freshInv || freshInvTx) { try{ renderInventory(); }catch(e){} }
+})();
 let inspections = DB.get('inspections', []);
 
 // ═══════════════════════════════════════════════════════════
@@ -5177,6 +5237,7 @@ const DEFAULT_OM_TEMPLATES = [
   ]},
 ];
 let omTemplates = DB.get('omTemplates', DEFAULT_OM_TEMPLATES);
+(async () => { const fresh = await loadKindFromBackend('omTemplates'); if (fresh && fresh.length) { omTemplates = fresh; try{ renderOMTemplates(); }catch(e){} } })();
 // เติม template มาตรฐานใหม่ที่เพิ่งเพิ่มเข้ามาให้อัตโนมัติ (จับคู่ด้วย id) โดยไม่ทับ template ที่ผู้ใช้แก้ไว้แล้ว
 DEFAULT_OM_TEMPLATES.forEach(dt=>{
   const idx=omTemplates.findIndex(t=>t.id===dt.id);
@@ -5264,6 +5325,13 @@ let omShiftTimes=DB.get('omShiftTimes', DEFAULT_OM_SHIFT_TIMES);
 Object.keys(DEFAULT_OM_SHIFT_TIMES).forEach(k=>{ if(!omShiftTimes[k]) omShiftTimes[k]=DEFAULT_OM_SHIFT_TIMES[k]; });
 DB.set('omShiftTimes', omShiftTimes);
 let omShiftTimeEditing=null; // shift key currently in edit mode
+// Note: omShiftTimes is a keyed object (M/A/N), not an item array, so it stays
+// mirrored between localStorage prefixes only (see DB.set) rather than going
+// through the array-shaped fm-records sync used by the other kinds below.
+(async () => {
+  const freshSched = await loadKindFromBackend('omSchedule');
+  if (freshSched && freshSched.length) { omSchedule = freshSched; try{ renderOMSchedule(); }catch(e){} }
+})();
 
 function omScheduleTplId(formCode){ return OM_FORMCODE_TO_TPL[formCode] || ''; }
 
@@ -5432,6 +5500,7 @@ function deleteOMScheduleItem(id){
 }
 
 let omRecords = DB.get('omRecords', []);
+(async () => { const fresh = await loadKindFromBackend('omRecords'); if (fresh) { omRecords = fresh; try{ renderOM(); }catch(e){} try{ renderOMSummarize(); }catch(e){} } })();
 let omTabFilter = 'all';
 let omCurrentItems = [];
 let omEquipPhotos = [];

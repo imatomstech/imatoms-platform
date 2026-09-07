@@ -8484,10 +8484,28 @@ async function cancelWR(dbId){
   }catch(e){ alert('ยกเลิกไม่สำเร็จ: '+(e.message||e)); }
 }
 
+// ══ Generic FM-records backend helper (PPM / MA / Inventory) ══
+// Same real-backend approach as WR above: read straight from the API with a
+// localStorage fallback, and push every create/update/delete to the server
+// immediately so this simple FM view stays genuinely connected to the same
+// data the Reliability Module and Mobile App read/write.
+async function fmLoad(kind, fallbackKey){
+  try{ const rows=await API.get('/fm-records/'+kind); DB.set(fallbackKey, rows); return rows; }
+  catch(e){ console.warn('fm-records load error ('+kind+'):', e); return DB.get(fallbackKey,[]); }
+}
+async function fmSyncItem(kind, item){
+  try{ await API.post('/fm-records/'+kind+'/sync', { items:[item] }); }
+  catch(e){ console.warn('fm-records sync error ('+kind+'):', e); }
+}
+async function fmDelItem(kind, id){
+  try{ await API.del('/fm-records/'+kind+'/'+encodeURIComponent(id)); }
+  catch(e){ console.warn('fm-records delete error ('+kind+'):', e); }
+}
+
 // ══ PPM ══
 function fPPM(f,el){ppmF=f;document.querySelectorAll('#view-ppm .tab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');renderPPM();}
-function renderPPM(){
-  PPM=DB.get('ppm',[]);
+async function renderPPM(){
+  PPM=await fmLoad('ppm','ppm');
   const tot=PPM.length;const pl=PPM.filter(p=>p.status==='planned').length;const dn=PPM.filter(p=>p.status==='done').length;
   const ov=PPM.filter(p=>p.status==='overdue'||(p.planDate&&new Date(p.planDate)<new Date()&&p.status==='planned')).length;
   const cp=tot?Math.round(dn/tot*100):0;
@@ -8496,49 +8514,49 @@ function renderPPM(){
   let list=bFilter(PPM);if(ppmF!=='all')list=bFilter(PPM).filter(p=>p.status===ppmF||(ppmF==='overdue'&&p.planDate&&new Date(p.planDate)<new Date()&&p.status==='planned'));
   document.getElementById('ppm-tbody').innerHTML=list.length?list.map(p=>`<tr><td><span class="tag ffm">${p.id}</span></td><td><span class="tag">${p.assetId||'—'}</span></td><td style="font-size:12px;max-width:180px">${p.name}</td><td><span class="badge badge-orange">${p.sys||'—'}</span></td><td style="font-size:12px">${p.freq||'—'}</td><td style="font-size:12px;color:${p.planDate&&new Date(p.planDate)<new Date()&&p.status!=='done'?'var(--red)':'inherit'}">${p.planDate||'—'}</td><td style="font-size:12px">${p.assign||'—'}</td><td class="ffm tt" style="font-size:12px">${p.mtbf?p.mtbf.toLocaleString()+'h':'—'}</td><td>${pbs[p.status]||'—'}</td><td><div class="flex g6">${p.status!=='done'?`<button class="btn btn-success btn-xs" onclick="donePPM('${p.id}')">✅</button>`:''}<button class="btn btn-danger btn-xs" onclick="delPPM('${p.id}')">🗑</button></div></td></tr>`).join(''):'<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีข้อมูล PPM</td></tr>';
 }
-function savePPM(){
+async function savePPM(){
   const nm=document.getElementById('pmi-nm').value.trim();if(!nm){alert('กรุณากรอกชื่องาน');return;}
   PPM=DB.get('ppm',[]);const id=`PPM-${String(PPM.length+1).padStart(4,'0')}`;
-  PPM.push({id,assetId:document.getElementById('pmi-as').value,name:nm,sys:document.getElementById('pmi-sy').value,freq:document.getElementById('pmi-fr').value,planDate:document.getElementById('pmi-dt').value,assign:document.getElementById('pmi-ag').value,status:document.getElementById('pmi-st').value,mtbf:0,needParts:!!document.getElementById('pmi-np')?.value,businessGroup:myBG()});
-  DB.set('ppm',PPM);closeModal('m-ppm');renderPPM();showToast('📅 บันทึก PPM แล้ว');
+  const item={id,assetId:document.getElementById('pmi-as').value,name:nm,sys:document.getElementById('pmi-sy').value,freq:document.getElementById('pmi-fr').value,planDate:document.getElementById('pmi-dt').value,assign:document.getElementById('pmi-ag').value,status:document.getElementById('pmi-st').value,mtbf:0,needParts:!!document.getElementById('pmi-np')?.value,businessGroup:myBG()};
+  PPM.push(item);DB.set('ppm',PPM);await fmSyncItem('ppm',item);closeModal('m-ppm');renderPPM();showToast('📅 บันทึก PPM แล้ว');
 }
-function donePPM(id){PPM=DB.get('ppm',[]);const i=PPM.findIndex(p=>p.id===id);if(i<0)return;const mt=parseInt(prompt('MTBF (h):','8760'))||8760;PPM[i].status='done';PPM[i].mtbf=mt;PPM[i].completedDate=new Date().toISOString();DB.set('ppm',PPM);renderPPM();showToast('✅ PM Done!');}
-function delPPM(id){if(!confirm('ลบ?'))return;PPM=PPM.filter(p=>p.id!==id);DB.set('ppm',PPM);renderPPM();}
+async function donePPM(id){PPM=DB.get('ppm',[]);const i=PPM.findIndex(p=>p.id===id);if(i<0)return;const mt=parseInt(prompt('MTBF (h):','8760'))||8760;PPM[i].status='done';PPM[i].mtbf=mt;PPM[i].completedDate=new Date().toISOString();DB.set('ppm',PPM);await fmSyncItem('ppm',PPM[i]);renderPPM();showToast('✅ PM Done!');}
+async function delPPM(id){if(!confirm('ลบ?'))return;PPM=PPM.filter(p=>p.id!==id);DB.set('ppm',PPM);await fmDelItem('ppm',id);renderPPM();}
 
 // ══ MA ══
-function renderMA(){
-  MA=DB.get('ma',[]);
+async function renderMA(){
+  MA=await fmLoad('ma','ma');
   const ac=MA.filter(m=>m.status==='active').length;const ex=MA.filter(m=>m.status==='expiring').length;const ep=MA.filter(m=>m.status==='expired').length;const tv=MA.reduce((s,m)=>s+(m.value||0),0);
   document.getElementById('ma-ac').textContent=ac;document.getElementById('ma-ex').textContent=ex;document.getElementById('ma-ep').textContent=ep;document.getElementById('ma-val').textContent='฿'+tv.toLocaleString();
   const sb={active:'<span class="badge badge-green">✅ Active</span>',expiring:'<span class="badge badge-yellow">⏰ ใกล้หมด</span>',expired:'<span class="badge badge-red">❌ หมดอายุ</span>'};
   const now=new Date();
   document.getElementById('ma-tbody').innerHTML=bFilter(MA).length?bFilter(MA).map(m=>{const dl=m.end?Math.round((new Date(m.end)-now)/86400000):null;const dc=dl==null?'inherit':dl<0?'var(--red)':dl<90?'var(--yellow)':'var(--green)';return`<tr><td><span class="tag ffm">${m.id}</span></td><td><span class="tag">${m.assetId||'—'}</span></td><td class="fw6" style="font-size:12px">${m.vendor}</td><td><span class="badge badge-blue" style="font-size:10px">${m.type}</span></td><td style="font-size:11px">${m.start||'—'}</td><td style="font-size:11px;color:${dc}">${m.end||'—'}</td><td class="ffm fw7" style="font-size:12px;color:${dc}">${dl!=null?dl+'d':'—'}</td><td class="ffm tg" style="font-size:12px">฿${(m.value||0).toLocaleString()}</td><td class="ffm" style="font-size:12px">${m.slaHrs||'—'}h</td><td>${sb[m.status]||'—'}</td><td><div class="flex g6"><button class="btn btn-secondary btn-xs" onclick="renewMA('${m.id}')">🔄</button><button class="btn btn-danger btn-xs" onclick="delMA('${m.id}')">🗑</button></div></td></tr>`;}).join(''):'<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">ยังไม่มีสัญญา</td></tr>';
 }
-function saveMA(){
+async function saveMA(){
   const vn=document.getElementById('mai-vn').value.trim();if(!vn){alert('กรุณากรอกชื่อ Vendor');return;}
   MA=DB.get('ma',[]);const en=document.getElementById('mai-en').value;const dl=en?(new Date(en)-new Date())/86400000:999;const id=`MA-${String(MA.length+1).padStart(4,'0')}`;
-  MA.push({id,assetId:document.getElementById('mai-as').value,vendor:vn,type:document.getElementById('mai-tp').value,value:parseFloat(document.getElementById('mai-vl').value)||0,start:document.getElementById('mai-st').value,end:en,pmFreq:document.getElementById('mai-fr').value,contact:document.getElementById('mai-ct').value,slaHrs:parseFloat(document.getElementById('mai-sl').value)||4,status:dl<0?'expired':dl<90?'expiring':'active'});
-  DB.set('ma',MA);closeModal('m-ma');renderMA();showToast('📄 บันทึกสัญญาแล้ว');
+  const item={id,assetId:document.getElementById('mai-as').value,vendor:vn,type:document.getElementById('mai-tp').value,value:parseFloat(document.getElementById('mai-vl').value)||0,start:document.getElementById('mai-st').value,end:en,pmFreq:document.getElementById('mai-fr').value,contact:document.getElementById('mai-ct').value,slaHrs:parseFloat(document.getElementById('mai-sl').value)||4,status:dl<0?'expired':dl<90?'expiring':'active'};
+  MA.push(item);DB.set('ma',MA);await fmSyncItem('ma',item);closeModal('m-ma');renderMA();showToast('📄 บันทึกสัญญาแล้ว');
 }
-function renewMA(id){const ne=prompt('วันสิ้นสุดใหม่ (YYYY-MM-DD):');if(!ne)return;MA=DB.get('ma',[]);const i=MA.findIndex(m=>m.id===id);if(i<0)return;MA[i].end=ne;const d=(new Date(ne)-new Date())/86400000;MA[i].status=d<0?'expired':d<90?'expiring':'active';DB.set('ma',MA);renderMA();showToast('🔄 ต่อสัญญาแล้ว');}
-function delMA(id){if(!confirm('ลบ?'))return;MA=MA.filter(m=>m.id!==id);DB.set('ma',MA);renderMA();}
+async function renewMA(id){const ne=prompt('วันสิ้นสุดใหม่ (YYYY-MM-DD):');if(!ne)return;MA=DB.get('ma',[]);const i=MA.findIndex(m=>m.id===id);if(i<0)return;MA[i].end=ne;const d=(new Date(ne)-new Date())/86400000;MA[i].status=d<0?'expired':d<90?'expiring':'active';DB.set('ma',MA);await fmSyncItem('ma',MA[i]);renderMA();showToast('🔄 ต่อสัญญาแล้ว');}
+async function delMA(id){if(!confirm('ลบ?'))return;MA=MA.filter(m=>m.id!==id);DB.set('ma',MA);await fmDelItem('ma',id);renderMA();}
 
 // ══ INVENTORY ══
-function renderInv(){
-  INV=DB.get('inv',[]);
+async function renderInv(){
+  INV=await fmLoad('inv','inv');
   const low=INV.filter(i=>i.qty<i.min).length;const tv=INV.reduce((s,i)=>s+(i.qty||0)*(i.price||0),0);const used=INV.reduce((s,i)=>s+(i.usedMTD||0),0);
   document.getElementById('iv-tot').textContent=INV.length;document.getElementById('iv-low').textContent=low;document.getElementById('iv-val').textContent='฿'+tv.toLocaleString();document.getElementById('iv-use').textContent=used;
   document.getElementById('iv-tbody').innerHTML=bFilter(INV).length?bFilter(INV).map(i=>{const low=i.qty<i.min;return`<tr><td><span class="tag ffm">${i.code}</span></td><td class="fw6" style="font-size:12px">${i.name}</td><td><span class="badge badge-gray">${i.type||'—'}</span></td><td style="font-size:12px">${i.unit||'—'}</td><td class="ffm fw7" style="color:${low?'var(--red)':'var(--green)'}">${i.qty}</td><td class="ffm" style="font-size:12px">${i.min||0}</td><td class="ffm" style="font-size:12px">${i.max||0}</td><td class="ffm ts" style="font-size:12px">฿${(i.price||0).toLocaleString()}</td><td class="ffm tg" style="font-size:12px">฿${((i.qty||0)*(i.price||0)).toLocaleString()}</td><td>${low?'<span class="badge badge-red">⚠ Low</span>':'<span class="badge badge-green">✅ OK</span>'}</td><td><div class="flex g6"><button class="btn btn-success btn-xs" onclick="issueInv('${i.id}')">เบิก</button><button class="btn btn-blue btn-xs" onclick="rcvInv('${i.id}')">รับเข้า</button><button class="btn btn-danger btn-xs" onclick="delInv('${i.id}')">🗑</button></div></td></tr>`;}).join(''):'<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">ไม่มีรายการ</td></tr>';
 }
-function saveInv(){
+async function saveInv(){
   const cd=document.getElementById('ivi-cd').value.trim();const nm=document.getElementById('ivi-nm').value.trim();if(!cd||!nm){alert('กรุณากรอก Code และชื่อ');return;}
   INV=DB.get('inv',[]);const id='INV-'+(INV.length+1).toString().padStart(3,'0');
-  INV.push({id,code:cd,name:nm,type:document.getElementById('ivi-tp').value,unit:document.getElementById('ivi-ut').value,price:parseFloat(document.getElementById('ivi-pr').value)||0,qty:parseInt(document.getElementById('ivi-qt').value)||0,min:parseInt(document.getElementById('ivi-mn').value)||0,max:parseInt(document.getElementById('ivi-mx').value)||0,usedMTD:0});
-  DB.set('inv',INV);closeModal('m-inv');renderInv();showToast('📦 บันทึกแล้ว');
+  const item={id,code:cd,name:nm,type:document.getElementById('ivi-tp').value,unit:document.getElementById('ivi-ut').value,price:parseFloat(document.getElementById('ivi-pr').value)||0,qty:parseInt(document.getElementById('ivi-qt').value)||0,min:parseInt(document.getElementById('ivi-mn').value)||0,max:parseInt(document.getElementById('ivi-mx').value)||0,usedMTD:0};
+  INV.push(item);DB.set('inv',INV);await fmSyncItem('inv',item);closeModal('m-inv');renderInv();showToast('📦 บันทึกแล้ว');
 }
-function issueInv(id){const q=parseInt(prompt('จำนวนที่เบิก:','1'))||1;INV=DB.get('inv',[]);const i=INV.findIndex(x=>x.id===id);if(i<0)return;INV[i].qty=Math.max(0,INV[i].qty-q);INV[i].usedMTD=(INV[i].usedMTD||0)+q;DB.set('inv',INV);renderInv();showToast('📤 เบิกแล้ว');}
-function rcvInv(id){const q=parseInt(prompt('จำนวนที่รับเข้า:','1'))||1;INV=DB.get('inv',[]);const i=INV.findIndex(x=>x.id===id);if(i<0)return;INV[i].qty+=q;DB.set('inv',INV);renderInv();showToast('📥 รับเข้าแล้ว');}
-function delInv(id){if(!confirm('ลบ?'))return;INV=INV.filter(i=>i.id!==id);DB.set('inv',INV);renderInv();}
+async function issueInv(id){const q=parseInt(prompt('จำนวนที่เบิก:','1'))||1;INV=DB.get('inv',[]);const i=INV.findIndex(x=>x.id===id);if(i<0)return;INV[i].qty=Math.max(0,INV[i].qty-q);INV[i].usedMTD=(INV[i].usedMTD||0)+q;DB.set('inv',INV);await fmSyncItem('inv',INV[i]);renderInv();showToast('📤 เบิกแล้ว');}
+async function rcvInv(id){const q=parseInt(prompt('จำนวนที่รับเข้า:','1'))||1;INV=DB.get('inv',[]);const i=INV.findIndex(x=>x.id===id);if(i<0)return;INV[i].qty+=q;DB.set('inv',INV);await fmSyncItem('inv',INV[i]);renderInv();showToast('📥 รับเข้าแล้ว');}
+async function delInv(id){if(!confirm('ลบ?'))return;INV=INV.filter(i=>i.id!==id);DB.set('inv',INV);await fmDelItem('inv',id);renderInv();}
 
 // ══ NCR / CAR / PAR — Corrective & Root Cause Analysis ══
 let ncrBeforePhotos=[];

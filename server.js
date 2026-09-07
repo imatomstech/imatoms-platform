@@ -493,6 +493,64 @@ app.patch('/api/work-orders/:id/evaluate', authMiddleware, async (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════
+// FM RECORDS — generic backend store for the Reliability Module's
+// remaining client-side-only FM data (OM / PPM / MA contracts /
+// Inventory + their sub-lists). Each "kind" (ppm, ma, maVisits, inv,
+// invtx, contract, omRecords, omTemplates, omSchedule, omShiftTimes,
+// ppmTemplates) is stored as one row per item, item shape preserved
+// losslessly as JSONB so the existing localStorage-based UI code in
+// TKO_iMATOMs_Reliability_Module_v1_3.html, TKO_iMATOMsFM/index.html
+// and the Mobile App can all read/write the exact same records.
+// ══════════════════════════════════════════════════════════════
+
+const FM_RECORD_KINDS = ['ppm','ma','maVisits','inv','invtx','contract',
+  'omRecords','omTemplates','omSchedule','ppmTemplates'];
+
+app.get('/api/fm-records/:kind', authMiddleware, async (req, res) => {
+  const { kind } = req.params;
+  if (!FM_RECORD_KINDS.includes(kind)) return res.status(400).json({ error: 'Unknown kind' });
+  try {
+    const { rows } = await pool.query(
+      `SELECT item_id, data, updated_at FROM fm_records WHERE building_id=$1 AND kind=$2 ORDER BY updated_at DESC LIMIT 2000`,
+      [req.user.building_id, kind]
+    );
+    res.json(rows.map(r => Object.assign({}, r.data, { id: r.data.id || r.item_id })));
+  } catch (e) { console.error('fm-records get error:', e); res.status(500).json({ error: 'Server error' }); }
+});
+
+app.post('/api/fm-records/:kind/sync', authMiddleware, async (req, res) => {
+  const { kind } = req.params;
+  if (!FM_RECORD_KINDS.includes(kind)) return res.status(400).json({ error: 'Unknown kind' });
+  const items = Array.isArray(req.body.items) ? req.body.items : [];
+  const out = [];
+  try {
+    for (const it of items) {
+      const itemId = String(it.id ?? it.code ?? it.item_id ?? '').trim();
+      if (!itemId) continue;
+      const { rows } = await pool.query(
+        `INSERT INTO fm_records (building_id, kind, item_id, data, created_by, updated_at)
+         VALUES ($1,$2,$3,$4,$5,NOW())
+         ON CONFLICT (building_id, kind, item_id) DO UPDATE SET data=EXCLUDED.data, updated_at=NOW()
+         RETURNING item_id, data, updated_at`,
+        [req.user.building_id, kind, itemId, JSON.stringify(it), req.user.id]
+      );
+      out.push(rows[0]);
+    }
+    res.json(out.map(r => Object.assign({}, r.data, { id: r.data.id || r.item_id })));
+  } catch (e) { console.error('fm-records sync error:', e); res.status(500).json({ error: 'Sync failed' }); }
+});
+
+app.delete('/api/fm-records/:kind/:itemId', authMiddleware, async (req, res) => {
+  const { kind, itemId } = req.params;
+  if (!FM_RECORD_KINDS.includes(kind)) return res.status(400).json({ error: 'Unknown kind' });
+  try {
+    await pool.query(`DELETE FROM fm_records WHERE building_id=$1 AND kind=$2 AND item_id=$3`,
+      [req.user.building_id, kind, itemId]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// ══════════════════════════════════════════════════════════════
 // INCIDENTS
 // ══════════════════════════════════════════════════════════════
 

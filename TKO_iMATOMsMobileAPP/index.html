@@ -497,6 +497,23 @@ async function loadFmWR(){
   ST.modLoading.wr = false; render();
 }
 
+/* OM / PPM / MA Contract / Inventory are wired to the same generic
+   /api/fm-records/:kind backend the FM webapp and Reliability Module use —
+   a genuine live connection, not just a localStorage mirror. Falls back to
+   the localStorage snapshot (fmDB) while loading or if offline. */
+function fmKindData(kind){ return (ST.modData.fm && ST.modData.fm[kind]) || null; }
+async function loadFmKind(kind){
+  ST.modLoading[kind] = true; render();
+  try{
+    const rows = await api('/fm-records/' + kind);
+    ST.modData.fm = ST.modData.fm || {};
+    ST.modData.fm[kind] = rows || [];
+  }catch(err){
+    // keep whatever was loaded before (or null, so fmDB() fallback is used)
+  }
+  ST.modLoading[kind] = false; render();
+}
+
 function fmSubTabs(active){
   const th = ST.lang==='th';
   const tabs = [
@@ -516,7 +533,7 @@ function fmSubTabs(active){
 
 function fmOverview(){
   const t = L();
-  const wr = wrData(), ppm = fmDB('ppm'), ma = fmDB('ma');
+  const wr = wrData(), ppm = fmKindData('ppm') || fmDB('ppm'), ma = fmKindData('ma') || fmDB('ma');
   const openCnt = wr.filter(function(w){return w.status==='open';}).length;
   const ipCnt = wr.filter(function(w){return w.status==='inprogress'||w.status==='arrived';}).length;
   const now = new Date();
@@ -744,15 +761,25 @@ function fmWR(){
 
 function fmOM(){
   const th = ST.lang==='th';
-  return fmCard(
-    '<div style="font-family:var(--font-heading);font-size:14px">'+(th?'ระบบ Operation (OM)':'Operation System (OM)')+'</div>'
-    +'<div style="font-size:12px;color:var(--color-neutral-700);margin-top:2px">'+(th?'Checklist ตรวจสอบความพร้อมใช้งานรายวัน — ดูรายละเอียดฉบับเต็มในเว็บแอป':'Daily readiness checklists — view full detail in the web app')+'</div>'
-  );
+  if (ST.modLoading.omRecords) return fmEmpty(th?'กำลังโหลด...':'Loading...');
+  const om = (fmKindData('omRecords') || fmDB('omRecords')).slice().sort(function(a,b){ return new Date(b.submittedDate||0) - new Date(a.submittedDate||0); });
+  if(!om.length) return fmEmpty(th?'ยังไม่มีบันทึก OM':'No OM records yet');
+  const stMap = { pending:[th?'รออนุมัติ':'Pending','orange'], approved:[th?'อนุมัติแล้ว':'Approved','green'], rejected:[th?'ส่งกลับแก้ไข':'Sent back','red'] };
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + om.slice(0,20).map(function(o){
+    const st = stMap[o.status] || [o.status||'—','gray'];
+    const abnormalCount = Array.isArray(o.linkedWRs) ? o.linkedWRs.length : 0;
+    return fmCard(
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(o.id||'OM')+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
+      +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc(o.templateName||o.assetId||'')+'</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+(o.sys?fmChip(o.sys,'gray'):'')+(o.person?fmChip(o.person,'gray'):'')+(abnormalCount?fmChip((th?'ผิดปกติ ':'Abnormal ')+abnormalCount,'red'):'')+'</div>'
+    );
+  }).join('') + '</div>';
 }
 
 function fmPPM(){
   const th = ST.lang==='th';
-  const ppm = fmDB('ppm').slice().sort(function(a,b){ return new Date(a.planDate||0) - new Date(b.planDate||0); });
+  if (ST.modLoading.ppm) return fmEmpty(th?'กำลังโหลด...':'Loading...');
+  const ppm = (fmKindData('ppm') || fmDB('ppm')).slice().sort(function(a,b){ return new Date(a.planDate||0) - new Date(b.planDate||0); });
   const stMap = { planned:['กำหนดการ','Planned','orange'], done:['เสร็จสิ้น','Done','green'], overdue:['เกินกำหนด','Overdue','red'], inprogress:['กำลังทำ','In Progress','sky'] };
   if(!ppm.length) return fmEmpty(th?'ไม่มีแผนงาน PM':'No PM plans');
   return '<div style="display:flex;flex-direction:column;gap:8px">' + ppm.slice(0,20).map(function(p){
@@ -768,7 +795,8 @@ function fmPPM(){
 
 function fmMA(){
   const th = ST.lang==='th';
-  const ma = fmDB('ma');
+  if (ST.modLoading.ma) return fmEmpty(th?'กำลังโหลด...':'Loading...');
+  const ma = fmKindData('ma') || fmDB('ma');
   const stMap = { active:[th?'ใช้งานอยู่':'Active','green'], expiring:[th?'ใกล้หมดอายุ':'Expiring','orange'], expired:[th?'หมดอายุ':'Expired','red'] };
   if(!ma.length) return fmEmpty(th?'ยังไม่มีสัญญา MA':'No MA contracts');
   return '<div style="display:flex;flex-direction:column;gap:8px">' + ma.map(function(m){
@@ -783,7 +811,8 @@ function fmMA(){
 
 function fmInv(){
   const th = ST.lang==='th';
-  const inv = fmDB('inv');
+  if (ST.modLoading.inv) return fmEmpty(th?'กำลังโหลด...':'Loading...');
+  const inv = fmKindData('inv') || fmDB('inv');
   if(!inv.length) return fmEmpty(th?'ไม่มีรายการในคลัง':'No inventory items');
   return '<div style="display:flex;flex-direction:column;gap:8px">' + inv.slice(0,25).map(function(i){
     const low = (i.qty||0) < (i.min||0);
@@ -944,7 +973,14 @@ document.addEventListener('click', function(e){
   else if(act==='module-back'){ ST.screen = 'main'; ST.tab = ST.fromTab || 'ops'; ST.activeModule = null; render(); }
   else if(act==='open-full-app'){ e.preventDefault(); const key = el.getAttribute('data-key'); const url = MODULE_URLS[key]; if(url) window.location.href = url; }
   else if(act==='retry-module'){ const key = el.getAttribute('data-key'); loadModuleData(key); }
-  else if(act==='fm-sub'){ ST.fmSub = el.getAttribute('data-sub'); if(ST.fmSub!=='wr') ST.wrSub='overview'; render(); if(ST.fmSub==='wr') loadFmWR(); }
+  else if(act==='fm-sub'){
+    ST.fmSub = el.getAttribute('data-sub'); if(ST.fmSub!=='wr') ST.wrSub='overview'; render();
+    if(ST.fmSub==='wr') loadFmWR();
+    else if(ST.fmSub==='ppm') loadFmKind('ppm');
+    else if(ST.fmSub==='ma') loadFmKind('ma');
+    else if(ST.fmSub==='inv') loadFmKind('inv');
+    else if(ST.fmSub==='om') loadFmKind('omRecords');
+  }
   else if(act==='refresh-wr'){ loadFmWR(); }
   else if(act==='wr-sub'){ ST.wrSub = el.getAttribute('data-sub'); render(); }
   else if(act==='retry-wr'){ loadFmWR(); }
@@ -1002,7 +1038,7 @@ async function loadDashboard(){
 /* light per-module data fetch — FM/M&V reuse the shared dashboard;
    only IoT needs its own call (bas.imatomstech.com sensor gateway). */
 async function loadModuleData(key){
-  if(key==='fm'){ loadFmWR(); return; } /* WR now comes from the real /api/work-orders backend */
+  if(key==='fm'){ loadFmWR(); loadFmKind('ppm'); loadFmKind('ma'); return; } /* WR/PPM/MA/Inv/OM now come from the real backend */
   if(key==='iot'){
     ST.modLoading.iot = true; ST.modData.iot = {}; render();
     try{
