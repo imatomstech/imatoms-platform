@@ -166,6 +166,8 @@ const ST = {
   wrDetailId: null,  // dbId of the WR currently shown in the detail overlay
   wrFormOpen: false, // whether the "New WR" create-form overlay is open
   wrFormBusy: false,
+  wrCloseId: null,   // dbId of the WR currently shown in the Close Detail overlay
+  wrCloseBusy: false,
 };
 
 function setLang(l){ ST.lang = l; try{ localStorage.setItem(LS.lang, l); }catch(e){} render(); }
@@ -632,16 +634,242 @@ async function wrAccept(dbId){
     loadFmWR();
   }catch(err){ toast((th?'รับงานไม่สำเร็จ: ':'Accept failed: ')+(err.message||err)); }
 }
-async function wrClose(dbId){
+const CLOSE_WORKTYPE_OPTIONS = [
+  ['BD','BD — Breakdown'], ['RM','RM — Repair & Maintenance'], ['CM','CM — Corrective Maintenance'],
+  ['OM','OM — On-site Maintenance'], ['PM','PM — Preventive Maintenance'], ['MA','MA — Maintenance Agreement'],
+  ['Sub','Sub — Subcontract'], ['PJ','PJ — Project'], ['OTH','OTH — Other'],
+];
+const CLOSE_SYSTEM_OPTIONS = [
+  ['AC','AC — Air Conditioning'], ['BAS','BAS — Building Automation'], ['BS','BS — Building Structure'],
+  ['CCTV','CCTV — Security Camera'], ['EC','EC — Electrical Control'], ['EE','EE — Electrical Equipment'],
+  ['EL','EL — Elevator/Escalator'], ['ER','ER — Emergency System'], ['FA','FA — Fire Alarm'],
+  ['FP','FP — Fire Protection'], ['FUR','FUR — Furniture'], ['GE','GE — Generator/UPS'],
+  ['MATV','MATV — Master Antenna TV'], ['SN','SN — Sanitary'], ['TR','TR — Transformer'],
+  ['VN','VN — Ventilation'], ['WWT','WWT — Wastewater Treatment'],
+];
+// Transient close-form state — plain JS vars (not ST) so canvas/photo/star
+// interactions don't need a full re-render (which would wipe the canvas).
+let wrClosePhotos = [];   // [{name, dataUrl}]
+let wrClosePartsUsed = []; // [{id, code, name, price, qty}]
+let wrCloseStars = 0;
+let wrCloseSigDrawing = false, wrCloseSigLast = null;
+
+function wrCloseOpen(dbId){
+  wrClosePhotos = []; wrClosePartsUsed = []; wrCloseStars = 0; wrCloseSigDrawing = false; wrCloseSigLast = null;
+  ST.wrCloseId = dbId; ST.wrCloseBusy = false;
+  render();
+  if(!(ST.modData.fm && ST.modData.fm.inv)) loadFmKind('inv');
+}
+function wrCloseClose(){ ST.wrCloseId = null; render(); }
+
+function wrCloseRecalc(){
   const th = ST.lang==='th';
-  const lb = parseFloat(prompt(th?'ค่าแรง (฿):':'Labor cost (฿):','0'))||0;
-  const pb = parseFloat(prompt(th?'ค่าอะไหล่ (฿):':'Parts cost (฿):','0'))||0;
-  const mt = parseFloat(prompt(th?'MTTR (ชั่วโมง):':'MTTR (hours):','1'))||1;
+  const w = wrData().find(function(x){ return String(x._dbId)===String(ST.wrCloseId); });
+  const s = document.getElementById('wr-cl-start'); const e = document.getElementById('wr-cl-end');
+  const respEl = document.getElementById('wr-cl-response'); const mttrEl = document.getElementById('wr-cl-mttr');
+  if (w && w.date && s && s.value && respEl) {
+    const m = Math.round((new Date(s.value) - new Date(w.date))/60000);
+    respEl.textContent = (isFinite(m)&&m>=0?m:'—') + ' ' + (th?'นาที':'min');
+  }
+  if (s && e && s.value && e.value && mttrEl) {
+    const m = Math.round((new Date(e.value) - new Date(s.value))/60000);
+    mttrEl.textContent = (isFinite(m)&&m>=0?m:'—') + ' ' + (th?'นาที':'min');
+    mttrEl.dataset.min = (isFinite(m)&&m>=0) ? m : '';
+  }
+}
+function wrClosePartsCost(){ return wrClosePartsUsed.reduce(function(s,p){ return s+(p.price||0)*(p.qty||1); }, 0); }
+function wrCloseRecalcCost(){
+  const lb = parseFloat((document.getElementById('wr-cl-labor')||{}).value)||0;
+  const tv = parseFloat((document.getElementById('wr-cl-travel')||{}).value)||0;
+  const pc = wrClosePartsCost();
+  const pcEl = document.getElementById('wr-cl-parts-cost'); if(pcEl) pcEl.value = pc;
+  const totalEl = document.getElementById('wr-cl-total'); if(totalEl) totalEl.textContent = fmMoney(lb+tv+pc);
+}
+function wrCloseAddPart(selectEl){
+  const th = ST.lang==='th';
+  const invId = selectEl.value; if(!invId) return;
+  const inv = (ST.modData.fm && ST.modData.fm.inv) || [];
+  const item = inv.find(function(i){ return String(i.id)===String(invId); });
+  selectEl.value = '';
+  if(!item) return;
+  wrClosePartsUsed.push({ id:item.id, code:item.code||item.id, name:item.name, price:item.price||0, qty:1 });
+  const list = document.getElementById('wr-cl-parts-list');
+  if(list){
+    const chip = document.createElement('span');
+    chip.style.cssText = 'font-size:10px;font-weight:600;color:var(--color-accent-700);border:1px solid var(--color-accent-700);padding:3px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px';
+    chip.textContent = (item.code||item.id) + ' ' + fmMoney(item.price||0);
+    const x = document.createElement('span'); x.textContent=' ✕'; x.style.cursor='pointer';
+    x.onclick = function(){ wrClosePartsUsed = wrClosePartsUsed.filter(function(p){return p.id!==item.id;}); chip.remove(); wrCloseRecalcCost(); };
+    chip.appendChild(x);
+    list.appendChild(chip);
+  }
+  wrCloseRecalcCost();
+}
+function wrClosePhotoAdd(fileInput){
+  const files = Array.prototype.slice.call(fileInput.files||[]);
+  const list = document.getElementById('wr-cl-photo-list');
+  files.forEach(function(f){
+    const reader = new FileReader();
+    reader.onload = function(){
+      wrClosePhotos.push({ name:f.name, dataUrl:reader.result });
+      if(list){
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--color-divider)';
+        const img = document.createElement('img');
+        img.src = reader.result; img.style.cssText = 'width:100%;height:100%;object-fit:cover';
+        wrap.appendChild(img);
+        list.appendChild(wrap);
+      }
+    };
+    reader.readAsDataURL(f);
+  });
+  fileInput.value = '';
+}
+function wrCloseSigPos(canvas, evt){
+  const r = canvas.getBoundingClientRect();
+  const t = (evt.touches && evt.touches[0]) || evt;
+  return { x: (t.clientX - r.left) * (canvas.width / r.width), y: (t.clientY - r.top) * (canvas.height / r.height) };
+}
+function wrCloseSigInit(){
+  const canvas = document.getElementById('wr-cl-sigpad');
+  if(!canvas || canvas._wrBound) return;
+  canvas._wrBound = true;
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#1d1f20'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  function down(e){ wrCloseSigDrawing = true; wrCloseSigLast = wrCloseSigPos(canvas, e); e.preventDefault(); }
+  function move(e){
+    if(!wrCloseSigDrawing) return;
+    const p = wrCloseSigPos(canvas, e);
+    ctx.beginPath(); ctx.moveTo(wrCloseSigLast.x, wrCloseSigLast.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    wrCloseSigLast = p; e.preventDefault();
+  }
+  function up(){ wrCloseSigDrawing = false; }
+  canvas.addEventListener('mousedown', down); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+  canvas.addEventListener('touchstart', down, {passive:false}); canvas.addEventListener('touchmove', move, {passive:false}); canvas.addEventListener('touchend', up);
+}
+function wrCloseSigClear(){
+  const canvas = document.getElementById('wr-cl-sigpad');
+  if(canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+}
+function wrCloseSetStar(n){
+  wrCloseStars = n;
+  const wrap = document.getElementById('wr-cl-stars');
+  if(!wrap) return;
+  Array.prototype.forEach.call(wrap.children, function(s, i){ s.textContent = (i < n) ? '★' : '☆'; });
+}
+
+function wrCloseOverlay(){
+  if(!ST.wrCloseId) return '';
+  const th = ST.lang==='th';
+  const w = wrData().find(function(x){ return String(x._dbId)===String(ST.wrCloseId); });
+  if(!w) return '';
+  const inv = (ST.modData.fm && ST.modData.fm.inv) || [];
+  const reportedAt = w.date ? new Date(w.date).toLocaleString(th?'th-TH':'en-US',{dateStyle:'short',timeStyle:'medium'}) : '—';
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    +'<span style="font-family:var(--font-heading);font-size:15px">📋 '+(th?'Close Detail — ปิดงาน':'Close Detail')+'</span>'
+    +'<div class="tap" data-act="wr-close-cancel" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--color-surface);flex-shrink:0">✕</div></div>'
+
+    +'<div class="blueprint" style="padding:10px 12px;margin-bottom:10px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+      +'<div style="font-weight:600;font-size:13px;margin-bottom:4px">'+esc(w.id)+' — '+esc(w.desc||'')+'</div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-700);padding:3px 0"><span>Asset</span>'+(w.assetId?fmChip(w.assetId,'gray'):'—')+'</div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-700);padding:3px 0"><span>'+(th?'ช่าง':'Technician')+'</span><span style="font-weight:600">'+esc(w.assign||'—')+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-700);padding:3px 0"><span>'+(th?'เวลาแจ้ง':'Reported')+'</span><span>'+esc(reportedAt)+'</span></div>'
+    +'</div>'
+
+    +'<div style="display:flex;flex-direction:column;gap:10px">'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+      + wrFormField('ลักษณะงาน (Work Type)','Work Type', th, '<select id="wr-cl-worktype" style="'+wrInputStyle+'">'+CLOSE_WORKTYPE_OPTIONS.map(function(o){return '<option value="'+o[0]+'">'+o[1]+'</option>';}).join('')+'</select>')
+      + wrFormField('ระบบงาน (System)','System', th, '<select id="wr-cl-system" style="'+wrInputStyle+'">'+CLOSE_SYSTEM_OPTIONS.map(function(o){return '<option value="'+o[0]+'">'+o[1]+'</option>';}).join('')+'</select>')
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+      + wrFormField('เวลาเริ่มดำเนินการ','Start time', th, '<input id="wr-cl-start" type="datetime-local" style="'+wrInputStyle+'">')
+      + wrFormField('เวลาดำเนินการเสร็จ','End time', th, '<input id="wr-cl-end" type="datetime-local" style="'+wrInputStyle+'">')
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
+      +'<div class="blueprint" style="padding:8px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:10px;color:var(--color-neutral-600)">'+(th?'เวลาตอบสนอง':'Response')+'</div><div id="wr-cl-response" style="font-weight:700;color:var(--orange);font-size:14px">— '+(th?'นาที':'min')+'</div></div>'
+      +'<div class="blueprint" style="padding:8px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:10px;color:var(--color-neutral-600)">'+(th?'เวลาซ่อม (MTTR)':'Repair (MTTR)')+'</div><div id="wr-cl-mttr" style="font-weight:700;color:var(--sky);font-size:14px">— '+(th?'นาที':'min')+'</div></div>'
+      +'<div class="blueprint" style="padding:8px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:10px;color:var(--color-neutral-600)">'+(th?'มูลค่าการซ่อม':'Total cost')+'</div><div id="wr-cl-total" style="font-weight:700;color:var(--green);font-size:14px">฿0</div></div>'
+    +'</div>'
+
+    + wrFormField('รายละเอียดการดำเนินการ','Action taken', th, '<textarea id="wr-cl-action" rows="2" style="'+wrInputStyle+';resize:vertical" placeholder="'+(th?'สิ่งที่ดำเนินการ เช่น เปลี่ยน bearing...':'What was done...')+'"></textarea>')
+
+    + wrFormField('อะไหล่ที่ใช้ (จากคลัง)','Parts used', th,
+        '<select id="wr-cl-parts-select" style="'+wrInputStyle+'">'
+        +'<option value="">-- '+(th?'เลือกอะไหล่จากคลัง':'Select part')+' --</option>'
+        + inv.map(function(i){ return '<option value="'+i.id+'">'+esc((i.code||i.id)+' — '+(i.name||'')+' (฿'+(i.price||0)+')')+'</option>'; }).join('')
+        +'</select><div id="wr-cl-parts-list" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px"></div>')
+
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
+      + wrFormField('ค่าแรง (฿)','Labor (฿)', th, '<input id="wr-cl-labor" type="number" value="0" style="'+wrInputStyle+'">')
+      + wrFormField('ค่าอะไหล่ (฿)','Parts (฿)', th, '<input id="wr-cl-parts-cost" type="number" value="0" readonly style="'+wrInputStyle+';opacity:.7">')
+      + wrFormField('ค่าเดินทาง (฿)','Travel (฿)', th, '<input id="wr-cl-travel" type="number" value="0" style="'+wrInputStyle+'">')
+    +'</div>'
+
+    + wrFormField('📷 รูปยืนยันการทำงาน / จุดที่ชำรุด (อย่างน้อย 1 รูป จากช่าง แนะนำ 2 รูป) *','📷 Photo evidence (at least 1, 2 recommended) *', th,
+        '<input id="wr-cl-photo-input" type="file" accept="image/*" capture="environment" multiple style="'+wrInputStyle+'"><div id="wr-cl-photo-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>')
+
+    + wrFormField('ลายเซ็นผู้แจ้งงาน / ผู้มอบหมาย','Reporter / assigner signature', th,
+        '<canvas id="wr-cl-sigpad" width="440" height="110" style="width:100%;height:110px;border:1px solid var(--color-divider);border-radius:8px;background:#fff;touch-action:none"></canvas>'
+        +'<div class="tap" data-act="wr-close-sig-clear" style="display:inline-block;margin-top:6px;font-size:11px;font-weight:600;padding:6px 10px;border-radius:8px;border:1px solid var(--color-divider)">🗑 '+(th?'ล้างลายเซ็น':'Clear')+'</div>')
+
+    + wrFormField('ประเมินความพึงพอใจ','Satisfaction', th,
+        '<div id="wr-cl-stars" style="font-size:24px;letter-spacing:4px">'
+        + [1,2,3,4,5].map(function(n){ return '<span class="tap" data-act="wr-close-star" data-n="'+n+'" style="cursor:pointer">☆</span>'; }).join('')
+        +'</div>')
+
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">'
+      +'<div class="tap" data-act="wr-close-cancel" style="font-size:12.5px;font-weight:600;padding:10px 16px;border-radius:8px;text-align:center;border:1px solid var(--color-divider)">'+(th?'ยกเลิก':'Cancel')+'</div>'
+      +'<div class="tap" data-act="wr-close-submit" style="font-size:12.5px;font-weight:700;padding:10px 16px;border-radius:8px;text-align:center;background:var(--color-accent);color:#fff'+(ST.wrCloseBusy?';opacity:.6':'')+'">'+(ST.wrCloseBusy?(th?'กำลังบันทึก...':'Saving...'):(th?'✅ ยืนยันปิดงาน':'✅ Confirm Close'))+'</div>'
+    +'</div>'
+    +'</div>'
+  );
+}
+
+async function wrCloseSubmit(){
+  const th = ST.lang==='th';
+  if (wrClosePhotos.length < 1) { toast(th?'⚠ กรุณาแนบรูปยืนยันการทำงานอย่างน้อย 1 รูปก่อนปิดงาน':'⚠ Attach at least 1 photo before closing'); return; }
+  const dbId = ST.wrCloseId;
+  const w = wrData().find(function(x){ return String(x._dbId)===String(dbId); });
+  const worktype = (document.getElementById('wr-cl-worktype')||{}).value;
+  const system = (document.getElementById('wr-cl-system')||{}).value;
+  const startVal = (document.getElementById('wr-cl-start')||{}).value;
+  const endVal = (document.getElementById('wr-cl-end')||{}).value;
+  const action = (document.getElementById('wr-cl-action')||{}).value || '';
+  const labor = parseFloat((document.getElementById('wr-cl-labor')||{}).value)||0;
+  const travel = parseFloat((document.getElementById('wr-cl-travel')||{}).value)||0;
+  const partsCost = wrClosePartsCost();
+  const mttrMin = (startVal && endVal) ? Math.round((new Date(endVal)-new Date(startVal))/60000) : null;
+  const mttrHours = (mttrMin!=null && mttrMin>=0) ? Math.round((mttrMin/60)*100)/100 : 1;
+  ST.wrCloseBusy = true; render();
   try{
-    await api('/work-orders/'+dbId+'/status', { method:'PATCH', body: JSON.stringify({ status:'closed', labor_hours:lb, parts_cost:pb, mttr_hours:mt }) });
-    toast(th?'✅ ปิดงานแล้ว':'✅ Completed');
+    await api('/work-orders/'+dbId+'/status', { method:'PATCH', body: JSON.stringify({
+      status:'closed', labor_hours: labor+travel, parts_cost: partsCost, mttr_hours: mttrHours, action_taken: action||null
+    }) });
+    // Extra detail the typed columns don't have a slot for — merged into meta
+    // via the sync endpoint, same lossless pattern used across this app.
+    if (w) {
+      try{
+        await api('/work-orders/sync', { method:'POST', body: JSON.stringify({ items: [{
+          id: w.id, assetId: w.assetId, desc: w.desc, type: worktype||w.type, priority: w.priority,
+          reporter: w.reporter||null, phone: w.phone||null, status:'closed',
+          worktype: worktype||undefined, system: system||undefined,
+          startTime: startVal?new Date(startVal).toISOString():undefined, endTime: endVal?new Date(endVal).toISOString():undefined,
+          laborCost: labor, travelCost: travel, partsCost: partsCost,
+          partsUsed: wrClosePartsUsed.length?wrClosePartsUsed:undefined,
+          photos: wrClosePhotos.length?wrClosePhotos.map(function(p){return p.dataUrl;}):undefined,
+          signature: (function(){ const c=document.getElementById('wr-cl-sigpad'); return c?c.toDataURL():undefined; })(),
+          satisfaction: wrCloseStars||undefined, closeDetail: action||undefined
+        }] }) });
+      }catch(e){ /* WR is already closed server-side; extra detail merge is best-effort */ }
+    }
+    ST.wrCloseId = null; ST.wrCloseBusy = false;
+    toast(th?'✅ ปิดงานสำเร็จ — รอ Manager อนุมัติ':'✅ Closed — pending manager approval');
     loadFmWR();
-  }catch(err){ toast((th?'ปิดงานไม่สำเร็จ: ':'Complete failed: ')+(err.message||err)); }
+  }catch(err){
+    ST.wrCloseBusy = false; render();
+    toast((th?'ปิดงานไม่สำเร็จ: ':'Close failed: ')+(err.message||err));
+  }
 }
 async function wrCancel(dbId){
   const th = ST.lang==='th';
@@ -1013,7 +1241,7 @@ function fmWR(){
   else if(sub==='repeated') body = wrRepeated();
   else if(sub==='reopt') body = wrReOpt();
   else if(sub==='history') body = wrHistory();
-  return '<div style="display:flex;flex-direction:column;gap:10px">' + wrSubTabs(sub) + body + '</div>' + wrDetailOverlay() + wrFormOverlay();
+  return '<div style="display:flex;flex-direction:column;gap:10px">' + wrSubTabs(sub) + body + '</div>' + wrDetailOverlay() + wrFormOverlay() + wrCloseOverlay();
 }
 
 function fmOM(){
@@ -1209,6 +1437,18 @@ function bindFormHandlers(){
   if(lf) lf.addEventListener('submit', onLoginSubmit);
   const rf = document.getElementById('register-form');
   if(rf) rf.addEventListener('submit', onRegisterSubmit);
+
+  // Close Detail (ปิดงาน) overlay — imperative bindings so typing/drawing/
+  // adding photos doesn't need a full render() (which would wipe the canvas).
+  if (ST.wrCloseId) {
+    const s1 = document.getElementById('wr-cl-start'); if(s1) s1.addEventListener('input', wrCloseRecalc);
+    const s2 = document.getElementById('wr-cl-end'); if(s2) s2.addEventListener('input', wrCloseRecalc);
+    const lb = document.getElementById('wr-cl-labor'); if(lb) lb.addEventListener('input', wrCloseRecalcCost);
+    const tv = document.getElementById('wr-cl-travel'); if(tv) tv.addEventListener('input', wrCloseRecalcCost);
+    const ps = document.getElementById('wr-cl-parts-select'); if(ps) ps.addEventListener('change', function(){ wrCloseAddPart(ps); });
+    const pi = document.getElementById('wr-cl-photo-input'); if(pi) pi.addEventListener('change', function(){ wrClosePhotoAdd(pi); });
+    wrCloseSigInit();
+  }
 }
 
 document.addEventListener('click', function(e){
@@ -1242,13 +1482,17 @@ document.addEventListener('click', function(e){
   else if(act==='wr-sub'){ ST.wrSub = el.getAttribute('data-sub'); render(); }
   else if(act==='retry-wr'){ loadFmWR(); }
   else if(act==='wr-accept'){ wrAccept(el.getAttribute('data-id')); }
-  else if(act==='wr-close'){ wrClose(el.getAttribute('data-id')); }
+  else if(act==='wr-close'){ wrCloseOpen(el.getAttribute('data-id')); }
   else if(act==='wr-cancel'){ wrCancel(el.getAttribute('data-id')); }
   else if(act==='wr-detail'){ ST.wrDetailId = el.getAttribute('data-id'); render(); }
   else if(act==='wr-detail-close'){ ST.wrDetailId = null; render(); }
   else if(act==='wr-new-open'){ ST.wrFormOpen = true; render(); if(!(ST.modData.fm && ST.modData.fm.assets)) loadFmAssets(); }
   else if(act==='wr-new-close'){ ST.wrFormOpen = false; render(); }
   else if(act==='wr-new-submit'){ if(!ST.wrFormBusy) wrCreateSubmit(); }
+  else if(act==='wr-close-cancel'){ wrCloseClose(); }
+  else if(act==='wr-close-submit'){ if(!ST.wrCloseBusy) wrCloseSubmit(); }
+  else if(act==='wr-close-sig-clear'){ wrCloseSigClear(); }
+  else if(act==='wr-close-star'){ wrCloseSetStar(parseInt(el.getAttribute('data-n'),10)); }
   else if(act==='noop'){ /* let the browser handle it (e.g. tel: link) without navigating the app state */ }
   else if(act==='lifestyle-market'){ ST.lifestyleSub='market'; render(); }
   else if(act==='lifestyle-coffee'){ ST.lifestyleSub='coffee'; render(); }
