@@ -475,7 +475,7 @@ function fmEmpty(msg){ return '<div style="font-size:12px;color:var(--color-neut
    the same endpoint the FM webapp's WR module now writes to — so this is a
    genuine live connection across devices, not a localStorage copy. */
 function normalizeWO(r){
-  return { id:r.wo_no, assetId:r.asset_no||r.asset_name||(r.asset_id?('#'+r.asset_id):null),
+  return { id:r.wo_no, _dbId:r.id, assetId:r.asset_no||r.asset_name||(r.asset_id?('#'+r.asset_id):null),
     desc:r.description, type:r.wo_type, priority:r.priority, reporter:r.reporter_name||r.requested_name,
     date:r.created_at, status:r.status, assign:r.assigned_name,
     mttr:r.mttr_hours!=null?parseFloat(r.mttr_hours):null, totalCost:r.total_cost!=null?parseFloat(r.total_cost):null,
@@ -555,11 +555,55 @@ const WR_TYPE_TARGET_H = { ER:4, CM:8, PJ:72 }; // hours — used for Maintainab
 function wrCardHtml(w, th){
   const st = WR_STATUS_MAP[w.status] || [w.status,w.status,'gray'];
   const pr = WR_PRIORITY_MAP[w.priority] || [w.priority,w.priority,'gray'];
+  const btnStyle = 'font-size:11px;font-weight:600;padding:6px 12px;border-radius:8px;text-align:center';
+  let actions = '';
+  if (w._dbId) {
+    if (w.status === 'open') {
+      actions += '<div class="tap" data-act="wr-accept" data-id="'+w._dbId+'" style="'+btnStyle+';background:var(--color-accent);color:#fff">'+(th?'รับงาน':'Accept')+'</div>';
+    }
+    if (w.status === 'inprogress' || w.status === 'arrived') {
+      actions += '<div class="tap" data-act="wr-close" data-id="'+w._dbId+'" style="'+btnStyle+';background:var(--green);color:#fff">'+(th?'ปิดงาน':'Complete')+'</div>';
+    }
+    if (w.status !== 'closed' && w.status !== 'approved' && w.status !== 'cancelled') {
+      actions += '<div class="tap" data-act="wr-cancel" data-id="'+w._dbId+'" style="'+btnStyle+';border:1px solid var(--danger);color:var(--danger)">'+(th?'ยกเลิก':'Cancel')+'</div>';
+    }
+  }
   return fmCard(
     '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(w.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
     +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc((w.desc||'').slice(0,70))+'</div>'
     +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip(th?pr[0]:pr[1], pr[2])+(w.assetId?fmChip(w.assetId,'gray'):'')+(w.assign?fmChip(w.assign,'gray'):'')+(w.mttr?fmChip('MTTR '+w.mttr+'h','gray'):'')+'</div>'
+    + (actions ? '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">'+actions+'</div>' : '')
   );
+}
+async function wrAccept(dbId){
+  const th = ST.lang==='th';
+  const tech = prompt(th?'ชื่อช่างที่รับงาน:':'Technician name:');
+  if(!tech) return;
+  try{
+    await api('/work-orders/'+dbId+'/status', { method:'PATCH', body: JSON.stringify({ status:'inprogress' }) });
+    toast(th?'✅ รับงานแล้ว — '+tech:'✅ Accepted — '+tech);
+    loadFmWR();
+  }catch(err){ toast((th?'รับงานไม่สำเร็จ: ':'Accept failed: ')+(err.message||err)); }
+}
+async function wrClose(dbId){
+  const th = ST.lang==='th';
+  const lb = parseFloat(prompt(th?'ค่าแรง (฿):':'Labor cost (฿):','0'))||0;
+  const pb = parseFloat(prompt(th?'ค่าอะไหล่ (฿):':'Parts cost (฿):','0'))||0;
+  const mt = parseFloat(prompt(th?'MTTR (ชั่วโมง):':'MTTR (hours):','1'))||1;
+  try{
+    await api('/work-orders/'+dbId+'/status', { method:'PATCH', body: JSON.stringify({ status:'closed', labor_hours:lb, parts_cost:pb, mttr_hours:mt }) });
+    toast(th?'✅ ปิดงานแล้ว':'✅ Completed');
+    loadFmWR();
+  }catch(err){ toast((th?'ปิดงานไม่สำเร็จ: ':'Complete failed: ')+(err.message||err)); }
+}
+async function wrCancel(dbId){
+  const th = ST.lang==='th';
+  if(!confirm(th?'ยกเลิกงานนี้?':'Cancel this WR?')) return;
+  try{
+    await api('/work-orders/'+dbId+'/status', { method:'PATCH', body: JSON.stringify({ status:'cancelled' }) });
+    toast(th?'ยกเลิกแล้ว':'Cancelled');
+    loadFmWR();
+  }catch(err){ toast((th?'ยกเลิกไม่สำเร็จ: ':'Cancel failed: ')+(err.message||err)); }
 }
 function wrListHtml(list, th, emptyMsg){
   if(!list.length) return fmEmpty(emptyMsg || (th?'ไม่มีข้อมูล':'No data'));
@@ -984,6 +1028,9 @@ document.addEventListener('click', function(e){
   else if(act==='refresh-wr'){ loadFmWR(); }
   else if(act==='wr-sub'){ ST.wrSub = el.getAttribute('data-sub'); render(); }
   else if(act==='retry-wr'){ loadFmWR(); }
+  else if(act==='wr-accept'){ wrAccept(el.getAttribute('data-id')); }
+  else if(act==='wr-close'){ wrClose(el.getAttribute('data-id')); }
+  else if(act==='wr-cancel'){ wrCancel(el.getAttribute('data-id')); }
   else if(act==='lifestyle-market'){ ST.lifestyleSub='market'; render(); }
   else if(act==='lifestyle-coffee'){ ST.lifestyleSub='coffee'; render(); }
   else if(act==='goto-market'){ window.location.href = '/TKO_IsanFoodMarket/'; }
