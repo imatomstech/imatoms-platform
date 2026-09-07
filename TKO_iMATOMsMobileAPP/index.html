@@ -168,6 +168,8 @@ const ST = {
   wrFormBusy: false,
   wrCloseId: null,   // dbId of the WR currently shown in the Close Detail overlay
   wrCloseBusy: false,
+  wrEvalId: null,    // dbId of the WR currently shown in the Evaluate & Approve overlay
+  wrEvalBusy: false,
 };
 
 function setLang(l){ ST.lang = l; try{ localStorage.setItem(LS.lang, l); }catch(e){} render(); }
@@ -490,7 +492,7 @@ function normalizeWO(r){
     phone:r.reporter_phone, date:r.created_at, status:r.status, assign:r.assigned_name,
     mttr:r.mttr_hours!=null?parseFloat(r.mttr_hours):null, totalCost:r.total_cost!=null?parseFloat(r.total_cost):null,
     responseTime:r.response_time_min!=null?Math.round(parseFloat(r.response_time_min)):null,
-    approvedBy:r.approved_name, closeDate:r.actual_end
+    approvedBy: r.approved_name || (r.meta && r.meta.approvedBy) || null, closeDate:r.actual_end
   });
 }
 function wrLocationText(w){
@@ -871,6 +873,119 @@ async function wrCloseSubmit(){
     toast((th?'ปิดงานไม่สำเร็จ: ':'Close failed: ')+(err.message||err));
   }
 }
+function wrEvalOpen(dbId){ ST.wrEvalId = dbId; ST.wrEvalBusy = false; render(); }
+function wrEvalClose(){ ST.wrEvalId = null; render(); }
+
+function wrEvalOverlay(){
+  if(!ST.wrEvalId) return '';
+  const th = ST.lang==='th';
+  const w = wrData().find(function(x){ return String(x._dbId)===String(ST.wrEvalId); });
+  if(!w) return '';
+  const pr = WR_PRIORITY_MAP[w.priority] || [w.priority,w.priority,'gray'];
+  const stars = '★'.repeat(w.satisfaction||0) + '☆'.repeat(5-(w.satisfaction||0));
+  const mttrMin = w.mttr ? Math.round(w.mttr*60) : '—';
+  const partsStr = Array.isArray(w.partsUsed) && w.partsUsed.length
+    ? w.partsUsed.map(function(p){ return '• '+esc(p.name||p.code)+' × '+(p.qty||1)+' = '+fmMoney((p.price||0)*(p.qty||1)); }).join('<br>')
+    : (th?'ไม่มีการใช้อะไหล่':'No parts used');
+  const photos = Array.isArray(w.photos) ? w.photos : [];
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    +'<span style="font-family:var(--font-heading);font-size:15px">🏅 '+(th?'Evaluate & Approve':'Evaluate & Approve')+'</span>'
+    +'<div class="tap" data-act="wr-eval-close" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--color-surface);flex-shrink:0">✕</div></div>'
+
+    +'<div class="blueprint" style="padding:14px;margin-bottom:12px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+      +'<div style="text-align:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--color-divider)">'
+        +'<div style="font-family:var(--font-heading);font-size:14px;font-weight:700">'+(th?'รายงานปิดงาน Work Request':'Work Order Close Report')+'</div>'
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:4px;font-size:11.5px">'
+        +'<div style="display:flex;justify-content:space-between"><span style="color:var(--color-neutral-600)">WR No.</span>'+fmChip(w.id,'gray')+'</div>'
+        +'<div style="display:flex;justify-content:space-between"><span style="color:var(--color-neutral-600)">Asset</span>'+fmChip(w.assetId||'—','gray')+'</div>'
+        +'<div style="display:flex;justify-content:space-between"><span style="color:var(--color-neutral-600)">'+(th?'ประเภท':'Priority')+'</span>'+fmChip(th?pr[0]:pr[1], pr[2])+'</div>'
+        +'<div style="display:flex;justify-content:space-between"><span style="color:var(--color-neutral-600)">'+(th?'ลักษณะงาน':'Work type')+'</span><span style="font-weight:600">'+esc((w.worktype||'—')+' — '+(w.system||'—'))+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between"><span style="color:var(--color-neutral-600)">'+(th?'ผู้แจ้ง':'Reporter')+'</span><span>'+esc(w.reporter||'—')+(w.phone?' ('+esc(w.phone)+')':'')+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between"><span style="color:var(--color-neutral-600)">'+(th?'ช่าง':'Technician')+'</span><span>'+esc(w.assign||'—')+'</span></div>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">'
+        +'<div style="text-align:center;background:var(--color-surface);border-radius:8px;padding:8px"><div style="font-size:10px;color:var(--color-neutral-600)">'+(th?'ตอบสนอง':'Response')+'</div><div style="font-weight:700;color:var(--orange);font-size:16px">'+(w.responseTime||'—')+'</div><div style="font-size:9px;color:var(--color-neutral-600)">'+(th?'นาที':'min')+'</div></div>'
+        +'<div style="text-align:center;background:var(--color-surface);border-radius:8px;padding:8px"><div style="font-size:10px;color:var(--color-neutral-600)">MTTR</div><div style="font-weight:700;color:var(--sky);font-size:16px">'+mttrMin+'</div><div style="font-size:9px;color:var(--color-neutral-600)">'+(th?'นาที':'min')+'</div></div>'
+        +'<div style="text-align:center;background:var(--color-surface);border-radius:8px;padding:8px"><div style="font-size:10px;color:var(--color-neutral-600)">'+(th?'มูลค่าซ่อม':'Cost')+'</div><div style="font-weight:700;color:var(--green);font-size:14px">'+fmMoney(w.totalCost)+'</div></div>'
+      +'</div>'
+      +'<div style="margin-top:10px"><div style="font-size:10px;font-weight:700;color:var(--color-neutral-600);text-transform:uppercase;margin-bottom:4px">'+(th?'อะไหล่ที่ใช้':'Parts used')+'</div><div style="font-size:11.5px;line-height:1.7">'+partsStr+'</div></div>'
+      + (photos.length ? '<div style="margin-top:10px"><div style="font-size:10px;font-weight:700;color:var(--color-neutral-600);text-transform:uppercase;margin-bottom:4px">📷 '+(th?'รูปยืนยันการทำงาน':'Photo evidence')+'</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+photos.map(function(p){ return '<img src="'+p+'" style="width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--color-divider)">'; }).join('')+'</div></div>' : '')
+      +'<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:11.5px"><span style="color:var(--color-neutral-600)">'+(th?'ความพึงพอใจ':'Satisfaction')+'</span><span style="color:#EAB308;font-size:15px">'+stars+'</span></div>'
+      + (w.approvedBy ? '<div style="margin-top:10px;padding:8px;border-radius:8px;background:rgba(34,197,94,.12);color:var(--green);font-size:11.5px">✅ '+(th?'อนุมัติโดย ':'Approved by ')+esc(w.approvedBy)+'</div>' : '')
+    +'</div>'
+
+    + (w.approvedBy ? '' : (
+      '<div style="font-family:var(--font-heading);font-size:13px;font-weight:700;margin-bottom:8px">📝 '+(th?'ประเมินและพัฒนาต่อเนื่อง':'Evaluation & continuous improvement')+'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:10px">'
+      + wrFormField('💪 จุดแข็ง (Strength)','Strength', th, '<textarea id="wr-ev-strength" rows="2" style="'+wrInputStyle+';resize:vertical" placeholder="'+(th?'ช่างตอบสนองเร็ว แก้ปัญหาถูกต้อง...':'What went well...')+'"></textarea>')
+      + wrFormField('🔧 จุดอ่อน (Weakness)','Weakness', th, '<textarea id="wr-ev-weakness" rows="2" style="'+wrInputStyle+';resize:vertical" placeholder="'+(th?'ขาดอะไหล่สำรอง ใช้เวลาวินิจฉัยนาน...':'What could improve...')+'"></textarea>')
+      + wrFormField('🚀 แนวทางพัฒนา (Improvement)','Improvement', th, '<textarea id="wr-ev-improve" rows="2" style="'+wrInputStyle+';resize:vertical" placeholder="'+(th?'เพิ่มอะไหล่ในคลัง จัดอบรม สร้าง PM plan...':'Suggested next steps...')+'"></textarea>')
+      + wrFormField('⚠ Repeated Repair? (งานซ่อมซ้ำ → ควรขึ้น PM)','Repeated repair?', th,
+          '<select id="wr-ev-recurring" style="'+wrInputStyle+'"><option value="no">'+(th?'ไม่ใช่':'No')+'</option><option value="yes">'+(th?'ใช่ — ควรจัดทำแผน PM':'Yes — should schedule PM')+'</option><option value="review">'+(th?'ตรวจสอบเพิ่มเติม':'Needs review')+'</option></select>')
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        + wrFormField('ความคิดเห็น Manager','Manager comment', th, '<textarea id="wr-ev-comment-mgr" rows="2" style="'+wrInputStyle+';resize:vertical"></textarea>')
+        + wrFormField('ความคิดเห็น Director','Director comment', th, '<textarea id="wr-ev-comment-dir" rows="2" style="'+wrInputStyle+';resize:vertical"></textarea>')
+      +'</div>'
+      +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">'
+        +'<div class="tap" data-act="wr-eval-reject" data-id="'+w._dbId+'" style="font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid var(--danger);color:var(--danger)">'+(th?'✕ ไม่ / ส่งกลับแก้ไข':'✕ Send back')+'</div>'
+        +'<div class="tap" data-act="wr-eval-approve" data-id="'+w._dbId+'" data-role="Manager" style="font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;background:var(--green);color:#fff'+(ST.wrEvalBusy?';opacity:.6':'')+'">'+(th?'✔ Manager เห็นชอบอนุมัติ':'✔ Manager approve')+'</div>'
+        +'<div class="tap" data-act="wr-eval-approve" data-id="'+w._dbId+'" data-role="Director" style="font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;background:var(--orange);color:#fff'+(ST.wrEvalBusy?';opacity:.6':'')+'">'+(th?'⭐ Director เห็นชอบอนุมัติ':'⭐ Director approve')+'</div>'
+      +'</div>'
+      +'</div>'
+    ))
+  );
+}
+
+async function wrEvalApprove(dbId, role){
+  const th = ST.lang==='th';
+  const w = wrData().find(function(x){ return String(x._dbId)===String(dbId); });
+  ST.wrEvalBusy = true; render();
+  try{
+    await api('/work-orders/'+dbId+'/evaluate', { method:'PATCH', body: JSON.stringify({ approved:true }) });
+    if (w) {
+      const user = getUser();
+      const roleLabel = role + ': ' + ((user&&(user.full_name||user.username))||'—');
+      try{
+        await api('/work-orders/sync', { method:'POST', body: JSON.stringify({ items: [{
+          id: w.id, assetId: w.assetId, desc: w.desc, type: w.type, priority: w.priority,
+          reporter: w.reporter||null, phone: w.phone||null, status:'approved', approvedBy: roleLabel,
+          evalStrength: (document.getElementById('wr-ev-strength')||{}).value || undefined,
+          evalWeakness: (document.getElementById('wr-ev-weakness')||{}).value || undefined,
+          evalImprove: (document.getElementById('wr-ev-improve')||{}).value || undefined,
+          evalRecurring: (document.getElementById('wr-ev-recurring')||{}).value || undefined,
+          commentManager: (document.getElementById('wr-ev-comment-mgr')||{}).value || undefined,
+          commentDirector: (document.getElementById('wr-ev-comment-dir')||{}).value || undefined,
+        }] }) });
+      }catch(e){ /* approval itself already saved; extra detail merge is best-effort */ }
+    }
+    ST.wrEvalId = null; ST.wrEvalBusy = false;
+    toast(th?('✅ '+role+' อนุมัติงานเรียบร้อย'):('✅ Approved by '+role));
+    loadFmWR();
+  }catch(err){
+    ST.wrEvalBusy = false; render();
+    toast((th?'อนุมัติไม่สำเร็จ: ':'Approve failed: ')+(err.message||err));
+  }
+}
+
+async function wrEvalReject(dbId){
+  const th = ST.lang==='th';
+  const reason = prompt(th?'เหตุผลที่ส่งกลับให้ช่างแก้ไข (สั้นๆ):':'Reason for sending back (brief):');
+  if (reason===null) return;
+  if (!reason.trim()) { toast(th?'⚠ กรุณาระบุเหตุผลก่อนส่งกลับแก้ไข':'⚠ Please provide a reason'); return; }
+  ST.wrEvalBusy = true; render();
+  try{
+    await api('/work-orders/'+dbId+'/evaluate', { method:'PATCH', body: JSON.stringify({ approved:false, reject_reason: reason.trim() }) });
+    ST.wrEvalId = null; ST.wrEvalBusy = false;
+    toast(th?'↩ ส่งกลับให้ช่างแก้ไขแล้ว':'↩ Sent back for rework');
+    loadFmWR();
+  }catch(err){
+    ST.wrEvalBusy = false; render();
+    toast((th?'ส่งกลับไม่สำเร็จ: ':'Send back failed: ')+(err.message||err));
+  }
+}
+
 async function wrCancel(dbId){
   const th = ST.lang==='th';
   if(!confirm(th?'ยกเลิกงานนี้?':'Cancel this WR?')) return;
@@ -963,16 +1078,29 @@ function wrNew(){
 function wrInProgress(){ const th=ST.lang==='th'; return wrListHtml(wrData().filter(function(w){return w.status==='inprogress'||w.status==='arrived';}).sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);}), th, th?'ไม่มีงานที่กำลังดำเนินการ':'Nothing in progress'); }
 function wrClosed(){ const th=ST.lang==='th'; return wrListHtml(wrData().filter(function(w){return w.status==='closed'||w.status==='approved';}).sort(function(a,b){return new Date(b.closeDate||b.date||0)-new Date(a.closeDate||a.date||0);}), th, th?'ยังไม่มีงานที่ปิดแล้ว':'No closed work requests'); }
 
+function wrEvalCardHtml(w, th){
+  const st = WR_STATUS_MAP[w.status] || [w.status,w.status,'gray'];
+  const pr = WR_PRIORITY_MAP[w.priority] || [w.priority,w.priority,'gray'];
+  return '<div class="tap blueprint" data-act="wr-eval-open" data-id="'+w._dbId+'" style="padding:11px 12px;display:flex;flex-direction:column;gap:4px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(w.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
+    +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc((w.desc||'').slice(0,60))+'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip(th?pr[0]:pr[1], pr[2])+(w.assetId?fmChip(w.assetId,'gray'):'')+(w.assign?fmChip(w.assign,'gray'):'')+(w.approvedBy?fmChip((th?'อนุมัติโดย ':'by ')+w.approvedBy,'green'):'')+'</div>'
+    +'</div>';
+}
+function wrEvalListHtml(list, th, emptyMsg){
+  if(!list.length) return fmEmpty(emptyMsg);
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + list.slice(0,30).map(function(w){ return wrEvalCardHtml(w, th); }).join('') + '</div>';
+}
 function wrEvaluate(){
   const th = ST.lang==='th';
   const wr = wrData();
   const pending = wr.filter(function(w){ return w.status==='closed' && !w.approvedBy; });
   const approved = wr.filter(function(w){ return w.status==='approved' || (w.status==='closed' && w.approvedBy); });
   return '<div><h4 style="font-size:13px;margin-bottom:6px">'+(th?'รอตรวจสอบ/อนุมัติ':'Pending Review')+' ('+pending.length+')</h4>'
-    + wrListHtml(pending, th, th?'ไม่มีงานรอประเมิน':'Nothing pending evaluation')
+    + wrEvalListHtml(pending, th, th?'ไม่มีงานรอประเมิน':'Nothing pending evaluation')
     +'</div><div style="margin-top:14px"><h4 style="font-size:13px;margin-bottom:6px">'+(th?'อนุมัติแล้ว':'Approved')+' ('+approved.length+')</h4>'
-    + wrListHtml(approved.slice(0,15), th, th?'ยังไม่มีงานที่อนุมัติ':'Nothing approved yet')
-    +'</div>';
+    + wrEvalListHtml(approved.slice(0,15), th, th?'ยังไม่มีงานที่อนุมัติ':'Nothing approved yet')
+    +'</div>' + wrEvalOverlay();
 }
 
 function wrSummarize(){
@@ -1493,6 +1621,10 @@ document.addEventListener('click', function(e){
   else if(act==='wr-close-submit'){ if(!ST.wrCloseBusy) wrCloseSubmit(); }
   else if(act==='wr-close-sig-clear'){ wrCloseSigClear(); }
   else if(act==='wr-close-star'){ wrCloseSetStar(parseInt(el.getAttribute('data-n'),10)); }
+  else if(act==='wr-eval-open'){ wrEvalOpen(el.getAttribute('data-id')); }
+  else if(act==='wr-eval-close'){ wrEvalClose(); }
+  else if(act==='wr-eval-approve'){ if(!ST.wrEvalBusy) wrEvalApprove(el.getAttribute('data-id'), el.getAttribute('data-role')); }
+  else if(act==='wr-eval-reject'){ if(!ST.wrEvalBusy) wrEvalReject(el.getAttribute('data-id')); }
   else if(act==='noop'){ /* let the browser handle it (e.g. tel: link) without navigating the app state */ }
   else if(act==='lifestyle-market'){ ST.lifestyleSub='market'; render(); }
   else if(act==='lifestyle-coffee'){ ST.lifestyleSub='coffee'; render(); }
