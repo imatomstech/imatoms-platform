@@ -475,12 +475,24 @@ function fmEmpty(msg){ return '<div style="font-size:12px;color:var(--color-neut
    the same endpoint the FM webapp's WR module now writes to — so this is a
    genuine live connection across devices, not a localStorage copy. */
 function normalizeWO(r){
-  return { id:r.wo_no, _dbId:r.id, assetId:r.asset_no||r.asset_name||(r.asset_id?('#'+r.asset_id):null),
+  // meta first (building/floor/zone/room/locationDetail/availableTime — the extra
+  // fields the Reliability Module captures that don't have their own DB column),
+  // then the real typed columns layered on top so the database stays authoritative
+  // for anything it actually tracks. Same recovery pattern as the Reliability Module.
+  return Object.assign({}, r.meta || {}, {
+    id:r.wo_no, _dbId:r.id, assetId:r.asset_no||r.asset_name||(r.asset_id?('#'+r.asset_id):null),
     desc:r.description, type:r.wo_type, priority:r.priority, reporter:r.reporter_name||r.requested_name,
-    date:r.created_at, status:r.status, assign:r.assigned_name,
+    phone:r.reporter_phone, date:r.created_at, status:r.status, assign:r.assigned_name,
     mttr:r.mttr_hours!=null?parseFloat(r.mttr_hours):null, totalCost:r.total_cost!=null?parseFloat(r.total_cost):null,
     responseTime:r.response_time_min!=null?Math.round(parseFloat(r.response_time_min)):null,
-    approvedBy:r.approved_name, closeDate:r.actual_end };
+    approvedBy:r.approved_name, closeDate:r.actual_end
+  });
+}
+function wrLocationText(w){
+  const parts = [w.building, w.floor, w.zone, w.room].filter(Boolean);
+  let s = parts.join(' / ');
+  if (w.locationDetail) s = s ? (s + ' — ' + w.locationDetail) : w.locationDetail;
+  return s;
 }
 function wrData(){ return (ST.modData.fm && ST.modData.fm.wr) || []; }
 async function loadFmWR(){
@@ -568,10 +580,18 @@ function wrCardHtml(w, th){
       actions += '<div class="tap" data-act="wr-cancel" data-id="'+w._dbId+'" style="'+btnStyle+';border:1px solid var(--danger);color:var(--danger)">'+(th?'ยกเลิก':'Cancel')+'</div>';
     }
   }
+  const loc = wrLocationText(w);
+  const reportedAt = w.date ? new Date(w.date).toLocaleString(th?'th-TH':'en-US',{dateStyle:'short',timeStyle:'short'}) : null;
   return fmCard(
     '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(w.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
     +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc((w.desc||'').slice(0,70))+'</div>'
-    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip(th?pr[0]:pr[1], pr[2])+(w.assetId?fmChip(w.assetId,'gray'):'')+(w.assign?fmChip(w.assign,'gray'):'')+(w.mttr?fmChip('MTTR '+w.mttr+'h','gray'):'')+'</div>'
+    + (loc ? '<div style="font-size:11px;color:var(--color-neutral-700)">📍 '+esc(loc)+'</div>' : '')
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip(th?pr[0]:pr[1], pr[2])+(w.type?fmChip(w.type,'gray'):'')+(w.assetId?fmChip(w.assetId,'gray'):'')+(w.assign?fmChip(w.assign,'gray'):'')+(w.mttr?fmChip('MTTR '+w.mttr+'h','gray'):'')+'</div>'
+    + (w.reporter||w.phone||reportedAt||w.availableTime ? '<div style="font-size:11px;color:var(--color-neutral-700);margin-top:2px;display:flex;flex-direction:column;gap:1px">'
+        + (w.reporter ? '<span>'+(th?'ผู้แจ้ง: ':'Reporter: ')+esc(w.reporter)+(w.phone?' · <a href="tel:'+esc(w.phone)+'" style="color:var(--color-accent-700)">📞 '+esc(w.phone)+'</a>':'')+'</span>' : (w.phone?'<span><a href="tel:'+esc(w.phone)+'" style="color:var(--color-accent-700)">📞 '+esc(w.phone)+'</a></span>':''))
+        + (reportedAt ? '<span>'+(th?'เวลาที่แจ้ง: ':'Reported: ')+esc(reportedAt)+'</span>' : '')
+        + (w.availableTime ? '<span>'+(th?'ช่วงเวลาเข้าดำเนินการ: ':'Available: ')+esc(w.availableTime)+'</span>' : '')
+      +'</div>' : '')
     + (actions ? '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">'+actions+'</div>' : '')
   );
 }
@@ -631,13 +651,13 @@ function wrSubTabs(active){
     { k:'new', label: th?'แจ้งใหม่':'New WR' },
     { k:'inprogress', label: th?'กำลังทำ':'In Progress' },
     { k:'closed', label: th?'ปิดงาน':'Closed' },
-    { k:'evaluate', label: th?'ประเมิน':'Evaluate' },
-    { k:'summarize', label: th?'สรุปผล':'Summarize' },
+    { k:'evaluate', label: th?'ประเมิน & อนุมัติ':'Evaluate & Approve' },
+    { k:'summarize', label: th?'สรุปผล WR':'Summarize WR' },
     { k:'maintain', label: th?'Maintainability':'Maintainability' },
     { k:'sla', label:'SLA' },
     { k:'repeated', label: th?'ซ่อมซ้ำ':'Repeated' },
     { k:'reopt', label:'Re-OPT' },
-    { k:'history', label: th?'ประวัติ':'History' },
+    { k:'history', label: th?'ประวัติ Asset':'Asset History' },
   ];
   return '<div style="display:flex;align-items:center;gap:6px">'
     +'<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;flex:1">'
