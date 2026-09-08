@@ -790,6 +790,46 @@ function wrEvalSigHasInk(){
   for(let i=3;i<data.length;i+=4){ if(data[i]!==0) return true; }
   return false;
 }
+// Technician signature pad on the Evaluate & Approve screen — mirrors the
+// Reliability Module desktop, where sig-close (technician) sits right next
+// to sig-approve (Manager/Director) in the same evaluate modal, both signed
+// at evaluation time rather than only being a read-only carryover from Close.
+let wrEvalTechSigDrawing = false, wrEvalTechSigLast = null;
+function wrEvalTechSigInit(){
+  const canvas = document.getElementById('wr-ev-sigpad-tech');
+  if(!canvas || canvas._wrBound) return;
+  canvas._wrBound = true;
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#1d1f20'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  const existing = canvas.getAttribute('data-existing');
+  if(existing){
+    const img = new Image();
+    img.onload = function(){ ctx.drawImage(img, 0, 0, canvas.width, canvas.height); };
+    img.src = existing;
+  }
+  function down(e){ wrEvalTechSigDrawing = true; wrEvalTechSigLast = wrCloseSigPos(canvas, e); e.preventDefault(); }
+  function move(e){
+    if(!wrEvalTechSigDrawing) return;
+    const p = wrCloseSigPos(canvas, e);
+    ctx.beginPath(); ctx.moveTo(wrEvalTechSigLast.x, wrEvalTechSigLast.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    wrEvalTechSigLast = p; e.preventDefault();
+  }
+  function up(){ wrEvalTechSigDrawing = false; }
+  canvas.addEventListener('mousedown', down); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+  canvas.addEventListener('touchstart', down, {passive:false}); canvas.addEventListener('touchmove', move, {passive:false}); canvas.addEventListener('touchend', up);
+}
+function wrEvalTechSigClear(){
+  const canvas = document.getElementById('wr-ev-sigpad-tech');
+  if(canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+}
+function wrEvalTechSigHasInk(){
+  const canvas = document.getElementById('wr-ev-sigpad-tech');
+  if(!canvas) return false;
+  const ctx = canvas.getContext('2d');
+  const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  for(let i=3;i<data.length;i+=4){ if(data[i]!==0) return true; }
+  return false;
+}
 function wrCloseSetStar(n){
   wrCloseStars = n;
   const wrap = document.getElementById('wr-cl-stars');
@@ -964,9 +1004,8 @@ function wrEvalOverlay(){
       +'<div style="font-family:var(--font-heading);font-size:13px;font-weight:700;margin:6px 0 8px">🖊 '+(th?'ลายเซ็นอนุมัติ':'Approval signature')+'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
         +'<div><div style="font-size:11px;color:var(--color-neutral-600);margin-bottom:6px">'+(th?'ลายเซ็นผู้ดำเนินงาน / ช่าง':'Technician signature')+'</div>'
-        + (w.signature
-            ? '<img src="'+w.signature+'" style="width:100%;height:80px;object-fit:contain;background:#fff;border-radius:8px;border:1px solid var(--color-divider)">'
-            : '<div style="width:100%;height:80px;display:flex;align-items:center;justify-content:center;background:var(--color-surface);border-radius:8px;border:1px solid var(--color-divider);font-size:11px;color:var(--color-neutral-600)">'+(th?'ไม่มีลายเซ็น':'No signature')+'</div>')
+        +'<canvas id="wr-ev-sigpad-tech" width="260" height="80" data-existing="'+esc(w.evalSigClose||w.signature||'')+'" style="width:100%;height:80px;background:#fff;border-radius:8px;border:1px solid var(--color-divider);touch-action:none"></canvas>'
+        +'<div class="tap" data-act="wr-eval-sig-clear-tech" style="margin-top:4px;text-align:center;font-size:11px;font-weight:700;padding:5px;border-radius:6px;border:1px solid var(--color-divider);color:var(--color-neutral-600)">🗑 '+(th?'ล้าง':'Clear')+'</div>'
         +'</div>'
         +'<div><div style="font-size:11px;color:var(--color-neutral-600);margin-bottom:6px">'+(th?'ลายเซ็น Manager / Director':'Manager / Director signature')+'</div>'
         +'<canvas id="wr-ev-sigpad" width="260" height="80" style="width:100%;height:80px;background:#fff;border-radius:8px;border:1px solid var(--color-divider);touch-action:none"></canvas>'
@@ -986,6 +1025,7 @@ function wrEvalOverlay(){
 async function wrEvalApprove(dbId, role){
   const th = ST.lang==='th';
   const w = wrData().find(function(x){ return String(x._dbId)===String(dbId); });
+  if(!wrEvalTechSigHasInk()){ toast(th?'⚠ กรุณาให้ช่างเซ็นชื่อก่อนอนุมัติ':'⚠ Please have the technician sign before approving'); return; }
   if(!wrEvalSigHasInk()){ toast(th?'⚠ กรุณาเซ็นชื่อก่อนอนุมัติ':'⚠ Please sign before approving'); return; }
   ST.wrEvalBusy = true; render();
   try{
@@ -1002,6 +1042,7 @@ async function wrEvalApprove(dbId, role){
           evalImprove: (document.getElementById('wr-ev-improve')||{}).value || undefined,
           evalRecurring: (document.getElementById('wr-ev-recurring')||{}).value || undefined,
           evalSigApprove: (function(){ const c=document.getElementById('wr-ev-sigpad'); return c?c.toDataURL():undefined; })(),
+          evalSigClose: (function(){ const c=document.getElementById('wr-ev-sigpad-tech'); return c?c.toDataURL():undefined; })(),
         }] }) });
       }catch(e){ /* approval itself already saved; extra detail merge is best-effort */ }
     }
@@ -1665,7 +1706,7 @@ function bindFormHandlers(){
     const pi = document.getElementById('wr-cl-photo-input'); if(pi) pi.addEventListener('change', function(){ wrClosePhotoAdd(pi); });
     wrCloseSigInit();
   }
-  if (ST.wrEvalId) { wrEvalSigInit(); }
+  if (ST.wrEvalId) { wrEvalSigInit(); wrEvalTechSigInit(); }
 }
 
 document.addEventListener('click', function(e){
@@ -1717,6 +1758,7 @@ document.addEventListener('click', function(e){
   else if(act==='wr-close-submit'){ if(!ST.wrCloseBusy) wrCloseSubmit(); }
   else if(act==='wr-close-sig-clear'){ wrCloseSigClear(); }
   else if(act==='wr-eval-sig-clear'){ wrEvalSigClear(); }
+  else if(act==='wr-eval-sig-clear-tech'){ wrEvalTechSigClear(); }
   else if(act==='wr-close-star'){ wrCloseSetStar(parseInt(el.getAttribute('data-n'),10)); }
   else if(act==='wr-eval-open'){ wrEvalOpen(el.getAttribute('data-id')); }
   else if(act==='wr-eval-close'){ wrEvalClose(); }
