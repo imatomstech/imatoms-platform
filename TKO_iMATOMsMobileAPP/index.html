@@ -170,6 +170,7 @@ const ST = {
   wrCloseId: null,   // dbId of the WR currently shown in the Close Detail overlay
   wrCloseBusy: false,
   wrEvalId: null,    // dbId of the WR currently shown in the Evaluate & Approve overlay
+  wrMoreOpen: false, // whether the WR sub-tabs "⋯ More" overlay is open
   wrEvalBusy: false,
 };
 
@@ -1016,31 +1017,65 @@ function wrBar(segments){ // [{pct, color}]
     +'</div>';
 }
 
+const WR_MORE_TABS = [
+  { k:'summarize', label: {th:'สรุปผล WR', en:'Summarize WR'} },
+  { k:'maintain', label: {th:'Maintainability', en:'Maintainability'} },
+  { k:'sla', label: {th:'SLA', en:'SLA'} },
+  { k:'repeated', label: {th:'ซ่อมซ้ำ', en:'Repeated'} },
+  { k:'reopt', label: {th:'Re-OPT', en:'Re-OPT'} },
+  { k:'history', label: {th:'ประวัติ Asset', en:'Asset History'} },
+];
+
+function wrBadgeCounts(){
+  const wr = wrData();
+  return {
+    new: wr.filter(function(w){ return w.status==='open'; }).length,
+    inprogress: wr.filter(function(w){ return w.status==='inprogress'||w.status==='arrived'; }).length,
+    evaluate: wr.filter(function(w){ return w.status==='closed' && !w.approvedBy; }).length,
+  };
+}
+
 function wrSubTabs(active){
   const th = ST.lang==='th';
-  const tabs = [
+  const counts = wrBadgeCounts();
+  const primary = [
     { k:'overview', label: th?'ภาพรวม':'Overview' },
-    { k:'new', label: th?'แจ้งใหม่':'New WR' },
-    { k:'inprogress', label: th?'กำลังทำ':'In Progress' },
+    { k:'new', label: th?'แจ้งใหม่':'New WR', badge: counts.new },
+    { k:'inprogress', label: th?'กำลังทำ':'In Progress', badge: counts.inprogress },
     { k:'closed', label: th?'ปิดงาน':'Closed' },
-    { k:'evaluate', label: th?'ประเมิน & อนุมัติ':'Evaluate & Approve' },
-    { k:'summarize', label: th?'สรุปผล WR':'Summarize WR' },
-    { k:'maintain', label: th?'Maintainability':'Maintainability' },
-    { k:'sla', label:'SLA' },
-    { k:'repeated', label: th?'ซ่อมซ้ำ':'Repeated' },
-    { k:'reopt', label:'Re-OPT' },
-    { k:'history', label: th?'ประวัติ Asset':'Asset History' },
+    { k:'evaluate', label: th?'ประเมิน & อนุมัติ':'Evaluate & Approve', badge: counts.evaluate },
   ];
-  return '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:4px">'
-    +'<div style="display:flex;justify-content:flex-end">'
+  const isMoreActive = WR_MORE_TABS.some(function(x){ return x.k===active; });
+  function pill(k, label, badge, extraStyle){
+    const isActive = active===k;
+    const badgeHtml = badge ? '<span style="margin-left:5px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;animation:wrBadgeBlink 1.2s ease-in-out infinite">'+(badge>99?'99+':badge)+'</span>' : '';
+    return '<div class="tap" data-act="wr-sub" data-sub="'+k+'" style="flex-shrink:0;display:flex;align-items:center;font-size:11.5px;font-weight:600;padding:7px 11px;border-radius:20px;border:1px solid '+(isActive?'var(--color-accent)':'var(--color-divider)')+';background:'+(isActive?'var(--color-accent)':'transparent')+';color:'+(isActive?'#fff':'var(--color-text)')+';'+(extraStyle||'')+'">'+esc(label)+badgeHtml+'</div>';
+  }
+  return '<style>@keyframes wrBadgeBlink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.15)}}</style>'
+    +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+    +'<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;flex:1">'
+    + primary.map(function(x){ return pill(x.k, x.label, x.badge); }).join('')
+    + pill('__more__', (th?'⋯ เพิ่มเติม':'⋯ More'), 0, isMoreActive ? 'border-color:var(--color-accent);color:var(--color-accent)' : '')
+    +'</div>'
     +'<div class="tap" data-act="refresh-wr" title="'+(th?'รีเฟรชข้อมูล':'Refresh')+'" style="flex-shrink:0;width:30px;height:30px;border-radius:50%;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;'+(ST.modLoading.wr?'opacity:.5':'')+'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7"></path><path d="M21 3v6h-6"></path></svg></div>'
     +'</div>'
-    +'<div style="display:flex;flex-direction:column;gap:5px">'
-    + tabs.map(function(x){
-        return '<div class="tap" data-act="wr-sub" data-sub="'+x.k+'" style="display:flex;align-items:center;font-size:12.5px;font-weight:600;padding:9px 14px;border-radius:10px;border:1px solid '+(active===x.k?'var(--color-accent)':'var(--color-divider)')+';background:'+(active===x.k?'var(--color-accent)':'transparent')+';color:'+(active===x.k?'#fff':'var(--color-text)')+'">'+esc(x.label)+'</div>';
+    + (isMoreActive ? '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;margin-bottom:4px">'
+        + WR_MORE_TABS.map(function(x){ return pill(x.k, th?x.label.th:x.label.en); }).join('')
+      + '</div>' : '')
+    + (ST.wrMoreOpen ? wrMoreOverlay(active, th) : '');
+}
+
+function wrMoreOverlay(active, th){
+  return wrOverlayShell(
+    '<div style="font-weight:700;font-size:15px;margin-bottom:14px">'+(th?'เมนูเพิ่มเติม':'More')+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+    + WR_MORE_TABS.map(function(x){
+        const isActive = active===x.k;
+        return '<div class="tap" data-act="wr-sub" data-sub="'+x.k+'" style="display:flex;align-items:center;font-size:13px;font-weight:600;padding:11px 14px;border-radius:10px;border:1px solid '+(isActive?'var(--color-accent)':'var(--color-divider)')+';background:'+(isActive?'var(--color-accent)':'transparent')+';color:'+(isActive?'#fff':'var(--color-text)')+'">'+esc(th?x.label.th:x.label.en)+'</div>';
       }).join('')
     +'</div>'
-    +'</div>';
+    +'<div class="tap" data-act="wr-more-close" style="margin-top:16px;text-align:center;font-size:13px;font-weight:700;padding:11px;border-radius:10px;border:1px solid var(--color-divider);color:var(--color-text2)">'+(th?'ปิด':'Close')+'</div>'
+  );
 }
 
 function wrOverview(){
@@ -1612,7 +1647,13 @@ document.addEventListener('click', function(e){
     else if(ST.fmSub==='om') loadFmKind('omRecords');
   }
   else if(act==='refresh-wr'){ loadFmWR(); }
-  else if(act==='wr-sub'){ ST.wrSub = el.getAttribute('data-sub'); render(); }
+  else if(act==='wr-sub'){
+    const sub = el.getAttribute('data-sub');
+    if(sub==='__more__'){ ST.wrMoreOpen = true; }
+    else { ST.wrSub = sub; ST.wrMoreOpen = false; }
+    render();
+  }
+  else if(act==='wr-more-close'){ ST.wrMoreOpen = false; render(); }
   else if(act==='retry-wr'){ loadFmWR(); }
   else if(act==='wr-accept'){ wrAccept(el.getAttribute('data-id')); }
   else if(act==='wr-close'){ wrCloseOpen(el.getAttribute('data-id')); }
