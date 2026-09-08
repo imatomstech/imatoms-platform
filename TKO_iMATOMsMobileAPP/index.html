@@ -760,6 +760,36 @@ function wrCloseSigClear(){
   const canvas = document.getElementById('wr-cl-sigpad');
   if(canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
 }
+let wrEvalSigDrawing = false, wrEvalSigLast = null;
+function wrEvalSigInit(){
+  const canvas = document.getElementById('wr-ev-sigpad');
+  if(!canvas || canvas._wrBound) return;
+  canvas._wrBound = true;
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#1d1f20'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  function down(e){ wrEvalSigDrawing = true; wrEvalSigLast = wrCloseSigPos(canvas, e); e.preventDefault(); }
+  function move(e){
+    if(!wrEvalSigDrawing) return;
+    const p = wrCloseSigPos(canvas, e);
+    ctx.beginPath(); ctx.moveTo(wrEvalSigLast.x, wrEvalSigLast.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    wrEvalSigLast = p; e.preventDefault();
+  }
+  function up(){ wrEvalSigDrawing = false; }
+  canvas.addEventListener('mousedown', down); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+  canvas.addEventListener('touchstart', down, {passive:false}); canvas.addEventListener('touchmove', move, {passive:false}); canvas.addEventListener('touchend', up);
+}
+function wrEvalSigClear(){
+  const canvas = document.getElementById('wr-ev-sigpad');
+  if(canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+}
+function wrEvalSigHasInk(){
+  const canvas = document.getElementById('wr-ev-sigpad');
+  if(!canvas) return false;
+  const ctx = canvas.getContext('2d');
+  const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  for(let i=3;i<data.length;i+=4){ if(data[i]!==0) return true; }
+  return false;
+}
 function wrCloseSetStar(n){
   wrCloseStars = n;
   const wrap = document.getElementById('wr-cl-stars');
@@ -931,9 +961,17 @@ function wrEvalOverlay(){
       + wrFormField('🚀 แนวทางพัฒนา (Improvement)','Improvement', th, '<textarea id="wr-ev-improve" rows="2" style="'+wrInputStyle+';resize:vertical" placeholder="'+(th?'เพิ่มอะไหล่ในคลัง จัดอบรม สร้าง PM plan...':'Suggested next steps...')+'"></textarea>')
       + wrFormField('⚠ Repeated Repair? (งานซ่อมซ้ำ → ควรขึ้น PM)','Repeated repair?', th,
           '<select id="wr-ev-recurring" style="'+wrInputStyle+'"><option value="no">'+(th?'ไม่ใช่':'No')+'</option><option value="yes">'+(th?'ใช่ — ควรจัดทำแผน PM':'Yes — should schedule PM')+'</option><option value="review">'+(th?'ตรวจสอบเพิ่มเติม':'Needs review')+'</option></select>')
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-        + wrFormField('ความคิดเห็น Manager','Manager comment', th, '<textarea id="wr-ev-comment-mgr" rows="2" style="'+wrInputStyle+';resize:vertical"></textarea>')
-        + wrFormField('ความคิดเห็น Director','Director comment', th, '<textarea id="wr-ev-comment-dir" rows="2" style="'+wrInputStyle+';resize:vertical"></textarea>')
+      +'<div style="font-family:var(--font-heading);font-size:13px;font-weight:700;margin:6px 0 8px">🖊 '+(th?'ลายเซ็นอนุมัติ':'Approval signature')+'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        +'<div><div style="font-size:11px;color:var(--color-neutral-600);margin-bottom:6px">'+(th?'ลายเซ็นผู้ดำเนินงาน / ช่าง':'Technician signature')+'</div>'
+        + (w.signature
+            ? '<img src="'+w.signature+'" style="width:100%;height:80px;object-fit:contain;background:#fff;border-radius:8px;border:1px solid var(--color-divider)">'
+            : '<div style="width:100%;height:80px;display:flex;align-items:center;justify-content:center;background:var(--color-surface);border-radius:8px;border:1px solid var(--color-divider);font-size:11px;color:var(--color-neutral-600)">'+(th?'ไม่มีลายเซ็น':'No signature')+'</div>')
+        +'</div>'
+        +'<div><div style="font-size:11px;color:var(--color-neutral-600);margin-bottom:6px">'+(th?'ลายเซ็น Manager / Director':'Manager / Director signature')+'</div>'
+        +'<canvas id="wr-ev-sigpad" width="260" height="80" style="width:100%;height:80px;background:#fff;border-radius:8px;border:1px solid var(--color-divider);touch-action:none"></canvas>'
+        +'<div class="tap" data-act="wr-eval-sig-clear" style="margin-top:4px;text-align:center;font-size:11px;font-weight:700;padding:5px;border-radius:6px;border:1px solid var(--color-divider);color:var(--color-neutral-600)">🗑 '+(th?'ล้าง':'Clear')+'</div>'
+        +'</div>'
       +'</div>'
       +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">'
         +'<div class="tap" data-act="wr-eval-reject" data-id="'+w._dbId+'" style="font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid var(--danger);color:var(--danger)">'+(th?'✕ ไม่ / ส่งกลับแก้ไข':'✕ Send back')+'</div>'
@@ -948,6 +986,7 @@ function wrEvalOverlay(){
 async function wrEvalApprove(dbId, role){
   const th = ST.lang==='th';
   const w = wrData().find(function(x){ return String(x._dbId)===String(dbId); });
+  if(!wrEvalSigHasInk()){ toast(th?'⚠ กรุณาเซ็นชื่อก่อนอนุมัติ':'⚠ Please sign before approving'); return; }
   ST.wrEvalBusy = true; render();
   try{
     await api('/work-orders/'+dbId+'/evaluate', { method:'PATCH', body: JSON.stringify({ approved:true }) });
@@ -962,8 +1001,7 @@ async function wrEvalApprove(dbId, role){
           evalWeakness: (document.getElementById('wr-ev-weakness')||{}).value || undefined,
           evalImprove: (document.getElementById('wr-ev-improve')||{}).value || undefined,
           evalRecurring: (document.getElementById('wr-ev-recurring')||{}).value || undefined,
-          commentManager: (document.getElementById('wr-ev-comment-mgr')||{}).value || undefined,
-          commentDirector: (document.getElementById('wr-ev-comment-dir')||{}).value || undefined,
+          evalSigApprove: (function(){ const c=document.getElementById('wr-ev-sigpad'); return c?c.toDataURL():undefined; })(),
         }] }) });
       }catch(e){ /* approval itself already saved; extra detail merge is best-effort */ }
     }
@@ -1627,6 +1665,7 @@ function bindFormHandlers(){
     const pi = document.getElementById('wr-cl-photo-input'); if(pi) pi.addEventListener('change', function(){ wrClosePhotoAdd(pi); });
     wrCloseSigInit();
   }
+  if (ST.wrEvalId) { wrEvalSigInit(); }
 }
 
 document.addEventListener('click', function(e){
@@ -1677,6 +1716,7 @@ document.addEventListener('click', function(e){
   else if(act==='wr-close-cancel'){ wrCloseClose(); }
   else if(act==='wr-close-submit'){ if(!ST.wrCloseBusy) wrCloseSubmit(); }
   else if(act==='wr-close-sig-clear'){ wrCloseSigClear(); }
+  else if(act==='wr-eval-sig-clear'){ wrEvalSigClear(); }
   else if(act==='wr-close-star'){ wrCloseSetStar(parseInt(el.getAttribute('data-n'),10)); }
   else if(act==='wr-eval-open'){ wrEvalOpen(el.getAttribute('data-id')); }
   else if(act==='wr-eval-close'){ wrEvalClose(); }
