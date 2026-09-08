@@ -1733,6 +1733,13 @@ body.embedded #content {
         <div class="kpi red"><div class="kpi-label">ปฏิเสธ</div><div class="kpi-value ff-display text-red" id="adm-rejected">0</div></div>
       </div>
 
+      <!-- Data Backup -->
+      <div class="card mb-16">
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:600;margin-bottom:6px">💾 สำรองข้อมูล (Data Backup)</div>
+        <div class="text-muted" style="font-size:12.5px;margin-bottom:14px">ดาวน์โหลดข้อมูลทั้งหมด (Work Request / OM / PPM / MA Contract / Inventory / Assets) เป็นไฟล์ Excel หลายชีต เพื่อเก็บสำรองไว้เอง</div>
+        <button class="btn btn-primary btn-sm" onclick="exportAllDataBackup()">⬇ Export All Data (Excel)</button>
+      </div>
+
       <!-- Pending Approval -->
       <div class="card mb-16">
         <div style="font-family:var(--font-display);font-size:15px;font-weight:600;margin-bottom:14px">
@@ -3394,6 +3401,33 @@ function confirmImport() {
   showView('assets');
   alert(`✅ Import สำเร็จ ${importData.length} รายการ`);
   importData = [];
+}
+
+function exportAllDataBackup() {
+  const wb = XLSX.utils.book_new();
+  function flatten(o){
+    const flat = {};
+    Object.keys(o||{}).forEach(function(k){
+      const v = o[k];
+      flat[k] = (v && typeof v === 'object') ? JSON.stringify(v) : v;
+    });
+    return flat;
+  }
+  function addSheet(name, arr){
+    const ws = (arr && arr.length)
+      ? XLSX.utils.json_to_sheet(arr.map(flatten))
+      : XLSX.utils.aoa_to_sheet([['(no data)']]);
+    XLSX.utils.book_append_sheet(wb, ws, name.slice(0,31));
+  }
+  addSheet('WorkRequests', typeof workRequests!=='undefined' ? workRequests : []);
+  addSheet('OM_Records', typeof omRecords!=='undefined' ? omRecords : []);
+  addSheet('PPM', typeof ppmList!=='undefined' ? ppmList : []);
+  addSheet('MA_Contracts', typeof maList!=='undefined' ? maList : []);
+  addSheet('MA_Visits', typeof maVisits!=='undefined' ? maVisits : []);
+  addSheet('Inventory', typeof inventory!=='undefined' ? inventory : []);
+  addSheet('Inventory_Tx', typeof invTx!=='undefined' ? invTx : []);
+  addSheet('Assets', typeof assets!=='undefined' ? assets : []);
+  XLSX.writeFile(wb, 'iMATOMs_FullBackup_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
 function exportAssets() {
