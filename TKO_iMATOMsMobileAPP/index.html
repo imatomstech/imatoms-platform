@@ -154,6 +154,7 @@ const ST = {
   tab: 'home',
   lifestyleSub: 'market',
   showPassword: false,
+  showPasswordReg: false,
   loginBusy:false, loginMsg:'', loginErr:false,
   regBusy:false, regMsg:'', regErr:false,
   dash: null,
@@ -302,7 +303,8 @@ function screenLogin(){
       +'<div class="field"><label>'+t.fullName+'</label><input class="input" id="rg-name" required></div>'
       +'<div class="field"><label>'+t.email+'</label><input class="input" type="email" id="rg-email" required></div>'
       +'<div class="field"><label>'+t.username+'</label><input class="input" id="rg-user" required></div>'
-      +'<div class="field"><label>'+t.password+'</label><input class="input" type="password" id="rg-pass" required></div>'
+      +'<div class="field"><label>'+t.password+'</label><div style="position:relative"><input class="input" type="'+(ST.showPasswordReg?'text':'password')+'" id="rg-pass" style="padding-right:36px" required>'
+      +'<div class="tap" data-act="toggle-pw-reg" style="position:absolute;right:8px;top:0;bottom:0;display:flex;align-items:center;color:var(--color-accent-700)">'+(ST.showPasswordReg?pwIconOff:pwIconEye)+'</div></div></div>'
       +'<div class="blueprint" style="padding:10px 12px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:11px;color:var(--color-neutral-700)">'+t.approvalNote+'</div></div>'
       +'<button type="submit" class="btn btn-primary btn-block" id="rg-submit" '+(ST.regBusy?'disabled':'')+'>'+(ST.regBusy?'<span class="spinner"></span>':'')+t.submitRequest+'</button>'
       +'<div class="msg '+(ST.regErr?'err':'ok')+'">'+esc(ST.regMsg||'')+'</div>'
@@ -1586,6 +1588,7 @@ document.addEventListener('click', function(e){
   if(act==='lang-th') setLang('th');
   else if(act==='lang-en') setLang('en');
   else if(act==='toggle-pw'){ ST.showPassword = !ST.showPassword; render(); }
+  else if(act==='toggle-pw-reg'){ ST.showPasswordReg = !ST.showPasswordReg; render(); }
   else if(act==='to-register'){ ST.authMode='register'; ST.regMsg=''; render(); }
   else if(act==='to-login'){ ST.authMode='login'; ST.loginMsg=''; render(); }
   else if(act==='splash-th'){ ST.lang='th'; try{localStorage.setItem(LS.lang,'th');}catch(err){} ST.screen='main'; render(); }

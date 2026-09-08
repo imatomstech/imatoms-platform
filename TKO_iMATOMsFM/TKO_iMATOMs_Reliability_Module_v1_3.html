@@ -294,7 +294,10 @@ body.embedded #content {
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>
-          <input class="form-control" id="inp-pass" type="password" placeholder="รหัสผ่าน" onkeydown="if(event.key==='Enter')doLogin()">
+          <div style="position:relative">
+            <input class="form-control" id="inp-pass" type="password" placeholder="รหัสผ่าน" style="padding-right:40px" onkeydown="if(event.key==='Enter')doLogin()">
+            <span onclick="togglePwVisibility('inp-pass', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;user-select:none" title="แสดง/ซ่อนรหัสผ่าน">👁</span>
+          </div>
         </div>
         <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px;font-size:14px;margin-top:4px" onclick="doLogin()">เข้าสู่ระบบ</button>
         <div class="login-hint">Admin: <span style="font-family:var(--font-mono);color:var(--orange)">enginno / asset277</span></div>
@@ -333,7 +336,12 @@ body.embedded #content {
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Username *</label><input class="form-control" id="reg-user" placeholder="ตั้ง username"></div>
-          <div class="form-group"><label class="form-label">Password *</label><input class="form-control" id="reg-pass" type="password" placeholder="อย่างน้อย 6 ตัว"></div>
+          <div class="form-group"><label class="form-label">Password *</label>
+            <div style="position:relative">
+              <input class="form-control" id="reg-pass" type="password" placeholder="อย่างน้อย 6 ตัว" style="padding-right:40px">
+              <span onclick="togglePwVisibility('reg-pass', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;user-select:none" title="แสดง/ซ่อนรหัสผ่าน">👁</span>
+            </div>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">สิทธิ์การใช้งาน</label>
@@ -8454,6 +8462,13 @@ function initAuth() {
   }
 }
 
+function togglePwVisibility(inputId, iconEl){
+  var el = document.getElementById(inputId);
+  if(!el) return;
+  var show = el.type === 'password';
+  el.type = show ? 'text' : 'password';
+  if(iconEl) iconEl.textContent = show ? '🙈' : '👁';
+}
 function doLogin() { initAuth(); }
 function doLogout() {
   if (!confirm('ออกจากระบบ?')) return;
