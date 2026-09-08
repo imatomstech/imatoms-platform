@@ -172,6 +172,8 @@ const ST = {
   wrEvalId: null,    // dbId of the WR currently shown in the Evaluate & Approve overlay
   wrMoreOpen: false, // whether the WR sub-tabs "⋯ More" overlay is open
   wrEvalBusy: false,
+  wrTechPickerId: null, // dbId of the WR currently showing the technician picker (Accept flow)
+  wrTechPickerBusy: false,
 };
 
 function setLang(l){ ST.lang = l; try{ localStorage.setItem(LS.lang, l); }catch(e){} render(); }
@@ -520,6 +522,18 @@ async function loadFmWR(){
   ST.modLoading.wr = false; render();
 }
 
+// Technicians for the Accept-flow picker — who's free vs already on a job,
+// refreshed each time the picker opens so availability is current.
+function fmTechnicians(){ return (ST.modData.fm && ST.modData.fm.technicians) || []; }
+async function loadTechnicians(){
+  try{
+    const rows = await api('/technicians');
+    ST.modData.fm = ST.modData.fm || {};
+    ST.modData.fm.technicians = rows || [];
+    render();
+  }catch(err){ /* picker just shows empty list if this fails */ }
+}
+
 /* OM / PPM / MA Contract / Inventory are wired to the same generic
    /api/fm-records/:kind backend the FM webapp and Reliability Module use —
    a genuine live connection, not just a localStorage mirror. Falls back to
@@ -633,15 +647,52 @@ function wrCardHtml(w, th){
     + (actions ? '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">'+actions+'</div>' : '')
     +'</div>';
 }
-async function wrAccept(dbId){
+function wrAcceptOpen(dbId){
+  ST.wrTechPickerId = dbId;
+  ST.wrTechPickerBusy = false;
+  render();
+  loadTechnicians();
+}
+function wrAcceptClose(){ ST.wrTechPickerId = null; render(); }
+async function wrAcceptConfirm(techId, techName){
   const th = ST.lang==='th';
-  const tech = prompt(th?'ชื่อช่างที่รับงาน:':'Technician name:');
-  if(!tech) return;
+  const dbId = ST.wrTechPickerId;
+  if(!dbId) return;
+  ST.wrTechPickerBusy = true; render();
   try{
-    await api('/work-orders/'+dbId+'/status', { method:'PATCH', body: JSON.stringify({ status:'inprogress' }) });
-    toast(th?'✅ รับงานแล้ว — '+tech:'✅ Accepted — '+tech);
+    await api('/work-orders/'+dbId+'/status', { method:'PATCH', body: JSON.stringify({ status:'inprogress', assigned_to: parseInt(techId,10) }) });
+    ST.wrTechPickerId = null; ST.wrTechPickerBusy = false;
+    toast(th?'✅ รับงานแล้ว — '+techName:'✅ Accepted — '+techName);
     loadFmWR();
-  }catch(err){ toast((th?'รับงานไม่สำเร็จ: ':'Accept failed: ')+(err.message||err)); }
+  }catch(err){
+    ST.wrTechPickerBusy = false; render();
+    toast((th?'รับงานไม่สำเร็จ: ':'Accept failed: ')+(err.message||err));
+  }
+}
+function wrTechPickerOverlay(){
+  if(!ST.wrTechPickerId) return '';
+  const th = ST.lang==='th';
+  const techs = fmTechnicians().slice().sort(function(a,b){
+    if(!!a.busy !== !!b.busy) return a.busy ? 1 : -1;
+    return String(a.full_name||'').localeCompare(String(b.full_name||''));
+  });
+  const rows = techs.length
+    ? techs.map(function(t){
+        const color = t.busy ? 'var(--danger)' : 'var(--green)';
+        const bg = t.busy ? 'rgba(239,68,68,.08)' : 'rgba(34,197,94,.08)';
+        return '<div class="tap" data-act="wr-tech-pick" data-tid="'+t.id+'" data-tname="'+esc(t.full_name||'')+'" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border-radius:10px;background:'+bg+';border:1px solid '+color+';margin-bottom:8px">'
+          +'<div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:50%;background:'+color+';flex-shrink:0"></span><span style="font-size:13px;font-weight:600">'+esc(t.full_name||'')+'</span></div>'
+          +'<span style="font-size:11px;font-weight:700;color:'+color+'">'+(t.busy?(th?'ไม่ว่าง':'Busy'):(th?'ว่าง':'Free'))+'</span>'
+        +'</div>';
+      }).join('')
+    : '<div style="text-align:center;padding:20px;color:var(--color-neutral-600);font-size:12.5px">'+(th?'ไม่พบรายชื่อช่าง':'No technicians found')+'</div>';
+  return '<div style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;display:flex;align-items:flex-end;justify-content:center">'
+    +'<div style="width:100%;max-width:480px;max-height:80vh;overflow-y:auto;background:var(--color-bg);border-radius:16px 16px 0 0;padding:16px;box-sizing:border-box'+(ST.wrTechPickerBusy?';opacity:.6;pointer-events:none':'')+'">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+      +'<span style="font-family:var(--font-heading);font-size:15px">'+(th?'เลือกช่างที่รับงาน':'Select technician')+'</span>'
+      +'<div class="tap" data-act="wr-tech-picker-close" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--color-surface);flex-shrink:0">✕</div></div>'
+      + rows
+    +'</div></div>';
 }
 const CLOSE_WORKTYPE_OPTIONS = [
   ['BD','BD — Breakdown'], ['RM','RM — Repair & Maintenance'], ['CM','CM — Corrective Maintenance'],
@@ -1498,7 +1549,7 @@ function fmWR(){
   else if(sub==='repeated') body = wrRepeated();
   else if(sub==='reopt') body = wrReOpt();
   else if(sub==='history') body = wrHistory();
-  return '<div style="display:flex;flex-direction:column;gap:10px">' + wrSubTabs(sub) + body + '</div>' + wrDetailOverlay() + wrFormOverlay() + wrCloseOverlay();
+  return '<div style="display:flex;flex-direction:column;gap:10px">' + wrSubTabs(sub) + body + '</div>' + wrDetailOverlay() + wrFormOverlay() + wrCloseOverlay() + wrTechPickerOverlay();
 }
 
 function fmOM(){
@@ -1746,7 +1797,9 @@ document.addEventListener('click', function(e){
   }
   else if(act==='wr-more-close'){ ST.wrMoreOpen = false; render(); }
   else if(act==='retry-wr'){ loadFmWR(); }
-  else if(act==='wr-accept'){ wrAccept(el.getAttribute('data-id')); }
+  else if(act==='wr-accept'){ wrAcceptOpen(el.getAttribute('data-id')); }
+  else if(act==='wr-tech-picker-close'){ wrAcceptClose(); }
+  else if(act==='wr-tech-pick'){ wrAcceptConfirm(el.getAttribute('data-tid'), el.getAttribute('data-tname')); }
   else if(act==='wr-close'){ wrCloseOpen(el.getAttribute('data-id')); }
   else if(act==='wr-cancel'){ wrCancel(el.getAttribute('data-id')); }
   else if(act==='wr-detail'){ ST.wrDetailId = el.getAttribute('data-id'); render(); }

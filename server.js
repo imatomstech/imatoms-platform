@@ -242,6 +242,28 @@ app.get('/api/users', authMiddleware, requireRole('superadmin','admin','manager'
   } catch (e) { res.status(500).json({ error: 'Server error' }); }
 });
 
+// Lightweight technician picker for the Work Request "Accept" flow — any
+// authenticated user in the building can see who's free (no active WO) vs
+// busy, without needing the full user-management permissions /api/users
+// requires. `busy` = has a work order currently in_progress/inprogress/arrived.
+app.get('/api/technicians', authMiddleware, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT u.id, u.full_name, u.role,
+              COUNT(wo.id) FILTER (WHERE wo.status IN ('in_progress','inprogress','arrived')) AS active_wo
+       FROM users u
+       LEFT JOIN work_orders wo ON wo.building_id = u.building_id
+         AND wo.status IN ('in_progress','inprogress','arrived')
+         AND (wo.assigned_to = u.id OR wo.assigned_name_text = u.full_name)
+       WHERE u.building_id = $1 AND u.status = 'approved'
+       GROUP BY u.id, u.full_name, u.role
+       ORDER BY u.full_name`,
+      [req.user.building_id]
+    );
+    res.json(rows.map(r => ({ id: r.id, full_name: r.full_name, role: r.role, busy: parseInt(r.active_wo, 10) > 0 })));
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
 app.patch('/api/users/:id/approve', authMiddleware, requireRole('superadmin','admin'), async (req, res) => {
   const { role, modules } = req.body;
   try {
