@@ -490,7 +490,7 @@ function normalizeWO(r){
   // then the real typed columns layered on top so the database stays authoritative
   // for anything it actually tracks. Same recovery pattern as the Reliability Module.
   return Object.assign({}, r.meta || {}, {
-    id:r.wo_no, _dbId:r.id, assetId:r.asset_no||r.asset_name||(r.asset_id?('#'+r.asset_id):null),
+    id:r.wo_no, _dbId:r.id, assetId:r.asset_no||r.asset_name||(r.asset_id?('#'+r.asset_id):null)||(r.meta&&r.meta.assetId)||null,
     desc:r.description, type:r.wo_type, priority:r.priority, reporter:r.reporter_name||r.requested_name,
     phone:r.reporter_phone, date:r.created_at, status:r.status, assign:r.assigned_name,
     mttr:r.mttr_hours!=null?parseFloat(r.mttr_hours):null, totalCost:r.total_cost!=null?parseFloat(r.total_cost):null,
@@ -542,10 +542,14 @@ async function loadFmKind(kind){
    to (the WR record itself only stores the asset's code, not its details). */
 async function loadFmAssets(){
   try{
-    const rows = await api('/assets');
+    // reads from the same /fm-records/assets store the Reliability Module's
+    // "Asset ID & Register" page writes to (via DB.set('assets', assets)) —
+    // the single asset list the FM team actually maintains, not the separate
+    // demo `assets` SQL table used elsewhere.
+    const rows = await api('/fm-records/assets');
     ST.modData.fm = ST.modData.fm || {};
     const byNo = {};
-    (rows||[]).forEach(function(a){ if(a.asset_no) byNo[a.asset_no] = a; byNo['#'+a.id] = a; });
+    (rows||[]).forEach(function(a){ if(a.id) byNo[a.id] = a; });
     ST.modData.fm.assets = rows || [];
     ST.modData.fm.assetsByNo = byNo;
     render();
@@ -1307,7 +1311,7 @@ function wrFormOverlay(){
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
       + wrFormField('Asset ID *','Asset ID *', th, '<select id="wr-f-asset" style="'+wrInputStyle+'">'
         +'<option value="">-- '+(th?'เลือก Asset':'Select asset')+' --</option>'
-        + assets.map(function(a){ return '<option value="'+a.id+'">'+esc((a.asset_no||'')+' — '+(a.name||''))+'</option>'; }).join('')
+        + assets.map(function(a){ return '<option value="'+esc(a.id)+'">'+esc((a.id||'')+' — '+(a.name||''))+'</option>'; }).join('')
         +'</select>')
       + wrFormField('ประเภทงาน *','Work type *', th, '<select id="wr-f-type" style="'+wrInputStyle+'">'
         + WR_TYPE_OPTIONS.map(function(t){ return '<option value="'+t[0]+'">'+t[1]+'</option>'; }).join('')
@@ -1355,6 +1359,12 @@ async function wrCreateSubmit(){
   const assetSel = document.getElementById('wr-f-asset');
   const assetDbId = assetSel.value || null;
   const assetObj = assetDbId ? (ST.modData.fm.assets||[]).find(function(a){ return String(a.id)===String(assetDbId); }) : null;
+  // work_orders.asset_id is an INTEGER FK into the old demo `assets` SQL table.
+  // Assets from the Reliability Module's register use string codes (e.g. "AST-AC-CH-01"),
+  // which don't fit that column — so only send asset_id when it's actually numeric,
+  // and carry the code separately in meta.assetId (same lossless-bucket pattern used
+  // for locationDetail/availableTime below) so normalizeWO can still recover it.
+  const assetIsNumeric = assetDbId != null && /^\d+$/.test(String(assetDbId));
   const woType = document.getElementById('wr-f-type').value;
   const priorityEl = document.querySelector('input[name="wr-f-priority"]:checked');
   const priority = priorityEl ? priorityEl.value : 'normal';
@@ -1366,16 +1376,17 @@ async function wrCreateSubmit(){
   ST.wrFormBusy = true; render();
   try{
     const wo = await api('/work-orders', { method:'POST', body: JSON.stringify({
-      asset_id: assetDbId, wo_type: woType, title: desc.slice(0,80), description: desc,
+      asset_id: assetIsNumeric ? assetDbId : null, wo_type: woType, title: desc.slice(0,80), description: desc,
       priority: priority, reporter_name: reporter || null, reporter_phone: phone || null, module: 'mobile'
     }) });
-    // Merge the extra fields (location detail / available time) that the typed
-    // work_orders columns don't have their own slot for — the sync endpoint
-    // buckets anything unrecognized into `meta`, same as the Reliability Module.
-    if (locDetail || availTime) {
+    // Merge the extra fields (location detail / available time / the asset's
+    // register code when it's not a numeric FK) that the typed work_orders
+    // columns don't have their own slot for — the sync endpoint buckets
+    // anything unrecognized into `meta`, same as the Reliability Module.
+    if (locDetail || availTime || !assetIsNumeric) {
       try{
         await api('/work-orders/sync', { method:'POST', body: JSON.stringify({ items: [{
-          id: wo.wo_no, assetId: (assetObj&&assetObj.asset_no)||assetDbId, desc: desc, type: woType,
+          id: wo.wo_no, assetId: (assetObj&&assetObj.id)||assetDbId, desc: desc, type: woType,
           priority: priority, reporter: reporter||null, phone: phone||null, status: wo.status||'open',
           locationDetail: locDetail||undefined, availableTime: availTime||undefined,
           date: dateVal ? new Date(dateVal).toISOString() : wo.created_at

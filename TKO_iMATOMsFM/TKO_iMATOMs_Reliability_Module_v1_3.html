@@ -2734,7 +2734,7 @@ const DB = {
 
 // Kinds backed by the generic /api/fm-records/:kind store on the server.
 const FM_RECORD_KINDS = ['ppm','ma','maVisits','inv','invtx',
-  'omRecords','omTemplates','omSchedule','ppmTemplates'];
+  'omRecords','omTemplates','omSchedule','ppmTemplates','assets'];
 
 const _kindSyncTimers = {};
 function syncKindToBackend(kind, items){
@@ -2896,6 +2896,14 @@ function suggestAssetIdOld(){
 }
 
 let assets = DB.get('assets', []).map(normalizeAsset);
+(async () => {
+  const fresh = await loadKindFromBackend('assets');
+  if (fresh) {
+    assets = fresh.map(normalizeAsset);
+    if (typeof populateAssetSelects === 'function') populateAssetSelects();
+    if (typeof renderAssets === 'function' && document.getElementById('asset-table-body')) renderAssets();
+  }
+})();
 let workRequests = DB.get('wr', []);
 // Refresh from the real backend once the page has loaded so this dashboard
 // picks up WR created from the webapp's simpler WR tab or the Mobile App.

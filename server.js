@@ -444,6 +444,12 @@ app.post('/api/work-orders/sync', authMiddleware, async (req, res) => {
         'reviewed','evalRejectReason','date','title'];
       const meta = {};
       for (const key in it) { if (!KNOWN.includes(key)) meta[key] = it[key]; }
+      // assetId is normally "resolved away" into the typed asset_id FK above, but
+      // when it doesn't match a row in the legacy demo `assets` table (e.g. an
+      // asset code from the Reliability Module's own register), that lookup comes
+      // back null and the human-readable code would otherwise be lost entirely.
+      // Keep it in meta too, unconditionally, so the client can always recover it.
+      if (it.assetId) meta.assetId = it.assetId;
       const { rows } = await pool.query(
         `INSERT INTO work_orders (
            building_id, wo_no, asset_id, wo_type, title, description, priority, status,
@@ -534,7 +540,7 @@ app.put('/api/platform-settings', authMiddleware, requireRole('superadmin','admi
 // ══════════════════════════════════════════════════════════════
 
 const FM_RECORD_KINDS = ['ppm','ma','maVisits','inv','invtx','contract',
-  'omRecords','omTemplates','omSchedule','ppmTemplates'];
+  'omRecords','omTemplates','omSchedule','ppmTemplates','assets'];
 
 app.get('/api/fm-records/:kind', authMiddleware, async (req, res) => {
   const { kind } = req.params;
