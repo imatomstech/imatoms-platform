@@ -631,10 +631,30 @@ async function loadPlatformSettingsFromServer(){
 }
 
 function applyModuleVisibility(isAdmin){
+  var lang = document.documentElement.lang === 'en' ? 'en' : 'th';
   document.querySelectorAll('.node[data-mod]').forEach(function(node){
     var mod = node.getAttribute('data-mod');
-    var visible = isAdmin || _platformVisibleModules.indexOf(mod) !== -1;
-    node.style.display = visible ? '' : 'none';
+    var enabled = _platformVisibleModules.indexOf(mod) !== -1;
+    if(isAdmin){
+      // admins always see every tile (so they never lose their own access) —
+      // but dim + badge the ones hidden from everyone else, as visual confirmation
+      node.style.display = '';
+      node.style.opacity = enabled ? '' : '.4';
+      var badge = node.querySelector('.node-hidden-badge');
+      if(!enabled){
+        if(!badge){
+          badge = document.createElement('div');
+          badge.className = 'node-hidden-badge';
+          badge.style.cssText = 'font-size:9px;font-weight:700;color:#fca5a5;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:999px;padding:2px 8px;margin-top:2px;font-family:Orbitron,sans-serif;letter-spacing:.3px';
+          badge.textContent = lang==='en' ? 'HIDDEN FROM OTHERS' : 'ซ่อนจากผู้ใช้อื่น';
+          node.appendChild(badge);
+        }
+      } else if(badge){
+        badge.remove();
+      }
+    } else {
+      node.style.display = enabled ? '' : 'none';
+    }
   });
 }
 
