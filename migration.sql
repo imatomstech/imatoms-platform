@@ -189,6 +189,21 @@ CREATE TABLE IF NOT EXISTS fm_records (
 );
 CREATE INDEX IF NOT EXISTS idx_fm_records_kind ON fm_records(building_id, kind);
 
+-- ============================================================
+-- PLATFORM SETTINGS — controls which of the 7 platform modules
+-- (fm/iot/mv/adv/bot/market/coffee) show on the "Choose Your
+-- Platform" hub (root index.html) for non-admin users. Admins
+-- always see all 7; this only gates what everyone else sees.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS platform_settings (
+  id              SERIAL PRIMARY KEY,
+  building_id     INTEGER REFERENCES buildings(id) ON DELETE CASCADE,
+  visible_modules JSONB NOT NULL DEFAULT '["fm","iot","mv","adv","bot","market","coffee"]'::jsonb,
+  updated_by      INTEGER REFERENCES users(id),
+  updated_at      TIMESTAMP DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_platform_settings_building ON platform_settings(COALESCE(building_id, 0));
+
 CREATE TABLE IF NOT EXISTS spare_parts (
   id            SERIAL PRIMARY KEY,
   building_id   INTEGER NOT NULL REFERENCES buildings(id) ON DELETE CASCADE,

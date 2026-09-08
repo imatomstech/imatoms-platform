@@ -168,6 +168,50 @@ footer span{color:var(--orange2)}
 }
 
 @media(max-width:520px){ .langbar{top:10px; right:10px} .orbit{grid-template-columns:1fr 1fr} .node-circle{width:96px; height:96px; font-size:30px} }
+
+/* hide gated hub content until auth state resolves (JS reveals via showHubContent/showAuthGate) */
+.page-title,.orbit,footer,.mobile-badge{display:none}
+
+/* ===== Auth badge (top-left, logged-in state) ===== */
+.auth-badge{position:fixed; top:18px; left:18px; z-index:20; display:none; align-items:center; gap:10px;
+  background:rgba(16,27,48,.82); border:1px solid var(--border); border-radius:14px; padding:8px 12px;
+  backdrop-filter:blur(8px); font-family:'Noto Sans Thai',sans-serif}
+.auth-badge-name{font-size:12.5px; font-weight:700; color:var(--text)}
+.auth-badge-clock{font-family:'Orbitron',sans-serif; font-size:10.5px; color:var(--text3); letter-spacing:.5px; margin-top:2px}
+.auth-badge-actions{display:flex; align-items:center; gap:6px; margin-left:4px}
+.auth-badge-btn{background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px; width:28px; height:28px;
+  display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; transition:.2s}
+.auth-badge-btn:hover{border-color:var(--orange2); color:var(--orange2)}
+@media(max-width:520px){ .auth-badge{top:10px; left:10px; padding:6px 10px} .auth-badge-name{font-size:11px} }
+
+/* ===== Login / Register gate ===== */
+.auth-gate{position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
+  background:rgba(4,12,28,.92); backdrop-filter:blur(6px); padding:20px; overflow-y:auto}
+.auth-card{width:100%; max-width:400px; background:linear-gradient(160deg, rgba(23,56,128,.55), rgba(7,26,62,.95));
+  border:1px solid var(--border); border-radius:20px; padding:26px 24px; box-shadow:0 0 60px -16px var(--orange-glow); margin:auto}
+.auth-tabs{display:flex; gap:6px; margin-bottom:18px; background:rgba(0,0,0,.25); border-radius:12px; padding:4px}
+.auth-tab{flex:1; text-align:center; padding:9px; border-radius:9px; cursor:pointer; font-size:13px; font-weight:700; color:var(--text3); transition:.2s}
+.auth-tab.active{background:linear-gradient(135deg,var(--orange),var(--orange2)); color:#0b0f16}
+.auth-field{margin-bottom:12px}
+.auth-field label{display:block; font-size:10.5px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.6px; margin-bottom:5px}
+.auth-field input,.auth-field select{width:100%; padding:10px 12px; border-radius:9px; border:1px solid var(--border);
+  background:rgba(4,12,28,.6); color:var(--text); font-size:13px; font-family:inherit}
+.auth-field input:focus,.auth-field select:focus{outline:none; border-color:var(--orange2)}
+.auth-err{background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.4); color:#fca5a5; font-size:12px; padding:9px 12px; border-radius:9px; margin-bottom:12px}
+.auth-ok{background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.4); color:#86efac; font-size:12px; padding:9px 12px; border-radius:9px; margin-bottom:12px}
+.auth-btn{width:100%; padding:11px; border:none; border-radius:10px; background:linear-gradient(135deg,var(--orange),var(--orange2));
+  color:#0b0f16; font-weight:800; font-size:13.5px; cursor:pointer; letter-spacing:.3px}
+.auth-btn:hover{filter:brightness(1.08)}
+.auth-row2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+
+/* ===== Settings modal (admin) ===== */
+.settings-fab{position:fixed; top:18px; left:calc(18px + 210px); z-index:20; display:none}
+.modal-overlay-tko{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; background:rgba(4,12,28,.85); padding:20px}
+.modal-tko{width:100%; max-width:420px; background:linear-gradient(160deg, rgba(23,56,128,.55), rgba(7,26,62,.97)); border:1px solid var(--border);
+  border-radius:18px; padding:22px; max-height:85vh; overflow-y:auto}
+.modal-tko h3{font-family:'Orbitron',sans-serif; font-size:15px; margin-bottom:14px; color:var(--text)}
+.mod-check-row{display:flex; align-items:center; gap:10px; padding:9px 4px; border-bottom:1px solid rgba(255,255,255,.06); font-size:13px}
+.mod-check-row input{width:17px; height:17px; accent-color:var(--orange)}
 </style>
 </head>
 <body>
@@ -221,6 +265,89 @@ footer span{color:var(--orange2)}
   <div class="langbar">
     <button id="btn-th" class="active" onclick="setLang('th')">TH</button>
     <button id="btn-en" onclick="setLang('en')">EN</button>
+  </div>
+
+  <!-- ===== #1 Auth badge: logged-in user + live clock + settings/logout ===== -->
+  <div class="auth-badge" id="authBadge">
+    <div>
+      <div class="auth-badge-clock" id="authClock">--:--:--</div>
+      <div class="auth-badge-name" id="authName">-</div>
+    </div>
+    <div class="auth-badge-actions">
+      <button class="auth-badge-btn" id="authSettingsBtn" title="Settings" onclick="openSettingsModal()" style="display:none">⚙️</button>
+      <button class="auth-badge-btn" title="Logout" onclick="doLogout()">⏻</button>
+    </div>
+  </div>
+
+  <!-- ===== Login / Register gate ===== -->
+  <div class="auth-gate" id="authGate">
+    <div class="auth-card">
+      <div style="text-align:center; margin-bottom:16px">
+        <div class="brand-kicker" style="color:var(--orange2)">TKO &middot; IMATOMS TECH</div>
+        <div class="brand-title" style="font-size:22px">Platform <span class="v">V3.0</span></div>
+      </div>
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')" data-th="เข้าสู่ระบบ" data-en="Login">เข้าสู่ระบบ</div>
+        <div class="auth-tab" id="tab-register" onclick="switchAuthTab('register')" data-th="สมัครสมาชิก" data-en="Register">สมัครสมาชิก</div>
+      </div>
+
+      <div id="authMsg"></div>
+
+      <!-- Login form -->
+      <div id="loginForm">
+        <div class="auth-field">
+          <label data-th="ชื่อผู้ใช้ / อีเมล" data-en="Username / Email">ชื่อผู้ใช้ / อีเมล</label>
+          <input type="text" id="li-user" autocomplete="username" onkeydown="if(event.key==='Enter')doHubLogin()">
+        </div>
+        <div class="auth-field">
+          <label data-th="รหัสผ่าน" data-en="Password">รหัสผ่าน</label>
+          <div style="position:relative">
+            <input type="password" id="li-pass" autocomplete="current-password" style="padding-right:40px" onkeydown="if(event.key==='Enter')doHubLogin()">
+            <span onclick="togglePwVisibility('li-pass', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;user-select:none">👁</span>
+          </div>
+        </div>
+        <button class="auth-btn" onclick="doHubLogin()" data-th="เข้าสู่ระบบ" data-en="Login">เข้าสู่ระบบ</button>
+      </div>
+
+      <!-- Register form -->
+      <div id="registerForm" style="display:none">
+        <div class="auth-field">
+          <label data-th="ชื่อ-นามสกุล" data-en="Full name">ชื่อ-นามสกุล</label>
+          <input type="text" id="rg-fullname">
+        </div>
+        <div class="auth-row2">
+          <div class="auth-field">
+            <label data-th="ชื่อผู้ใช้" data-en="Username">ชื่อผู้ใช้</label>
+            <input type="text" id="rg-user" autocomplete="username">
+          </div>
+          <div class="auth-field">
+            <label>Email</label>
+            <input type="email" id="rg-email" autocomplete="email">
+          </div>
+        </div>
+        <div class="auth-field">
+          <label data-th="รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)" data-en="Password (min 8 characters)">รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)</label>
+          <div style="position:relative">
+            <input type="password" id="rg-pass" autocomplete="new-password" style="padding-right:40px">
+            <span onclick="togglePwVisibility('rg-pass', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;user-select:none">👁</span>
+          </div>
+        </div>
+        <button class="auth-btn" onclick="doHubRegister()" data-th="สมัครสมาชิก" data-en="Register">สมัครสมาชิก</button>
+        <div style="text-align:center; font-size:11px; color:var(--text3); margin-top:12px" data-th="บัญชีใหม่ต้องรอผู้ดูแลระบบอนุมัติก่อนใช้งาน" data-en="New accounts require admin approval before use">บัญชีใหม่ต้องรอผู้ดูแลระบบอนุมัติก่อนใช้งาน</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Settings modal (admin only): choose visible modules ===== -->
+  <div class="modal-overlay-tko" id="settingsModal">
+    <div class="modal-tko">
+      <h3 data-th="⚙️ ตั้งค่าระบบ — เลือก Module ที่แสดง" data-en="⚙️ Settings — Visible Modules">⚙️ ตั้งค่าระบบ — เลือก Module ที่แสดง</h3>
+      <div id="settingsModList"></div>
+      <div style="display:flex; gap:10px; margin-top:18px">
+        <button class="auth-btn" style="background:transparent; border:1px solid var(--border); color:var(--text2)" onclick="closeSettingsModal()" data-th="ปิด" data-en="Close">ปิด</button>
+        <button class="auth-btn" onclick="savePlatformSettings()" data-th="บันทึก" data-en="Save">บันทึก</button>
+      </div>
+    </div>
   </div>
 
   <a class="mobile-badge" href="/TKO_iMATOMsMobileAPP/" style="--card-a:var(--amber2); --card-b:var(--sky)">
@@ -283,7 +410,7 @@ footer span{color:var(--orange2)}
       </div>
     </div>
 
-    <a class="node" href="/TKO_iMATOMsFM/" style="--card-a:var(--orange); --card-b:var(--orange2)">
+    <a class="node" data-mod="fm" href="/TKO_iMATOMsFM/" style="--card-a:var(--orange); --card-b:var(--orange2)">
       <div class="node-circle">🏢</div>
       <div class="node-code">01 &middot; HARD FM</div>
       <div class="node-title" data-th="บริหารจัดการอาคาร" data-en="Facility Management">บริหารจัดการอาคาร</div>
@@ -291,7 +418,7 @@ footer span{color:var(--orange2)}
       <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="node" href="/TKO_iMATOMsIoT/" style="--card-a:var(--sky); --card-b:var(--blue)">
+    <a class="node" data-mod="iot" href="/TKO_iMATOMsIoT/" style="--card-a:var(--sky); --card-b:var(--blue)">
       <div class="node-circle">📡</div>
       <div class="node-code">02 &middot; IOT</div>
       <div class="node-title" data-th="ระบบ IoT ตรวจสอบ & แจ้งเตือน" data-en="IoT Monitoring & Alarm">ระบบ IoT ตรวจสอบ &amp; แจ้งเตือน</div>
@@ -299,7 +426,7 @@ footer span{color:var(--orange2)}
       <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="node" href="/TKO_iMATOMsMV/" style="--card-a:var(--teal); --card-b:var(--sky)">
+    <a class="node" data-mod="mv" href="/TKO_iMATOMsMV/" style="--card-a:var(--teal); --card-b:var(--sky)">
       <div class="node-circle">📊</div>
       <div class="node-code">03 &middot; M&amp;V</div>
       <div class="node-title" data-th="วัดผลและทวนสอบพลังงาน" data-en="Measurement & Validation">วัดผลและทวนสอบพลังงาน</div>
@@ -307,7 +434,7 @@ footer span{color:var(--orange2)}
       <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="node" href="/TKO_iMATOMsadV/" style="--card-a:var(--blue); --card-b:var(--indigo)">
+    <a class="node" data-mod="adv" href="/TKO_iMATOMsadV/" style="--card-a:var(--blue); --card-b:var(--indigo)">
       <div class="node-circle">🏆</div>
       <div class="node-code">04 &middot; ADVISORY</div>
       <div class="node-title" data-th="ที่ปรึกษาพลังงาน & รางวัล" data-en="Energy Consultant & Awards">ที่ปรึกษาพลังงาน &amp; รางวัล</div>
@@ -315,7 +442,7 @@ footer span{color:var(--orange2)}
       <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="node" href="/TKO_iMATOMsBOT/" style="--card-a:var(--green); --card-b:var(--teal)">
+    <a class="node" data-mod="bot" href="/TKO_iMATOMsBOT/" style="--card-a:var(--green); --card-b:var(--teal)">
       <div class="node-circle">🤖</div>
       <div class="node-code">05 &middot; ROBOTICS</div>
       <div class="node-title" data-th="หุ่นยนต์ & ระบบอัตโนมัติ" data-en="Robotics & Automation">หุ่นยนต์ &amp; ระบบอัตโนมัติ</div>
@@ -323,7 +450,7 @@ footer span{color:var(--orange2)}
       <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="node" href="/TKO_IsanFoodMarket/" style="--card-a:var(--red); --card-b:var(--purple)">
+    <a class="node" data-mod="market" href="/TKO_IsanFoodMarket/" style="--card-a:var(--red); --card-b:var(--purple)">
       <div class="node-circle">🍜</div>
       <div class="node-code">06 &middot; MARKET</div>
       <div class="node-title" data-th="ตลาดอาหารอีสาน" data-en="Isan Food Market">ตลาดอาหารอีสาน</div>
@@ -331,7 +458,7 @@ footer span{color:var(--orange2)}
       <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
-    <a class="node" href="/TKO_MeeHangCoffee/" style="--card-a:var(--purple); --card-b:var(--indigo)">
+    <a class="node" data-mod="coffee" href="/TKO_MeeHangCoffee/" style="--card-a:var(--purple); --card-b:var(--indigo)">
       <div class="node-circle">☕</div>
       <div class="node-code">07 &middot; CAFE</div>
       <div class="node-title" data-th="มีฮัง คอฟฟี่" data-en="MeeHang Coffee">มีฮัง คอฟฟี่</div>
@@ -363,6 +490,200 @@ function setLang(lang){
   var saved = 'th';
   try{ saved = localStorage.getItem('tko_lang') || 'th'; }catch(e){}
   setLang(saved);
+})();
+
+/* ================== AUTH / HUB GATE ================== */
+var API_BASE = 'https://api.imatomstech.com/api';
+var MODULE_KEYS = ['fm','iot','mv','adv','bot','market','coffee'];
+var MODULE_LABELS = {
+  fm:{th:'01 · บริหารจัดการอาคาร (FM)', en:'01 · Facility Management'},
+  iot:{th:'02 · ระบบ IoT', en:'02 · IoT Monitoring'},
+  mv:{th:'03 · Measurement & Validation', en:'03 · Measurement & Validation'},
+  adv:{th:'04 · ที่ปรึกษาพลังงาน (Advisory)', en:'04 · Energy Advisory'},
+  bot:{th:'05 · หุ่นยนต์ & อัตโนมัติ', en:'05 · Robotics & Automation'},
+  market:{th:'06 · ตลาดอาหารอีสาน', en:'06 · Isan Food Market'},
+  coffee:{th:'07 · มีฮัง คอฟฟี่', en:'07 · MeeHang Coffee'}
+};
+
+function getToken(){ try{ return localStorage.getItem('imatoms_jwt'); }catch(e){ return null; } }
+function getStoredUser(){ try{ return JSON.parse(localStorage.getItem('imatoms_user')||'null'); }catch(e){ return null; } }
+function setSession(token,user){ try{ localStorage.setItem('imatoms_jwt', token); localStorage.setItem('imatoms_user', JSON.stringify(user)); }catch(e){} }
+function clearSession(){ try{ localStorage.removeItem('imatoms_jwt'); localStorage.removeItem('imatoms_user'); }catch(e){} }
+
+function togglePwVisibility(inputId, iconEl){
+  var el = document.getElementById(inputId);
+  if(!el) return;
+  var show = el.type === 'password';
+  el.type = show ? 'text' : 'password';
+  if(iconEl) iconEl.textContent = show ? '🙈' : '👁';
+}
+
+function switchAuthTab(which){
+  document.getElementById('tab-login').classList.toggle('active', which==='login');
+  document.getElementById('tab-register').classList.toggle('active', which==='register');
+  document.getElementById('loginForm').style.display = which==='login' ? '' : 'none';
+  document.getElementById('registerForm').style.display = which==='register' ? '' : 'none';
+  document.getElementById('authMsg').innerHTML = '';
+}
+
+function authMsg(text, ok){
+  var lang = document.documentElement.lang === 'en' ? 'en' : 'th';
+  document.getElementById('authMsg').innerHTML =
+    '<div class="'+(ok?'auth-ok':'auth-err')+'">'+text+'</div>';
+}
+
+async function doHubLogin(){
+  var user = (document.getElementById('li-user').value||'').trim();
+  var pass = document.getElementById('li-pass').value||'';
+  if(!user || !pass){ authMsg('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน / Please enter username and password'); return; }
+  try{
+    var res = await fetch(API_BASE+'/auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:user, password:pass})
+    });
+    var data = await res.json();
+    if(!res.ok){ authMsg(data.error || 'Username หรือ Password ไม่ถูกต้อง'); return; }
+    setSession(data.token, data.user);
+    await afterAuthed();
+  }catch(e){ authMsg('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ / Cannot reach server'); }
+}
+
+async function doHubRegister(){
+  var fullname = (document.getElementById('rg-fullname').value||'').trim();
+  var user = (document.getElementById('rg-user').value||'').trim();
+  var email = (document.getElementById('rg-email').value||'').trim();
+  var pass = document.getElementById('rg-pass').value||'';
+  if(!fullname || !user || !email || !pass){ authMsg('กรุณากรอกข้อมูลให้ครบ / Please fill in all fields'); return; }
+  if(pass.length < 8){ authMsg('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร / Password min 8 characters'); return; }
+  try{
+    var res = await fetch(API_BASE+'/auth/register', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:user, email:email, password:pass, full_name:fullname})
+    });
+    var data = await res.json();
+    if(!res.ok){ authMsg(data.error || 'สมัครสมาชิกไม่สำเร็จ / Registration failed'); return; }
+    authMsg('สมัครสมาชิกสำเร็จ กรุณารอผู้ดูแลระบบอนุมัติ / Registered — awaiting admin approval', true);
+    document.getElementById('rg-fullname').value='';
+    document.getElementById('rg-user').value='';
+    document.getElementById('rg-email').value='';
+    document.getElementById('rg-pass').value='';
+  }catch(e){ authMsg('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ / Cannot reach server'); }
+}
+
+function doLogout(){
+  clearSession();
+  showAuthGate();
+}
+
+function showAuthGate(){
+  document.getElementById('authGate').style.display = 'flex';
+  document.getElementById('authBadge').style.display = 'none';
+  ['page-title'].forEach(function(c){ var el=document.querySelector('.'+c); if(el) el.style.display='none'; });
+  var orbit = document.querySelector('.orbit'); if(orbit) orbit.style.display='none';
+  var footer = document.querySelector('footer'); if(footer) footer.style.display='none';
+  var mb = document.querySelector('.mobile-badge'); if(mb) mb.style.display='none';
+}
+
+function showHubContent(user){
+  document.getElementById('authGate').style.display = 'none';
+  document.getElementById('authBadge').style.display = 'flex';
+  var pt = document.querySelector('.page-title'); if(pt) pt.style.display='';
+  var orbit = document.querySelector('.orbit'); if(orbit) orbit.style.display='';
+  var footer = document.querySelector('footer'); if(footer) footer.style.display='';
+  var mb = document.querySelector('.mobile-badge'); if(mb) mb.style.display='';
+  document.getElementById('authName').textContent = user.full_name || user.username || '-';
+  var isAdmin = (user.role === 'admin' || user.role === 'superadmin');
+  document.getElementById('authSettingsBtn').style.display = isAdmin ? 'flex' : 'none';
+  applyModuleVisibility(isAdmin);
+}
+
+async function afterAuthed(){
+  var user = getStoredUser();
+  if(!user){ showAuthGate(); return; }
+  await loadPlatformSettingsFromServer();
+  showHubContent(user);
+}
+
+function startClock(){
+  function tick(){
+    var el = document.getElementById('authClock');
+    if(!el) return;
+    var now = new Date();
+    var pad = function(n){ return String(n).padStart(2,'0'); };
+    var dateStr = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+    var timeStr = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+    el.textContent = dateStr+'  '+timeStr;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+/* ---- module visibility (Settings) ---- */
+var _platformVisibleModules = MODULE_KEYS.slice();
+
+async function loadPlatformSettingsFromServer(){
+  try{
+    var res = await fetch(API_BASE+'/platform-settings', { headers:{ 'Authorization':'Bearer '+getToken() } });
+    if(!res.ok) return;
+    var data = await res.json();
+    if(Array.isArray(data.visibleModules)) _platformVisibleModules = data.visibleModules;
+  }catch(e){}
+}
+
+function applyModuleVisibility(isAdmin){
+  document.querySelectorAll('.node[data-mod]').forEach(function(node){
+    var mod = node.getAttribute('data-mod');
+    var visible = isAdmin || _platformVisibleModules.indexOf(mod) !== -1;
+    node.style.display = visible ? '' : 'none';
+  });
+}
+
+function openSettingsModal(){
+  var list = document.getElementById('settingsModList');
+  var lang = document.documentElement.lang === 'en' ? 'en' : 'th';
+  list.innerHTML = MODULE_KEYS.map(function(k){
+    var checked = _platformVisibleModules.indexOf(k) !== -1 ? 'checked' : '';
+    var label = MODULE_LABELS[k][lang] || k;
+    return '<label class="mod-check-row"><input type="checkbox" data-mod-key="'+k+'" '+checked+'> '+label+'</label>';
+  }).join('');
+  document.getElementById('settingsModal').style.display = 'flex';
+}
+function closeSettingsModal(){
+  document.getElementById('settingsModal').style.display = 'none';
+}
+async function savePlatformSettings(){
+  var checks = document.querySelectorAll('#settingsModList input[data-mod-key]');
+  var chosen = [];
+  checks.forEach(function(c){ if(c.checked) chosen.push(c.getAttribute('data-mod-key')); });
+  try{
+    var res = await fetch(API_BASE+'/platform-settings', {
+      method:'PUT', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+getToken() },
+      body: JSON.stringify({ visibleModules: chosen })
+    });
+    if(res.ok){
+      var data = await res.json();
+      _platformVisibleModules = data.visibleModules || chosen;
+      closeSettingsModal();
+      var user = getStoredUser();
+      applyModuleVisibility(user && (user.role==='admin'||user.role==='superadmin'));
+    }
+  }catch(e){}
+}
+
+/* ---- boot ---- */
+(async function bootAuth(){
+  startClock();
+  var token = getToken();
+  if(!token){ showAuthGate(); return; }
+  try{
+    var res = await fetch(API_BASE+'/auth/me', { headers:{ 'Authorization':'Bearer '+token } });
+    if(!res.ok){ clearSession(); showAuthGate(); return; }
+    var data = await res.json();
+    var user = data.user || data;
+    setSession(token, user);
+    await loadPlatformSettingsFromServer();
+    showHubContent(user);
+  }catch(e){ showAuthGate(); }
 })();
 </script>
 

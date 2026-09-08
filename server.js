@@ -493,6 +493,36 @@ app.patch('/api/work-orders/:id/evaluate', authMiddleware, async (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════
+// PLATFORM SETTINGS — which of the 7 hub modules are visible to
+// non-admin users on the root "Choose Your Platform" page.
+// ══════════════════════════════════════════════════════════════
+
+const PLATFORM_MODULE_KEYS = ['fm','iot','mv','adv','bot','market','coffee'];
+
+app.get('/api/platform-settings', authMiddleware, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT visible_modules FROM platform_settings WHERE building_id IS NULL LIMIT 1`);
+    res.json({ visibleModules: rows[0] ? rows[0].visible_modules : PLATFORM_MODULE_KEYS });
+  } catch (e) { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.put('/api/platform-settings', authMiddleware, requireRole('superadmin','admin'), async (req, res) => {
+  const modules = Array.isArray(req.body.visibleModules)
+    ? req.body.visibleModules.filter(m => PLATFORM_MODULE_KEYS.includes(m))
+    : [];
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO platform_settings (building_id, visible_modules, updated_by, updated_at)
+       VALUES (NULL, $1, $2, NOW())
+       ON CONFLICT (COALESCE(building_id, 0)) DO UPDATE SET visible_modules=EXCLUDED.visible_modules, updated_by=EXCLUDED.updated_by, updated_at=NOW()
+       RETURNING visible_modules`,
+      [JSON.stringify(modules), req.user.id]
+    );
+    res.json({ visibleModules: rows[0].visible_modules });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Server error' }); }
+});
+
+// ══════════════════════════════════════════════════════════════
 // FM RECORDS — generic backend store for the Reliability Module's
 // remaining client-side-only FM data (OM / PPM / MA contracts /
 // Inventory + their sub-lists). Each "kind" (ppm, ma, maVisits, inv,
