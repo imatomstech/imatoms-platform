@@ -1660,7 +1660,7 @@ document.addEventListener('click', function(e){
   else if(act==='wr-cancel'){ wrCancel(el.getAttribute('data-id')); }
   else if(act==='wr-detail'){ ST.wrDetailId = el.getAttribute('data-id'); render(); }
   else if(act==='wr-detail-close'){ ST.wrDetailId = null; render(); }
-  else if(act==='wr-new-open'){ ST.wrFormOpen = true; render(); if(!(ST.modData.fm && ST.modData.fm.assets)) loadFmAssets(); }
+  else if(act==='wr-new-open'){ ST.wrFormOpen = true; render(); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
   else if(act==='wr-new-close'){ ST.wrFormOpen = false; render(); }
   else if(act==='wr-new-submit'){ if(!ST.wrFormBusy) wrCreateSubmit(); }
   else if(act==='wr-close-cancel'){ wrCloseClose(); }
