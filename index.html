@@ -169,8 +169,14 @@ footer span{color:var(--orange2)}
 
 @media(max-width:520px){ .langbar{top:10px; right:10px} .orbit{grid-template-columns:1fr 1fr} .node-circle{width:96px; height:96px; font-size:30px} }
 
-/* hide gated hub content until auth state resolves (JS reveals via showHubContent/showAuthGate) */
-.page-title,.orbit,footer,.mobile-badge{display:none}
+/* hide gated hub content until auth state resolves — scoped so it doesn't fight the
+   responsive .orbit display rules (grid on mobile, block on desktop via media query).
+   JS toggles the body class; once added, these selectors stop matching and the normal
+   cascade (including the desktop media query) takes back over. */
+body:not(.tko-authed) .page-title,
+body:not(.tko-authed) .orbit,
+body:not(.tko-authed) footer,
+body:not(.tko-authed) .mobile-badge{ display:none !important }
 
 /* ===== Auth badge (top-left, logged-in state) ===== */
 .auth-badge{position:fixed; top:18px; left:18px; z-index:20; display:none; align-items:center; gap:10px;
@@ -576,21 +582,15 @@ function doLogout(){
 }
 
 function showAuthGate(){
+  document.body.classList.remove('tko-authed');
   document.getElementById('authGate').style.display = 'flex';
   document.getElementById('authBadge').style.display = 'none';
-  ['page-title'].forEach(function(c){ var el=document.querySelector('.'+c); if(el) el.style.display='none'; });
-  var orbit = document.querySelector('.orbit'); if(orbit) orbit.style.display='none';
-  var footer = document.querySelector('footer'); if(footer) footer.style.display='none';
-  var mb = document.querySelector('.mobile-badge'); if(mb) mb.style.display='none';
 }
 
 function showHubContent(user){
+  document.body.classList.add('tko-authed');
   document.getElementById('authGate').style.display = 'none';
   document.getElementById('authBadge').style.display = 'flex';
-  var pt = document.querySelector('.page-title'); if(pt) pt.style.display='';
-  var orbit = document.querySelector('.orbit'); if(orbit) orbit.style.display='';
-  var footer = document.querySelector('footer'); if(footer) footer.style.display='';
-  var mb = document.querySelector('.mobile-badge'); if(mb) mb.style.display='';
   document.getElementById('authName').textContent = user.full_name || user.username || '-';
   var isAdmin = (user.role === 'admin' || user.role === 'superadmin');
   document.getElementById('authSettingsBtn').style.display = isAdmin ? 'flex' : 'none';
