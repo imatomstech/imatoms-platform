@@ -382,13 +382,13 @@ body:not(.tko-authed) .mobile-badge{ display:none !important }
         </linearGradient>
       </defs>
       <circle class="ring1" cx="410" cy="410" r="190" fill="none" stroke="var(--sky)" stroke-width="1" stroke-dasharray="2 10" opacity=".35"/>
-      <line x1="410" y1="410" x2="410" y2="120" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
-      <line x1="410" y1="410" x2="637" y2="229" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
-      <line x1="410" y1="410" x2="693" y2="474" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
-      <line x1="410" y1="410" x2="536" y2="671" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
-      <line x1="410" y1="410" x2="284" y2="671" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
-      <line x1="410" y1="410" x2="127" y2="474" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
-      <line x1="410" y1="410" x2="183" y2="229" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line class="dyn-connector" x1="410" y1="410" x2="410" y2="120" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line class="dyn-connector" x1="410" y1="410" x2="637" y2="229" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line class="dyn-connector" x1="410" y1="410" x2="693" y2="474" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line class="dyn-connector" x1="410" y1="410" x2="536" y2="671" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line class="dyn-connector" x1="410" y1="410" x2="284" y2="671" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line class="dyn-connector" x1="410" y1="410" x2="127" y2="474" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
+      <line class="dyn-connector" x1="410" y1="410" x2="183" y2="229" stroke="url(#lg)" stroke-width="2" opacity=".6"/>
     </svg>
 
     <!-- central hub: brand block, moved here so it sits at the exact center of the orbit -->
@@ -631,32 +631,65 @@ async function loadPlatformSettingsFromServer(){
 }
 
 function applyModuleVisibility(isAdmin){
-  var lang = document.documentElement.lang === 'en' ? 'en' : 'th';
+  // admin's Settings gear (top-left badge) always stays reachable regardless of this,
+  // so it's safe to fully hide unchecked modules for everyone, including admin —
+  // per request, hidden means hidden, not just dimmed.
   document.querySelectorAll('.node[data-mod]').forEach(function(node){
     var mod = node.getAttribute('data-mod');
     var enabled = _platformVisibleModules.indexOf(mod) !== -1;
-    if(isAdmin){
-      // admins always see every tile (so they never lose their own access) —
-      // but dim + badge the ones hidden from everyone else, as visual confirmation
-      node.style.display = '';
-      node.style.opacity = enabled ? '' : '.4';
-      var badge = node.querySelector('.node-hidden-badge');
-      if(!enabled){
-        if(!badge){
-          badge = document.createElement('div');
-          badge.className = 'node-hidden-badge';
-          badge.style.cssText = 'font-size:9px;font-weight:700;color:#fca5a5;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:999px;padding:2px 8px;margin-top:2px;font-family:Orbitron,sans-serif;letter-spacing:.3px';
-          badge.textContent = lang==='en' ? 'HIDDEN FROM OTHERS' : 'ซ่อนจากผู้ใช้อื่น';
-          node.appendChild(badge);
-        }
-      } else if(badge){
-        badge.remove();
-      }
-    } else {
-      node.style.display = enabled ? '' : 'none';
-    }
+    node.style.display = enabled ? '' : 'none';
+    var badge = node.querySelector('.node-hidden-badge');
+    if(badge) badge.remove();
   });
+  layoutOrbitNodes();
 }
+
+/* Re-space the visible module tiles evenly around the desktop orbit circle
+   (radius 290px, matching the original 7-tile CSS positions) so hidden tiles
+   don't leave gaps. On mobile/tablet the grid layout handles spacing itself. */
+function layoutOrbitNodes(){
+  var nodes = Array.prototype.slice.call(document.querySelectorAll('.orbit .node[data-mod]'));
+  var isDesktop = window.innerWidth >= 901;
+  if(!isDesktop){
+    nodes.forEach(function(n){ n.style.transform = ''; });
+    return;
+  }
+  var visible = nodes.filter(function(n){ return n.style.display !== 'none'; });
+  var R = 290;
+  var n = visible.length || 1;
+  visible.forEach(function(node, i){
+    var angle = (i * (360/n)) * Math.PI/180;
+    var x = Math.round(R * Math.sin(angle));
+    var y = Math.round(-R * Math.cos(angle));
+    node.style.transform = 'translate(calc(-50% + '+x+'px), calc(-50% + '+y+'px))';
+  });
+  nodes.forEach(function(n){ if(n.style.display==='none') n.style.transform = ''; });
+  updateOrbitLines(n);
+}
+
+/* redraw the decorative hub→tile connector lines to match however many tiles are visible */
+function updateOrbitLines(n){
+  var svg = document.querySelector('.orbit-lines');
+  if(!svg) return;
+  svg.querySelectorAll('line.dyn-connector').forEach(function(l){ l.remove(); });
+  var cx=410, cy=410, R=290;
+  for(var i=0;i<n;i++){
+    var angle = (i * (360/n)) * Math.PI/180;
+    var x = Math.round(cx + R*Math.sin(angle));
+    var y = Math.round(cy - R*Math.cos(angle));
+    var line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('class','dyn-connector');
+    line.setAttribute('x1',cx); line.setAttribute('y1',cy);
+    line.setAttribute('x2',x); line.setAttribute('y2',y);
+    line.setAttribute('stroke','url(#lg)'); line.setAttribute('stroke-width','2'); line.setAttribute('opacity','.6');
+    svg.appendChild(line);
+  }
+}
+var _orbitResizeTimer = null;
+window.addEventListener('resize', function(){
+  clearTimeout(_orbitResizeTimer);
+  _orbitResizeTimer = setTimeout(layoutOrbitNodes, 150);
+});
 
 function openSettingsModal(){
   var list = document.getElementById('settingsModList');
