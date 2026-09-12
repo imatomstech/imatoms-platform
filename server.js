@@ -422,15 +422,15 @@ app.patch('/api/work-orders/:id/status', authMiddleware, async (req, res) => {
   const { status, action_taken, root_cause, labor_hours, parts_cost, mttr_hours, assigned_to } = req.body;
   try {
     const { rows } = await pool.query(
-      `UPDATE work_orders SET status=$1, action_taken=COALESCE($2,action_taken),
+      `UPDATE work_orders SET status=$1::varchar, action_taken=COALESCE($2,action_taken),
          root_cause=COALESCE($3,root_cause), labor_hours=COALESCE($4,labor_hours),
          parts_cost=COALESCE($5,parts_cost),
          total_cost=COALESCE($4,labor_cost,0)+COALESCE($5,parts_cost,0),
          mttr_hours=COALESCE($8,mttr_hours),
          assigned_to=COALESCE($9,assigned_to),
-         accepted_at=CASE WHEN $1 IN ('in_progress','inprogress') AND accepted_at IS NULL THEN NOW() ELSE accepted_at END,
-         actual_start=CASE WHEN $1 IN ('in_progress','arrived') AND actual_start IS NULL THEN NOW() ELSE actual_start END,
-         actual_end=CASE WHEN $1 IN ('completed','closed','verified') AND actual_end IS NULL THEN NOW() ELSE actual_end END,
+         accepted_at=CASE WHEN $1::varchar IN ('in_progress','inprogress') AND accepted_at IS NULL THEN NOW() ELSE accepted_at END,
+         actual_start=CASE WHEN $1::varchar IN ('in_progress','arrived') AND actual_start IS NULL THEN NOW() ELSE actual_start END,
+         actual_end=CASE WHEN $1::varchar IN ('completed','closed','verified') AND actual_end IS NULL THEN NOW() ELSE actual_end END,
          updated_at=NOW()
        WHERE id=$6 AND building_id=$7 RETURNING *`,
       [status, action_taken, root_cause, labor_hours, parts_cost, req.params.id, req.user.building_id, mttr_hours, assigned_to]

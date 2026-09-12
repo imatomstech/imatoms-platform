@@ -342,9 +342,12 @@ function screenSplash(){
     +'</div></div>';
 }
 
-function statCard(label, value){
-  return '<div style="padding:10px 2px">'
-    +'<div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-accent-700)">'+esc(label)+'</div>'
+function statCard(label, value, sub){
+  // `sub` (optional) wires the card into the same wr-sub navigation the
+  // toolbar pills use, so a dashboard KPI can jump straight to its list.
+  const clickable = sub ? ' class="tap" data-act="wr-sub" data-sub="'+sub+'"' : '';
+  return '<div'+clickable+' style="padding:10px 2px'+(sub?';cursor:pointer;border-radius:8px':'')+'">'
+    +'<div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-accent-700)">'+esc(label)+(sub?' ›':'')+'</div>'
     +'<div style="font-family:var(--font-heading);font-size:24px;margin-top:2px">'+esc(value)+'</div></div>';
 }
 
@@ -1226,10 +1229,10 @@ function wrOverview(){
   const trendSrc = closed.slice().sort(function(a,b){ return new Date(a.closeDate||a.date||0) - new Date(b.closeDate||b.date||0); }).slice(-10).filter(function(w){return w.mttr;});
 
   return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + statCard(th?'แจ้งซ่อม':'List WR', open.length) + statCard(th?'กำลังทำ':'In Progress', ip.length)
-    + statCard(th?'ปิดงาน':'Closed', closed.length) + statCard(th?'MTTR เฉลี่ย (ชม.)':'Avg MTTR (hrs)', avgMttr!=null?avgMttr:'—')
+    + statCard(th?'แจ้งซ่อม':'List WR', open.length, 'new') + statCard(th?'กำลังทำ':'In Progress', ip.length, 'inprogress')
+    + statCard(th?'ปิดงาน':'Closed', closed.length, 'closed') + statCard(th?'MTTR เฉลี่ย (ชม.)':'Avg MTTR (hrs)', avgMttr!=null?avgMttr:'—', 'maintain')
     +'</div>'
-    +'<div style="margin-top:2px">'+statCard(th?'ค่าใช้จ่าย WR ทั้งหมด':'All WR Cost', fmMoney(allCost))+'</div>'
+    +'<div style="margin-top:2px">'+statCard(th?'ค่าใช้จ่าย WR ทั้งหมด':'All WR Cost', fmMoney(allCost), 'closed')+'</div>'
     +'<div style="margin-top:6px"><h4 style="font-size:13px;margin-bottom:6px">'+(th?'สถานะงาน':'WR Status Flow')+'</h4>'
     + wrBar([
         { pct: Math.round(open.length/total*100), color:'var(--orange)' },
@@ -1238,9 +1241,12 @@ function wrOverview(){
         { pct: Math.round(cancelled.length/total*100), color:'var(--color-neutral-500)' },
       ])
     +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;font-size:10px;color:var(--color-neutral-700)">'
-    +'<span>🟠 '+(th?'เปิด':'Open')+' '+open.length+'</span><span>🔵 '+(th?'กำลังทำ':'In Progress')+' '+ip.length+'</span><span>🟢 '+(th?'ปิด':'Closed')+' '+closed.length+'</span><span>⚪ '+(th?'ยกเลิก':'Cancelled')+' '+cancelled.length+'</span>'
+    +'<span class="tap" data-act="wr-sub" data-sub="new" style="cursor:pointer">🟠 '+(th?'เปิด':'Open')+' '+open.length+'</span>'
+    +'<span class="tap" data-act="wr-sub" data-sub="inprogress" style="cursor:pointer">🔵 '+(th?'กำลังทำ':'In Progress')+' '+ip.length+'</span>'
+    +'<span class="tap" data-act="wr-sub" data-sub="closed" style="cursor:pointer">🟢 '+(th?'ปิด':'Closed')+' '+closed.length+'</span>'
+    +'<span>⚪ '+(th?'ยกเลิก':'Cancelled')+' '+cancelled.length+'</span>'
     +'</div></div>'
-    + (trendSrc.length ? '<div style="margin-top:10px">'+fmCard('<div style="font-size:12px;font-weight:600;margin-bottom:4px">'+(th?'แนวโน้ม MTTR (10 งานล่าสุด)':'MTTR Trend (last 10)')+'</div>'+wrSpark(trendSrc.map(function(w){return w.mttr;}), 'var(--color-accent)')) +'</div>' : '');
+    + (trendSrc.length ? '<div class="tap" data-act="wr-sub" data-sub="maintain" style="margin-top:10px;cursor:pointer">'+fmCard('<div style="font-size:12px;font-weight:600;margin-bottom:4px">'+(th?'แนวโน้ม MTTR (10 งานล่าสุด)':'MTTR Trend (last 10)')+' ›</div>'+wrSpark(trendSrc.map(function(w){return w.mttr;}), 'var(--color-accent)')) +'</div>' : '');
 }
 
 function wrNew(){
