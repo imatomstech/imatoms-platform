@@ -351,6 +351,41 @@ function statCard(label, value, sub){
     +'<div style="font-family:var(--font-heading);font-size:24px;margin-top:2px">'+esc(value)+'</div></div>';
 }
 
+// ── Availability % (fleet-wide proxy) — same formula as the desktop
+// Reliability Module, so the two apps always show a consistent number.
+// No per-asset uptime log exists, so this proxies availability from the
+// repair time (MTTR) already recorded against WRs closed in the window.
+function computeAvailability(periodDays, sinceDate, untilDate){
+  const days = periodDays || 30;
+  const until = untilDate ? new Date(untilDate) : new Date();
+  const since = sinceDate ? new Date(sinceDate) : new Date(until.getTime() - days*86400000);
+  const closed = wrData().filter(function(w){
+    if (w.status!=='closed' && w.status!=='approved') return false;
+    if (!w.date) return false;
+    const d = new Date(w.date);
+    return d>=since && d<=until;
+  });
+  const downtimeHr = closed.reduce(function(s,w){ return s+(parseFloat(w.mttr)||0); }, 0);
+  const capacityHr = days*24;
+  const pct = capacityHr>0 ? Math.max(0, Math.min(100, 100 - (downtimeHr/capacityHr)*100)) : 100;
+  return { pct: parseFloat(pct.toFixed(2)), downtimeHr: parseFloat(downtimeHr.toFixed(2)), capacityHr: capacityHr, wrCount: closed.length };
+}
+
+// Top-N failure causes among closed WRs that have failureCause set (from the
+// Close Detail dropdown — mirrors CLOSE_FAILCAUSE_OPTIONS labels).
+function computeFailureCauseBreakdown(topN){
+  const labelMap = {}; CLOSE_FAILCAUSE_OPTIONS.forEach(function(o){ labelMap[o[0]]=o[1]; });
+  const th = ST.lang==='th';
+  const counts = {};
+  wrData().filter(function(w){ return (w.status==='closed'||w.status==='approved') && w.failureCause; }).forEach(function(w){
+    counts[w.failureCause] = (counts[w.failureCause]||0) + 1;
+  });
+  const rows = Object.keys(counts).map(function(k){
+    const lbl = labelMap[k]; return { code:k, label: lbl?(th?lbl.th:lbl.en):k, count: counts[k] };
+  }).sort(function(a,b){ return b.count-a.count; });
+  return topN ? rows.slice(0, topN) : rows;
+}
+
 function moduleTile(m, compact){
   const pad = compact ? '12px' : '14px';
   return '<div class="blueprint tap" data-act="open-module" data-key="'+m.key+'" style="padding:'+pad+';display:flex;flex-direction:column;gap:8px;min-height:112px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
@@ -710,6 +745,21 @@ const CLOSE_SYSTEM_OPTIONS = [
   ['MATV','MATV — Master Antenna TV'], ['SN','SN — Sanitary'], ['TR','TR — Transformer'],
   ['VN','VN — Ventilation'], ['WWT','WWT — Wastewater Treatment'],
 ];
+// Standardized failure-cause taxonomy — same value set used on the desktop
+// Reliability Module's Close Detail form, so Top-5 Failure Cause analytics
+// aggregate correctly regardless of which app closed the WR.
+const CLOSE_FAILCAUSE_OPTIONS = [
+  ['electrical', {th:'ไฟฟ้าขัดข้อง', en:'Electrical Fault'}],
+  ['mechanical', {th:'กลไก/เครื่องกลชำรุด', en:'Mechanical Failure'}],
+  ['bearing_motor', {th:'มอเตอร์/แบริ่งเสีย', en:'Bearing & Motor Failure'}],
+  ['leak', {th:'รั่วซึม น้ำ/น้ำมัน/สารทำความเย็น', en:'Leak'}],
+  ['sensor_control', {th:'เซ็นเซอร์/ระบบควบคุมขัดข้อง', en:'Sensor & Control Fault'}],
+  ['wear', {th:'สึกหรอตามอายุการใช้งาน', en:'Wear & Tear'}],
+  ['power', {th:'ไฟฟ้าดับ/แรงดันผิดปกติ', en:'Power Supply Issue'}],
+  ['human', {th:'ผิดพลาดจากการใช้งาน', en:'Operator/Human Error'}],
+  ['software', {th:'ซอฟต์แวร์/โปรแกรมขัดข้อง', en:'Software Fault'}],
+  ['other', {th:'อื่นๆ', en:'Other'}],
+];
 // Transient close-form state — plain JS vars (not ST) so canvas/photo/star
 // interactions don't need a full re-render (which would wipe the canvas).
 let wrClosePhotos = [];   // [{name, dataUrl}]
@@ -915,6 +965,7 @@ function wrCloseOverlay(){
       + wrFormField('ลักษณะงาน (Work Type)','Work Type', th, '<select id="wr-cl-worktype" style="'+wrInputStyle+'">'+CLOSE_WORKTYPE_OPTIONS.map(function(o){return '<option value="'+o[0]+'">'+o[1]+'</option>';}).join('')+'</select>')
       + wrFormField('ระบบงาน (System)','System', th, '<select id="wr-cl-system" style="'+wrInputStyle+'">'+CLOSE_SYSTEM_OPTIONS.map(function(o){return '<option value="'+o[0]+'">'+o[1]+'</option>';}).join('')+'</select>')
     +'</div>'
+    + wrFormField('สาเหตุที่แท้จริง (Failure Cause)','Failure Cause', th, '<select id="wr-cl-failcause" style="'+wrInputStyle+'"><option value="">'+(th?'-- เลือกสาเหตุ --':'-- Select cause --')+'</option>'+CLOSE_FAILCAUSE_OPTIONS.map(function(o){return '<option value="'+o[0]+'">'+(th?o[1].th:o[1].en)+'</option>';}).join('')+'</select>')
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
       + wrFormField('เวลาเริ่มดำเนินการ','Start time', th, '<input id="wr-cl-start" type="datetime-local" style="'+wrInputStyle+'">')
       + wrFormField('เวลาดำเนินการเสร็จ','End time', th, '<input id="wr-cl-end" type="datetime-local" style="'+wrInputStyle+'">')
@@ -966,6 +1017,7 @@ async function wrCloseSubmit(){
   const w = wrData().find(function(x){ return String(x._dbId)===String(dbId); });
   const worktype = (document.getElementById('wr-cl-worktype')||{}).value;
   const system = (document.getElementById('wr-cl-system')||{}).value;
+  const failureCause = (document.getElementById('wr-cl-failcause')||{}).value || null;
   const startVal = (document.getElementById('wr-cl-start')||{}).value;
   const endVal = (document.getElementById('wr-cl-end')||{}).value;
   const action = (document.getElementById('wr-cl-action')||{}).value || '';
@@ -986,7 +1038,7 @@ async function wrCloseSubmit(){
         await api('/work-orders/sync', { method:'POST', body: JSON.stringify({ items: [{
           id: w.id, assetId: w.assetId, desc: w.desc, type: worktype||w.type, priority: w.priority,
           reporter: w.reporter||null, phone: w.phone||null, status:'closed',
-          worktype: worktype||undefined, system: system||undefined,
+          worktype: worktype||undefined, system: system||undefined, failureCause: failureCause||undefined,
           startTime: startVal?new Date(startVal).toISOString():undefined, endTime: endVal?new Date(endVal).toISOString():undefined,
           laborCost: labor, travelCost: travel, partsCost: partsCost,
           partsUsed: wrClosePartsUsed.length?wrClosePartsUsed:undefined,
@@ -1215,6 +1267,38 @@ function wrMoreOverlay(active, th){
   );
 }
 
+// Condensed qualitative summary — Availability, Top-5 problem assets, and
+// Failure Cause breakdown — shown above the quantity cards per the owner's
+// explicit request to prioritize quality-of-maintenance signals over raw counts.
+function wrQualitativeSummary(th){
+  const avail = computeAvailability(30);
+  const availColor = avail.pct>=95 ? 'var(--green)' : avail.pct>=85 ? 'var(--orange)' : 'var(--red)';
+  const causes = computeFailureCauseBreakdown(5);
+  const byAsset = {};
+  wrData().forEach(function(w){ if(!w.assetId) return; byAsset[w.assetId]=(byAsset[w.assetId]||0)+1; });
+  const topAssets = Object.keys(byAsset).map(function(k){return {assetId:k,cnt:byAsset[k]};}).sort(function(a,b){return b.cnt-a.cnt;}).slice(0,5);
+
+  const availCard = '<div class="blueprint" style="padding:12px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    +'<div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-accent-700)">'+(th?'ความพร้อมใช้งาน (30 วัน)':'Availability (30d)')+'</div>'
+    +'<div style="font-family:var(--font-heading);font-size:30px;margin-top:2px;color:'+availColor+'">'+avail.pct+'%</div>'
+    +'<div style="font-size:10px;color:var(--color-neutral-600);margin-top:2px">'+(th?'ซ่อม':'downtime')+' '+avail.downtimeHr+'h / '+avail.wrCount+' WR</div></div>';
+
+  const causeRows = causes.length
+    ? causes.map(function(c){ return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px solid var(--color-neutral-200)"><span>'+esc(c.label)+'</span>'+fmChip(String(c.count), 'orange')+'</div>'; }).join('')
+    : '<div style="font-size:11px;color:var(--color-neutral-600);padding:6px 0">'+(th?'ยังไม่มีข้อมูลสาเหตุ':'No failure-cause data yet')+'</div>';
+
+  const assetRows = topAssets.length
+    ? topAssets.map(function(a){ return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px solid var(--color-neutral-200)"><span style="font-family:var(--font-heading)">'+esc(a.assetId)+'</span>'+fmChip(a.cnt+' '+(th?'ครั้ง':'x'), a.cnt>=2?'red':'gray')+'</div>'; }).join('')
+    : '<div style="font-size:11px;color:var(--color-neutral-600);padding:6px 0">'+(th?'ยังไม่มีข้อมูล':'No data yet')+'</div>';
+
+  return '<div style="margin-bottom:12px">'
+    + availCard
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">'
+    +'<div>'+fmCard('<div style="font-size:11px;font-weight:600;margin-bottom:2px">'+(th?'สาเหตุที่แท้จริง Top 5':'Top 5 Failure Causes')+'</div>'+causeRows)+'</div>'
+    +'<div>'+fmCard('<div style="font-size:11px;font-weight:600;margin-bottom:2px">'+(th?'Asset ที่มีปัญหาบ่อย Top 5':'Top 5 Problem Assets')+'</div>'+assetRows)+'</div>'
+    +'</div></div>';
+}
+
 function wrOverview(){
   const th = ST.lang==='th';
   const wr = wrData();
@@ -1228,7 +1312,8 @@ function wrOverview(){
   const total = wr.length || 1;
   const trendSrc = closed.slice().sort(function(a,b){ return new Date(a.closeDate||a.date||0) - new Date(b.closeDate||b.date||0); }).slice(-10).filter(function(w){return w.mttr;});
 
-  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+  return wrQualitativeSummary(th)
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + statCard(th?'แจ้งซ่อม':'List WR', open.length, 'new') + statCard(th?'กำลังทำ':'In Progress', ip.length, 'inprogress')
     + statCard(th?'ปิดงาน':'Closed', closed.length, 'closed') + statCard(th?'MTTR เฉลี่ย (ชม.)':'Avg MTTR (hrs)', avgMttr!=null?avgMttr:'—', 'maintain')
     +'</div>'
