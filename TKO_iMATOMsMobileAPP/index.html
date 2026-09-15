@@ -1638,13 +1638,21 @@ function wrFLocCascade(presetRoom){
 }
 // QR ติดหน้าห้อง เก็บแค่รหัสสั้นๆ รูปแบบ LOC:อาคาร-ชั้น-รหัสห้อง เช่น LOC:A-2-AHU
 // เรียกจากทั้งกล้องสแกน (ถ้ามีในอนาคต) และการเปิดแอปผ่านลิงก์ ?loc=LOC:...
-function wrApplyLocCode(text){
+function wrApplyLocCode(rawText){
   const th = ST.lang==='th';
-  // Match "LOC:A-2-AHU" whether it's the raw code or embedded in a full URL
-  // (this app reads it from ?loc=..., but the same QR text also works if
-  // someone pastes/types it directly).
-  const m = /LOC:([A-Za-z0-9]+)-([A-Za-z0-9]+)-([A-Za-z0-9_]+)/.exec((text||'').trim());
-  if (!m) { toast((th?'QR นี้ไม่ใช่รูปแบบตำแหน่งที่รู้จัก: ':'Unrecognized location QR: ')+text); return false; }
+  let text = (rawText||'').trim();
+  // If it's a URL with ?loc=..., pull the param out first — this also
+  // handles the colon in "LOC:A-2-AHU" coming back percent-encoded
+  // (LOC%3AA-2-AHU) as URLSearchParams decodes it automatically, unlike a
+  // plain regex over the raw scanned text.
+  try{
+    const u = new URL(text);
+    const locParam = u.searchParams.get('loc');
+    if (locParam) text = locParam;
+  }catch(err){ /* not a URL — scanned text is likely the bare "LOC:..." code */ }
+  // Match "LOC:A-2-AHU" whether it's the raw code or still embedded in text.
+  const m = /LOC:([A-Za-z0-9]+)-([A-Za-z0-9]+)-([A-Za-z0-9_]+)/.exec(text);
+  if (!m) { toast((th?'QR นี้ไม่ใช่รูปแบบตำแหน่งที่รู้จัก: ':'Unrecognized location QR: ')+rawText); return false; }
   const bEl = document.getElementById('wr-f-building'), fEl = document.getElementById('wr-f-floor');
   if (!bEl || !fEl) return false;
   bEl.value = m[1]; fEl.value = m[2];

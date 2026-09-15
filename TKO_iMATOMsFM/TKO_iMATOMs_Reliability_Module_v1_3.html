@@ -4231,11 +4231,18 @@ function wrLocCascade(){
 // QR ติดหน้าห้อง เก็บแค่รหัสสั้นๆ รูปแบบ LOC:อาคาร-ชั้น-รหัสห้อง เช่น LOC:A-2-AHU
 // (ยึดรูปแบบเดียวกับ Asset QR ที่เก็บแค่ id ล้วน หลีกเลี่ยงปัญหา qrcodejs คำนวณ
 //  ความยาว UTF-8 ผิดพลาดถ้ายัดภาษาไทยลงไปตรงๆ)
-function handleWRLocScan(text){
-  // Match "LOC:A-2-AHU" whether it's the whole scanned string or embedded in
-  // a full URL (e.g. a real printed QR that also opens the Mobile App).
-  const m=/LOC:([A-Za-z0-9]+)-([A-Za-z0-9]+)-([A-Za-z0-9_]+)/.exec((text||'').trim());
-  if(!m){ alert('QR นี้ไม่ใช่รูปแบบตำแหน่งที่รู้จัก: '+text); return; }
+function handleWRLocScan(rawText){
+  let text=(rawText||'').trim();
+  // If it's a URL with ?loc=..., pull the param out first — this also
+  // un-does the colon in "LOC:A-2-AHU" coming back percent-encoded
+  // (LOC%3AA-2-AHU), which a plain regex over the raw text would miss.
+  try{
+    const u=new URL(text);
+    const locParam=u.searchParams.get('loc');
+    if(locParam) text=locParam;
+  }catch(err){ /* not a URL — scanned text is likely the bare "LOC:..." code */ }
+  const m=/LOC:([A-Za-z0-9]+)-([A-Za-z0-9]+)-([A-Za-z0-9_]+)/.exec(text);
+  if(!m){ alert('QR นี้ไม่ใช่รูปแบบตำแหน่งที่รู้จัก: '+rawText); return; }
   document.getElementById('wr-loc-building').value=m[1];
   document.getElementById('wr-loc-floor').value=m[2];
   wrLocCascade();
