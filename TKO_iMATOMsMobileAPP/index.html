@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 :root{
   --color-bg:#f2f2f3; --color-surface:#e9e9ea; --color-text:#1d1f20;
@@ -167,6 +168,7 @@ const ST = {
   wrDetailId: null,  // dbId of the WR currently shown in the detail overlay
   wrFormOpen: false, // whether the "New WR" create-form overlay is open
   wrFormBusy: false,
+  wrLocQrOpen: false, // whether the in-app camera scanner for Location QR is open
   wrCloseId: null,   // dbId of the WR currently shown in the Close Detail overlay
   wrCloseBusy: false,
   wrEvalId: null,    // dbId of the WR currently shown in the Evaluate & Approve overlay
@@ -1565,6 +1567,16 @@ function wrFormOverlay(){
         +'</select>')
     +'</div>'
 
+    +'<div class="tap" data-act="wr-loc-qr-open" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:var(--color-surface);font-size:12px;cursor:pointer">'
+      +'<span>📷</span><span>'+(th?'สแกน QR ที่ติดหน้าห้อง':'Scan the QR posted on the room')+'</span>'
+    +'</div>'
+    + (ST.wrLocQrOpen ? (
+        '<div style="border-radius:8px;overflow:hidden;background:#000;min-height:200px" id="wr-loc-qr-box"></div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">'
+        +'<span style="font-size:11px;color:var(--color-neutral-600)" id="wr-loc-qr-status">'+(th?'📷 หันกล้องไปที่ QR Code':'📷 Point camera at the QR code')+'</span>'
+        +'<div class="tap" data-act="wr-loc-qr-close" style="font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--color-divider)">'+(th?'ปิดกล้อง':'Close camera')+'</div>'
+        +'</div>'
+      ) : '')
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
       + wrFormField('อาคาร *','Building *', th, '<select id="wr-f-building" style="'+wrInputStyle+'" onchange="wrFLocCascade()">'
         +'<option value="">--</option>'+ LOC_BUILDINGS.map(function(b){ return '<option value="'+b+'">'+b+'</option>'; }).join('') +'</select>')
@@ -1638,6 +1650,51 @@ function wrApplyLocCode(text){
   bEl.value = m[1]; fEl.value = m[2];
   wrFLocCascade(m[3]);
   return true;
+}
+
+// In-app camera QR scanner for the location step — same html5-qrcode lib
+// and pattern the Desktop Reliability Module already uses for Asset QR, so
+// a stuck-on-the-wall location QR is scannable from either app.
+let _wrLocQrScanner = null;
+function wrLocQrStart(){
+  const th = ST.lang==='th';
+  const boxId = 'wr-loc-qr-box', statusId = 'wr-loc-qr-status';
+  const box = document.getElementById(boxId);
+  if (!box) return; // overlay not open / not rendered yet
+  if (typeof Html5Qrcode === 'undefined'){
+    toast(th?'⚠ โหลดไลบรารีกล้องไม่สำเร็จ — เลือกตำแหน่งเองแทนได้':'⚠ Camera library failed to load — select location manually instead');
+    return;
+  }
+  const statusEl = document.getElementById(statusId);
+  if (statusEl) statusEl.textContent = th?'📷 กำลังเปิดกล้อง...':'📷 Opening camera...';
+  _wrLocQrScanner = new Html5Qrcode(boxId);
+  Html5Qrcode.getCameras().then(function(cams){
+    const backCam = cams.filter(function(c){ return /back|rear|environment/i.test(c.label); })[0];
+    const cameraId = backCam ? backCam.id : (cams[0] ? cams[0].id : null);
+    if (!cameraId){ if(statusEl) statusEl.textContent = th?'❌ ไม่พบกล้อง':'❌ No camera found'; return; }
+    _wrLocQrScanner.start(
+      cameraId,
+      { fps: 10, qrbox: { width: 220, height: 220 } },
+      function(decodedText){
+        const ok = wrApplyLocCode(decodedText.trim());
+        if (statusEl) statusEl.textContent = ok ? (th?'✅ สแกนพบ':'✅ Scanned') + ': '+decodedText : (th?'❌ QR ไม่ใช่รูปแบบตำแหน่ง':'❌ Not a location QR');
+        if (ok) setTimeout(function(){ wrLocQrStop(); ST.wrLocQrOpen = false; render(); }, 600);
+      },
+      function(){ /* decode error, keep scanning quietly */ }
+    ).catch(function(err){
+      if (statusEl) statusEl.textContent = th?'❌ เปิดกล้องไม่ได้ — ตรวจสอบสิทธิ์การใช้กล้อง':'❌ Could not open camera — check camera permission';
+      console.error('WR loc QR scanner start failed', err);
+    });
+  }).catch(function(err){
+    if (statusEl) statusEl.textContent = th?'❌ ไม่พบกล้อง หรือไม่ได้อนุญาตสิทธิ์':'❌ No camera, or permission denied';
+    console.error('getCameras failed', err);
+  });
+}
+function wrLocQrStop(){
+  if (_wrLocQrScanner){
+    _wrLocQrScanner.stop().then(function(){ _wrLocQrScanner.clear(); }).catch(function(){});
+    _wrLocQrScanner = null;
+  }
 }
 
 async function wrCreateSubmit(){
@@ -1970,8 +2027,10 @@ document.addEventListener('click', function(e){
   else if(act==='wr-cancel'){ wrCancel(el.getAttribute('data-id')); }
   else if(act==='wr-detail'){ ST.wrDetailId = el.getAttribute('data-id'); render(); }
   else if(act==='wr-detail-close'){ ST.wrDetailId = null; render(); }
-  else if(act==='wr-new-open'){ ST.wrFormOpen = true; render(); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
-  else if(act==='wr-new-close'){ ST.wrFormOpen = false; render(); }
+  else if(act==='wr-new-open'){ ST.wrFormOpen = true; ST.wrLocQrOpen = false; render(); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
+  else if(act==='wr-new-close'){ ST.wrFormOpen = false; wrLocQrStop(); render(); }
+  else if(act==='wr-loc-qr-open'){ ST.wrLocQrOpen = true; render(); setTimeout(wrLocQrStart, 50); }
+  else if(act==='wr-loc-qr-close'){ wrLocQrStop(); ST.wrLocQrOpen = false; render(); }
   else if(act==='wr-new-submit'){ if(!ST.wrFormBusy) wrCreateSubmit(); }
   else if(act==='wr-close-cancel'){ wrCloseClose(); }
   else if(act==='wr-close-submit'){ if(!ST.wrCloseBusy) wrCloseSubmit(); }
