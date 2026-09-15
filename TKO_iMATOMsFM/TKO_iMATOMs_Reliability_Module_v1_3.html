@@ -3670,28 +3670,30 @@ function openQRScanner(opts){
   document.getElementById(wrapId).style.display = 'block';
   document.getElementById(statusId).textContent = '📷 กำลังเปิดกล้อง...';
   _qrScanner = new Html5Qrcode(boxId);
-  Html5Qrcode.getCameras().then(cams=>{
-    // ใช้กล้องหลัง (back camera) เป็นค่าเริ่มต้นบนมือถือ ถ้ามี
-    const backCam = cams.find(c=>/back|rear|environment/i.test(c.label));
-    const cameraId = backCam ? backCam.id : (cams[0] ? cams[0].id : null);
-    if (!cameraId){ document.getElementById(statusId).textContent='❌ ไม่พบกล้อง'; return; }
-    _qrScanner.start(
-      cameraId,
-      { fps: 10, qrbox: { width: 220, height: 220 } },
-      (decodedText) => {
-        // สแกนเจอ — เติม Asset ID อัตโนมัติแล้วปิดกล้อง
-        onDecoded(decodedText.trim());
-        document.getElementById(statusId).textContent = `✅ สแกนพบ: ${decodedText}`;
-        setTimeout(()=>closeQRScanner(wrapId), 600);
-      },
-      () => { /* decode error ต่อเนื่อง — เงียบไว้ ไม่ต้อง spam log */ }
-    ).catch(err=>{
-      document.getElementById(statusId).textContent = '❌ เปิดกล้องไม่ได้ — ตรวจสอบสิทธิ์การใช้กล้องของเบราว์เซอร์';
-      console.error('QR scanner start failed', err);
+  const cfg = { fps: 10, qrbox: { width: 220, height: 220 } };
+  const onOk = (decodedText) => {
+    onDecoded(decodedText.trim());
+    document.getElementById(statusId).textContent = `✅ สแกนพบ: ${decodedText}`;
+    setTimeout(()=>closeQRScanner(wrapId), 600);
+  };
+  const onErr = () => { /* decode error ต่อเนื่อง — เงียบไว้ ไม่ต้อง spam log */ };
+  // ขอกล้องผ่าน facingMode ก่อน — เป็นวิธีที่ html5-qrcode แนะนำสำหรับมือถือ
+  // (เรียก getUserMedia ตรงๆ ทำให้ prompt ขอสิทธิ์ขึ้นชัวร์กว่า) ถ้าไม่ผ่านค่อย
+  // fallback ไป enumerate กล้องแบบเดิม — ป้องกันเคสจอมืดค้างไม่ขึ้น error ให้เห็น
+  _qrScanner.start({ facingMode: 'environment' }, cfg, onOk, onErr).catch(err=>{
+    console.error('QR scanner facingMode start failed, falling back to getCameras()', err);
+    Html5Qrcode.getCameras().then(cams=>{
+      const backCam = cams.find(c=>/back|rear|environment/i.test(c.label));
+      const cameraId = backCam ? backCam.id : (cams[0] ? cams[0].id : null);
+      if (!cameraId){ document.getElementById(statusId).textContent='❌ ไม่พบกล้อง'; return; }
+      _qrScanner.start(cameraId, cfg, onOk, onErr).catch(err2=>{
+        document.getElementById(statusId).textContent = '❌ เปิดกล้องไม่ได้ — ตรวจสอบสิทธิ์การใช้กล้องของเบราว์เซอร์';
+        console.error('QR scanner cameraId start failed', err2);
+      });
+    }).catch(err3=>{
+      document.getElementById(statusId).textContent = '❌ ไม่พบกล้อง หรือไม่ได้อนุญาตสิทธิ์กล้อง';
+      console.error('getCameras failed', err3);
     });
-  }).catch(err=>{
-    document.getElementById(statusId).textContent = '❌ ไม่พบกล้อง หรือไม่ได้อนุญาตสิทธิ์กล้อง';
-    console.error('getCameras failed', err);
   });
 }
 function closeQRScanner(wrapId){

@@ -1665,30 +1665,43 @@ function wrLocQrStart(){
     toast(th?'⚠ โหลดไลบรารีกล้องไม่สำเร็จ — เลือกตำแหน่งเองแทนได้':'⚠ Camera library failed to load — select location manually instead');
     return;
   }
+  if (!(window.isSecureContext)) {
+    const statusEl0 = document.getElementById(statusId);
+    if (statusEl0) statusEl0.textContent = th?'❌ ต้องเปิดผ่าน HTTPS ถึงจะใช้กล้องได้':'❌ Camera requires HTTPS';
+    return;
+  }
   const statusEl = document.getElementById(statusId);
   if (statusEl) statusEl.textContent = th?'📷 กำลังเปิดกล้อง...':'📷 Opening camera...';
   _wrLocQrScanner = new Html5Qrcode(boxId);
-  Html5Qrcode.getCameras().then(function(cams){
-    const backCam = cams.filter(function(c){ return /back|rear|environment/i.test(c.label); })[0];
-    const cameraId = backCam ? backCam.id : (cams[0] ? cams[0].id : null);
-    if (!cameraId){ if(statusEl) statusEl.textContent = th?'❌ ไม่พบกล้อง':'❌ No camera found'; return; }
-    _wrLocQrScanner.start(
-      cameraId,
-      { fps: 10, qrbox: { width: 220, height: 220 } },
-      function(decodedText){
-        const ok = wrApplyLocCode(decodedText.trim());
-        if (statusEl) statusEl.textContent = ok ? (th?'✅ สแกนพบ':'✅ Scanned') + ': '+decodedText : (th?'❌ QR ไม่ใช่รูปแบบตำแหน่ง':'❌ Not a location QR');
-        if (ok) setTimeout(function(){ wrLocQrStop(); ST.wrLocQrOpen = false; render(); }, 600);
-      },
-      function(){ /* decode error, keep scanning quietly */ }
-    ).catch(function(err){
-      if (statusEl) statusEl.textContent = th?'❌ เปิดกล้องไม่ได้ — ตรวจสอบสิทธิ์การใช้กล้อง':'❌ Could not open camera — check camera permission';
-      console.error('WR loc QR scanner start failed', err);
+  const onDecoded = function(decodedText){
+    const ok = wrApplyLocCode(decodedText.trim());
+    if (statusEl) statusEl.textContent = ok ? (th?'✅ สแกนพบ':'✅ Scanned') + ': '+decodedText : (th?'❌ QR ไม่ใช่รูปแบบตำแหน่ง':'❌ Not a location QR');
+    if (ok) setTimeout(function(){ wrLocQrStop(); ST.wrLocQrOpen = false; render(); }, 600);
+  };
+  const onDecodeError = function(){ /* keep scanning quietly */ };
+  const cfg = { fps: 10, qrbox: { width: 220, height: 220 } };
+  // Ask by facingMode first — this is the pattern html5-qrcode itself
+  // recommends for phones: it triggers the getUserMedia permission prompt
+  // directly and works far more reliably than enumerating devices first
+  // (Html5Qrcode.getCameras() before permission is granted often comes back
+  // with unusable device entries on mobile Chrome/Safari, which is what
+  // left the preview stuck on a black box with no error surfaced).
+  _wrLocQrScanner.start({ facingMode: 'environment' }, cfg, onDecoded, onDecodeError)
+    .catch(function(err){
+      console.error('WR loc QR scanner facingMode start failed, falling back to getCameras()', err);
+      Html5Qrcode.getCameras().then(function(cams){
+        const backCam = cams.filter(function(c){ return /back|rear|environment/i.test(c.label); })[0];
+        const cameraId = backCam ? backCam.id : (cams[0] ? cams[0].id : null);
+        if (!cameraId){ if(statusEl) statusEl.textContent = th?'❌ ไม่พบกล้อง':'❌ No camera found'; return; }
+        _wrLocQrScanner.start(cameraId, cfg, onDecoded, onDecodeError).catch(function(err2){
+          if (statusEl) statusEl.textContent = th?'❌ เปิดกล้องไม่ได้ — ตรวจสอบสิทธิ์การใช้กล้องของเบราว์เซอร์':'❌ Could not open camera — check browser camera permission';
+          console.error('WR loc QR scanner cameraId start failed', err2);
+        });
+      }).catch(function(err3){
+        if (statusEl) statusEl.textContent = th?'❌ ไม่พบกล้อง หรือไม่ได้อนุญาตสิทธิ์':'❌ No camera, or permission denied';
+        console.error('getCameras failed', err3);
+      });
     });
-  }).catch(function(err){
-    if (statusEl) statusEl.textContent = th?'❌ ไม่พบกล้อง หรือไม่ได้อนุญาตสิทธิ์':'❌ No camera, or permission denied';
-    console.error('getCameras failed', err);
-  });
 }
 function wrLocQrStop(){
   if (_wrLocQrScanner){
