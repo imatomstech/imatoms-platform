@@ -2020,6 +2020,46 @@ body.embedded #content {
       <div style="font-size:11px;color:var(--text3);margin-bottom:4px">📍 ตำแหน่งตามทะเบียน Asset</div>
       <div id="wr-loc-text" style="font-size:13px;font-weight:600"></div>
     </div>
+
+    <!-- ตำแหน่งที่แจ้งจริง — อาคาร/ชั้น/พื้นที่ เลือกเองได้เสมอ ไม่ต้องพึ่ง Asset
+         (บางเคสไม่มี Asset ตรงกับปัญหา เช่น ห้องน้ำ/ห้องประชุม) -->
+    <div class="alert alert-info mb-12" style="display:flex;align-items:center;gap:12px">
+      <span>📍 ระบุตำแหน่ง หรือสแกน QR ที่ติดหน้าห้อง</span>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="openQRScanner({wrapId:'wr-loc-qr-scanner-wrap',boxId:'wr-loc-qr-scanner-box',statusId:'wr-loc-qr-scanner-status',onDecoded:handleWRLocScan})">📷 Scan QR สถานที่</button>
+    </div>
+    <div id="wr-loc-qr-scanner-wrap" style="display:none;margin-bottom:12px">
+      <div id="wr-loc-qr-scanner-box" style="border-radius:8px;overflow:hidden;background:#000;min-height:220px"></div>
+      <div class="flex justify-between flex-center mt-8">
+        <div class="text-muted" style="font-size:11px" id="wr-loc-qr-scanner-status">📷 หันกล้องไปที่ QR Code หน้าห้อง</div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeQRScanner('wr-loc-qr-scanner-wrap')">✕ ปิดกล้อง</button>
+      </div>
+    </div>
+    <div class="form-row-3">
+      <div class="form-group">
+        <label class="form-label">อาคาร (Building) *</label>
+        <select class="form-control" id="wr-loc-building" onchange="wrLocCascade()">
+          <option value="">-- เลือกอาคาร --</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ชั้น (Floor) *</label>
+        <select class="form-control" id="wr-loc-floor" onchange="wrLocCascade()">
+          <option value="">-- เลือกชั้น --</option>
+          <option value="B1">B1</option>
+          <option value="G">G</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">พื้นที่/ห้อง (Zone-Room) *</label>
+        <select class="form-control" id="wr-loc-room"><option value="">-- เลือกชั้นก่อน --</option></select>
+      </div>
+    </div>
     <div class="form-group">
       <label class="form-label">ตำแหน่งที่พบปัญหาจริง (ระบุเพิ่มเติม)</label>
       <input class="form-control" id="wr-loc-detail" placeholder="เช่น มุมห้องฝั่งซ้าย, ใกล้ประตูทางเข้า — กรณี QR ติดพื้นที่กว้าง ให้ระบุจุดที่แน่นอนตรงนี้">
@@ -3876,6 +3916,39 @@ let systemTargets = DB.get('wrTargets', DEFAULT_TARGETS);
 const WR_SYSTEMS=['BD','RM','CM','OM','PM','MA','Sub','PJ','OTH'];
 const SYS_NAMES={BD:'Breakdown',RM:'Repair & Maint.',CM:'Corrective',OM:'On-site',PM:'Preventive',MA:'MA Contract',Sub:'Subcontract',PJ:'Project',OTH:'Other'};
 
+// ── Location master data (Building / Floor / Zone-Room) ──────────────────
+// Standalone location taxonomy so a WR can be pinned to a real place even
+// when no specific Asset applies (e.g. a restroom light, a meeting-room
+// AC complaint) — independent of, but auto-fillable from, the Asset
+// register's own building/floor/zone/room text fields. Same list is
+// mirrored in the Mobile App so QR codes work from either app.
+const LOC_BUILDINGS = ['A','B','C'];
+const LOC_FLOORS = ['B1','G','2','3','4'];
+const LOC_CATS = {
+  mech:   {th:'พื้นที่ห้องเครื่องจักร', en:'Machine Room Area'},
+  general:{th:'พื้นที่ทั่วไป',          en:'General Area'},
+  common: {th:'พื้นที่ส่วนกลาง',        en:'Common Area'},
+};
+const LOC_ROOMS = [
+  {code:'ELEC_DB', cat:'mech',    th:'ห้องไฟฟ้า DB',      en:'Electrical DB Room'},
+  {code:'AHU',     cat:'mech',    th:'ห้อง AHU',          en:'AHU Room'},
+  {code:'PUMP',    cat:'mech',    th:'ห้องปั๊มน้ำดี',      en:'Water Pump Room'},
+  {code:'LIFT',    cat:'mech',    th:'ห้องลิฟท์',          en:'Lift Machine Room'},
+  {code:'MEETING', cat:'general', th:'ห้องประชุม',        en:'Meeting Room'},
+  {code:'EXEC',    cat:'general', th:'ห้องผู้บริหาร',      en:'Executive Room'},
+  {code:'LOUNGE',  cat:'general', th:'ห้องพักรับรอง',      en:'Reception Lounge'},
+  {code:'WC_M',    cat:'common',  th:'ห้องน้ำชาย',        en:"Men's Restroom", floors:['G','2','4']},
+];
+// Rooms with no `floors` list apply to every floor; rooms that name floors
+// (like the restroom above, per the example given) only show up there.
+function locRoomsForFloor(floor){
+  return LOC_ROOMS.filter(r => !r.floors || r.floors.includes(floor));
+}
+function locRoomLabel(code, th){
+  const r = LOC_ROOMS.find(x => x.code === code);
+  return r ? (th ? r.th : r.en) : code;
+}
+
 function priorityBadge(p){
   if(p==='critical')return '<span class="priority-critical">🔴 Critical &lt;5m</span>';
   if(p==='urgently')return '<span class="priority-urgently">🟡 Urgently &lt;15m</span>';
@@ -4102,9 +4175,14 @@ function saveWR(){
   const asset=document.getElementById('wr-asset').value;
   const desc=document.getElementById('wr-desc').value.trim();
   if(!desc){alert('กรุณากรอกรายละเอียดปัญหา');return;}
+  const locBuilding=document.getElementById('wr-loc-building').value;
+  const locFloor=document.getElementById('wr-loc-floor').value;
+  const locRoom=document.getElementById('wr-loc-room').value;
+  if(!locBuilding || !locFloor || !locRoom){ alert('กรุณาระบุตำแหน่ง อาคาร/ชั้น/พื้นที่ ให้ครบ'); return; }
   const priority=document.querySelector('input[name="wr-priority"]:checked')?.value||'normal';
   const id=`WR-${String(workRequests.length+1).padStart(4,'0')}`;
   const a=assets.find(x=>x.id===asset);
+  const roomMeta=LOC_ROOMS.find(r=>r.code===locRoom);
   workRequests.push({
     id, assetId:asset, desc,
     type:document.getElementById('wr-type').value,
@@ -4113,8 +4191,12 @@ function saveWR(){
     phone:document.getElementById('wr-phone').value,
     date:document.getElementById('wr-date').value||new Date().toISOString(),
     availableTime:document.getElementById('wr-available-time').value,
-    // ตำแหน่งตามทะเบียน Asset ณ เวลาที่แจ้ง (เผื่อ asset ย้ายที่ภายหลัง ประวัติ WR ยังอ้างอิงตำแหน่งตอนแจ้งได้)
-    building:a?.building||'', floor:a?.floor||'', zone:a?.zone||'', room:a?.room||'',
+    // ตำแหน่งที่ผู้แจ้งเลือกเอง (อาคาร/ชั้น/พื้นที่) เป็นค่าหลักเสมอ — ไม่พึ่งพา
+    // ตำแหน่งตามทะเบียน Asset อีกต่อไป เพราะบาง WR ไม่มี Asset ที่ตรงกับปัญหา
+    // (เช่น ห้องน้ำ, ห้องประชุม) ค่าจากทะเบียน Asset ใช้เป็น fallback เท่านั้น
+    building:locBuilding||a?.building||'', floor:locFloor||a?.floor||'',
+    zone:roomMeta?LOC_CATS[roomMeta.cat].th:(a?.zone||''), room:roomMeta?roomMeta.th:(a?.room||''),
+    locCode:locRoom||null,
     locationDetail:document.getElementById('wr-loc-detail').value.trim(),
     status:'open', closeDate:null, mttr:null,
     assign:null, arrivalTime:null, startTime:null, endTime:null,
@@ -4125,8 +4207,39 @@ function saveWR(){
   closeModal('addWRModal');
   document.getElementById('wr-loc-detail').value='';
   document.getElementById('wr-loc-card').style.display='none';
+  document.getElementById('wr-loc-building').value='';
+  document.getElementById('wr-loc-floor').value='';
+  wrLocCascade();
   renderWR();
   if(priority==='critical') alert(`🚨 CRITICAL: แจ้งงาน ${id} — ต้องตอบสนองภายใน 5 นาที!\nแจ้งช่างทีมทันที`);
+}
+
+function wrLocCascade(){
+  const floor=document.getElementById('wr-loc-floor').value;
+  const sel=document.getElementById('wr-loc-room');
+  if(!floor){ sel.innerHTML='<option value="">-- เลือกชั้นก่อน --</option>'; return; }
+  const rooms=locRoomsForFloor(floor);
+  const byCat={};
+  rooms.forEach(r=>{ (byCat[r.cat]=byCat[r.cat]||[]).push(r); });
+  sel.innerHTML='<option value="">-- เลือกพื้นที่ --</option>'+Object.keys(byCat).map(cat=>
+    `<optgroup label="${LOC_CATS[cat].th}">`+byCat[cat].map(r=>`<option value="${r.code}">${r.th}</option>`).join('')+`</optgroup>`
+  ).join('');
+}
+
+// QR ติดหน้าห้อง เก็บแค่รหัสสั้นๆ รูปแบบ LOC:อาคาร-ชั้น-รหัสห้อง เช่น LOC:A-2-AHU
+// (ยึดรูปแบบเดียวกับ Asset QR ที่เก็บแค่ id ล้วน หลีกเลี่ยงปัญหา qrcodejs คำนวณ
+//  ความยาว UTF-8 ผิดพลาดถ้ายัดภาษาไทยลงไปตรงๆ)
+function handleWRLocScan(text){
+  // Match "LOC:A-2-AHU" whether it's the whole scanned string or embedded in
+  // a full URL (e.g. a real printed QR that also opens the Mobile App).
+  const m=/LOC:([A-Za-z0-9]+)-([A-Za-z0-9]+)-([A-Za-z0-9_]+)/.exec((text||'').trim());
+  if(!m){ alert('QR นี้ไม่ใช่รูปแบบตำแหน่งที่รู้จัก: '+text); return; }
+  document.getElementById('wr-loc-building').value=m[1];
+  document.getElementById('wr-loc-floor').value=m[2];
+  wrLocCascade();
+  const roomSel=document.getElementById('wr-loc-room');
+  if([...roomSel.options].some(o=>o.value===m[3])) roomSel.value=m[3];
+  else alert(`⚠ ไม่พบห้องรหัส "${m[3]}" ในชั้นนี้ — กรุณาเลือกจากรายการเอง`);
 }
 
 function openAcceptWR(id){

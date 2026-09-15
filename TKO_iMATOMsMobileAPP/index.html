@@ -760,6 +760,32 @@ const CLOSE_FAILCAUSE_OPTIONS = [
   ['software', {th:'ซอฟต์แวร์/โปรแกรมขัดข้อง', en:'Software Fault'}],
   ['other', {th:'อื่นๆ', en:'Other'}],
 ];
+
+// ── Location master data (Building / Floor / Zone-Room) ──────────────────
+// Mirrors the same list in the Desktop Reliability Module so QR codes
+// printed for either app resolve to the same place. Independent of Asset —
+// some WRs (a restroom light, a meeting-room AC) have no matching Asset.
+const LOC_BUILDINGS = ['A','B','C'];
+const LOC_FLOORS = ['B1','G','2','3','4'];
+const LOC_CATS = {
+  mech:    {th:'พื้นที่ห้องเครื่องจักร', en:'Machine Room Area'},
+  general: {th:'พื้นที่ทั่วไป',          en:'General Area'},
+  common:  {th:'พื้นที่ส่วนกลาง',        en:'Common Area'},
+};
+const LOC_ROOMS = [
+  {code:'ELEC_DB', cat:'mech',    th:'ห้องไฟฟ้า DB',      en:'Electrical DB Room'},
+  {code:'AHU',     cat:'mech',    th:'ห้อง AHU',          en:'AHU Room'},
+  {code:'PUMP',    cat:'mech',    th:'ห้องปั๊มน้ำดี',      en:'Water Pump Room'},
+  {code:'LIFT',    cat:'mech',    th:'ห้องลิฟท์',          en:'Lift Machine Room'},
+  {code:'MEETING', cat:'general', th:'ห้องประชุม',        en:'Meeting Room'},
+  {code:'EXEC',    cat:'general', th:'ห้องผู้บริหาร',      en:'Executive Room'},
+  {code:'LOUNGE',  cat:'general', th:'ห้องพักรับรอง',      en:'Reception Lounge'},
+  {code:'WC_M',    cat:'common',  th:'ห้องน้ำชาย',        en:"Men's Restroom", floors:['G','2','4']},
+];
+function locRoomsForFloor(floor){
+  return LOC_ROOMS.filter(function(r){ return !r.floors || r.floors.indexOf(floor) !== -1; });
+}
+
 // Transient close-form state — plain JS vars (not ST) so canvas/photo/star
 // interactions don't need a full re-render (which would wipe the canvas).
 let wrClosePhotos = [];   // [{name, dataUrl}]
@@ -1530,13 +1556,21 @@ function wrFormOverlay(){
     +'<div style="display:flex;flex-direction:column;gap:10px">'
 
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-      + wrFormField('Asset ID *','Asset ID *', th, '<select id="wr-f-asset" style="'+wrInputStyle+'">'
+      + wrFormField('Asset ID (ถ้ามี)','Asset ID (if any)', th, '<select id="wr-f-asset" style="'+wrInputStyle+'">'
         +'<option value="">-- '+(th?'เลือก Asset':'Select asset')+' --</option>'
         + assets.map(function(a){ return '<option value="'+esc(a.id)+'">'+esc((a.id||'')+' — '+(a.name||''))+'</option>'; }).join('')
         +'</select>')
       + wrFormField('ประเภทงาน *','Work type *', th, '<select id="wr-f-type" style="'+wrInputStyle+'">'
         + WR_TYPE_OPTIONS.map(function(t){ return '<option value="'+t[0]+'">'+t[1]+'</option>'; }).join('')
         +'</select>')
+    +'</div>'
+
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
+      + wrFormField('อาคาร *','Building *', th, '<select id="wr-f-building" style="'+wrInputStyle+'" onchange="wrFLocCascade()">'
+        +'<option value="">--</option>'+ LOC_BUILDINGS.map(function(b){ return '<option value="'+b+'">'+b+'</option>'; }).join('') +'</select>')
+      + wrFormField('ชั้น *','Floor *', th, '<select id="wr-f-floor" style="'+wrInputStyle+'" onchange="wrFLocCascade()">'
+        +'<option value="">--</option>'+ LOC_FLOORS.map(function(f){ return '<option value="'+f+'">'+f+'</option>'; }).join('') +'</select>')
+      + wrFormField('พื้นที่/ห้อง *','Zone/Room *', th, '<select id="wr-f-room" style="'+wrInputStyle+'"><option value="">'+(th?'-- เลือกชั้นก่อน --':'-- pick floor first --')+'</option></select>')
     +'</div>'
 
     + wrFormField('ตำแหน่งที่พบปัญหาจริง (ระบุเพิ่มเติม)','Exact location (optional)', th,
@@ -1572,11 +1606,50 @@ function wrFormOverlay(){
   );
 }
 
+function wrFLocCascade(presetRoom){
+  const floorEl = document.getElementById('wr-f-floor');
+  const sel = document.getElementById('wr-f-room');
+  if (!floorEl || !sel) return;
+  const floor = floorEl.value;
+  const th = ST.lang==='th';
+  if (!floor) { sel.innerHTML = '<option value="">'+(th?'-- เลือกชั้นก่อน --':'-- pick floor first --')+'</option>'; return; }
+  const rooms = locRoomsForFloor(floor);
+  const byCat = {};
+  rooms.forEach(function(r){ (byCat[r.cat] = byCat[r.cat] || []).push(r); });
+  sel.innerHTML = '<option value="">'+(th?'-- เลือกพื้นที่ --':'-- select area --')+'</option>'
+    + Object.keys(byCat).map(function(cat){
+        return '<optgroup label="'+(th?LOC_CATS[cat].th:LOC_CATS[cat].en)+'">'
+          + byCat[cat].map(function(r){ return '<option value="'+r.code+'">'+(th?r.th:r.en)+'</option>'; }).join('')
+          + '</optgroup>';
+      }).join('');
+  if (presetRoom && [].some.call(sel.options, function(o){ return o.value===presetRoom; })) sel.value = presetRoom;
+}
+// QR ติดหน้าห้อง เก็บแค่รหัสสั้นๆ รูปแบบ LOC:อาคาร-ชั้น-รหัสห้อง เช่น LOC:A-2-AHU
+// เรียกจากทั้งกล้องสแกน (ถ้ามีในอนาคต) และการเปิดแอปผ่านลิงก์ ?loc=LOC:...
+function wrApplyLocCode(text){
+  const th = ST.lang==='th';
+  // Match "LOC:A-2-AHU" whether it's the raw code or embedded in a full URL
+  // (this app reads it from ?loc=..., but the same QR text also works if
+  // someone pastes/types it directly).
+  const m = /LOC:([A-Za-z0-9]+)-([A-Za-z0-9]+)-([A-Za-z0-9_]+)/.exec((text||'').trim());
+  if (!m) { toast((th?'QR นี้ไม่ใช่รูปแบบตำแหน่งที่รู้จัก: ':'Unrecognized location QR: ')+text); return false; }
+  const bEl = document.getElementById('wr-f-building'), fEl = document.getElementById('wr-f-floor');
+  if (!bEl || !fEl) return false;
+  bEl.value = m[1]; fEl.value = m[2];
+  wrFLocCascade(m[3]);
+  return true;
+}
+
 async function wrCreateSubmit(){
   const th = ST.lang==='th';
   const descEl = document.getElementById('wr-f-desc');
   const desc = descEl ? descEl.value.trim() : '';
   if(!desc){ toast(th?'กรุณากรอกรายละเอียดปัญหา':'Please describe the problem'); return; }
+  const locBuilding = (document.getElementById('wr-f-building')||{}).value;
+  const locFloor = (document.getElementById('wr-f-floor')||{}).value;
+  const locRoomCode = (document.getElementById('wr-f-room')||{}).value;
+  if(!locBuilding || !locFloor || !locRoomCode){ toast(th?'กรุณาระบุตำแหน่ง อาคาร/ชั้น/พื้นที่ ให้ครบ':'Please select Building/Floor/Zone-Room'); return; }
+  const roomMeta = LOC_ROOMS.filter(function(r){ return r.code===locRoomCode; })[0];
   const assetSel = document.getElementById('wr-f-asset');
   const assetDbId = assetSel.value || null;
   const assetObj = assetDbId ? (ST.modData.fm.assets||[]).find(function(a){ return String(a.id)===String(assetDbId); }) : null;
@@ -1604,16 +1677,18 @@ async function wrCreateSubmit(){
     // register code when it's not a numeric FK) that the typed work_orders
     // columns don't have their own slot for — the sync endpoint buckets
     // anything unrecognized into `meta`, same as the Reliability Module.
-    if (locDetail || availTime || !assetIsNumeric) {
-      try{
-        await api('/work-orders/sync', { method:'POST', body: JSON.stringify({ items: [{
-          id: wo.wo_no, assetId: (assetObj&&assetObj.id)||assetDbId, desc: desc, type: woType,
-          priority: priority, reporter: reporter||null, phone: phone||null, status: wo.status||'open',
-          locationDetail: locDetail||undefined, availableTime: availTime||undefined,
-          date: dateVal ? new Date(dateVal).toISOString() : wo.created_at
-        }] }) });
-      }catch(e){ /* WR itself is already saved; the extra detail merge is best-effort */ }
-    }
+    try{
+      await api('/work-orders/sync', { method:'POST', body: JSON.stringify({ items: [{
+        id: wo.wo_no, assetId: (assetObj&&assetObj.id)||assetDbId, desc: desc, type: woType,
+        priority: priority, reporter: reporter||null, phone: phone||null, status: wo.status||'open',
+        locationDetail: locDetail||undefined, availableTime: availTime||undefined,
+        building: locBuilding, floor: locFloor,
+        zone: roomMeta ? (th?LOC_CATS[roomMeta.cat].th:LOC_CATS[roomMeta.cat].en) : undefined,
+        room: roomMeta ? (th?roomMeta.th:roomMeta.en) : undefined,
+        locCode: locRoomCode,
+        date: dateVal ? new Date(dateVal).toISOString() : wo.created_at
+      }] }) });
+    }catch(e){ /* WR itself is already saved; the extra detail merge is best-effort */ }
     ST.wrFormOpen = false; ST.wrFormBusy = false;
     toast(th?('✅ แจ้งซ่อม '+(wo.wo_no||'')+' สำเร็จ'):('✅ Submitted '+(wo.wo_no||'')));
     loadFmWR();
@@ -1981,10 +2056,32 @@ async function loadModuleData(key){
 }
 
 /* ============== boot ============== */
+// QR codes stuck on doors/rooms link to `?loc=LOC:A-2-AHU` — on load, stash
+// that code and, once the user reaches the dashboard (already logged in, or
+// right after they log in), jump straight into WR > New WR with the
+// Building/Floor/Zone-Room pre-filled from the scanned code.
+let PENDING_LOC = null;
 (function boot(){
+  try{
+    const qp = new URLSearchParams(window.location.search);
+    const loc = qp.get('loc');
+    if (loc) PENDING_LOC = loc;
+  }catch(err){ /* no URLSearchParams support — ignore, manual entry still works */ }
   render();
   if(ST.screen === 'main') loadDashboard();
+  if (PENDING_LOC) setTimeout(wrOpenPendingLocIfAny, 400);
 })();
+function wrOpenPendingLocIfAny(){
+  if (!PENDING_LOC) return;
+  if (ST.screen !== 'main'){ setTimeout(wrOpenPendingLocIfAny, 400); return; } // still on login/splash
+  ST.activeModule = 'fm'; ST.fromTab = ST.tab; ST.screen = 'module';
+  ST.fmSub = 'wr'; ST.wrSub = 'new'; ST.wrFormOpen = true;
+  render();
+  loadModuleData('fm');
+  setTimeout(function(){
+    if (wrApplyLocCode(PENDING_LOC)) PENDING_LOC = null;
+  }, 300);
+}
 </script>
 </body>
 </html>
