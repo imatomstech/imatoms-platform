@@ -953,6 +953,72 @@ function wrCloseAddPart(selectEl){
   }
   wrCloseRecalcCost();
 }
+function renderWrClosePartsChips(){
+  const list = document.getElementById('wr-cl-parts-list'); if(!list) return;
+  list.innerHTML = '';
+  wrClosePartsUsed.forEach(function(item){
+    const chip = document.createElement('span');
+    chip.style.cssText = 'font-size:10px;font-weight:600;color:var(--color-accent-700);border:1px solid var(--color-accent-700);padding:3px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px';
+    chip.textContent = (item.code||item.id) + ' ' + fmMoney(item.price||0);
+    const x = document.createElement('span'); x.textContent=' ✕'; x.style.cursor='pointer';
+    x.onclick = function(){ wrClosePartsUsed = wrClosePartsUsed.filter(function(p){return p.id!==item.id;}); chip.remove(); wrCloseRecalcCost(); };
+    chip.appendChild(x);
+    list.appendChild(chip);
+  });
+}
+function renderWrClosePhotoChips(){
+  const list = document.getElementById('wr-cl-photo-list'); if(!list) return;
+  list.innerHTML = '';
+  wrClosePhotos.forEach(function(p){
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--color-divider)';
+    const img = document.createElement('img');
+    img.src = p.dataUrl; img.style.cssText = 'width:100%;height:100%;object-fit:cover';
+    wrap.appendChild(img);
+    list.appendChild(wrap);
+  });
+}
+function toLocalInputVal(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  if(isNaN(d)) return '';
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0,16);
+}
+// Opens Close Detail pre-filled with everything already entered for this WR,
+// so a mistake spotted on the Evaluate & Approve screen (wrong cost, wrong
+// failure cause, etc.) can be fixed before it goes to the manager, instead of
+// only being able to "send back" and make the technician redo it from scratch.
+function wrCloseEditOpen(dbId){
+  const w = wrData().find(function(x){ return String(x._dbId)===String(dbId); });
+  if(!w) return;
+  wrClosePhotos = Array.isArray(w.photos) ? w.photos.map(function(url,i){ return { name:'photo-'+i, dataUrl:url }; }) : [];
+  wrClosePartsUsed = Array.isArray(w.partsUsed) ? w.partsUsed.map(function(p){ return Object.assign({},p); }) : [];
+  wrCloseStars = w.satisfaction || 0;
+  wrCloseSigDrawing = false; wrCloseSigLast = null;
+  wrCloseTechs = w.assign ? w.assign.split(/[,\/]/).map(function(s){ return s.trim(); }).filter(Boolean) : [];
+  ST.wrEvalId = null; // close the Evaluate & Approve overlay underneath
+  ST.wrCloseId = dbId; ST.wrCloseBusy = false;
+  render();
+  if(!(ST.modData.fm && ST.modData.fm.inv)) loadFmKind('inv');
+  loadTechNameList();
+  setTimeout(function(){
+    var el;
+    if (w.worktype && (el=document.getElementById('wr-cl-worktype'))) el.value = w.worktype;
+    if (w.system && (el=document.getElementById('wr-cl-system'))) el.value = w.system;
+    if (w.failureCause && (el=document.getElementById('wr-cl-failcause'))) el.value = w.failureCause;
+    if (w.startTime && (el=document.getElementById('wr-cl-start'))) el.value = toLocalInputVal(w.startTime);
+    if (w.endTime && (el=document.getElementById('wr-cl-end'))) el.value = toLocalInputVal(w.endTime);
+    const actionVal = w.actionDetail || w.closeDetail || '';
+    if (actionVal && (el=document.getElementById('wr-cl-action'))) el.value = actionVal;
+    if (w.laborCost!=null && (el=document.getElementById('wr-cl-labor'))) el.value = w.laborCost;
+    if (w.travelCost!=null && (el=document.getElementById('wr-cl-travel'))) el.value = w.travelCost;
+    wrCloseRecalc(); wrCloseRecalcCost();
+    renderWrClosePartsChips();
+    renderWrClosePhotoChips();
+    renderWrCloseTechList();
+  }, 0);
+}
 function wrClosePhotoAdd(fileInput){
   const files = Array.prototype.slice.call(fileInput.files||[]);
   const list = document.getElementById('wr-cl-photo-list');
@@ -1265,7 +1331,8 @@ function wrEvalOverlay(){
         +'<div class="tap" data-act="wr-eval-sig-clear" style="margin-top:4px;text-align:center;font-size:11px;font-weight:700;padding:5px;border-radius:6px;border:1px solid var(--color-divider);color:var(--color-neutral-600)">🗑 '+(th?'ล้าง':'Clear')+'</div>'
         +'</div>'
       +'</div>'
-      +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">'
+      +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;flex-wrap:wrap">'
+        +'<div class="tap" data-act="wr-eval-edit" data-id="'+w._dbId+'" style="font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid var(--color-divider)">'+(th?'✏ แก้ไขข้อมูล':'✏ Edit details')+'</div>'
         +'<div class="tap" data-act="wr-eval-reject" data-id="'+w._dbId+'" style="font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid var(--danger);color:var(--danger)">'+(th?'✕ ไม่ / ส่งกลับแก้ไข':'✕ Send back')+'</div>'
         +'<div class="tap" data-act="wr-eval-approve" data-id="'+w._dbId+'" data-role="Manager" style="font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;background:var(--green);color:#fff'+(ST.wrEvalBusy?';opacity:.6':'')+'">'+(th?'✔ Manager เห็นชอบอนุมัติ':'✔ Manager approve')+'</div>'
         +'<div class="tap" data-act="wr-eval-approve" data-id="'+w._dbId+'" data-role="Director" style="font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;background:var(--orange);color:#fff'+(ST.wrEvalBusy?';opacity:.6':'')+'">'+(th?'⭐ Director เห็นชอบอนุมัติ':'⭐ Director approve')+'</div>'
@@ -2185,6 +2252,7 @@ document.addEventListener('click', function(e){
   else if(act==='wr-eval-open'){ wrEvalOpen(el.getAttribute('data-id')); }
   else if(act==='wr-eval-close'){ wrEvalClose(); }
   else if(act==='wr-eval-approve'){ if(!ST.wrEvalBusy) wrEvalApprove(el.getAttribute('data-id'), el.getAttribute('data-role')); }
+  else if(act==='wr-eval-edit'){ wrCloseEditOpen(el.getAttribute('data-id')); }
   else if(act==='wr-eval-reject'){ if(!ST.wrEvalBusy) wrEvalReject(el.getAttribute('data-id')); }
   else if(act==='noop'){ /* let the browser handle it (e.g. tel: link) without navigating the app state */ }
   else if(act==='lifestyle-market'){ ST.lifestyleSub='market'; render(); }

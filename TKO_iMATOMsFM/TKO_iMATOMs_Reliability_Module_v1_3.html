@@ -4599,7 +4599,8 @@ function renderEvaluate(){
         </div>
         <div class="flex gap-8 flex-center" style="flex-wrap:wrap">
           <span style="font-size:11px;color:${statusColor};white-space:nowrap">${approved?`✅ อนุมัติ: ${w.approvedBy}`:'⏳ รออนุมัติ'}</span>
-          <button class="btn btn-secondary btn-sm" onclick="rejectEvaluate('${w.id}')" title="ส่งกลับให้ช่างแก้ไขข้อมูล">↩ แก้ไข</button>
+          <button class="btn btn-secondary btn-sm" onclick="closeModal('evaluateModal');editCloseWR('${w.id}')" title="แก้ไขข้อมูลปิดงานเองตรงนี้ ก่อนส่งอนุมัติ">✏ แก้ไขข้อมูล</button>
+          <button class="btn btn-secondary btn-sm" onclick="rejectEvaluate('${w.id}')" title="ส่งกลับให้ช่างแก้ไขข้อมูล">↩ ส่งกลับให้ช่าง</button>
         </div>
       </div>
       ${w.evalRejectReason?`<div class="alert alert-warning" style="font-size:12px;padding:6px 12px;margin-bottom:8px">↩ ส่งกลับแก้ไขล่าสุด (${w.evalRejectDate?new Date(w.evalRejectDate).toLocaleString('th-TH'):''}): ${w.evalRejectReason}</div>`:''}
