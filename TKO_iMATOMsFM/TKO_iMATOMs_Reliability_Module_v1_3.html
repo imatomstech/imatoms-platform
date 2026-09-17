@@ -2124,14 +2124,10 @@ body.embedded #content {
     <div class="card-sm mb-12" id="accept-wr-info"></div>
     <div class="form-group">
       <label class="form-label">ช่างที่ว่าง / มอบหมายงาน</label>
-      <div id="tech-status-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"></div>
       <select class="form-control" id="accept-tech">
         <option value="">-- เลือกช่าง --</option>
-        <option value="ช่าง A — สมชาย">ช่าง A — สมชาย (ว่าง)</option>
-        <option value="ช่าง B — วิชัย">ช่าง B — วิชัย (ว่าง)</option>
-        <option value="ช่าง C — อนุชา">ช่าง C — อนุชา (กำลังทำงาน)</option>
-        <option value="ช่าง D — ประยุทธ์">ช่าง D — ประยุทธ์ (ว่าง)</option>
       </select>
+      <button type="button" class="btn btn-secondary btn-sm mt-8" onclick="addCloseTechName();populateTechSelect('accept-tech','-- เลือกช่าง --')" title="เพิ่มชื่อช่างใหม่เข้าระบบ">+ เพิ่มชื่อช่างใหม่</button>
     </div>
     <div class="form-group">
       <label class="form-label">ข้อความแจ้งผู้แจ้งงาน (SMS)</label>
@@ -2875,6 +2871,15 @@ async function loadTechNames(){
     techNames = seeded;
   }
   renderCloseTechSelectOptions();
+  populateTechSelect('accept-tech','-- เลือกช่าง --');
+}
+// Shared by the Close Detail multi-add select and the Accept modal's select
+// (and re-called after "+" adds a new name) — one master list of technician
+// names feeds every picker in this file, and the same list is shared with
+// the Mobile App via the /fm-records/techNames backend.
+function populateTechSelect(selId, placeholder){
+  const sel = document.getElementById(selId); if (!sel) return;
+  sel.innerHTML = `<option value="">${placeholder}</option>` + techNames.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
 }
 // closeTechs — the technician *team* assigned to the WR currently open in
 // Close Detail (a WR can have more than one technician, e.g. lead + helper).
@@ -2882,8 +2887,7 @@ async function loadTechNames(){
 // re-renders, same pattern as closedParts.
 let closeTechs = [];
 function renderCloseTechSelectOptions(){
-  const sel = document.getElementById('cl-tech-select'); if (!sel) return;
-  sel.innerHTML = '<option value="">-- เลือกช่าง เพิ่มลงทีม --</option>' + techNames.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+  populateTechSelect('cl-tech-select','-- เลือกช่าง เพิ่มลงทีม --');
 }
 function renderCloseTechTags(){
   const list = document.getElementById('cl-tech-list'); if (!list) return;
@@ -4323,6 +4327,11 @@ function openAcceptWR(id){
     <div class="metric-row"><span class="text-muted">Asset</span><span class="tag">${w.assetId||'—'}</span></div>
     <div class="metric-row"><span class="text-muted">ประเภท</span>${typeBadge(w.type)} ${priorityBadge(w.priority)}</div>
     <div class="metric-row"><span class="text-muted">ผู้แจ้ง</span><span>${w.reporter} <a href="tel:${w.phone}" class="text-green">📞 ${w.phone}</a></span></div>`;
+  // Technician list shared with Close Detail (and the Mobile App) via the
+  // /fm-records/techNames backend, so a name picked here shows up the same
+  // way everywhere else instead of each screen having its own private list.
+  populateTechSelect('accept-tech','-- เลือกช่าง --');
+  loadTechNames();
   // Update SMS preview
   document.getElementById('accept-tech').addEventListener('change',function(){
     document.getElementById('accept-sms-preview').value=

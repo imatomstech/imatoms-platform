@@ -699,16 +699,32 @@ function wrAcceptOpen(dbId){
   ST.wrTechPickerId = dbId;
   ST.wrTechPickerBusy = false;
   render();
-  loadTechnicians();
+  loadTechNameList();
 }
 function wrAcceptClose(){ ST.wrTechPickerId = null; render(); }
-async function wrAcceptConfirm(techId, techName){
+// Technician names come from the same shared /fm-records/techNames list used
+// by Close Detail and the Desktop Reliability Module, so a name picked here
+// (Accept) matches what shows up later in Close Detail and Evaluate&Approve
+// on either app — previously this screen pulled from real login accounts
+// (/api/technicians) while Desktop's Accept used a separate hardcoded list,
+// so the same WR could show two different-looking technician names.
+async function wrAcceptConfirm(techName){
   const th = ST.lang==='th';
   const dbId = ST.wrTechPickerId;
-  if(!dbId) return;
+  if(!dbId || !techName) return;
+  const w = wrData().find(function(x){ return String(x._dbId)===String(dbId); });
   ST.wrTechPickerBusy = true; render();
   try{
-    await api('/work-orders/'+dbId+'/status', { method:'PATCH', body: JSON.stringify({ status:'inprogress', assigned_to: parseInt(techId,10) }) });
+    await api('/work-orders/'+dbId+'/status', { method:'PATCH', body: JSON.stringify({ status:'inprogress' }) });
+    if (w) {
+      try{
+        await api('/work-orders/sync', { method:'POST', body: JSON.stringify({ items: [{
+          id: w.id, assetId: w.assetId, desc: w.desc, type: w.type, priority: w.priority,
+          reporter: w.reporter||null, phone: w.phone||null, status:'inprogress',
+          assign: techName, acceptTime: new Date().toISOString()
+        }] }) });
+      }catch(e){ /* status already updated; name sync is best-effort */ }
+    }
     ST.wrTechPickerId = null; ST.wrTechPickerBusy = false;
     toast(th?'✅ รับงานแล้ว — '+techName:'✅ Accepted — '+techName);
     loadFmWR();
@@ -717,20 +733,21 @@ async function wrAcceptConfirm(techId, techName){
     toast((th?'รับงานไม่สำเร็จ: ':'Accept failed: ')+(err.message||err));
   }
 }
+async function wrTechPickerAddName(){
+  const th = ST.lang==='th';
+  const name = window.prompt(th?'ชื่อ-นามสกุลช่างใหม่:':'New technician full name:');
+  if(!name) return;
+  const added = await addTechName(name);
+  if(added){ render(); }
+}
 function wrTechPickerOverlay(){
   if(!ST.wrTechPickerId) return '';
   const th = ST.lang==='th';
-  const techs = fmTechnicians().slice().sort(function(a,b){
-    if(!!a.busy !== !!b.busy) return a.busy ? 1 : -1;
-    return String(a.full_name||'').localeCompare(String(b.full_name||''));
-  });
+  const techs = fmTechNameList().slice().sort(function(a,b){ return String(a.name||'').localeCompare(String(b.name||'')); });
   const rows = techs.length
     ? techs.map(function(t){
-        const color = t.busy ? 'var(--danger)' : 'var(--green)';
-        const bg = t.busy ? 'rgba(239,68,68,.08)' : 'rgba(34,197,94,.08)';
-        return '<div class="tap" data-act="wr-tech-pick" data-tid="'+t.id+'" data-tname="'+esc(t.full_name||'')+'" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border-radius:10px;background:'+bg+';border:1px solid '+color+';margin-bottom:8px">'
-          +'<div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:50%;background:'+color+';flex-shrink:0"></span><span style="font-size:13px;font-weight:600">'+esc(t.full_name||'')+'</span></div>'
-          +'<span style="font-size:11px;font-weight:700;color:'+color+'">'+(t.busy?(th?'ไม่ว่าง':'Busy'):(th?'ว่าง':'Free'))+'</span>'
+        return '<div class="tap" data-act="wr-tech-pick" data-tname="'+esc(t.name||'')+'" style="display:flex;align-items:center;gap:8px;padding:12px;border-radius:10px;background:var(--color-surface);border:1px solid var(--color-divider);margin-bottom:8px">'
+          +'<span style="font-size:13px;font-weight:600">'+esc(t.name||'')+'</span>'
         +'</div>';
       }).join('')
     : '<div style="text-align:center;padding:20px;color:var(--color-neutral-600);font-size:12.5px">'+(th?'ไม่พบรายชื่อช่าง':'No technicians found')+'</div>';
@@ -740,6 +757,7 @@ function wrTechPickerOverlay(){
       +'<span style="font-family:var(--font-heading);font-size:15px">'+(th?'เลือกช่างที่รับงาน':'Select technician')+'</span>'
       +'<div class="tap" data-act="wr-tech-picker-close" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--color-surface);flex-shrink:0">✕</div></div>'
       + rows
+      +'<div class="tap" data-act="wr-tech-picker-add" style="text-align:center;padding:10px;font-size:12.5px;font-weight:600;border:1px dashed var(--color-divider);border-radius:10px;margin-top:4px">+ '+(th?'เพิ่มชื่อช่างใหม่':'Add new technician')+'</div>'
     +'</div></div>';
 }
 const CLOSE_WORKTYPE_OPTIONS = [
@@ -2146,7 +2164,8 @@ document.addEventListener('click', function(e){
   else if(act==='retry-wr'){ loadFmWR(); }
   else if(act==='wr-accept'){ wrAcceptOpen(el.getAttribute('data-id')); }
   else if(act==='wr-tech-picker-close'){ wrAcceptClose(); }
-  else if(act==='wr-tech-pick'){ wrAcceptConfirm(el.getAttribute('data-tid'), el.getAttribute('data-tname')); }
+  else if(act==='wr-tech-pick'){ wrAcceptConfirm(el.getAttribute('data-tname')); }
+  else if(act==='wr-tech-picker-add'){ wrTechPickerAddName(); }
   else if(act==='wr-close'){ wrCloseOpen(el.getAttribute('data-id')); }
   else if(act==='wr-cancel'){ wrCancel(el.getAttribute('data-id')); }
   else if(act==='wr-detail'){ ST.wrDetailId = el.getAttribute('data-id'); render(); }
