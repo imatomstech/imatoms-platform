@@ -1237,10 +1237,12 @@ async function wrCloseSubmit(){
   const partsCost = wrClosePartsCost();
   const mttrMin = (startVal && endVal) ? Math.round((new Date(endVal)-new Date(startVal))/60000) : null;
   const mttrHours = (mttrMin!=null && mttrMin>=0) ? Math.round((mttrMin/60)*100)/100 : 1;
+  const wasApproved = !!(w && w.approvedBy);
   ST.wrCloseBusy = true; render();
   try{
     await api('/work-orders/'+dbId+'/status', { method:'PATCH', body: JSON.stringify({
-      status:'closed', labor_hours: labor+travel, parts_cost: partsCost, mttr_hours: mttrHours, action_taken: action||null
+      status:'closed', labor_hours: labor+travel, parts_cost: partsCost, mttr_hours: mttrHours, action_taken: action||null,
+      clear_approval: wasApproved
     }) });
     // Extra detail the typed columns don't have a slot for — merged into meta
     // via the sync endpoint, same lossless pattern used across this app.
@@ -1257,12 +1259,18 @@ async function wrCloseSubmit(){
           partsUsed: wrClosePartsUsed.length?wrClosePartsUsed:undefined,
           photos: wrClosePhotos.length?wrClosePhotos.map(function(p){return p.dataUrl;}):undefined,
           signature: (function(){ const c=document.getElementById('wr-cl-sigpad'); return c?c.toDataURL():undefined; })(),
-          satisfaction: wrCloseStars||undefined, closeDetail: action||undefined
+          satisfaction: wrCloseStars||undefined, closeDetail: action||undefined,
+          // Mobile's "approve" writes approvedBy into meta (not the typed
+          // approved_by column, which only real login-account approvers use)
+          // — clear it here too so an edited WR doesn't still show as approved.
+          approvedBy: wasApproved ? null : undefined
         }] }) });
       }catch(e){ /* WR is already closed server-side; extra detail merge is best-effort */ }
     }
     ST.wrCloseId = null; ST.wrCloseBusy = false;
-    toast(th?'✅ ปิดงานสำเร็จ — รอ Manager อนุมัติ':'✅ Closed — pending manager approval');
+    toast(wasApproved
+      ? (th?'✅ แก้ไขข้อมูลแล้ว — ต้องรออนุมัติใหม่':'✅ Updated — needs re-approval')
+      : (th?'✅ ปิดงานสำเร็จ — รอ Manager อนุมัติ':'✅ Closed — pending manager approval'));
     loadFmWR();
   }catch(err){
     ST.wrCloseBusy = false; render();
@@ -1312,7 +1320,11 @@ function wrEvalOverlay(){
       + (w.approvedBy ? '<div style="margin-top:10px;padding:8px;border-radius:8px;background:rgba(34,197,94,.12);color:var(--green);font-size:11.5px">✅ '+(th?'อนุมัติโดย ':'Approved by ')+esc(w.approvedBy)+'</div>' : '')
     +'</div>'
 
-    + (w.approvedBy ? '' : (
+    + (w.approvedBy ? (
+      '<div style="display:flex;justify-content:flex-end">'
+      +'<div class="tap" data-act="wr-eval-edit" data-id="'+w._dbId+'" style="font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid var(--color-divider)">'+(th?'✏ แก้ไขข้อมูล (จะยกเลิกการอนุมัติ)':'✏ Edit details (will un-approve)')+'</div>'
+      +'</div>'
+    ) : (
       '<div style="font-family:var(--font-heading);font-size:13px;font-weight:700;margin-bottom:8px">📝 '+(th?'ประเมินและพัฒนาต่อเนื่อง':'Evaluation & continuous improvement')+'</div>'
       +'<div style="display:flex;flex-direction:column;gap:10px">'
       + wrFormField('💪 จุดแข็ง (Strength)','Strength', th, '<textarea id="wr-ev-strength" rows="2" style="'+wrInputStyle+';resize:vertical" placeholder="'+(th?'ช่างตอบสนองเร็ว แก้ปัญหาถูกต้อง...':'What went well...')+'"></textarea>')

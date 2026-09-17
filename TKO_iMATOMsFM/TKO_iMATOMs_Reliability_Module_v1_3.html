@@ -4517,10 +4517,21 @@ function confirmCloseWR(){
   workRequests[idx].satisfaction=starScore;
   workRequests[idx].responseTime=responseMins;
   if(workRequests[idx].evalRejectReason){ workRequests[idx].evalRejectReason=null; workRequests[idx].evalRejectDate=null; }
+  // If this WR was already approved and someone is now correcting the data
+  // (via the ✏ แก้ไขข้อมูล button on Evaluate & Approve), the correction must
+  // go back into the pending-approval queue rather than silently staying
+  // "approved" with stale approver info.
+  const wasApproved = !!workRequests[idx].approvedBy;
+  if (wasApproved) {
+    workRequests[idx].prevApprovedBy = workRequests[idx].approvedBy;
+    workRequests[idx].approvedBy = null;
+    workRequests[idx].approvedDate = null;
+  }
+  workRequests[idx].reviewed = false;
   DB.set('wr',workRequests);
   closeModal('closeWRModal');
   renderWR();
-  alert(`✅ ปิดงาน ${closingWRId} สำเร็จ!\nMTTR: ${mttrHrs} ชั่วโมง | ตอบสนอง: ${responseMins} นาที\nมูลค่าการซ่อม: ฿${workRequests[idx].totalCost.toLocaleString()}`);
+  alert((wasApproved?`✏ แก้ไขข้อมูล ${closingWRId} สำเร็จ — ต้องรออนุมัติใหม่อีกครั้ง`:`✅ ปิดงาน ${closingWRId} สำเร็จ!`)+`\nMTTR: ${mttrHrs} ชั่วโมง | ตอบสนอง: ${responseMins} นาที\nมูลค่าการซ่อม: ฿${workRequests[idx].totalCost.toLocaleString()}`);
 }
 
 function viewCloseDetail(id){
