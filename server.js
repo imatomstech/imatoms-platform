@@ -562,7 +562,7 @@ app.put('/api/platform-settings', authMiddleware, requireRole('superadmin','admi
 // ══════════════════════════════════════════════════════════════
 
 const FM_RECORD_KINDS = ['ppm','ma','maVisits','inv','invtx','contract',
-  'omRecords','omTemplates','omSchedule','ppmTemplates','assets'];
+  'omRecords','omTemplates','omSchedule','ppmTemplates','assets','techNames'];
 
 app.get('/api/fm-records/:kind', authMiddleware, async (req, res) => {
   const { kind } = req.params;

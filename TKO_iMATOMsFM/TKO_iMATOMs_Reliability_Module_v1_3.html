@@ -2820,7 +2820,7 @@ const DB = {
 
 // Kinds backed by the generic /api/fm-records/:kind store on the server.
 const FM_RECORD_KINDS = ['ppm','ma','maVisits','inv','invtx',
-  'omRecords','omTemplates','omSchedule','ppmTemplates','assets'];
+  'omRecords','omTemplates','omSchedule','ppmTemplates','assets','techNames'];
 
 const _kindSyncTimers = {};
 function syncKindToBackend(kind, items){
@@ -2853,6 +2853,51 @@ async function loadKindFromBackend(kind){
     try{ localStorage.setItem('tko_v2_'+kind, JSON.stringify(rows)); }catch(e){}
     return rows;
   }catch(e){ console.warn('fm-records load failed for '+kind+', using local cache:', e); return null; }
+}
+
+// ── Technician name list (Close Detail picker) ────────────────────────────
+// Independent of the "ช่างที่ว่าง" hardcoded Accept picker — a simple named
+// list any user can pick from or add to when closing a WR, shared with the
+// Mobile App via the same /fm-records/techNames backend. Seeded with 5
+// sample techs once, the first time the list comes back empty.
+const DEFAULT_TECH_NAMES = [
+  'สมชาย ใจดี','วิชัย รักงาน','ประเสริฐ ช่างซ่อม','อนุชา แข็งแรง','ธนากร ตั้งใจ'
+];
+let techNames = DB.get('techNames', []);
+let _techNamesSeeded = false;
+async function loadTechNames(){
+  const rows = await loadKindFromBackend('techNames');
+  if (rows) techNames = rows;
+  if (!_techNamesSeeded && techNames.length === 0) {
+    _techNamesSeeded = true;
+    const seeded = DEFAULT_TECH_NAMES.map(n => ({ id:'tech-'+n, name:n }));
+    syncKindToBackend('techNames', seeded);
+    techNames = seeded;
+    renderCloseTechOptions();
+  }
+}
+function renderCloseTechOptions(){
+  const sel = document.getElementById('cl-tech'); if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- เลือกช่าง --</option>' + techNames.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+function closeTechSelectHtml(selected){
+  const opts = techNames.map(t => `<option value="${t.name}" ${t.name===selected?'selected':''}>${t.name}</option>`).join('')
+    + ((selected && !techNames.some(t=>t.name===selected)) ? `<option value="${selected}" selected>${selected}</option>` : '');
+  return `<div style="display:flex;gap:6px;align-items:center">
+    <select class="form-control" id="cl-tech" style="flex:1"><option value="">-- เลือกช่าง --</option>${opts}</select>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="addCloseTechName()" title="เพิ่มชื่อช่าง">+</button>
+  </div>`;
+}
+async function addCloseTechName(){
+  const name = prompt('ชื่อ-นามสกุลช่างใหม่:');
+  if (!name || !name.trim()) return;
+  const n = name.trim();
+  if (!techNames.some(t => t.name === n)) techNames.push({ id:'tech-'+n, name:n });
+  syncKindToBackend('techNames', techNames);
+  renderCloseTechOptions();
+  const sel = document.getElementById('cl-tech'); if (sel) sel.value = n;
 }
 
 let _wrSyncTimer = null;
@@ -4324,8 +4369,9 @@ function openCloseWR(id){
   document.getElementById('close-wr-info').innerHTML=`
     <div class="fw-600 mb-8">${w.id} — ${w.desc}</div>
     <div class="metric-row"><span class="text-muted">Asset</span><span class="tag">${w.assetId||'—'}</span></div>
-    <div class="metric-row"><span class="text-muted">ช่าง</span><span>${w.assign||'—'}</span></div>
+    <div class="metric-row"><span class="text-muted">ช่างผู้ดำเนินการ</span>${closeTechSelectHtml(w.assign||'')}</div>
     <div class="metric-row"><span class="text-muted">เวลาแจ้ง</span><span style="font-size:12px">${w.date?new Date(w.date).toLocaleString('th-TH'):'-'}</span></div>`;
+  loadTechNames();
   // Set default start = arrivalTime or now
   const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
   const st=w.arrivalTime?new Date(w.arrivalTime):now;
@@ -4419,6 +4465,8 @@ function confirmCloseWR(){
   const et=new Date(document.getElementById('cl-end-time').value);
   const mttrHrs=((et-st)/(3600*1000)).toFixed(2);
   const responseMins=Math.round((st-new Date(workRequests[idx].date))/60000);
+  const clTechVal=(document.getElementById('cl-tech')||{}).value;
+  if(clTechVal) workRequests[idx].assign=clTechVal;
   workRequests[idx].status='closed';
   workRequests[idx].closeDate=et.toISOString();
   workRequests[idx].mttr=parseFloat(mttrHrs);
@@ -4453,8 +4501,9 @@ function editCloseWR(id){
   document.getElementById('close-wr-info').innerHTML=`
     <div class="fw-600 mb-8">${w.id} — ${w.desc} <span class="badge badge-orange" style="margin-left:6px">✏ กำลังแก้ไขงานที่ปิดแล้ว</span></div>
     <div class="metric-row"><span class="text-muted">Asset</span><span class="tag">${w.assetId||'—'}</span></div>
-    <div class="metric-row"><span class="text-muted">ช่าง</span><span>${w.assign||'—'}</span></div>
+    <div class="metric-row"><span class="text-muted">ช่างผู้ดำเนินการ</span>${closeTechSelectHtml(w.assign||'')}</div>
     <div class="metric-row"><span class="text-muted">เวลาแจ้ง</span><span style="font-size:12px">${w.date?new Date(w.date).toLocaleString('th-TH'):'-'}</span></div>`;
+  loadTechNames();
   // Prefill start/end from saved close data
   const toLocalInput=d=>{ if(!d)return ''; const dt=new Date(d); dt.setMinutes(dt.getMinutes()-dt.getTimezoneOffset()); return dt.toISOString().slice(0,16); };
   document.getElementById('cl-start-time').value=toLocalInput(w.startTime)||toLocalInput(w.arrivalTime)||'';

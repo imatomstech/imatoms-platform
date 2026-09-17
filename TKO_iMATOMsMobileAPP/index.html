@@ -796,6 +796,41 @@ function locRoomsForFloor(floor){
   return LOC_ROOMS.filter(function(r){ return !r.floors || r.floors.indexOf(floor) !== -1; });
 }
 
+// ── Technician name list (Close Detail picker) ────────────────────────────
+// Independent of the /technicians (user-account) picker used at Accept time —
+// this is a simple named list any user can pick from or add to when closing
+// a WR, stored via the generic /fm-records/techNames backend so Mobile and
+// Desktop always show the same names. Seeded with 5 sample techs once, the
+// first time the list comes back empty from the server.
+const DEFAULT_TECH_NAMES = [
+  'สมชาย ใจดี','วิชัย รักงาน','ประเสริฐ ช่างซ่อม','อนุชา แข็งแรง','ธนากร ตั้งใจ'
+];
+let _techNamesSeeded = false;
+function fmTechNameList(){ return (ST.modData.fm && ST.modData.fm.techNames) || []; }
+async function loadTechNameList(){
+  await loadFmKind('techNames');
+  if (!_techNamesSeeded && fmTechNameList().length === 0) {
+    _techNamesSeeded = true;
+    try{
+      await api('/fm-records/techNames/sync', { method:'POST', body: JSON.stringify({
+        items: DEFAULT_TECH_NAMES.map(function(n){ return { id:'tech-'+n, name:n }; })
+      }) });
+      await loadFmKind('techNames');
+    }catch(e){ /* seeding is best-effort; picker just shows empty + add button */ }
+  }
+}
+async function addTechName(name){
+  name = (name||'').trim();
+  if (!name) return null;
+  try{
+    await api('/fm-records/techNames/sync', { method:'POST', body: JSON.stringify({
+      items: [{ id:'tech-'+name, name:name }]
+    }) });
+    await loadFmKind('techNames');
+    return name;
+  }catch(e){ toast((ST.lang==='th'?'เพิ่มชื่อช่างไม่สำเร็จ: ':'Failed to add technician: ')+(e.message||e)); return null; }
+}
+
 // Transient close-form state — plain JS vars (not ST) so canvas/photo/star
 // interactions don't need a full re-render (which would wipe the canvas).
 let wrClosePhotos = [];   // [{name, dataUrl}]
@@ -808,8 +843,19 @@ function wrCloseOpen(dbId){
   ST.wrCloseId = dbId; ST.wrCloseBusy = false;
   render();
   if(!(ST.modData.fm && ST.modData.fm.inv)) loadFmKind('inv');
+  loadTechNameList();
 }
 function wrCloseClose(){ ST.wrCloseId = null; render(); }
+async function wrCloseTechAdd(){
+  const th = ST.lang==='th';
+  const name = window.prompt(th?'ชื่อ-นามสกุลช่างใหม่:':'New technician full name:');
+  if(!name) return;
+  const added = await addTechName(name);
+  if(added){
+    render();
+    setTimeout(function(){ const sel=document.getElementById('wr-cl-tech'); if(sel) sel.value=added; }, 0);
+  }
+}
 
 function wrCloseRecalc(){
   const th = ST.lang==='th';
@@ -992,9 +1038,18 @@ function wrCloseOverlay(){
     +'<div class="blueprint" style="padding:10px 12px;margin-bottom:10px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
       +'<div style="font-weight:600;font-size:13px;margin-bottom:4px">'+esc(w.id)+' — '+esc(w.desc||'')+'</div>'
       +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-700);padding:3px 0"><span>Asset</span>'+(w.assetId?fmChip(w.assetId,'gray'):'—')+'</div>'
-      +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-700);padding:3px 0"><span>'+(th?'ช่าง':'Technician')+'</span><span style="font-weight:600">'+esc(w.assign||'—')+'</span></div>'
       +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-700);padding:3px 0"><span>'+(th?'เวลาแจ้ง':'Reported')+'</span><span>'+esc(reportedAt)+'</span></div>'
     +'</div>'
+
+    + wrFormField('ช่างผู้ดำเนินการ','Technician', th,
+        '<div style="display:flex;gap:6px">'
+        +'<select id="wr-cl-tech" style="'+wrInputStyle+';flex:1">'
+          +'<option value="">'+(th?'-- เลือกช่าง --':'-- Select technician --')+'</option>'
+          + fmTechNameList().map(function(t){ const nm=t.name||''; return '<option value="'+esc(nm)+'"'+(w.assign===nm?' selected':'')+'>'+esc(nm)+'</option>'; }).join('')
+          + ((w.assign && !fmTechNameList().some(function(t){return t.name===w.assign;})) ? '<option value="'+esc(w.assign)+'" selected>'+esc(w.assign)+'</option>' : '')
+        +'</select>'
+        +'<div class="tap" data-act="wr-cl-tech-add" style="flex-shrink:0;width:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--color-divider);border-radius:8px;font-weight:700">+</div>'
+        +'</div>')
 
     +'<div style="display:flex;flex-direction:column;gap:10px">'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
@@ -1057,6 +1112,7 @@ async function wrCloseSubmit(){
   const startVal = (document.getElementById('wr-cl-start')||{}).value;
   const endVal = (document.getElementById('wr-cl-end')||{}).value;
   const action = (document.getElementById('wr-cl-action')||{}).value || '';
+  const techName = (document.getElementById('wr-cl-tech')||{}).value || '';
   const labor = parseFloat((document.getElementById('wr-cl-labor')||{}).value)||0;
   const travel = parseFloat((document.getElementById('wr-cl-travel')||{}).value)||0;
   const partsCost = wrClosePartsCost();
@@ -1074,6 +1130,7 @@ async function wrCloseSubmit(){
         await api('/work-orders/sync', { method:'POST', body: JSON.stringify({ items: [{
           id: w.id, assetId: w.assetId, desc: w.desc, type: worktype||w.type, priority: w.priority,
           reporter: w.reporter||null, phone: w.phone||null, status:'closed',
+          assign: techName||w.assign||undefined,
           worktype: worktype||undefined, system: system||undefined, failureCause: failureCause||undefined,
           startTime: startVal?new Date(startVal).toISOString():undefined, endTime: endVal?new Date(endVal).toISOString():undefined,
           laborCost: labor, travelCost: travel, partsCost: partsCost,
@@ -2064,6 +2121,7 @@ document.addEventListener('click', function(e){
   else if(act==='wr-close-cancel'){ wrCloseClose(); }
   else if(act==='wr-close-submit'){ if(!ST.wrCloseBusy) wrCloseSubmit(); }
   else if(act==='wr-close-sig-clear'){ wrCloseSigClear(); }
+  else if(act==='wr-cl-tech-add'){ wrCloseTechAdd(); }
   else if(act==='wr-eval-sig-clear'){ wrEvalSigClear(); }
   else if(act==='wr-eval-sig-clear-tech'){ wrEvalTechSigClear(); }
   else if(act==='wr-close-star'){ wrCloseSetStar(parseInt(el.getAttribute('data-n'),10)); }
