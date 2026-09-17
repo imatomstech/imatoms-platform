@@ -482,15 +482,25 @@ app.post('/api/work-orders/sync', authMiddleware, async (req, res) => {
            asset_id=EXCLUDED.asset_id, wo_type=EXCLUDED.wo_type, title=EXCLUDED.title,
            description=EXCLUDED.description, priority=EXCLUDED.priority, status=EXCLUDED.status,
            reporter_name=EXCLUDED.reporter_name, reporter_phone=EXCLUDED.reporter_phone,
-           assigned_name_text=EXCLUDED.assigned_name_text, labor_cost=EXCLUDED.labor_cost,
-           parts_cost=EXCLUDED.parts_cost, total_cost=EXCLUDED.total_cost, mttr_hours=EXCLUDED.mttr_hours,
+           assigned_name_text=COALESCE(EXCLUDED.assigned_name_text, work_orders.assigned_name_text),
+           labor_cost=COALESCE(EXCLUDED.labor_cost, work_orders.labor_cost),
+           parts_cost=COALESCE(EXCLUDED.parts_cost, work_orders.parts_cost),
+           total_cost=COALESCE(EXCLUDED.total_cost, work_orders.total_cost),
+           mttr_hours=COALESCE(EXCLUDED.mttr_hours, work_orders.mttr_hours),
            accepted_at=COALESCE(work_orders.accepted_at, EXCLUDED.accepted_at),
            actual_end=EXCLUDED.actual_end, reviewed=EXCLUDED.reviewed, reject_reason=EXCLUDED.reject_reason,
-           meta=EXCLUDED.meta, updated_at=NOW()
+           meta=COALESCE(work_orders.meta,'{}'::jsonb) || EXCLUDED.meta, updated_at=NOW()
          RETURNING *`,
+        // NOTE: these pass through as NULL (not 0/false-y defaults) when the
+        // client omits them, so a partial sync call (e.g. Close Detail only
+        // sending the fields its form has) merges onto the existing row via
+        // the COALESCE()s above instead of blanking out values a previous
+        // call (Accept, or the /status PATCH) already set.
         [req.user.building_id, it.id, assetDbId, it.type||'CM', title, it.desc||null,
-         it.priority||'normal', it.status||'open', it.reporter||null, it.phone||null, it.assign||null,
-         it.laborCost||0, it.partsCost||0, it.totalCost||0, it.mttr||null,
+         it.priority||'normal', it.status||'open', it.reporter||null, it.phone||null,
+         (it.assign!=null?it.assign:null),
+         (it.laborCost!=null?it.laborCost:null), (it.partsCost!=null?it.partsCost:null),
+         (it.totalCost!=null?it.totalCost:null), (it.mttr!=null?it.mttr:null),
          it.acceptTime||null, it.closeDate||null, !!it.reviewed, it.evalRejectReason||null,
          req.user.id, it.date||null, JSON.stringify(meta)]
       );

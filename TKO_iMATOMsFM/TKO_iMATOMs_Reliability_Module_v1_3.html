@@ -2873,21 +2873,39 @@ async function loadTechNames(){
     const seeded = DEFAULT_TECH_NAMES.map(n => ({ id:'tech-'+n, name:n }));
     syncKindToBackend('techNames', seeded);
     techNames = seeded;
-    renderCloseTechOptions();
   }
+  renderCloseTechSelectOptions();
 }
-function renderCloseTechOptions(){
-  const sel = document.getElementById('cl-tech'); if (!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">-- เลือกช่าง --</option>' + techNames.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
-  if (cur) sel.value = cur;
+// closeTechs — the technician *team* assigned to the WR currently open in
+// Close Detail (a WR can have more than one technician, e.g. lead + helper).
+// Kept as a plain array (not re-derived from the DOM) so it survives partial
+// re-renders, same pattern as closedParts.
+let closeTechs = [];
+function renderCloseTechSelectOptions(){
+  const sel = document.getElementById('cl-tech-select'); if (!sel) return;
+  sel.innerHTML = '<option value="">-- เลือกช่าง เพิ่มลงทีม --</option>' + techNames.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
 }
-function closeTechSelectHtml(selected){
-  const opts = techNames.map(t => `<option value="${t.name}" ${t.name===selected?'selected':''}>${t.name}</option>`).join('')
-    + ((selected && !techNames.some(t=>t.name===selected)) ? `<option value="${selected}" selected>${selected}</option>` : '');
-  return `<div style="display:flex;gap:6px;align-items:center">
-    <select class="form-control" id="cl-tech" style="flex:1"><option value="">-- เลือกช่าง --</option>${opts}</select>
-    <button type="button" class="btn btn-secondary btn-sm" onclick="addCloseTechName()" title="เพิ่มชื่อช่าง">+</button>
+function renderCloseTechTags(){
+  const list = document.getElementById('cl-tech-list'); if (!list) return;
+  list.innerHTML = closeTechs.map((n,i) => `
+    <span class="tag" style="display:inline-flex;align-items:center;gap:4px">
+      ${n}
+      <span onclick="closeTechs.splice(${i},1);renderCloseTechTags()" style="cursor:pointer;color:var(--red);margin-left:4px">✕</span>
+    </span>`).join('') || '<span class="text-muted" style="font-size:12px">ยังไม่ได้เลือกช่าง</span>';
+}
+function addCloseTech(selectEl){
+  const name = selectEl.value; if (!name) return;
+  selectEl.value = '';
+  if (closeTechs.indexOf(name) === -1) closeTechs.push(name);
+  renderCloseTechTags();
+}
+function closeTechPickerHtml(){
+  return `<div style="display:flex;flex-direction:column;gap:6px;width:100%">
+    <div style="display:flex;gap:6px">
+      <select class="form-control" id="cl-tech-select" style="flex:1" onchange="addCloseTech(this)"><option value="">-- เลือกช่าง เพิ่มลงทีม --</option>${techNames.map(t=>`<option value="${t.name}">${t.name}</option>`).join('')}</select>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="addCloseTechName()" title="เพิ่มชื่อช่างใหม่เข้าระบบ">+</button>
+    </div>
+    <div id="cl-tech-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
   </div>`;
 }
 async function addCloseTechName(){
@@ -2896,8 +2914,9 @@ async function addCloseTechName(){
   const n = name.trim();
   if (!techNames.some(t => t.name === n)) techNames.push({ id:'tech-'+n, name:n });
   syncKindToBackend('techNames', techNames);
-  renderCloseTechOptions();
-  const sel = document.getElementById('cl-tech'); if (sel) sel.value = n;
+  renderCloseTechSelectOptions();
+  if (closeTechs.indexOf(n) === -1) closeTechs.push(n);
+  renderCloseTechTags();
 }
 
 let _wrSyncTimer = null;
@@ -4366,11 +4385,16 @@ function editWR(id){
 function openCloseWR(id){
   closingWRId=id;
   const w=workRequests.find(x=>x.id===id);if(!w)return;
+  closeTechs = w.assign ? w.assign.split(/[,\/]/).map(s=>s.trim()).filter(Boolean) : [];
   document.getElementById('close-wr-info').innerHTML=`
     <div class="fw-600 mb-8">${w.id} — ${w.desc}</div>
     <div class="metric-row"><span class="text-muted">Asset</span><span class="tag">${w.assetId||'—'}</span></div>
-    <div class="metric-row"><span class="text-muted">ช่างผู้ดำเนินการ</span>${closeTechSelectHtml(w.assign||'')}</div>
-    <div class="metric-row"><span class="text-muted">เวลาแจ้ง</span><span style="font-size:12px">${w.date?new Date(w.date).toLocaleString('th-TH'):'-'}</span></div>`;
+    <div class="metric-row"><span class="text-muted">เวลาแจ้ง</span><span style="font-size:12px">${w.date?new Date(w.date).toLocaleString('th-TH'):'-'}</span></div>
+    <div style="margin-top:8px">
+      <div class="text-muted mb-4" style="font-size:12px">ช่างผู้ดำเนินการ (เลือกได้มากกว่า 1 คน)</div>
+      ${closeTechPickerHtml()}
+    </div>`;
+  renderCloseTechTags();
   loadTechNames();
   // Set default start = arrivalTime or now
   const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
@@ -4465,8 +4489,7 @@ function confirmCloseWR(){
   const et=new Date(document.getElementById('cl-end-time').value);
   const mttrHrs=((et-st)/(3600*1000)).toFixed(2);
   const responseMins=Math.round((st-new Date(workRequests[idx].date))/60000);
-  const clTechVal=(document.getElementById('cl-tech')||{}).value;
-  if(clTechVal) workRequests[idx].assign=clTechVal;
+  if(closeTechs.length) workRequests[idx].assign=closeTechs.join(', ');
   workRequests[idx].status='closed';
   workRequests[idx].closeDate=et.toISOString();
   workRequests[idx].mttr=parseFloat(mttrHrs);
@@ -4498,11 +4521,16 @@ function viewCloseDetail(id){
 function editCloseWR(id){
   closingWRId=id;
   const w=workRequests.find(x=>x.id===id);if(!w)return;
+  closeTechs = w.assign ? w.assign.split(/[,\/]/).map(s=>s.trim()).filter(Boolean) : [];
   document.getElementById('close-wr-info').innerHTML=`
     <div class="fw-600 mb-8">${w.id} — ${w.desc} <span class="badge badge-orange" style="margin-left:6px">✏ กำลังแก้ไขงานที่ปิดแล้ว</span></div>
     <div class="metric-row"><span class="text-muted">Asset</span><span class="tag">${w.assetId||'—'}</span></div>
-    <div class="metric-row"><span class="text-muted">ช่างผู้ดำเนินการ</span>${closeTechSelectHtml(w.assign||'')}</div>
-    <div class="metric-row"><span class="text-muted">เวลาแจ้ง</span><span style="font-size:12px">${w.date?new Date(w.date).toLocaleString('th-TH'):'-'}</span></div>`;
+    <div class="metric-row"><span class="text-muted">เวลาแจ้ง</span><span style="font-size:12px">${w.date?new Date(w.date).toLocaleString('th-TH'):'-'}</span></div>
+    <div style="margin-top:8px">
+      <div class="text-muted mb-4" style="font-size:12px">ช่างผู้ดำเนินการ (เลือกได้มากกว่า 1 คน)</div>
+      ${closeTechPickerHtml()}
+    </div>`;
+  renderCloseTechTags();
   loadTechNames();
   // Prefill start/end from saved close data
   const toLocalInput=d=>{ if(!d)return ''; const dt=new Date(d); dt.setMinutes(dt.getMinutes()-dt.getTimezoneOffset()); return dt.toISOString().slice(0,16); };

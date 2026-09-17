@@ -835,26 +835,61 @@ async function addTechName(name){
 // interactions don't need a full re-render (which would wipe the canvas).
 let wrClosePhotos = [];   // [{name, dataUrl}]
 let wrClosePartsUsed = []; // [{id, code, name, price, qty}]
+let wrCloseTechs = [];    // [name, name, ...] — technician team assigned to this WR
 let wrCloseStars = 0;
 let wrCloseSigDrawing = false, wrCloseSigLast = null;
 
 function wrCloseOpen(dbId){
   wrClosePhotos = []; wrClosePartsUsed = []; wrCloseStars = 0; wrCloseSigDrawing = false; wrCloseSigLast = null;
+  const w = wrData().find(function(x){ return String(x._dbId)===String(dbId); });
+  wrCloseTechs = (w && w.assign) ? w.assign.split(/[,/]/).map(function(s){ return s.trim(); }).filter(Boolean) : [];
   ST.wrCloseId = dbId; ST.wrCloseBusy = false;
   render();
   if(!(ST.modData.fm && ST.modData.fm.inv)) loadFmKind('inv');
   loadTechNameList();
 }
 function wrCloseClose(){ ST.wrCloseId = null; render(); }
+// Adds the technician chosen from the dropdown to the team list for this WR
+// (a WR can have more than one technician — e.g. a helper + lead tech).
+function wrCloseAddTech(selectEl){
+  const name = selectEl.value; if(!name) return;
+  selectEl.value = '';
+  if (wrCloseTechs.indexOf(name) !== -1) return; // already in the team
+  wrCloseTechs.push(name);
+  renderWrCloseTechChip(name);
+}
+function renderWrCloseTechChip(name){
+  const list = document.getElementById('wr-cl-tech-list');
+  if(!list) return;
+  const chip = document.createElement('span');
+  chip.style.cssText = 'font-size:11px;font-weight:600;color:var(--color-accent-700);border:1px solid var(--color-accent-700);padding:4px 9px;border-radius:20px;display:inline-flex;align-items:center;gap:4px';
+  chip.textContent = name;
+  const x = document.createElement('span'); x.textContent=' ✕'; x.style.cursor='pointer';
+  x.onclick = function(){ wrCloseTechs = wrCloseTechs.filter(function(n){ return n!==name; }); chip.remove(); };
+  chip.appendChild(x);
+  list.appendChild(chip);
+}
+function renderWrCloseTechList(){
+  const list = document.getElementById('wr-cl-tech-list'); if(!list) return;
+  list.innerHTML = '';
+  wrCloseTechs.forEach(renderWrCloseTechChip);
+}
+// "+" button — adds a brand-new name to the shared technician master list,
+// then adds it straight into this WR's team too. Updates the <select>'s
+// options in place (no full render()) so the signature canvas / photo &
+// parts chips already on screen aren't wiped.
 async function wrCloseTechAdd(){
   const th = ST.lang==='th';
   const name = window.prompt(th?'ชื่อ-นามสกุลช่างใหม่:':'New technician full name:');
   if(!name) return;
   const added = await addTechName(name);
-  if(added){
-    render();
-    setTimeout(function(){ const sel=document.getElementById('wr-cl-tech'); if(sel) sel.value=added; }, 0);
+  if(!added) return;
+  const sel = document.getElementById('wr-cl-tech-select');
+  if (sel) {
+    sel.innerHTML = '<option value="">'+(th?'-- เลือกช่าง เพิ่มลงทีม --':'-- Select technician to add --')+'</option>'
+      + fmTechNameList().map(function(t){ return '<option value="'+esc(t.name||'')+'">'+esc(t.name||'')+'</option>'; }).join('');
   }
+  if (wrCloseTechs.indexOf(added) === -1) { wrCloseTechs.push(added); renderWrCloseTechChip(added); }
 }
 
 function wrCloseRecalc(){
@@ -1041,15 +1076,15 @@ function wrCloseOverlay(){
       +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-700);padding:3px 0"><span>'+(th?'เวลาแจ้ง':'Reported')+'</span><span>'+esc(reportedAt)+'</span></div>'
     +'</div>'
 
-    + wrFormField('ช่างผู้ดำเนินการ','Technician', th,
+    + wrFormField('ช่างผู้ดำเนินการ (เลือกได้มากกว่า 1 คน)','Technician (add 1 or more)', th,
         '<div style="display:flex;gap:6px">'
-        +'<select id="wr-cl-tech" style="'+wrInputStyle+';flex:1">'
-          +'<option value="">'+(th?'-- เลือกช่าง --':'-- Select technician --')+'</option>'
-          + fmTechNameList().map(function(t){ const nm=t.name||''; return '<option value="'+esc(nm)+'"'+(w.assign===nm?' selected':'')+'>'+esc(nm)+'</option>'; }).join('')
-          + ((w.assign && !fmTechNameList().some(function(t){return t.name===w.assign;})) ? '<option value="'+esc(w.assign)+'" selected>'+esc(w.assign)+'</option>' : '')
+        +'<select id="wr-cl-tech-select" style="'+wrInputStyle+';flex:1">'
+          +'<option value="">'+(th?'-- เลือกช่าง เพิ่มลงทีม --':'-- Select technician to add --')+'</option>'
+          + fmTechNameList().map(function(t){ const nm=t.name||''; return '<option value="'+esc(nm)+'">'+esc(nm)+'</option>'; }).join('')
         +'</select>'
         +'<div class="tap" data-act="wr-cl-tech-add" style="flex-shrink:0;width:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--color-divider);border-radius:8px;font-weight:700">+</div>'
-        +'</div>')
+        +'</div>'
+        +'<div id="wr-cl-tech-list" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px"></div>')
 
     +'<div style="display:flex;flex-direction:column;gap:10px">'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
@@ -1112,7 +1147,7 @@ async function wrCloseSubmit(){
   const startVal = (document.getElementById('wr-cl-start')||{}).value;
   const endVal = (document.getElementById('wr-cl-end')||{}).value;
   const action = (document.getElementById('wr-cl-action')||{}).value || '';
-  const techName = (document.getElementById('wr-cl-tech')||{}).value || '';
+  const techName = wrCloseTechs.length ? wrCloseTechs.join(', ') : '';
   const labor = parseFloat((document.getElementById('wr-cl-labor')||{}).value)||0;
   const travel = parseFloat((document.getElementById('wr-cl-travel')||{}).value)||0;
   const partsCost = wrClosePartsCost();
@@ -1133,6 +1168,7 @@ async function wrCloseSubmit(){
           assign: techName||w.assign||undefined,
           worktype: worktype||undefined, system: system||undefined, failureCause: failureCause||undefined,
           startTime: startVal?new Date(startVal).toISOString():undefined, endTime: endVal?new Date(endVal).toISOString():undefined,
+          mttr: mttrHours, totalCost: labor+travel+partsCost,
           laborCost: labor, travelCost: travel, partsCost: partsCost,
           partsUsed: wrClosePartsUsed.length?wrClosePartsUsed:undefined,
           photos: wrClosePhotos.length?wrClosePhotos.map(function(p){return p.dataUrl;}):undefined,
@@ -2064,6 +2100,8 @@ function bindFormHandlers(){
     const tv = document.getElementById('wr-cl-travel'); if(tv) tv.addEventListener('input', wrCloseRecalcCost);
     const ps = document.getElementById('wr-cl-parts-select'); if(ps) ps.addEventListener('change', function(){ wrCloseAddPart(ps); });
     const pi = document.getElementById('wr-cl-photo-input'); if(pi) pi.addEventListener('change', function(){ wrClosePhotoAdd(pi); });
+    const tsel = document.getElementById('wr-cl-tech-select'); if(tsel) tsel.addEventListener('change', function(){ wrCloseAddTech(tsel); });
+    renderWrCloseTechList();
     wrCloseSigInit();
   }
   if (ST.wrEvalId) { wrEvalSigInit(); wrEvalTechSigInit(); }
