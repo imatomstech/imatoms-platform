@@ -29,7 +29,7 @@
   --danger:#c0392b; --orange:#e69a3c; --green:#4fd17a; --sky:#5aa9e6;
 }
 *,*::before,*::after{box-sizing:border-box}
-body{margin:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);font-size:15px;line-height:1.5}
+body{margin:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);font-size:17px;line-height:1.5}
 h1,h2,h3,h4,h5{font-family:var(--font-heading);font-weight:600;line-height:1.12;letter-spacing:-.01em;margin:0}
 a{color:inherit;text-decoration:none}
 .tap{cursor:pointer}
@@ -50,13 +50,6 @@ a{color:inherit;text-decoration:none}
    pushed out to the same breakpoint so it doesn't show up on phones. */
 #app-root{width:100%;max-width:900px;margin:0 auto;min-height:100vh;background:var(--color-bg);display:flex;flex-direction:column}
 @media(min-width:901px){ body{background:#dfe1e4} #app-root{min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.08)} }
-/* Phone text was reported too small to use comfortably. Scale the whole
-   rendered app up ~14% on narrow/handheld widths (portrait or landscape) —
-   `zoom` recomputes real layout (unlike transform:scale), and since every
-   screen and overlay renders inside this one #app-root, everything scales
-   together consistently. Left alone above 900px (desktop/notebook) where
-   the smaller sizes already read fine at normal viewing distance. */
-@media(max-width:900px){ #app-root{zoom:1.14} }
 
 /* ---- blueprint card ---- */
 .blueprint{position:relative;border:1px solid var(--color-divider);border-radius:6px;overflow:hidden}
@@ -72,7 +65,7 @@ a{color:inherit;text-decoration:none}
 .blueprint.tap:hover *,.blueprint.tap:active *{text-shadow:0 1px 0 rgba(255,255,255,.8)}
 
 /* ---- buttons ---- */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-family:var(--font-heading);font-weight:600;font-size:14px;color:var(--color-text);background:transparent;border:1px solid var(--color-divider);padding:9px 16px;border-radius:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-family:var(--font-heading);font-weight:600;font-size:16px;color:var(--color-text);background:transparent;border:1px solid var(--color-divider);padding:9px 16px;border-radius:0}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn-primary{background:var(--color-accent);color:#fff;border-color:var(--color-accent)}
 .btn-primary:not(:disabled):hover{background:var(--color-accent-600)}
@@ -80,20 +73,20 @@ a{color:inherit;text-decoration:none}
 .btn-block{width:100%;margin-top:6px}
 
 /* ---- forms ---- */
-.field>label{display:block;font-size:12px;margin-bottom:5px;color:rgba(29,31,32,.7)}
+.field>label{display:block;font-size:14px;margin-bottom:5px;color:rgba(29,31,32,.7)}
 .field{margin-bottom:12px}
-.input{width:100%;min-height:38px;padding:8px 10px;font:inherit;font-size:14px;color:var(--color-text);background:var(--color-surface);border:1px solid var(--color-divider);border-radius:0}
+.input{width:100%;min-height:38px;padding:8px 10px;font:inherit;font-size:16px;color:var(--color-text);background:var(--color-surface);border:1px solid var(--color-divider);border-radius:0}
 .input:focus-visible{outline:none;border-color:var(--color-accent)}
 textarea.input{min-height:80px;resize:vertical}
 
 /* ---- seg control ---- */
 .seg{display:inline-flex;overflow:hidden;border:1px solid var(--color-divider)}
-.seg-opt{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;font-size:13px;cursor:pointer}
+.seg-opt{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;font-size:15px;cursor:pointer}
 .seg-opt+.seg-opt{border-left:1px solid var(--color-divider)}
 .seg-opt.active{background:var(--color-accent);color:#fff}
 
 /* ---- tags ---- */
-.tag{display:inline-flex;align-items:center;font-size:11px;letter-spacing:.02em;padding:3px 10px;border-radius:2px}
+.tag{display:inline-flex;align-items:center;font-size:13px;letter-spacing:.02em;padding:3px 10px;border-radius:2px}
 .tag-accent{background:var(--color-accent-100);color:var(--color-accent-800)}
 .tag-neutral{background:var(--color-neutral-100);color:var(--color-neutral-800)}
 .tag-outline{border:1px solid var(--color-accent);color:var(--color-accent)}
@@ -115,29 +108,29 @@ textarea.input{min-height:80px;resize:vertical}
 .tabbar{display:flex;border-top:1px solid var(--color-divider);flex-shrink:0;padding:8px 8px calc(10px + env(safe-area-inset-bottom));background:var(--color-bg)}
 .tabitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:var(--color-neutral-600)}
 .tabitem.active{color:var(--color-accent-700)}
-.tabitem span{font-size:9px;font-family:var(--font-heading);letter-spacing:.02em}
+.tabitem span{font-size:11px;font-family:var(--font-heading);letter-spacing:.02em}
 
 /* ---- views ---- */
 .view-body{flex:1;overflow:auto;padding:0 18px 22px}
 .stack{display:flex;flex-direction:column;gap:16px}
 .footer-legal{text-align:center;padding-top:6px;border-top:1px solid var(--color-divider)}
-.footer-legal .l1{font-family:var(--font-heading);font-size:10px;letter-spacing:.1em}
-.footer-legal .l2{font-size:8.5px;line-height:1.35;color:var(--color-accent-700);margin-top:6px;padding:0 4px}
-.footer-legal .l3{font-size:8.5px;color:var(--color-accent-700);margin-top:3px}
-.back-to-platform{display:block;text-align:center;font-size:12px;color:var(--color-accent-700);margin:14px 0 4px;cursor:pointer}
+.footer-legal .l1{font-family:var(--font-heading);font-size:12px;letter-spacing:.1em}
+.footer-legal .l2{font-size:10.5px;line-height:1.35;color:var(--color-accent-700);margin-top:6px;padding:0 4px}
+.footer-legal .l3{font-size:10.5px;color:var(--color-accent-700);margin-top:3px}
+.back-to-platform{display:block;text-align:center;font-size:14px;color:var(--color-accent-700);margin:14px 0 4px;cursor:pointer}
 
 /* ---- login/splash hero ---- */
 .hero{flex-shrink:0;padding:30px 16px 22px;position:relative;overflow:hidden;text-align:center;background:radial-gradient(circle at 50% 35%,#1c3a5e 0%,#0d1b30 70%,#0a1526 100%);color:#fff}
-.hero .kicker{font-family:var(--font-heading);font-size:12px;letter-spacing:.18em;color:var(--orange)}
+.hero .kicker{font-family:var(--font-heading);font-size:14px;letter-spacing:.18em;color:var(--orange)}
 .hero .title{font-family:var(--font-heading);font-size:28px;font-weight:600;margin-top:2px}
 .hero .title .v{color:#e6672f}
-.hero .tag{font-family:var(--font-heading);font-size:11px;letter-spacing:.1em;color:var(--green);margin-top:4px}
+.hero .tag{font-family:var(--font-heading);font-size:13px;letter-spacing:.1em;color:var(--green);margin-top:4px}
 
 /* ---- spinner / toast ---- */
 .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
-.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#1d1f20;color:#fff;padding:10px 18px;font-size:13px;border-radius:4px;opacity:0;pointer-events:none;transition:.25s;z-index:999;max-width:88%;text-align:center}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#1d1f20;color:#fff;padding:10px 18px;font-size:15px;border-radius:4px;opacity:0;pointer-events:none;transition:.25s;z-index:999;max-width:88%;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.msg{font-size:12.5px;margin-top:2px;min-height:16px}
+.msg{font-size:14.5px;margin-top:2px;min-height:16px}
 .msg.ok{color:#1a7a3c}
 .msg.err{color:var(--danger)}
 </style>
@@ -297,7 +290,7 @@ function footerLegalHtml(){
 }
 function segLangHtml(){
   const th = ST.lang==='th';
-  return '<div class="seg" style="font-size:11px">'
+  return '<div class="seg" style="font-size:13px">'
     +'<div class="seg-opt tap '+(th?'active':'')+'" data-act="lang-th">TH</div>'
     +'<div class="seg-opt tap '+(!th?'active':'')+'" data-act="lang-en">EN</div>'
     +'</div>';
@@ -317,7 +310,7 @@ function screenLogin(){
     +'<div class="tag">TOWARDS SUSTAINABLE ORGANIZATION · 2026</div>'
     +'</div>'
     +'<div style="flex:1;padding:22px 22px 24px;display:flex;flex-direction:column;gap:16px">'
-    +'<div><h2 style="font-size:22px;margin-bottom:2px">'+t.loginTitle+'</h2><div style="font-size:12px;color:var(--color-neutral-700)">'+t.loginSub+'</div></div>'
+    +'<div><h2 style="font-size:22px;margin-bottom:2px">'+t.loginTitle+'</h2><div style="font-size:14px;color:var(--color-neutral-700)">'+t.loginSub+'</div></div>'
     + (isLoginMode ? (
       '<form id="login-form" style="display:flex;flex-direction:column;gap:12px">'
       +'<div class="field"><label>'+t.username+'</label><input class="input" id="li-user" autocomplete="username" required></div>'
@@ -325,7 +318,7 @@ function screenLogin(){
       +'<div class="tap" data-act="toggle-pw" style="position:absolute;right:8px;top:0;bottom:0;display:flex;align-items:center;color:var(--color-accent-700)">'+(ST.showPassword?pwIconOff:pwIconEye)+'</div></div></div>'
       +'<button type="submit" class="btn btn-primary btn-block" id="li-submit" '+(ST.loginBusy?'disabled':'')+'>'+(ST.loginBusy?'<span class="spinner"></span>':'')+t.signIn+'</button>'
       +'<div class="msg '+(ST.loginErr?'err':'ok')+'">'+esc(ST.loginMsg||'')+'</div>'
-      +'<div style="text-align:center;font-size:12px;color:var(--color-neutral-700)">'+t.noAccount+' <span class="tap" data-act="to-register" style="color:var(--color-accent-700);font-weight:600">'+t.registerLink+'</span></div>'
+      +'<div style="text-align:center;font-size:14px;color:var(--color-neutral-700)">'+t.noAccount+' <span class="tap" data-act="to-register" style="color:var(--color-accent-700);font-weight:600">'+t.registerLink+'</span></div>'
       +'</form>'
     ) : (
       '<form id="register-form" style="display:flex;flex-direction:column;gap:12px">'
@@ -334,10 +327,10 @@ function screenLogin(){
       +'<div class="field"><label>'+t.username+'</label><input class="input" id="rg-user" required></div>'
       +'<div class="field"><label>'+t.password+'</label><div style="position:relative"><input class="input" type="'+(ST.showPasswordReg?'text':'password')+'" id="rg-pass" style="padding-right:36px" required>'
       +'<div class="tap" data-act="toggle-pw-reg" style="position:absolute;right:8px;top:0;bottom:0;display:flex;align-items:center;color:var(--color-accent-700)">'+(ST.showPasswordReg?pwIconOff:pwIconEye)+'</div></div></div>'
-      +'<div class="blueprint" style="padding:10px 12px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:11px;color:var(--color-neutral-700)">'+t.approvalNote+'</div></div>'
+      +'<div class="blueprint" style="padding:10px 12px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:13px;color:var(--color-neutral-700)">'+t.approvalNote+'</div></div>'
       +'<button type="submit" class="btn btn-primary btn-block" id="rg-submit" '+(ST.regBusy?'disabled':'')+'>'+(ST.regBusy?'<span class="spinner"></span>':'')+t.submitRequest+'</button>'
       +'<div class="msg '+(ST.regErr?'err':'ok')+'">'+esc(ST.regMsg||'')+'</div>'
-      +'<div style="text-align:center;font-size:12px;color:var(--color-neutral-700)">'+t.haveAccount+' <span class="tap" data-act="to-login" style="color:var(--color-accent-700);font-weight:600">'+t.loginLink+'</span></div>'
+      +'<div style="text-align:center;font-size:14px;color:var(--color-neutral-700)">'+t.haveAccount+' <span class="tap" data-act="to-login" style="color:var(--color-accent-700);font-weight:600">'+t.loginLink+'</span></div>'
       +'</form>'
     ))
     +'<div style="display:flex;justify-content:center;margin-top:auto">'+segLangHtml()+'</div>'
@@ -355,16 +348,16 @@ function screenSplash(){
     + atomHtml(88,76,30,18)
     +'</div>'
     +'<h1 style="margin-top:14px;font-size:34px">iMATOMs</h1>'
-    +'<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-accent-700)">TKO Group · Technology · Innovation · Sustainability</div>'
-    +'<p style="max-width:280px;font-size:13px;color:var(--color-neutral-700);margin-top:10px">Integrated Maintenance Analytics Technical Operations Management and Safety</p>'
+    +'<div style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-accent-700)">TKO Group · Technology · Innovation · Sustainability</div>'
+    +'<p style="max-width:280px;font-size:15px;color:var(--color-neutral-700);margin-top:10px">Integrated Maintenance Analytics Technical Operations Management and Safety</p>'
     +'</div>'
     +'<div style="width:100%;display:flex;flex-direction:column;gap:14px">'
-    +'<div style="font-size:13px;text-align:center;color:var(--color-neutral-700)">'+t.splashSelect+'</div>'
+    +'<div style="font-size:15px;text-align:center;color:var(--color-neutral-700)">'+t.splashSelect+'</div>'
     +'<div style="display:flex;gap:10px">'
     +'<div class="blueprint tap" data-act="splash-th" style="flex:1;padding:16px 10px;text-align:center;font-family:var(--font-heading);font-size:18px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'+t.splashTh+'</div>'
     +'<div class="blueprint tap" data-act="splash-en" style="flex:1;padding:16px 10px;text-align:center;font-family:var(--font-heading);font-size:18px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'+t.splashEn+'</div>'
     +'</div>'
-    +'<div style="font-size:10px;text-align:center;color:var(--color-neutral-500);letter-spacing:.04em">PLATFORM V3.0 · TKO GROUP · 2026</div>'
+    +'<div style="font-size:12px;text-align:center;color:var(--color-neutral-500);letter-spacing:.04em">PLATFORM V3.0 · TKO GROUP · 2026</div>'
     +'</div></div>';
 }
 
@@ -373,7 +366,7 @@ function statCard(label, value, sub){
   // toolbar pills use, so a dashboard KPI can jump straight to its list.
   const clickable = sub ? ' class="tap" data-act="wr-sub" data-sub="'+sub+'"' : '';
   return '<div'+clickable+' style="padding:10px 2px'+(sub?';cursor:pointer;border-radius:8px':'')+'">'
-    +'<div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-accent-700)">'+esc(label)+(sub?' ›':'')+'</div>'
+    +'<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-accent-700)">'+esc(label)+(sub?' ›':'')+'</div>'
     +'<div style="font-family:var(--font-heading);font-size:24px;margin-top:2px">'+esc(value)+'</div></div>';
 }
 
@@ -415,9 +408,9 @@ function computeFailureCauseBreakdown(topN){
 function moduleTile(m, compact){
   const pad = compact ? '12px' : '14px';
   return '<div class="blueprint tap" data-act="open-module" data-key="'+m.key+'" style="padding:'+pad+';display:flex;flex-direction:column;gap:8px;min-height:112px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-    +'<div style="width:34px;height:34px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:11px;color:var(--color-accent-700)">'+m.code+'</div>'
-    +'<div style="font-family:var(--font-heading);font-size:14px;line-height:1.1">'+m.name+'</div>'
-    +'<div style="font-size:11px;color:var(--color-neutral-700);flex:1">'+m.tagline+'</div>'
+    +'<div style="width:34px;height:34px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:13px;color:var(--color-accent-700)">'+m.code+'</div>'
+    +'<div style="font-family:var(--font-heading);font-size:16px;line-height:1.1">'+m.name+'</div>'
+    +'<div style="font-size:13px;color:var(--color-neutral-700);flex:1">'+m.tagline+'</div>'
     +'<span class="tag '+m.tagClass+'">'+m.status+'</span></div>';
 }
 
@@ -431,19 +424,19 @@ function screenHome(){
   const notif = d ? (d.unread_notif||0) : '–';
   const mods = opsModules();
   return '<div class="stack">'
-    +'<div><h2 style="font-size:22px;margin-bottom:2px">'+t.homeGreeting+'</h2><div style="font-size:12px;color:var(--color-neutral-700)">'+t.homeRole+'</div></div>'
+    +'<div><h2 style="font-size:22px;margin-bottom:2px">'+t.homeGreeting+'</h2><div style="font-size:14px;color:var(--color-neutral-700)">'+t.homeRole+'</div></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
       + statCard(t.kOpen, openCnt) + statCard(t.kProgress, ipCnt) + statCard(t.kPm, pm) + statCard(t.kNotif, notif)
     +'</div>'
-    +'<div><h3 style="font-size:17px;margin-bottom:2px">'+t.platformsTitle+'</h3><div style="font-size:12px;color:var(--color-neutral-700);margin-bottom:10px">'+t.platformsSub+'</div>'
+    +'<div><h3 style="font-size:17px;margin-bottom:2px">'+t.platformsTitle+'</h3><div style="font-size:14px;color:var(--color-neutral-700);margin-bottom:10px">'+t.platformsSub+'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + mods.map(function(m){ return moduleTile(m, true); }).join('')
     +'</div></div>'
     +'<div><h3 style="font-size:17px;margin-bottom:10px">'+t.lifestyleTitle+'</h3><div style="display:flex;flex-direction:column;gap:10px">'
     +'<div class="blueprint tap" data-act="goto-market" style="padding:12px;display:flex;justify-content:space-between;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-    +'<div><div style="font-family:var(--font-heading);font-size:15px">'+t.marketName+'</div><div style="font-size:11px;color:var(--color-neutral-700)">'+t.marketTagline+'</div></div><span class="tag tag-accent">'+t.open+'</span></div>'
+    +'<div><div style="font-family:var(--font-heading);font-size:17px">'+t.marketName+'</div><div style="font-size:13px;color:var(--color-neutral-700)">'+t.marketTagline+'</div></div><span class="tag tag-accent">'+t.open+'</span></div>'
     +'<div class="blueprint tap" data-act="goto-coffee" style="padding:12px;display:flex;justify-content:space-between;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-    +'<div><div style="font-family:var(--font-heading);font-size:15px">'+t.coffeeName+'</div><div style="font-size:11px;color:var(--color-neutral-700)">'+t.coffeeTagline+'</div></div><span class="tag tag-accent">'+t.open+'</span></div>'
+    +'<div><div style="font-family:var(--font-heading);font-size:17px">'+t.coffeeName+'</div><div style="font-size:13px;color:var(--color-neutral-700)">'+t.coffeeTagline+'</div></div><span class="tag tag-accent">'+t.open+'</span></div>'
     +'</div></div>'
     +'</div>';
 }
@@ -451,12 +444,12 @@ function screenHome(){
 function screenOpsList(){
   const t = L(); const mods = opsModules();
   return '<div class="stack">'
-    +'<div><h2 style="font-size:22px;margin-bottom:2px">'+t.opsTitle+'</h2><div style="font-size:12px;color:var(--color-neutral-700)">'+t.opsSub+'</div></div>'
+    +'<div><h2 style="font-size:22px;margin-bottom:2px">'+t.opsTitle+'</h2><div style="font-size:14px;color:var(--color-neutral-700)">'+t.opsSub+'</div></div>'
     +'<div style="display:flex;flex-direction:column;gap:10px">'
     + mods.map(function(m){
       return '<div class="blueprint tap" data-act="open-module" data-key="'+m.key+'" style="padding:14px;display:flex;gap:12px;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-        +'<div style="width:40px;height:40px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:12px;color:var(--color-accent-700);flex-shrink:0">'+m.code+'</div>'
-        +'<div style="flex:1"><div style="font-family:var(--font-heading);font-size:15px">'+m.name+'</div><div style="font-size:11px;color:var(--color-neutral-700)">'+m.tagline+'</div></div>'
+        +'<div style="width:40px;height:40px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:14px;color:var(--color-accent-700);flex-shrink:0">'+m.code+'</div>'
+        +'<div style="flex:1"><div style="font-family:var(--font-heading);font-size:17px">'+m.name+'</div><div style="font-size:13px;color:var(--color-neutral-700)">'+m.tagline+'</div></div>'
         +'<span class="tag '+m.tagClass+'">'+m.status+'</span></div>';
     }).join('')
     +'</div></div>';
@@ -469,12 +462,12 @@ function screenLifestyle(){
     { act:'goto-coffee', code:'02', name:t.coffeeName, tagline:t.coffeeTagline },
   ];
   return '<div class="stack">'
-    +'<div><h2 style="font-size:22px;margin-bottom:2px">'+t.lifestyleTitle+'</h2><div style="font-size:12px;color:var(--color-neutral-700)">'+t.opsSub+'</div></div>'
+    +'<div><h2 style="font-size:22px;margin-bottom:2px">'+t.lifestyleTitle+'</h2><div style="font-size:14px;color:var(--color-neutral-700)">'+t.opsSub+'</div></div>'
     +'<div style="display:flex;flex-direction:column;gap:10px">'
     + items.map(function(it){
       return '<div class="blueprint tap" data-act="'+it.act+'" style="padding:14px;display:flex;gap:12px;align-items:center">'
-        +'<div style="width:40px;height:40px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:12px;color:var(--color-accent-700);flex-shrink:0">'+it.code+'</div>'
-        +'<div style="flex:1"><div style="font-family:var(--font-heading);font-size:15px">'+it.name+'</div><div style="font-size:11px;color:var(--color-neutral-700)">'+it.tagline+'</div></div>'
+        +'<div style="width:40px;height:40px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:14px;color:var(--color-accent-700);flex-shrink:0">'+it.code+'</div>'
+        +'<div style="flex:1"><div style="font-family:var(--font-heading);font-size:17px">'+it.name+'</div><div style="font-size:13px;color:var(--color-neutral-700)">'+it.tagline+'</div></div>'
         +'<span class="tag tag-accent">'+t.open+'</span></div>';
     }).join('')
     +'</div></div>';
@@ -488,10 +481,10 @@ function screenProfile(){
     +'<h2 style="font-size:22px">'+t.profileTitle+'</h2>'
     +'<div class="blueprint" style="padding:16px;display:flex;gap:12px;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
     +'<div style="width:48px;height:48px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:16px;color:var(--color-accent-700)">'+esc(initials)+'</div>'
-    +'<div><div style="font-family:var(--font-heading);font-size:16px">'+esc((u&&(u.full_name||u.username))||'—')+'</div><div style="font-size:12px;color:var(--color-neutral-700)">'+esc((u&&u.role)||'')+'</div></div></div>'
-    +'<div><h4 style="font-size:14px;margin-bottom:8px">'+t.profileLang+'</h4><div class="seg" style="width:100%"><div class="seg-opt tap '+(ST.lang==='th'?'active':'')+'" data-act="lang-th" style="flex:1;justify-content:center">ภาษาไทย</div><div class="seg-opt tap '+(ST.lang==='en'?'active':'')+'" data-act="lang-en" style="flex:1;justify-content:center">English</div></div></div>'
-    +'<div><h4 style="font-size:14px;margin-bottom:8px">'+t.profileAccess+'</h4><div style="display:flex;flex-direction:column;gap:6px">'
-    + mods.map(function(m){ return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--color-divider)"><span style="font-size:13px">'+m.name+'</span><span class="tag tag-accent">'+t.granted+'</span></div>'; }).join('')
+    +'<div><div style="font-family:var(--font-heading);font-size:16px">'+esc((u&&(u.full_name||u.username))||'—')+'</div><div style="font-size:14px;color:var(--color-neutral-700)">'+esc((u&&u.role)||'')+'</div></div></div>'
+    +'<div><h4 style="font-size:16px;margin-bottom:8px">'+t.profileLang+'</h4><div class="seg" style="width:100%"><div class="seg-opt tap '+(ST.lang==='th'?'active':'')+'" data-act="lang-th" style="flex:1;justify-content:center">ภาษาไทย</div><div class="seg-opt tap '+(ST.lang==='en'?'active':'')+'" data-act="lang-en" style="flex:1;justify-content:center">English</div></div></div>'
+    +'<div><h4 style="font-size:16px;margin-bottom:8px">'+t.profileAccess+'</h4><div style="display:flex;flex-direction:column;gap:6px">'
+    + mods.map(function(m){ return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--color-divider)"><span style="font-size:15px">'+m.name+'</span><span class="tag tag-accent">'+t.granted+'</span></div>'; }).join('')
     +'</div></div>'
     +'<button class="btn btn-secondary btn-block" data-act="logout">'+t.signOut+'</button>'
     +'</div>';
@@ -501,14 +494,14 @@ function screenProfile(){
 function modHeader(title, key){
   const t = L();
   return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
-    +'<div class="tap" data-act="module-back" style="font-size:13px;color:var(--color-accent-700);font-weight:600">'+t.modBack+'</div>'
-    +'<a class="tap" data-act="open-full-app" data-key="'+key+'" style="font-size:11px;color:var(--color-neutral-700);border:1px solid var(--color-divider);padding:5px 9px">'+t.openFullApp+' ↗</a>'
+    +'<div class="tap" data-act="module-back" style="font-size:15px;color:var(--color-accent-700);font-weight:600">'+t.modBack+'</div>'
+    +'<a class="tap" data-act="open-full-app" data-key="'+key+'" style="font-size:13px;color:var(--color-neutral-700);border:1px solid var(--color-divider);padding:5px 9px">'+t.openFullApp+' ↗</a>'
     +'</div>'
     +'<h2 style="font-size:20px;margin-bottom:2px">'+esc(title)+'</h2>';
 }
 function modLoadingBlock(key){
   const t = L();
-  if(ST.modLoading[key]) return '<div style="text-align:center;padding:30px 0;color:var(--color-neutral-600);font-size:13px">'+t.loadingData+'</div>';
+  if(ST.modLoading[key]) return '<div style="text-align:center;padding:30px 0;color:var(--color-neutral-600);font-size:15px">'+t.loadingData+'</div>';
   return '';
 }
 function modErrorBlock(key){
@@ -516,7 +509,7 @@ function modErrorBlock(key){
   const err = ST.modData[key] && ST.modData[key].__error;
   if(!err) return '';
   return '<div class="blueprint" style="padding:14px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-    +'<div style="font-size:12px;color:var(--danger);margin-bottom:8px">'+t.loadFailed+'</div>'
+    +'<div style="font-size:14px;color:var(--danger);margin-bottom:8px">'+t.loadFailed+'</div>'
     +'<button class="btn btn-secondary" data-act="retry-module" data-key="'+key+'">'+t.retry+'</button></div>';
 }
 
@@ -540,12 +533,12 @@ function fmMoney(n){ return '฿' + Math.round(n||0).toLocaleString(); }
 function fmChip(label, kind){
   const colors = { red:'var(--danger)', orange:'var(--orange)', green:'var(--green)', sky:'var(--sky)', gray:'var(--color-neutral-600)' };
   const c = colors[kind] || colors.gray;
-  return '<span style="font-size:10px;font-weight:600;color:'+c+';border:1px solid '+c+';padding:2px 7px;border-radius:20px;white-space:nowrap">'+esc(label)+'</span>';
+  return '<span style="font-size:12px;font-weight:600;color:'+c+';border:1px solid '+c+';padding:2px 7px;border-radius:20px;white-space:nowrap">'+esc(label)+'</span>';
 }
 function fmCard(rows){
   return '<div class="blueprint" style="padding:11px 12px;display:flex;flex-direction:column;gap:4px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'+rows+'</div>';
 }
-function fmEmpty(msg){ return '<div style="font-size:12px;color:var(--color-neutral-700);text-align:center;padding:18px 0">'+esc(msg)+'</div>'; }
+function fmEmpty(msg){ return '<div style="font-size:14px;color:var(--color-neutral-700);text-align:center;padding:18px 0">'+esc(msg)+'</div>'; }
 
 /* WR is wired to the real backend (/api/work-orders on api.imatomstech.com) —
    the same endpoint the FM webapp's WR module now writes to — so this is a
@@ -650,7 +643,7 @@ function fmSubTabs(active){
   ];
   return '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch">'
     + tabs.map(function(x){
-        return '<div class="tap" data-act="fm-sub" data-sub="'+x.k+'" style="flex-shrink:0;font-size:12px;font-weight:600;padding:7px 12px;border-radius:20px;border:1px solid '+(active===x.k?'var(--color-accent)':'var(--color-divider)')+';background:'+(active===x.k?'var(--color-accent)':'transparent')+';color:'+(active===x.k?'#fff':'var(--color-text)')+'">'+esc(x.label)+'</div>';
+        return '<div class="tap" data-act="fm-sub" data-sub="'+x.k+'" style="flex-shrink:0;font-size:14px;font-weight:600;padding:7px 12px;border-radius:20px;border:1px solid '+(active===x.k?'var(--color-accent)':'var(--color-divider)')+';background:'+(active===x.k?'var(--color-accent)':'transparent')+';color:'+(active===x.k?'#fff':'var(--color-text)')+'">'+esc(x.label)+'</div>';
       }).join('')
     +'</div>';
 }
@@ -679,7 +672,7 @@ const WR_TYPE_TARGET_H = { ER:4, CM:8, PJ:72 }; // hours — used for Maintainab
 function wrCardHtml(w, th){
   const st = WR_STATUS_MAP[w.status] || [w.status,w.status,'gray'];
   const pr = WR_PRIORITY_MAP[w.priority] || [w.priority,w.priority,'gray'];
-  const btnStyle = 'font-size:11px;font-weight:600;padding:6px 12px;border-radius:8px;text-align:center';
+  const btnStyle = 'font-size:13px;font-weight:600;padding:6px 12px;border-radius:8px;text-align:center';
   let actions = '';
   if (w._dbId) {
     if (w.status === 'open') {
@@ -698,12 +691,12 @@ function wrCardHtml(w, th){
   const reportedAt = w.date ? new Date(w.date).toLocaleString(th?'th-TH':'en-US',{dateStyle:'short',timeStyle:'short'}) : null;
   const tapAttrs = w._dbId ? ' class="tap blueprint" data-act="wr-detail" data-id="'+w._dbId+'"' : ' class="blueprint"';
   return '<div'+tapAttrs+' style="padding:11px 12px;display:flex;flex-direction:column;gap:4px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-    +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(w.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
-    + (equipName ? '<div style="font-size:12px;font-weight:600;color:var(--color-text)">'+esc(equipName)+(w.assetId?' <span style="font-weight:400;color:var(--color-neutral-600)">('+esc(w.assetId)+')</span>':'')+'</div>' : '')
-    +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc((w.desc||'').slice(0,70))+'</div>'
-    + (loc ? '<div style="font-size:11px;color:var(--color-neutral-700)">📍 '+esc(loc)+'</div>' : (w.assetId?'<div style="font-size:11px;color:var(--color-neutral-700)">📍 '+esc(w.assetId)+'</div>':''))
+    +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(w.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
+    + (equipName ? '<div style="font-size:14px;font-weight:600;color:var(--color-text)">'+esc(equipName)+(w.assetId?' <span style="font-weight:400;color:var(--color-neutral-600)">('+esc(w.assetId)+')</span>':'')+'</div>' : '')
+    +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc((w.desc||'').slice(0,70))+'</div>'
+    + (loc ? '<div style="font-size:13px;color:var(--color-neutral-700)">📍 '+esc(loc)+'</div>' : (w.assetId?'<div style="font-size:13px;color:var(--color-neutral-700)">📍 '+esc(w.assetId)+'</div>':''))
     +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip(th?pr[0]:pr[1], pr[2])+(w.type?fmChip(w.type,'gray'):'')+(!equipName&&w.assetId?fmChip(w.assetId,'gray'):'')+(w.assign?fmChip(w.assign,'gray'):'')+(w.mttr?fmChip('MTTR '+w.mttr+'h','gray'):'')+'</div>'
-    + (w.reporter||w.phone||reportedAt||w.availableTime ? '<div style="font-size:11px;color:var(--color-neutral-700);margin-top:2px;display:flex;flex-direction:column;gap:1px">'
+    + (w.reporter||w.phone||reportedAt||w.availableTime ? '<div style="font-size:13px;color:var(--color-neutral-700);margin-top:2px;display:flex;flex-direction:column;gap:1px">'
         + (w.reporter ? '<span>'+(th?'ผู้แจ้ง: ':'Reporter: ')+esc(w.reporter)+(w.phone?' · <a href="tel:'+esc(w.phone)+'" style="color:var(--color-accent-700)" data-act="noop">📞 '+esc(w.phone)+'</a>':'')+'</span>' : (w.phone?'<span><a href="tel:'+esc(w.phone)+'" style="color:var(--color-accent-700)" data-act="noop">📞 '+esc(w.phone)+'</a></span>':''))
         + (reportedAt ? '<span>'+(th?'เวลาที่แจ้ง: ':'Reported: ')+esc(reportedAt)+'</span>' : '')
         + (w.availableTime ? '<span>'+(th?'ช่วงเวลาเข้าดำเนินการ: ':'Available: ')+esc(w.availableTime)+'</span>' : '')
@@ -763,17 +756,17 @@ function wrTechPickerOverlay(){
   const rows = techs.length
     ? techs.map(function(t){
         return '<div class="tap" data-act="wr-tech-pick" data-tname="'+esc(t.name||'')+'" style="display:flex;align-items:center;gap:8px;padding:12px;border-radius:10px;background:var(--color-surface);border:1px solid var(--color-divider);margin-bottom:8px">'
-          +'<span style="font-size:13px;font-weight:600">'+esc(t.name||'')+'</span>'
+          +'<span style="font-size:15px;font-weight:600">'+esc(t.name||'')+'</span>'
         +'</div>';
       }).join('')
-    : '<div style="text-align:center;padding:20px;color:var(--color-neutral-600);font-size:12.5px">'+(th?'ไม่พบรายชื่อช่าง':'No technicians found')+'</div>';
+    : '<div style="text-align:center;padding:20px;color:var(--color-neutral-600);font-size:14.5px">'+(th?'ไม่พบรายชื่อช่าง':'No technicians found')+'</div>';
   return '<div style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;display:flex;align-items:flex-end;justify-content:center">'
     +'<div style="width:100%;max-width:480px;max-height:80vh;overflow-y:auto;background:var(--color-bg);border-radius:16px 16px 0 0;padding:16px;box-sizing:border-box'+(ST.wrTechPickerBusy?';opacity:.6;pointer-events:none':'')+'">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
-      +'<span style="font-family:var(--font-heading);font-size:15px">'+(th?'เลือกช่างที่รับงาน':'Select technician')+'</span>'
+      +'<span style="font-family:var(--font-heading);font-size:17px">'+(th?'เลือกช่างที่รับงาน':'Select technician')+'</span>'
       +'<div class="tap" data-act="wr-tech-picker-close" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--color-surface);flex-shrink:0">✕</div></div>'
       + rows
-      +'<div class="tap" data-act="wr-tech-picker-add" style="text-align:center;padding:10px;font-size:12.5px;font-weight:600;border:1px dashed var(--color-divider);border-radius:10px;margin-top:4px">+ '+(th?'เพิ่มชื่อช่างใหม่':'Add new technician')+'</div>'
+      +'<div class="tap" data-act="wr-tech-picker-add" style="text-align:center;padding:10px;font-size:14.5px;font-weight:600;border:1px dashed var(--color-divider);border-radius:10px;margin-top:4px">+ '+(th?'เพิ่มชื่อช่างใหม่':'Add new technician')+'</div>'
     +'</div></div>';
 }
 const CLOSE_WORKTYPE_OPTIONS = [
@@ -896,7 +889,7 @@ function renderWrCloseTechChip(name){
   const list = document.getElementById('wr-cl-tech-list');
   if(!list) return;
   const chip = document.createElement('span');
-  chip.style.cssText = 'font-size:11px;font-weight:600;color:var(--color-accent-700);border:1px solid var(--color-accent-700);padding:4px 9px;border-radius:20px;display:inline-flex;align-items:center;gap:4px';
+  chip.style.cssText = 'font-size:13px;font-weight:600;color:var(--color-accent-700);border:1px solid var(--color-accent-700);padding:4px 9px;border-radius:20px;display:inline-flex;align-items:center;gap:4px';
   chip.textContent = name;
   const x = document.createElement('span'); x.textContent=' ✕'; x.style.cursor='pointer';
   x.onclick = function(){ wrCloseTechs = wrCloseTechs.filter(function(n){ return n!==name; }); chip.remove(); };
@@ -960,7 +953,7 @@ function wrCloseAddPart(selectEl){
   const list = document.getElementById('wr-cl-parts-list');
   if(list){
     const chip = document.createElement('span');
-    chip.style.cssText = 'font-size:10px;font-weight:600;color:var(--color-accent-700);border:1px solid var(--color-accent-700);padding:3px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px';
+    chip.style.cssText = 'font-size:12px;font-weight:600;color:var(--color-accent-700);border:1px solid var(--color-accent-700);padding:3px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px';
     chip.textContent = (item.code||item.id) + ' ' + fmMoney(item.price||0);
     const x = document.createElement('span'); x.textContent=' ✕'; x.style.cursor='pointer';
     x.onclick = function(){ wrClosePartsUsed = wrClosePartsUsed.filter(function(p){return p.id!==item.id;}); chip.remove(); wrCloseRecalcCost(); };
@@ -974,7 +967,7 @@ function renderWrClosePartsChips(){
   list.innerHTML = '';
   wrClosePartsUsed.forEach(function(item){
     const chip = document.createElement('span');
-    chip.style.cssText = 'font-size:10px;font-weight:600;color:var(--color-accent-700);border:1px solid var(--color-accent-700);padding:3px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px';
+    chip.style.cssText = 'font-size:12px;font-weight:600;color:var(--color-accent-700);border:1px solid var(--color-accent-700);padding:3px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px';
     chip.textContent = (item.code||item.id) + ' ' + fmMoney(item.price||0);
     const x = document.createElement('span'); x.textContent=' ✕'; x.style.cursor='pointer';
     x.onclick = function(){ wrClosePartsUsed = wrClosePartsUsed.filter(function(p){return p.id!==item.id;}); chip.remove(); wrCloseRecalcCost(); };
@@ -1167,13 +1160,13 @@ function wrCloseOverlay(){
   const reportedAt = w.date ? new Date(w.date).toLocaleString(th?'th-TH':'en-US',{dateStyle:'short',timeStyle:'medium'}) : '—';
   return wrOverlayShell(
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
-    +'<span style="font-family:var(--font-heading);font-size:15px">📋 '+(th?'Close Detail — ปิดงาน':'Close Detail')+'</span>'
+    +'<span style="font-family:var(--font-heading);font-size:17px">📋 '+(th?'Close Detail — ปิดงาน':'Close Detail')+'</span>'
     +'<div class="tap" data-act="wr-close-cancel" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--color-surface);flex-shrink:0">✕</div></div>'
 
     +'<div class="blueprint" style="padding:10px 12px;margin-bottom:10px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-      +'<div style="font-weight:600;font-size:13px;margin-bottom:4px">'+esc(w.id)+' — '+esc(w.desc||'')+'</div>'
-      +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-700);padding:3px 0"><span>Asset</span>'+(w.assetId?fmChip(w.assetId,'gray'):'—')+'</div>'
-      +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-700);padding:3px 0"><span>'+(th?'เวลาแจ้ง':'Reported')+'</span><span>'+esc(reportedAt)+'</span></div>'
+      +'<div style="font-weight:600;font-size:15px;margin-bottom:4px">'+esc(w.id)+' — '+esc(w.desc||'')+'</div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--color-neutral-700);padding:3px 0"><span>Asset</span>'+(w.assetId?fmChip(w.assetId,'gray'):'—')+'</div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--color-neutral-700);padding:3px 0"><span>'+(th?'เวลาแจ้ง':'Reported')+'</span><span>'+esc(reportedAt)+'</span></div>'
     +'</div>'
 
     + wrFormField('ช่างผู้ดำเนินการ (เลือกได้มากกว่า 1 คน)','Technician (add 1 or more)', th,
@@ -1197,9 +1190,9 @@ function wrCloseOverlay(){
       + wrFormField('เวลาดำเนินการเสร็จ','End time', th, '<input id="wr-cl-end" type="datetime-local" style="'+wrInputStyle+'">')
     +'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
-      +'<div class="blueprint" style="padding:8px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:10px;color:var(--color-neutral-600)">'+(th?'เวลาตอบสนอง':'Response')+'</div><div id="wr-cl-response" style="font-weight:700;color:var(--orange);font-size:14px">— '+(th?'นาที':'min')+'</div></div>'
-      +'<div class="blueprint" style="padding:8px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:10px;color:var(--color-neutral-600)">'+(th?'เวลาซ่อม (MTTR)':'Repair (MTTR)')+'</div><div id="wr-cl-mttr" style="font-weight:700;color:var(--sky);font-size:14px">— '+(th?'นาที':'min')+'</div></div>'
-      +'<div class="blueprint" style="padding:8px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:10px;color:var(--color-neutral-600)">'+(th?'มูลค่าการซ่อม':'Total cost')+'</div><div id="wr-cl-total" style="font-weight:700;color:var(--green);font-size:14px">฿0</div></div>'
+      +'<div class="blueprint" style="padding:8px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:12px;color:var(--color-neutral-600)">'+(th?'เวลาตอบสนอง':'Response')+'</div><div id="wr-cl-response" style="font-weight:700;color:var(--orange);font-size:16px">— '+(th?'นาที':'min')+'</div></div>'
+      +'<div class="blueprint" style="padding:8px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:12px;color:var(--color-neutral-600)">'+(th?'เวลาซ่อม (MTTR)':'Repair (MTTR)')+'</div><div id="wr-cl-mttr" style="font-weight:700;color:var(--sky);font-size:16px">— '+(th?'นาที':'min')+'</div></div>'
+      +'<div class="blueprint" style="padding:8px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:12px;color:var(--color-neutral-600)">'+(th?'มูลค่าการซ่อม':'Total cost')+'</div><div id="wr-cl-total" style="font-weight:700;color:var(--green);font-size:16px">฿0</div></div>'
     +'</div>'
 
     + wrFormField('รายละเอียดการดำเนินการ','Action taken', th, '<textarea id="wr-cl-action" rows="2" style="'+wrInputStyle+';resize:vertical" placeholder="'+(th?'สิ่งที่ดำเนินการ เช่น เปลี่ยน bearing...':'What was done...')+'"></textarea>')
@@ -1221,7 +1214,7 @@ function wrCloseOverlay(){
 
     + wrFormField('ลายเซ็นผู้แจ้งงาน / ผู้มอบหมาย','Reporter / assigner signature', th,
         '<canvas id="wr-cl-sigpad" width="440" height="110" style="width:100%;height:110px;border:1px solid var(--color-divider);border-radius:8px;background:#fff;touch-action:none"></canvas>'
-        +'<div class="tap" data-act="wr-close-sig-clear" style="display:inline-block;margin-top:6px;font-size:11px;font-weight:600;padding:6px 10px;border-radius:8px;border:1px solid var(--color-divider)">🗑 '+(th?'ล้างลายเซ็น':'Clear')+'</div>')
+        +'<div class="tap" data-act="wr-close-sig-clear" style="display:inline-block;margin-top:6px;font-size:13px;font-weight:600;padding:6px 10px;border-radius:8px;border:1px solid var(--color-divider)">🗑 '+(th?'ล้างลายเซ็น':'Clear')+'</div>')
 
     + wrFormField('ประเมินความพึงพอใจ','Satisfaction', th,
         '<div id="wr-cl-stars" style="font-size:24px;letter-spacing:4px">'
@@ -1229,8 +1222,8 @@ function wrCloseOverlay(){
         +'</div>')
 
     +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">'
-      +'<div class="tap" data-act="wr-close-cancel" style="font-size:12.5px;font-weight:600;padding:10px 16px;border-radius:8px;text-align:center;border:1px solid var(--color-divider)">'+(th?'ยกเลิก':'Cancel')+'</div>'
-      +'<div class="tap" data-act="wr-close-submit" style="font-size:12.5px;font-weight:700;padding:10px 16px;border-radius:8px;text-align:center;background:var(--color-accent);color:#fff'+(ST.wrCloseBusy?';opacity:.6':'')+'">'+(ST.wrCloseBusy?(th?'กำลังบันทึก...':'Saving...'):(th?'✅ ยืนยันปิดงาน':'✅ Confirm Close'))+'</div>'
+      +'<div class="tap" data-act="wr-close-cancel" style="font-size:14.5px;font-weight:600;padding:10px 16px;border-radius:8px;text-align:center;border:1px solid var(--color-divider)">'+(th?'ยกเลิก':'Cancel')+'</div>'
+      +'<div class="tap" data-act="wr-close-submit" style="font-size:14.5px;font-weight:700;padding:10px 16px;border-radius:8px;text-align:center;background:var(--color-accent);color:#fff'+(ST.wrCloseBusy?';opacity:.6':'')+'">'+(ST.wrCloseBusy?(th?'กำลังบันทึก...':'Saving...'):(th?'✅ ยืนยันปิดงาน':'✅ Confirm Close'))+'</div>'
     +'</div>'
     +'</div>'
   );
@@ -1310,12 +1303,12 @@ function wrEvalOverlay(){
   const photos = Array.isArray(w.photos) ? w.photos : [];
   return wrOverlayShell(
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
-    +'<span style="font-family:var(--font-heading);font-size:15px">🏅 '+(th?'Evaluate & Approve':'Evaluate & Approve')+'</span>'
+    +'<span style="font-family:var(--font-heading);font-size:17px">🏅 '+(th?'Evaluate & Approve':'Evaluate & Approve')+'</span>'
     +'<div class="tap" data-act="wr-eval-close" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--color-surface);flex-shrink:0">✕</div></div>'
 
     +'<div class="blueprint" style="padding:14px;margin-bottom:12px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
       +'<div style="text-align:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--color-divider)">'
-        +'<div style="font-family:var(--font-heading);font-size:14px;font-weight:700">'+(th?'รายงานปิดงาน Work Request':'Work Order Close Report')+'</div>'
+        +'<div style="font-family:var(--font-heading);font-size:16px;font-weight:700">'+(th?'รายงานปิดงาน Work Request':'Work Order Close Report')+'</div>'
       +'</div>'
       +'<div style="display:flex;flex-direction:column;gap:4px;font-size:11.5px">'
         +'<div style="display:flex;justify-content:space-between"><span style="color:var(--color-neutral-600)">WR No.</span>'+fmChip(w.id,'gray')+'</div>'
@@ -1326,44 +1319,44 @@ function wrEvalOverlay(){
         +'<div style="display:flex;justify-content:space-between"><span style="color:var(--color-neutral-600)">'+(th?'ช่าง':'Technician')+'</span><span>'+esc(w.assign||'—')+'</span></div>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">'
-        +'<div style="text-align:center;background:var(--color-surface);border-radius:8px;padding:8px"><div style="font-size:10px;color:var(--color-neutral-600)">'+(th?'ตอบสนอง':'Response')+'</div><div style="font-weight:700;color:var(--orange);font-size:16px">'+(w.responseTime||'—')+'</div><div style="font-size:9px;color:var(--color-neutral-600)">'+(th?'นาที':'min')+'</div></div>'
-        +'<div style="text-align:center;background:var(--color-surface);border-radius:8px;padding:8px"><div style="font-size:10px;color:var(--color-neutral-600)">MTTR</div><div style="font-weight:700;color:var(--sky);font-size:16px">'+mttrMin+'</div><div style="font-size:9px;color:var(--color-neutral-600)">'+(th?'นาที':'min')+'</div></div>'
-        +'<div style="text-align:center;background:var(--color-surface);border-radius:8px;padding:8px"><div style="font-size:10px;color:var(--color-neutral-600)">'+(th?'มูลค่าซ่อม':'Cost')+'</div><div style="font-weight:700;color:var(--green);font-size:14px">'+fmMoney(w.totalCost)+'</div></div>'
+        +'<div style="text-align:center;background:var(--color-surface);border-radius:8px;padding:8px"><div style="font-size:12px;color:var(--color-neutral-600)">'+(th?'ตอบสนอง':'Response')+'</div><div style="font-weight:700;color:var(--orange);font-size:16px">'+(w.responseTime||'—')+'</div><div style="font-size:11px;color:var(--color-neutral-600)">'+(th?'นาที':'min')+'</div></div>'
+        +'<div style="text-align:center;background:var(--color-surface);border-radius:8px;padding:8px"><div style="font-size:12px;color:var(--color-neutral-600)">MTTR</div><div style="font-weight:700;color:var(--sky);font-size:16px">'+mttrMin+'</div><div style="font-size:11px;color:var(--color-neutral-600)">'+(th?'นาที':'min')+'</div></div>'
+        +'<div style="text-align:center;background:var(--color-surface);border-radius:8px;padding:8px"><div style="font-size:12px;color:var(--color-neutral-600)">'+(th?'มูลค่าซ่อม':'Cost')+'</div><div style="font-weight:700;color:var(--green);font-size:16px">'+fmMoney(w.totalCost)+'</div></div>'
       +'</div>'
-      +'<div style="margin-top:10px"><div style="font-size:10px;font-weight:700;color:var(--color-neutral-600);text-transform:uppercase;margin-bottom:4px">'+(th?'อะไหล่ที่ใช้':'Parts used')+'</div><div style="font-size:11.5px;line-height:1.7">'+partsStr+'</div></div>'
-      + (photos.length ? '<div style="margin-top:10px"><div style="font-size:10px;font-weight:700;color:var(--color-neutral-600);text-transform:uppercase;margin-bottom:4px">📷 '+(th?'รูปยืนยันการทำงาน':'Photo evidence')+'</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+photos.map(function(p){ return '<img src="'+p+'" style="width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--color-divider)">'; }).join('')+'</div></div>' : '')
-      +'<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:11.5px"><span style="color:var(--color-neutral-600)">'+(th?'ความพึงพอใจ':'Satisfaction')+'</span><span style="color:#EAB308;font-size:15px">'+stars+'</span></div>'
+      +'<div style="margin-top:10px"><div style="font-size:12px;font-weight:700;color:var(--color-neutral-600);text-transform:uppercase;margin-bottom:4px">'+(th?'อะไหล่ที่ใช้':'Parts used')+'</div><div style="font-size:11.5px;line-height:1.7">'+partsStr+'</div></div>'
+      + (photos.length ? '<div style="margin-top:10px"><div style="font-size:12px;font-weight:700;color:var(--color-neutral-600);text-transform:uppercase;margin-bottom:4px">📷 '+(th?'รูปยืนยันการทำงาน':'Photo evidence')+'</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+photos.map(function(p){ return '<img src="'+p+'" style="width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--color-divider)">'; }).join('')+'</div></div>' : '')
+      +'<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:11.5px"><span style="color:var(--color-neutral-600)">'+(th?'ความพึงพอใจ':'Satisfaction')+'</span><span style="color:#EAB308;font-size:17px">'+stars+'</span></div>'
       + (w.approvedBy ? '<div style="margin-top:10px;padding:8px;border-radius:8px;background:rgba(34,197,94,.12);color:var(--green);font-size:11.5px">✅ '+(th?'อนุมัติโดย ':'Approved by ')+esc(w.approvedBy)+'</div>' : '')
     +'</div>'
 
     + (w.approvedBy ? (
       '<div style="display:flex;justify-content:flex-end">'
-      +'<div class="tap" data-act="wr-eval-edit" data-id="'+w._dbId+'" style="font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid var(--color-divider)">'+(th?'✏ แก้ไขข้อมูล (จะยกเลิกการอนุมัติ)':'✏ Edit details (will un-approve)')+'</div>'
+      +'<div class="tap" data-act="wr-eval-edit" data-id="'+w._dbId+'" style="font-size:14px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid var(--color-divider)">'+(th?'✏ แก้ไขข้อมูล (จะยกเลิกการอนุมัติ)':'✏ Edit details (will un-approve)')+'</div>'
       +'</div>'
     ) : (
-      '<div style="font-family:var(--font-heading);font-size:13px;font-weight:700;margin-bottom:8px">📝 '+(th?'ประเมินและพัฒนาต่อเนื่อง':'Evaluation & continuous improvement')+'</div>'
+      '<div style="font-family:var(--font-heading);font-size:15px;font-weight:700;margin-bottom:8px">📝 '+(th?'ประเมินและพัฒนาต่อเนื่อง':'Evaluation & continuous improvement')+'</div>'
       +'<div style="display:flex;flex-direction:column;gap:10px">'
       + wrFormField('💪 จุดแข็ง (Strength)','Strength', th, '<textarea id="wr-ev-strength" rows="2" style="'+wrInputStyle+';resize:vertical" placeholder="'+(th?'ช่างตอบสนองเร็ว แก้ปัญหาถูกต้อง...':'What went well...')+'"></textarea>')
       + wrFormField('🔧 จุดอ่อน (Weakness)','Weakness', th, '<textarea id="wr-ev-weakness" rows="2" style="'+wrInputStyle+';resize:vertical" placeholder="'+(th?'ขาดอะไหล่สำรอง ใช้เวลาวินิจฉัยนาน...':'What could improve...')+'"></textarea>')
       + wrFormField('🚀 แนวทางพัฒนา (Improvement)','Improvement', th, '<textarea id="wr-ev-improve" rows="2" style="'+wrInputStyle+';resize:vertical" placeholder="'+(th?'เพิ่มอะไหล่ในคลัง จัดอบรม สร้าง PM plan...':'Suggested next steps...')+'"></textarea>')
       + wrFormField('⚠ Repeated Repair? (งานซ่อมซ้ำ → ควรขึ้น PM)','Repeated repair?', th,
           '<select id="wr-ev-recurring" style="'+wrInputStyle+'"><option value="no">'+(th?'ไม่ใช่':'No')+'</option><option value="yes">'+(th?'ใช่ — ควรจัดทำแผน PM':'Yes — should schedule PM')+'</option><option value="review">'+(th?'ตรวจสอบเพิ่มเติม':'Needs review')+'</option></select>')
-      +'<div style="font-family:var(--font-heading);font-size:13px;font-weight:700;margin:6px 0 8px">🖊 '+(th?'ลายเซ็นอนุมัติ':'Approval signature')+'</div>'
+      +'<div style="font-family:var(--font-heading);font-size:15px;font-weight:700;margin:6px 0 8px">🖊 '+(th?'ลายเซ็นอนุมัติ':'Approval signature')+'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-        +'<div><div style="font-size:11px;color:var(--color-neutral-600);margin-bottom:6px">'+(th?'ลายเซ็นผู้ดำเนินงาน / ช่าง':'Technician signature')+'</div>'
+        +'<div><div style="font-size:13px;color:var(--color-neutral-600);margin-bottom:6px">'+(th?'ลายเซ็นผู้ดำเนินงาน / ช่าง':'Technician signature')+'</div>'
         +'<canvas id="wr-ev-sigpad-tech" width="260" height="80" data-existing="'+esc(w.evalSigClose||w.signature||'')+'" style="width:100%;height:80px;background:#fff;border-radius:8px;border:1px solid var(--color-divider);touch-action:none"></canvas>'
-        +'<div class="tap" data-act="wr-eval-sig-clear-tech" style="margin-top:4px;text-align:center;font-size:11px;font-weight:700;padding:5px;border-radius:6px;border:1px solid var(--color-divider);color:var(--color-neutral-600)">🗑 '+(th?'ล้าง':'Clear')+'</div>'
+        +'<div class="tap" data-act="wr-eval-sig-clear-tech" style="margin-top:4px;text-align:center;font-size:13px;font-weight:700;padding:5px;border-radius:6px;border:1px solid var(--color-divider);color:var(--color-neutral-600)">🗑 '+(th?'ล้าง':'Clear')+'</div>'
         +'</div>'
-        +'<div><div style="font-size:11px;color:var(--color-neutral-600);margin-bottom:6px">'+(th?'ลายเซ็น Manager / Director':'Manager / Director signature')+'</div>'
+        +'<div><div style="font-size:13px;color:var(--color-neutral-600);margin-bottom:6px">'+(th?'ลายเซ็น Manager / Director':'Manager / Director signature')+'</div>'
         +'<canvas id="wr-ev-sigpad" width="260" height="80" style="width:100%;height:80px;background:#fff;border-radius:8px;border:1px solid var(--color-divider);touch-action:none"></canvas>'
-        +'<div class="tap" data-act="wr-eval-sig-clear" style="margin-top:4px;text-align:center;font-size:11px;font-weight:700;padding:5px;border-radius:6px;border:1px solid var(--color-divider);color:var(--color-neutral-600)">🗑 '+(th?'ล้าง':'Clear')+'</div>'
+        +'<div class="tap" data-act="wr-eval-sig-clear" style="margin-top:4px;text-align:center;font-size:13px;font-weight:700;padding:5px;border-radius:6px;border:1px solid var(--color-divider);color:var(--color-neutral-600)">🗑 '+(th?'ล้าง':'Clear')+'</div>'
         +'</div>'
       +'</div>'
       +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;flex-wrap:wrap">'
-        +'<div class="tap" data-act="wr-eval-edit" data-id="'+w._dbId+'" style="font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid var(--color-divider)">'+(th?'✏ แก้ไขข้อมูล':'✏ Edit details')+'</div>'
-        +'<div class="tap" data-act="wr-eval-reject" data-id="'+w._dbId+'" style="font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid var(--danger);color:var(--danger)">'+(th?'✕ ไม่ / ส่งกลับแก้ไข':'✕ Send back')+'</div>'
-        +'<div class="tap" data-act="wr-eval-approve" data-id="'+w._dbId+'" data-role="Manager" style="font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;background:var(--green);color:#fff'+(ST.wrEvalBusy?';opacity:.6':'')+'">'+(th?'✔ Manager เห็นชอบอนุมัติ':'✔ Manager approve')+'</div>'
-        +'<div class="tap" data-act="wr-eval-approve" data-id="'+w._dbId+'" data-role="Director" style="font-size:12px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;background:var(--orange);color:#fff'+(ST.wrEvalBusy?';opacity:.6':'')+'">'+(th?'⭐ Director เห็นชอบอนุมัติ':'⭐ Director approve')+'</div>'
+        +'<div class="tap" data-act="wr-eval-edit" data-id="'+w._dbId+'" style="font-size:14px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid var(--color-divider)">'+(th?'✏ แก้ไขข้อมูล':'✏ Edit details')+'</div>'
+        +'<div class="tap" data-act="wr-eval-reject" data-id="'+w._dbId+'" style="font-size:14px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;border:1px solid var(--danger);color:var(--danger)">'+(th?'✕ ไม่ / ส่งกลับแก้ไข':'✕ Send back')+'</div>'
+        +'<div class="tap" data-act="wr-eval-approve" data-id="'+w._dbId+'" data-role="Manager" style="font-size:14px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;background:var(--green);color:#fff'+(ST.wrEvalBusy?';opacity:.6':'')+'">'+(th?'✔ Manager เห็นชอบอนุมัติ':'✔ Manager approve')+'</div>'
+        +'<div class="tap" data-act="wr-eval-approve" data-id="'+w._dbId+'" data-role="Director" style="font-size:14px;font-weight:700;padding:10px 14px;border-radius:8px;text-align:center;background:var(--orange);color:#fff'+(ST.wrEvalBusy?';opacity:.6':'')+'">'+(th?'⭐ Director เห็นชอบอนุมัติ':'⭐ Director approve')+'</div>'
       +'</div>'
       +'</div>'
     ))
@@ -1479,7 +1472,7 @@ function wrSubTabs(active){
   const isMoreActive = WR_MORE_TABS.some(function(x){ return x.k===active; });
   function pill(k, label, badge, extraStyle){
     const isActive = active===k;
-    const badgeHtml = badge ? '<span style="margin-left:5px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;animation:wrBadgeBlink 1.2s ease-in-out infinite">'+(badge>99?'99+':badge)+'</span>' : '';
+    const badgeHtml = badge ? '<span style="margin-left:5px;background:#ef4444;color:#fff;font-size:12px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;animation:wrBadgeBlink 1.2s ease-in-out infinite">'+(badge>99?'99+':badge)+'</span>' : '';
     return '<div class="tap" data-act="wr-sub" data-sub="'+k+'" style="flex-shrink:0;display:flex;align-items:center;font-size:11.5px;font-weight:600;padding:7px 11px;border-radius:20px;border:1px solid '+(isActive?'var(--color-accent)':'var(--color-divider)')+';background:'+(isActive?'var(--color-accent)':'transparent')+';color:'+(isActive?'#fff':'var(--color-text)')+';'+(extraStyle||'')+'">'+esc(label)+badgeHtml+'</div>';
   }
   return '<style>@keyframes wrBadgeBlink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.15)}}</style>'
@@ -1498,14 +1491,14 @@ function wrSubTabs(active){
 
 function wrMoreOverlay(active, th){
   return wrOverlayShell(
-    '<div style="font-weight:700;font-size:15px;margin-bottom:14px">'+(th?'เมนูเพิ่มเติม':'More')+'</div>'
+    '<div style="font-weight:700;font-size:17px;margin-bottom:14px">'+(th?'เมนูเพิ่มเติม':'More')+'</div>'
     +'<div style="display:flex;flex-direction:column;gap:8px">'
     + WR_MORE_TABS.map(function(x){
         const isActive = active===x.k;
-        return '<div class="tap" data-act="wr-sub" data-sub="'+x.k+'" style="display:flex;align-items:center;font-size:13px;font-weight:600;padding:11px 14px;border-radius:10px;border:1px solid '+(isActive?'var(--color-accent)':'var(--color-divider)')+';background:'+(isActive?'var(--color-accent)':'transparent')+';color:'+(isActive?'#fff':'var(--color-text)')+'">'+esc(th?x.label.th:x.label.en)+'</div>';
+        return '<div class="tap" data-act="wr-sub" data-sub="'+x.k+'" style="display:flex;align-items:center;font-size:15px;font-weight:600;padding:11px 14px;border-radius:10px;border:1px solid '+(isActive?'var(--color-accent)':'var(--color-divider)')+';background:'+(isActive?'var(--color-accent)':'transparent')+';color:'+(isActive?'#fff':'var(--color-text)')+'">'+esc(th?x.label.th:x.label.en)+'</div>';
       }).join('')
     +'</div>'
-    +'<div class="tap" data-act="wr-more-close" style="margin-top:16px;text-align:center;font-size:13px;font-weight:700;padding:11px;border-radius:10px;border:1px solid var(--color-divider);color:var(--color-text2)">'+(th?'ปิด':'Close')+'</div>'
+    +'<div class="tap" data-act="wr-more-close" style="margin-top:16px;text-align:center;font-size:15px;font-weight:700;padding:11px;border-radius:10px;border:1px solid var(--color-divider);color:var(--color-text2)">'+(th?'ปิด':'Close')+'</div>'
   );
 }
 
@@ -1521,23 +1514,23 @@ function wrQualitativeSummary(th){
   const topAssets = Object.keys(byAsset).map(function(k){return {assetId:k,cnt:byAsset[k]};}).sort(function(a,b){return b.cnt-a.cnt;}).slice(0,5);
 
   const availCard = '<div class="blueprint" style="padding:12px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-    +'<div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-accent-700)">'+(th?'ความพร้อมใช้งาน (30 วัน)':'Availability (30d)')+'</div>'
+    +'<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-accent-700)">'+(th?'ความพร้อมใช้งาน (30 วัน)':'Availability (30d)')+'</div>'
     +'<div style="font-family:var(--font-heading);font-size:30px;margin-top:2px;color:'+availColor+'">'+avail.pct+'%</div>'
-    +'<div style="font-size:10px;color:var(--color-neutral-600);margin-top:2px">'+(th?'ซ่อม':'downtime')+' '+avail.downtimeHr+'h / '+avail.wrCount+' WR</div></div>';
+    +'<div style="font-size:12px;color:var(--color-neutral-600);margin-top:2px">'+(th?'ซ่อม':'downtime')+' '+avail.downtimeHr+'h / '+avail.wrCount+' WR</div></div>';
 
   const causeRows = causes.length
-    ? causes.map(function(c){ return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px solid var(--color-neutral-200)"><span>'+esc(c.label)+'</span>'+fmChip(String(c.count), 'orange')+'</div>'; }).join('')
-    : '<div style="font-size:11px;color:var(--color-neutral-600);padding:6px 0">'+(th?'ยังไม่มีข้อมูลสาเหตุ':'No failure-cause data yet')+'</div>';
+    ? causes.map(function(c){ return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:5px 0;border-bottom:1px solid var(--color-neutral-200)"><span>'+esc(c.label)+'</span>'+fmChip(String(c.count), 'orange')+'</div>'; }).join('')
+    : '<div style="font-size:13px;color:var(--color-neutral-600);padding:6px 0">'+(th?'ยังไม่มีข้อมูลสาเหตุ':'No failure-cause data yet')+'</div>';
 
   const assetRows = topAssets.length
-    ? topAssets.map(function(a){ return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px solid var(--color-neutral-200)"><span style="font-family:var(--font-heading)">'+esc(a.assetId)+'</span>'+fmChip(a.cnt+' '+(th?'ครั้ง':'x'), a.cnt>=2?'red':'gray')+'</div>'; }).join('')
-    : '<div style="font-size:11px;color:var(--color-neutral-600);padding:6px 0">'+(th?'ยังไม่มีข้อมูล':'No data yet')+'</div>';
+    ? topAssets.map(function(a){ return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:5px 0;border-bottom:1px solid var(--color-neutral-200)"><span style="font-family:var(--font-heading)">'+esc(a.assetId)+'</span>'+fmChip(a.cnt+' '+(th?'ครั้ง':'x'), a.cnt>=2?'red':'gray')+'</div>'; }).join('')
+    : '<div style="font-size:13px;color:var(--color-neutral-600);padding:6px 0">'+(th?'ยังไม่มีข้อมูล':'No data yet')+'</div>';
 
   return '<div style="margin-bottom:12px">'
     + availCard
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">'
-    +'<div>'+fmCard('<div style="font-size:11px;font-weight:600;margin-bottom:2px">'+(th?'สาเหตุที่แท้จริง Top 5':'Top 5 Failure Causes')+'</div>'+causeRows)+'</div>'
-    +'<div>'+fmCard('<div style="font-size:11px;font-weight:600;margin-bottom:2px">'+(th?'Asset ที่มีปัญหาบ่อย Top 5':'Top 5 Problem Assets')+'</div>'+assetRows)+'</div>'
+    +'<div>'+fmCard('<div style="font-size:13px;font-weight:600;margin-bottom:2px">'+(th?'สาเหตุที่แท้จริง Top 5':'Top 5 Failure Causes')+'</div>'+causeRows)+'</div>'
+    +'<div>'+fmCard('<div style="font-size:13px;font-weight:600;margin-bottom:2px">'+(th?'Asset ที่มีปัญหาบ่อย Top 5':'Top 5 Problem Assets')+'</div>'+assetRows)+'</div>'
     +'</div></div>';
 }
 
@@ -1560,25 +1553,25 @@ function wrOverview(){
     + statCard(th?'ปิดงาน':'Closed', closed.length, 'closed') + statCard(th?'MTTR เฉลี่ย (ชม.)':'Avg MTTR (hrs)', avgMttr!=null?avgMttr:'—', 'maintain')
     +'</div>'
     +'<div style="margin-top:2px">'+statCard(th?'ค่าใช้จ่าย WR ทั้งหมด':'All WR Cost', fmMoney(allCost), 'closed')+'</div>'
-    +'<div style="margin-top:6px"><h4 style="font-size:13px;margin-bottom:6px">'+(th?'สถานะงาน':'WR Status Flow')+'</h4>'
+    +'<div style="margin-top:6px"><h4 style="font-size:15px;margin-bottom:6px">'+(th?'สถานะงาน':'WR Status Flow')+'</h4>'
     + wrBar([
         { pct: Math.round(open.length/total*100), color:'var(--orange)' },
         { pct: Math.round(ip.length/total*100), color:'var(--sky)' },
         { pct: Math.round(closed.length/total*100), color:'var(--green)' },
         { pct: Math.round(cancelled.length/total*100), color:'var(--color-neutral-500)' },
       ])
-    +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;font-size:10px;color:var(--color-neutral-700)">'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;font-size:12px;color:var(--color-neutral-700)">'
     +'<span class="tap" data-act="wr-sub" data-sub="new" style="cursor:pointer">🟠 '+(th?'เปิด':'Open')+' '+open.length+'</span>'
     +'<span class="tap" data-act="wr-sub" data-sub="inprogress" style="cursor:pointer">🔵 '+(th?'กำลังทำ':'In Progress')+' '+ip.length+'</span>'
     +'<span class="tap" data-act="wr-sub" data-sub="closed" style="cursor:pointer">🟢 '+(th?'ปิด':'Closed')+' '+closed.length+'</span>'
     +'<span>⚪ '+(th?'ยกเลิก':'Cancelled')+' '+cancelled.length+'</span>'
     +'</div></div>'
-    + (trendSrc.length ? '<div class="tap" data-act="wr-sub" data-sub="maintain" style="margin-top:10px;cursor:pointer">'+fmCard('<div style="font-size:12px;font-weight:600;margin-bottom:4px">'+(th?'แนวโน้ม MTTR (10 งานล่าสุด)':'MTTR Trend (last 10)')+' ›</div>'+wrSpark(trendSrc.map(function(w){return w.mttr;}), 'var(--color-accent)')) +'</div>' : '');
+    + (trendSrc.length ? '<div class="tap" data-act="wr-sub" data-sub="maintain" style="margin-top:10px;cursor:pointer">'+fmCard('<div style="font-size:14px;font-weight:600;margin-bottom:4px">'+(th?'แนวโน้ม MTTR (10 งานล่าสุด)':'MTTR Trend (last 10)')+' ›</div>'+wrSpark(trendSrc.map(function(w){return w.mttr;}), 'var(--color-accent)')) +'</div>' : '');
 }
 
 function wrNew(){
   const th=ST.lang==='th';
-  const btn = '<div style="display:flex"><div class="tap" data-act="wr-new-open" style="font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'แจ้งงานใหม่':'New WR')+'</div></div>';
+  const btn = '<div style="display:flex"><div class="tap" data-act="wr-new-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'แจ้งงานใหม่':'New WR')+'</div></div>';
   return btn + wrListHtml(wrData().filter(function(w){return w.status==='open';}).sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);}), th, th?'ไม่มีงานแจ้งใหม่':'No new work requests');
 }
 function wrInProgress(){ const th=ST.lang==='th'; return wrListHtml(wrData().filter(function(w){return w.status==='inprogress'||w.status==='arrived';}).sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);}), th, th?'ไม่มีงานที่กำลังดำเนินการ':'Nothing in progress'); }
@@ -1588,8 +1581,8 @@ function wrEvalCardHtml(w, th){
   const st = WR_STATUS_MAP[w.status] || [w.status,w.status,'gray'];
   const pr = WR_PRIORITY_MAP[w.priority] || [w.priority,w.priority,'gray'];
   return '<div class="tap blueprint" data-act="wr-eval-open" data-id="'+w._dbId+'" style="padding:11px 12px;display:flex;flex-direction:column;gap:4px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-    +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(w.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
-    +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc((w.desc||'').slice(0,60))+'</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(w.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
+    +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc((w.desc||'').slice(0,60))+'</div>'
     +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip(th?pr[0]:pr[1], pr[2])+(w.assetId?fmChip(w.assetId,'gray'):'')+(w.assign?fmChip(w.assign,'gray'):'')+(w.approvedBy?fmChip((th?'อนุมัติโดย ':'by ')+w.approvedBy,'green'):'')+'</div>'
     +'</div>';
 }
@@ -1602,9 +1595,9 @@ function wrEvaluate(){
   const wr = wrData();
   const pending = wr.filter(function(w){ return w.status==='closed' && !w.approvedBy; });
   const approved = wr.filter(function(w){ return w.status==='approved' || (w.status==='closed' && w.approvedBy); });
-  return '<div><h4 style="font-size:13px;margin-bottom:6px">'+(th?'รอตรวจสอบ/อนุมัติ':'Pending Review')+' ('+pending.length+')</h4>'
+  return '<div><h4 style="font-size:15px;margin-bottom:6px">'+(th?'รอตรวจสอบ/อนุมัติ':'Pending Review')+' ('+pending.length+')</h4>'
     + wrEvalListHtml(pending, th, th?'ไม่มีงานรอประเมิน':'Nothing pending evaluation')
-    +'</div><div style="margin-top:14px"><h4 style="font-size:13px;margin-bottom:6px">'+(th?'อนุมัติแล้ว':'Approved')+' ('+approved.length+')</h4>'
+    +'</div><div style="margin-top:14px"><h4 style="font-size:15px;margin-bottom:6px">'+(th?'อนุมัติแล้ว':'Approved')+' ('+approved.length+')</h4>'
     + wrEvalListHtml(approved.slice(0,15), th, th?'ยังไม่มีงานที่อนุมัติ':'Nothing approved yet')
     +'</div>' + wrEvalOverlay();
 }
@@ -1614,15 +1607,15 @@ function wrSummarize(){
   const wr = wrData();
   const byPr = {};
   wr.forEach(function(w){ const k=w.priority||'normal'; byPr[k]=(byPr[k]||0)+1; });
-  const prRows = Object.keys(byPr).map(function(k){ const pr=WR_PRIORITY_MAP[k]||[k,k,'gray']; return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px">'+esc(th?pr[0]:pr[1])+'</span>'+fmChip(String(byPr[k]),pr[2])+'</div>'); }).join('');
+  const prRows = Object.keys(byPr).map(function(k){ const pr=WR_PRIORITY_MAP[k]||[k,k,'gray']; return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px">'+esc(th?pr[0]:pr[1])+'</span>'+fmChip(String(byPr[k]),pr[2])+'</div>'); }).join('');
   const byAsset = {};
   wr.forEach(function(w){ if(!w.assetId) return; byAsset[w.assetId]=(byAsset[w.assetId]||0)+1; });
   const topAssets = Object.keys(byAsset).map(function(k){return {assetId:k,cnt:byAsset[k]};}).sort(function(a,b){return b.cnt-a.cnt;}).slice(0,5);
   return '<div>'+ wrOverview() +'</div>'
-    +'<div style="margin-top:14px"><h4 style="font-size:13px;margin-bottom:6px">'+(th?'แยกตามลำดับความสำคัญ':'By Priority')+'</h4>'
+    +'<div style="margin-top:14px"><h4 style="font-size:15px;margin-bottom:6px">'+(th?'แยกตามลำดับความสำคัญ':'By Priority')+'</h4>'
     +'<div style="display:flex;flex-direction:column;gap:8px">'+ (prRows||fmEmpty(th?'ไม่มีข้อมูล':'No data')) +'</div></div>'
-    +'<div style="margin-top:14px"><h4 style="font-size:13px;margin-bottom:6px">'+(th?'Asset ที่แจ้งซ่อมบ่อยที่สุด (Top 5)':'Top 5 Most-Reported Assets')+'</h4>'
-    + (topAssets.length ? '<div style="display:flex;flex-direction:column;gap:8px">'+topAssets.map(function(a){ return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(a.assetId)+'</span>'+fmChip((th?'':'')+a.cnt+' '+(th?'ครั้ง':'times'), a.cnt>=2?'orange':'gray')+'</div>'); }).join('')+'</div>' : fmEmpty(th?'ไม่มีข้อมูล':'No data'))
+    +'<div style="margin-top:14px"><h4 style="font-size:15px;margin-bottom:6px">'+(th?'Asset ที่แจ้งซ่อมบ่อยที่สุด (Top 5)':'Top 5 Most-Reported Assets')+'</h4>'
+    + (topAssets.length ? '<div style="display:flex;flex-direction:column;gap:8px">'+topAssets.map(function(a){ return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(a.assetId)+'</span>'+fmChip((th?'':'')+a.cnt+' '+(th?'ครั้ง':'times'), a.cnt>=2?'orange':'gray')+'</div>'); }).join('')+'</div>' : fmEmpty(th?'ไม่มีข้อมูล':'No data'))
     +'</div>';
 }
 
@@ -1636,9 +1629,9 @@ function wrMaintainability(){
   });
   const avg = withPct.length ? Math.round(withPct.reduce(function(s,x){return s+x.pct;},0)/withPct.length) : null;
   return '<div>'+statCard(th?'Maintainability เฉลี่ย':'Avg Maintainability', avg!=null?avg+'%':'—')+'</div>'
-    +'<div style="font-size:11px;color:var(--color-neutral-700);margin:8px 0">Maintainability = 1 − e^(−Target/MTTR)</div>'
+    +'<div style="font-size:13px;color:var(--color-neutral-700);margin:8px 0">Maintainability = 1 − e^(−Target/MTTR)</div>'
     + (withPct.length ? '<div style="display:flex;flex-direction:column;gap:8px">' + withPct.slice(0,20).map(function(x){
-        return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(x.w.id)+'</span>'+fmChip(x.pct+'%', x.pct>=70?'green':x.pct>=40?'orange':'red')+'</div>'+'<div style="font-size:11px;color:var(--color-neutral-700)">MTTR '+x.w.mttr+'h · '+esc(x.w.type||'')+'</div>');
+        return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(x.w.id)+'</span>'+fmChip(x.pct+'%', x.pct>=70?'green':x.pct>=40?'orange':'red')+'</div>'+'<div style="font-size:13px;color:var(--color-neutral-700)">MTTR '+x.w.mttr+'h · '+esc(x.w.type||'')+'</div>');
       }).join('') + '</div>' : fmEmpty(th?'ยังไม่มีข้อมูลงานที่ปิดแล้ว':'No closed work requests yet'));
 }
 
@@ -1651,9 +1644,9 @@ function wrSLA(){
   return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + statCard(th?'ตรงเวลา':'SLA Met', met.length) + statCard(th?'เกินเวลา':'SLA Breached', breach.length)
     +'</div><div style="margin-top:2px">'+statCard(th?'อัตราปฏิบัติตาม SLA':'SLA Compliance', pct!=null?pct+'%':'—')+'</div>'
-    +'<div style="margin-top:10px"><h4 style="font-size:13px;margin-bottom:6px">'+(th?'รายการที่เกินเวลา':'Breaches')+'</h4>'
+    +'<div style="margin-top:10px"><h4 style="font-size:15px;margin-bottom:6px">'+(th?'รายการที่เกินเวลา':'Breaches')+'</h4>'
     + (breach.length ? '<div style="display:flex;flex-direction:column;gap:8px">'+breach.slice(0,15).map(function(w){
-        return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(w.id)+'</span>'+fmChip((w.responseTime||0)+' '+(th?'นาที':'min'),'red')+'</div>'+'<div style="font-size:11px;color:var(--color-neutral-700)">'+esc((WR_PRIORITY_MAP[w.priority]||[w.priority])[th?0:1])+' · '+(th?'เป้าหมาย ':'target ')+(SLA_TARGETS_MIN[w.priority]||480)+' '+(th?'นาที':'min')+'</div>');
+        return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(w.id)+'</span>'+fmChip((w.responseTime||0)+' '+(th?'นาที':'min'),'red')+'</div>'+'<div style="font-size:13px;color:var(--color-neutral-700)">'+esc((WR_PRIORITY_MAP[w.priority]||[w.priority])[th?0:1])+' · '+(th?'เป้าหมาย ':'target ')+(SLA_TARGETS_MIN[w.priority]||480)+' '+(th?'นาที':'min')+'</div>');
       }).join('')+'</div>' : fmEmpty(th?'ไม่มีการเกินเวลา':'No breaches'));
 }
 
@@ -1667,9 +1660,9 @@ function wrRepeated(){
   return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + statCard(th?'Asset ซ่อมซ้ำ':'Repeated Assets', repeated.length) + statCard(th?'WR ซ้ำทั้งหมด':'Total Repeat WR', repeated.reduce(function(s,r){return s+r.items.length;},0))
     +'</div><div style="margin-top:2px">'+statCard(th?'มูลค่าซ่อมสะสม':'Cumulative Repair Cost', fmMoney(totalCost))+'</div>'
-    +'<div style="font-size:11px;color:var(--color-neutral-700);margin:8px 0">'+(th?'Asset ที่ซ่อมซ้ำ ≥ 2 ครั้ง → แนะนำสร้างแผน PM':'Assets repaired ≥ 2 times → recommend creating a PM plan')+'</div>'
+    +'<div style="font-size:13px;color:var(--color-neutral-700);margin:8px 0">'+(th?'Asset ที่ซ่อมซ้ำ ≥ 2 ครั้ง → แนะนำสร้างแผน PM':'Assets repaired ≥ 2 times → recommend creating a PM plan')+'</div>'
     + (repeated.length ? '<div style="display:flex;flex-direction:column;gap:8px">'+repeated.map(function(r){
-        return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(r.assetId)+'</span>'+fmChip(r.items.length+'x','red')+'</div>'+'<div style="font-size:11px;color:var(--color-neutral-700)">'+(th?'มูลค่ารวม ':'total cost ')+fmMoney(r.items.reduce(function(s,w){return s+(w.totalCost||0);},0))+'</div>');
+        return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(r.assetId)+'</span>'+fmChip(r.items.length+'x','red')+'</div>'+'<div style="font-size:13px;color:var(--color-neutral-700)">'+(th?'มูลค่ารวม ':'total cost ')+fmMoney(r.items.reduce(function(s,w){return s+(w.totalCost||0);},0))+'</div>');
       }).join('')+'</div>' : fmEmpty(th?'ยังไม่พบการซ่อมซ้ำ':'No repeated repairs found'));
 }
 
@@ -1678,9 +1671,9 @@ function wrReOpt(){
   const logs = fmDB('reoptlogs');
   if(!logs.length) return fmEmpty(th?'ยังไม่มีบันทึก Re-OPT':'No Re-OPT logs yet');
   return '<div style="display:flex;flex-direction:column;gap:8px">' + logs.slice(-15).reverse().map(function(r){
-    return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(r.assetId||'')+'</span>'+(r.wrRef?fmChip(r.wrRef,'gray'):'')+'</div>'
-      +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc(r.param||'')+': '+esc(r.before||'—')+' → '+esc(r.after||'—')+' '+esc(r.unit||'')+'</div>'
-      +(r.reason?'<div style="font-size:11px;color:var(--color-neutral-700)">'+esc(r.reason)+'</div>':''));
+    return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(r.assetId||'')+'</span>'+(r.wrRef?fmChip(r.wrRef,'gray'):'')+'</div>'
+      +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(r.param||'')+': '+esc(r.before||'—')+' → '+esc(r.after||'—')+' '+esc(r.unit||'')+'</div>'
+      +(r.reason?'<div style="font-size:13px;color:var(--color-neutral-700)">'+esc(r.reason)+'</div>':''));
   }).join('') + '</div>';
 }
 
@@ -1692,7 +1685,7 @@ function wrHistory(){
   const rows = Object.keys(byAsset).map(function(k){ const items=byAsset[k]; return { assetId:k, cnt:items.length, cost: items.reduce(function(s,w){return s+(w.totalCost||0);},0) }; }).sort(function(a,b){return b.cnt-a.cnt;});
   if(!rows.length) return fmEmpty(th?'ยังไม่มีประวัติ':'No history yet');
   return '<div style="display:flex;flex-direction:column;gap:8px">' + rows.slice(0,25).map(function(r){
-    return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(r.assetId)+'</span>'+fmChip((th?'WR ':'')+r.cnt+(th?' ครั้ง':' WR'),'gray')+'</div>'+'<div style="font-size:11px;color:var(--color-neutral-700)">'+(th?'ค่าใช้จ่ายสะสม ':'total cost ')+fmMoney(r.cost)+'</div>');
+    return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(r.assetId)+'</span>'+fmChip((th?'WR ':'')+r.cnt+(th?' ครั้ง':' WR'),'gray')+'</div>'+'<div style="font-size:13px;color:var(--color-neutral-700)">'+(th?'ค่าใช้จ่ายสะสม ':'total cost ')+fmMoney(r.cost)+'</div>');
   }).join('') + '</div>';
 }
 
@@ -1739,26 +1732,26 @@ function wrDetailOverlay(){
   if (w.approvedBy) rows.push([th?'อนุมัติโดย':'Approved by', esc(w.approvedBy)]);
   let actions = '';
   if (w._dbId) {
-    if (w.status === 'open') actions += '<div class="tap" data-act="wr-accept" data-id="'+w._dbId+'" style="flex:1;font-size:13px;font-weight:700;padding:11px;border-radius:10px;text-align:center;background:var(--color-accent);color:#fff">'+(th?'รับงาน':'Accept')+'</div>';
-    if (w.status === 'inprogress' || w.status === 'arrived') actions += '<div class="tap" data-act="wr-close" data-id="'+w._dbId+'" style="flex:1;font-size:13px;font-weight:700;padding:11px;border-radius:10px;text-align:center;background:var(--green);color:#fff">'+(th?'ปิดงาน':'Complete')+'</div>';
-    if (w.status !== 'closed' && w.status !== 'approved' && w.status !== 'cancelled') actions += '<div class="tap" data-act="wr-cancel" data-id="'+w._dbId+'" style="flex:1;font-size:13px;font-weight:700;padding:11px;border-radius:10px;text-align:center;border:1px solid var(--danger);color:var(--danger)">'+(th?'ยกเลิก':'Cancel')+'</div>';
+    if (w.status === 'open') actions += '<div class="tap" data-act="wr-accept" data-id="'+w._dbId+'" style="flex:1;font-size:15px;font-weight:700;padding:11px;border-radius:10px;text-align:center;background:var(--color-accent);color:#fff">'+(th?'รับงาน':'Accept')+'</div>';
+    if (w.status === 'inprogress' || w.status === 'arrived') actions += '<div class="tap" data-act="wr-close" data-id="'+w._dbId+'" style="flex:1;font-size:15px;font-weight:700;padding:11px;border-radius:10px;text-align:center;background:var(--green);color:#fff">'+(th?'ปิดงาน':'Complete')+'</div>';
+    if (w.status !== 'closed' && w.status !== 'approved' && w.status !== 'cancelled') actions += '<div class="tap" data-act="wr-cancel" data-id="'+w._dbId+'" style="flex:1;font-size:15px;font-weight:700;padding:11px;border-radius:10px;text-align:center;border:1px solid var(--danger);color:var(--danger)">'+(th?'ยกเลิก':'Cancel')+'</div>';
   }
   return wrOverlayShell(
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
     +'<span style="font-family:var(--font-heading);font-size:16px">'+esc(w.id)+'</span>'
     +'<div class="tap" data-act="wr-detail-close" style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--color-surface)">✕</div></div>'
-    +'<div style="font-size:13px;color:var(--color-text);margin-bottom:12px">'+esc(w.desc||'')+'</div>'
+    +'<div style="font-size:15px;color:var(--color-text);margin-bottom:12px">'+esc(w.desc||'')+'</div>'
     +'<div style="display:flex;flex-direction:column;gap:8px">'
-    + rows.map(function(r){ return '<div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;border-bottom:1px solid var(--color-divider);padding-bottom:6px"><span style="color:var(--color-neutral-600)">'+esc(r[0])+'</span><span style="text-align:right">'+r[1]+'</span></div>'; }).join('')
+    + rows.map(function(r){ return '<div style="display:flex;justify-content:space-between;gap:10px;font-size:14px;border-bottom:1px solid var(--color-divider);padding-bottom:6px"><span style="color:var(--color-neutral-600)">'+esc(r[0])+'</span><span style="text-align:right">'+r[1]+'</span></div>'; }).join('')
     +'</div>'
     + (actions ? '<div style="display:flex;gap:8px;margin-top:16px">'+actions+'</div>' : '')
   );
 }
 
 function wrFormField(labelTh, labelEn, th, innerHtml){
-  return '<div class="form-group" style="margin:0"><label style="font-size:11px;font-weight:600;color:var(--color-neutral-700);display:block;margin-bottom:4px">'+(th?labelTh:labelEn)+'</label>'+innerHtml+'</div>';
+  return '<div class="form-group" style="margin:0"><label style="font-size:13px;font-weight:600;color:var(--color-neutral-700);display:block;margin-bottom:4px">'+(th?labelTh:labelEn)+'</label>'+innerHtml+'</div>';
 }
-const wrInputStyle = 'width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);color:var(--color-text);font-size:12.5px;box-sizing:border-box';
+const wrInputStyle = 'width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--color-divider);background:var(--color-surface);color:var(--color-text);font-size:14.5px;box-sizing:border-box';
 
 function wrFormOverlay(){
   if(!ST.wrFormOpen) return '';
@@ -1767,7 +1760,7 @@ function wrFormOverlay(){
   const user = getUser();
   return wrOverlayShell(
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
-    +'<span style="font-family:var(--font-heading);font-size:15px">🔧 '+(th?'แจ้งงาน Work Request':'New Work Request')+'</span>'
+    +'<span style="font-family:var(--font-heading);font-size:17px">🔧 '+(th?'แจ้งงาน Work Request':'New Work Request')+'</span>'
     +'<div class="tap" data-act="wr-new-close" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--color-surface);flex-shrink:0">✕</div></div>'
     +'<div style="display:flex;flex-direction:column;gap:10px">'
 
@@ -1781,14 +1774,14 @@ function wrFormOverlay(){
         +'</select>')
     +'</div>'
 
-    +'<div class="tap" data-act="wr-loc-qr-open" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:var(--color-surface);font-size:12px;cursor:pointer">'
+    +'<div class="tap" data-act="wr-loc-qr-open" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:var(--color-surface);font-size:14px;cursor:pointer">'
       +'<span>📷</span><span>'+(th?'สแกน QR ที่ติดหน้าห้อง':'Scan the QR posted on the room')+'</span>'
     +'</div>'
     + (ST.wrLocQrOpen ? (
         '<div style="border-radius:8px;overflow:hidden;background:#000;min-height:200px" id="wr-loc-qr-box"></div>'
         +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">'
-        +'<span style="font-size:11px;color:var(--color-neutral-600)" id="wr-loc-qr-status">'+(th?'📷 หันกล้องไปที่ QR Code':'📷 Point camera at the QR code')+'</span>'
-        +'<div class="tap" data-act="wr-loc-qr-close" style="font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--color-divider)">'+(th?'ปิดกล้อง':'Close camera')+'</div>'
+        +'<span style="font-size:13px;color:var(--color-neutral-600)" id="wr-loc-qr-status">'+(th?'📷 หันกล้องไปที่ QR Code':'📷 Point camera at the QR code')+'</span>'
+        +'<div class="tap" data-act="wr-loc-qr-close" style="font-size:13px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--color-divider)">'+(th?'ปิดกล้อง':'Close camera')+'</div>'
         +'</div>'
       ) : '')
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
@@ -1805,7 +1798,7 @@ function wrFormOverlay(){
     + wrFormField('ลำดับความเร่งด่วน *','Priority *', th,
         '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">'
         + WR_PRIORITY_FORM_OPTIONS.map(function(p, i){
-            return '<label style="cursor:pointer;text-align:center;border:1px solid var(--color-divider);border-radius:8px;padding:8px 4px;font-size:10px;line-height:1.3;display:flex;flex-direction:column;align-items:center;gap:3px">'
+            return '<label style="cursor:pointer;text-align:center;border:1px solid var(--color-divider);border-radius:8px;padding:8px 4px;font-size:12px;line-height:1.3;display:flex;flex-direction:column;align-items:center;gap:3px">'
               +'<input type="radio" name="wr-f-priority" value="'+p[0]+'"'+(i===2?' checked':'')+' style="margin:0">'
               +'<span>'+p[1]+' '+(th?p[2]:p[3])+'</span></label>';
           }).join('')
@@ -1825,8 +1818,8 @@ function wrFormOverlay(){
     +'</div>'
 
     +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">'
-      +'<div class="tap" data-act="wr-new-close" style="font-size:12.5px;font-weight:600;padding:10px 16px;border-radius:8px;text-align:center;border:1px solid var(--color-divider)">'+(th?'ยกเลิก':'Cancel')+'</div>'
-      +'<div class="tap" data-act="wr-new-submit" style="font-size:12.5px;font-weight:700;padding:10px 16px;border-radius:8px;text-align:center;background:var(--color-accent);color:#fff'+(ST.wrFormBusy?';opacity:.6':'')+'">'+(ST.wrFormBusy?(th?'กำลังส่ง...':'Submitting...'):(th?'📤 แจ้งงาน WR':'📤 Submit WR'))+'</div>'
+      +'<div class="tap" data-act="wr-new-close" style="font-size:14.5px;font-weight:600;padding:10px 16px;border-radius:8px;text-align:center;border:1px solid var(--color-divider)">'+(th?'ยกเลิก':'Cancel')+'</div>'
+      +'<div class="tap" data-act="wr-new-submit" style="font-size:14.5px;font-weight:700;padding:10px 16px;border-radius:8px;text-align:center;background:var(--color-accent);color:#fff'+(ST.wrFormBusy?';opacity:.6':'')+'">'+(ST.wrFormBusy?(th?'กำลังส่ง...':'Submitting...'):(th?'📤 แจ้งงาน WR':'📤 Submit WR'))+'</div>'
     +'</div>'
     +'</div>'
   );
@@ -1993,8 +1986,8 @@ async function wrCreateSubmit(){
 function fmWR(){
   const th = ST.lang==='th';
   const sub = ST.wrSub || 'overview';
-  if(ST.modLoading.wr) return wrSubTabs(sub) + '<div style="text-align:center;padding:30px 0;color:var(--color-neutral-600);font-size:13px">'+(th?'กำลังโหลดข้อมูล…':'Loading data…')+'</div>';
-  if(ST.modData.fm && ST.modData.fm.wrError) return wrSubTabs(sub) + '<div class="blueprint" style="padding:14px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:12px;color:var(--danger);margin-bottom:8px">'+(th?'โหลดข้อมูลไม่สำเร็จ':'Failed to load data')+'</div><button class="btn btn-secondary" data-act="retry-wr">'+(th?'ลองอีกครั้ง':'Retry')+'</button></div>';
+  if(ST.modLoading.wr) return wrSubTabs(sub) + '<div style="text-align:center;padding:30px 0;color:var(--color-neutral-600);font-size:15px">'+(th?'กำลังโหลดข้อมูล…':'Loading data…')+'</div>';
+  if(ST.modData.fm && ST.modData.fm.wrError) return wrSubTabs(sub) + '<div class="blueprint" style="padding:14px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:14px;color:var(--danger);margin-bottom:8px">'+(th?'โหลดข้อมูลไม่สำเร็จ':'Failed to load data')+'</div><button class="btn btn-secondary" data-act="retry-wr">'+(th?'ลองอีกครั้ง':'Retry')+'</button></div>';
   let body = '';
   if(sub==='overview') body = wrOverview();
   else if(sub==='new') body = wrNew();
@@ -2020,8 +2013,8 @@ function fmOM(){
     const st = stMap[o.status] || [o.status||'—','gray'];
     const abnormalCount = Array.isArray(o.linkedWRs) ? o.linkedWRs.length : 0;
     return fmCard(
-      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(o.id||'OM')+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
-      +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc(o.templateName||o.assetId||'')+'</div>'
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(o.id||'OM')+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
+      +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(o.templateName||o.assetId||'')+'</div>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+(o.sys?fmChip(o.sys,'gray'):'')+(o.person?fmChip(o.person,'gray'):'')+(abnormalCount?fmChip((th?'ผิดปกติ ':'Abnormal ')+abnormalCount,'red'):'')+'</div>'
     );
   }).join('') + '</div>';
@@ -2037,8 +2030,8 @@ function fmPPM(){
     const overdue = p.planDate && new Date(p.planDate) < new Date() && p.status!=='done';
     const st = stMap[overdue ? 'overdue' : p.status] || [p.status,p.status,'gray'];
     return fmCard(
-      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(p.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
-      +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc(p.name||'')+'</div>'
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(p.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
+      +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(p.name||'')+'</div>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+(p.sys?fmChip(p.sys,'gray'):'')+(p.planDate?fmChip(p.planDate,'gray'):'')+(p.assign?fmChip(p.assign,'gray'):'')+'</div>'
     );
   }).join('') + '</div>';
@@ -2053,8 +2046,8 @@ function fmMA(){
   return '<div style="display:flex;flex-direction:column;gap:8px">' + ma.map(function(m){
     const st = stMap[m.status] || [m.status,'gray'];
     return fmCard(
-      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(m.id)+'</span>'+fmChip(st[0], st[1])+'</div>'
-      +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc(m.vendor||'')+'</div>'
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(m.id)+'</span>'+fmChip(st[0], st[1])+'</div>'
+      +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(m.vendor||'')+'</div>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+(m.end?fmChip((th?'ถึง ':'to ')+m.end,'gray'):'')+fmChip(fmMoney(m.value),'gray')+'</div>'
     );
   }).join('') + '</div>';
@@ -2068,8 +2061,8 @@ function fmInv(){
   return '<div style="display:flex;flex-direction:column;gap:8px">' + inv.slice(0,25).map(function(i){
     const low = (i.qty||0) < (i.min||0);
     return fmCard(
-      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:13px">'+esc(i.code||i.id)+'</span>'+fmChip(low?(th?'ใกล้หมด':'Low'):(th?'ปกติ':'OK'), low?'red':'green')+'</div>'
-      +'<div style="font-size:12px;color:var(--color-neutral-800)">'+esc(i.name||'')+'</div>'
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(i.code||i.id)+'</span>'+fmChip(low?(th?'ใกล้หมด':'Low'):(th?'ปกติ':'OK'), low?'red':'green')+'</div>'
+      +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(i.name||'')+'</div>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip((th?'คงเหลือ ':'Qty ')+(i.qty||0)+' '+(i.unit||''),'gray')+fmChip(fmMoney((i.qty||0)*(i.price||0)),'gray')+'</div>'
     );
   }).join('') + '</div>';
@@ -2101,12 +2094,12 @@ function screenModuleIoT(){
     + (!ST.modLoading.iot && !((ST.modData.iot||{}).__error) ? (
         devices.length ? '<div style="display:flex;flex-direction:column;gap:10px">' + devices.map(function(dev){
           return '<div class="blueprint" style="padding:12px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-            +'<div style="font-family:var(--font-heading);font-size:14px;margin-bottom:6px">'+esc(dev.name||dev.device||'Sensor')+'</div>'
+            +'<div style="font-family:var(--font-heading);font-size:16px;margin-bottom:6px">'+esc(dev.name||dev.device||'Sensor')+'</div>'
             +'<div style="display:flex;gap:16px">'
-            + (dev.temperature!=null ? '<div><div style="font-size:10px;color:var(--color-neutral-700)">TEMP</div><div style="font-size:18px;font-family:var(--font-heading)">'+esc(dev.temperature)+'°C</div></div>' : '')
-            + (dev.humidity!=null ? '<div><div style="font-size:10px;color:var(--color-neutral-700)">RH</div><div style="font-size:18px;font-family:var(--font-heading)">'+esc(dev.humidity)+'%</div></div>' : '')
+            + (dev.temperature!=null ? '<div><div style="font-size:12px;color:var(--color-neutral-700)">TEMP</div><div style="font-size:18px;font-family:var(--font-heading)">'+esc(dev.temperature)+'°C</div></div>' : '')
+            + (dev.humidity!=null ? '<div><div style="font-size:12px;color:var(--color-neutral-700)">RH</div><div style="font-size:18px;font-family:var(--font-heading)">'+esc(dev.humidity)+'%</div></div>' : '')
             +'</div></div>';
-        }).join('') + '</div>' : '<div style="font-size:12px;color:var(--color-neutral-700)">'+t.iotNoDevice+'</div>'
+        }).join('') + '</div>' : '<div style="font-size:14px;color:var(--color-neutral-700)">'+t.iotNoDevice+'</div>'
       ) : '')
     +'</div>';
 }
@@ -2115,7 +2108,7 @@ function screenModuleMV(){
   const t = L(); const mods = opsModules(); const m = mods.find(function(x){return x.key==='mv';});
   return '<div class="stack">'
     + modHeader(m.name, 'mv')
-    +'<div><h4 style="font-size:14px;margin-bottom:8px">'+t.mvTitle+'</h4>'
+    +'<div><h4 style="font-size:16px;margin-bottom:8px">'+t.mvTitle+'</h4>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
       + statCard(t.mvKwh, '9.90M') + statCard(t.mvAc, '53.6%') + statCard(t.mvSaving, '351,973') + statCard(t.mvSheets, '47')
     +'</div></div></div>';
@@ -2130,12 +2123,12 @@ function screenModuleAdvisory(){
   ];
   return '<div class="stack">'
     + modHeader(m.name, 'advisory')
-    +'<div style="font-size:12px;color:var(--color-neutral-700);margin-bottom:4px">'+t.advTitle+'</div>'
+    +'<div style="font-size:14px;color:var(--color-neutral-700);margin-bottom:4px">'+t.advTitle+'</div>'
     +'<div style="display:flex;flex-direction:column;gap:10px">'
     + items.map(function(it){
       return '<div class="blueprint" style="padding:12px;display:flex;gap:12px;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-        +'<div style="width:36px;height:36px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:12px;color:var(--color-accent-700);flex-shrink:0">'+it.code+'</div>'
-        +'<div><div style="font-family:var(--font-heading);font-size:14px">'+esc(it.name)+'</div><div style="font-size:11px;color:var(--color-neutral-700)">'+esc(it.d)+'</div></div></div>';
+        +'<div style="width:36px;height:36px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:14px;color:var(--color-accent-700);flex-shrink:0">'+it.code+'</div>'
+        +'<div><div style="font-family:var(--font-heading);font-size:16px">'+esc(it.name)+'</div><div style="font-size:13px;color:var(--color-neutral-700)">'+esc(it.d)+'</div></div></div>';
     }).join('')
     +'</div></div>';
 }
@@ -2146,7 +2139,7 @@ function screenModuleBOT(){
     + modHeader(m.name, 'bot')
     +'<div class="blueprint" style="padding:22px;text-align:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
     +'<div style="font-family:var(--font-heading);font-size:16px;margin-bottom:6px">'+t.comingSoon+'</div>'
-    +'<div style="font-size:12px;color:var(--color-neutral-700)">'+t.botDesc+'</div></div></div>';
+    +'<div style="font-size:14px;color:var(--color-neutral-700)">'+t.botDesc+'</div></div></div>';
 }
 
 function screenModuleDetail(){
