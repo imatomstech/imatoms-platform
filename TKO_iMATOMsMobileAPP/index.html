@@ -38,9 +38,18 @@ a{color:inherit;text-decoration:none}
 @keyframes orbitC{from{transform:rotate(100deg)}to{transform:rotate(460deg)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ---- shell ---- */
-#app-root{max-width:480px;margin:0 auto;min-height:100vh;background:var(--color-bg);display:flex;flex-direction:column}
-@media(min-width:481px){ body{background:#dfe1e4} #app-root{min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.08)} }
+/* ---- shell ----
+   Was a hard max-width:480px, which reads fine on a narrow phone in portrait
+   but centers a narrow letterboxed column (gray bars both sides) on anything
+   wider — a phone rotated to landscape (many run 700-930px CSS-wide) or a
+   notebook browser window — since the cap kicks in at 481px regardless of
+   what kind of device it is. Raised the cap so it only ever constrains truly
+   wide desktop windows; phones stay full-bleed in both orientations, and a
+   notebook window narrower than the cap now fills edge-to-edge too. The
+   cosmetic "phone card on a gray desk" treatment (background + shadow) is
+   pushed out to the same breakpoint so it doesn't show up on phones. */
+#app-root{width:100%;max-width:900px;margin:0 auto;min-height:100vh;background:var(--color-bg);display:flex;flex-direction:column}
+@media(min-width:901px){ body{background:#dfe1e4} #app-root{min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.08)} }
 
 /* ---- blueprint card ---- */
 .blueprint{position:relative;border:1px solid var(--color-divider);border-radius:6px;overflow:hidden}
