@@ -607,6 +607,27 @@ async function loadFmKind(kind){
   }
   ST.modLoading[kind] = false; render();
 }
+/* Write-back for the same generic /api/fm-records/:kind store — upserts one
+   item locally (so the UI reflects it immediately) and pushes it to the real
+   backend, same endpoint the Reliability Module's DB.set() uses. Used by
+   OM's Checklist Setup / OM Setting / New-OM-submit so Mobile edits are a
+   genuine two-way connection with the webapp, not a one-way read. */
+async function fmSyncKind(kind, item){
+  ST.modData.fm = ST.modData.fm || {};
+  const arr = (ST.modData.fm[kind] || fmKindData(kind) || fmDB(kind) || []).slice();
+  const idx = arr.findIndex(function(x){ return String(x.id)===String(item.id); });
+  if(idx>=0) arr[idx] = item; else arr.unshift(item);
+  ST.modData.fm[kind] = arr;
+  try{ await api('/fm-records/'+kind+'/sync', { method:'POST', body: JSON.stringify({ items:[item] }) }); }catch(e){ /* local copy still updated; best-effort push */ }
+  return arr;
+}
+async function fmDeleteKind(kind, id){
+  ST.modData.fm = ST.modData.fm || {};
+  const arr = (ST.modData.fm[kind] || fmKindData(kind) || fmDB(kind) || []).filter(function(x){ return String(x.id)!==String(id); });
+  ST.modData.fm[kind] = arr;
+  try{ await api('/fm-records/'+kind+'/'+encodeURIComponent(id), { method:'DELETE' }); }catch(e){}
+  return arr;
+}
 
 /* Asset registry — loaded once per module-open so WR cards can show the
    building/floor/zone/room and equipment name for the asset each WR refers
@@ -2003,21 +2024,540 @@ function fmWR(){
   return '<div style="display:flex;flex-direction:column;gap:10px">' + wrSubTabs(sub) + body + '</div>' + wrDetailOverlay() + wrFormOverlay() + wrCloseOverlay() + wrTechPickerOverlay();
 }
 
-function fmOM(){
+/* ══════════════ OM (Operation Checklist) — full parity with the webapp:
+   New OM (fill+submit, auto-creates WR for abnormal items), In Progress,
+   Closed, Evaluate & Approve, Checklist Setup, OM Setting. Templates and
+   the shift schedule are read from the same /fm-records/omTemplates and
+   /fm-records/omSchedule the Reliability Module already seeds & pushes to
+   the backend, so Mobile doesn't need its own copy of the 18 checklists. */
+const OM_ITEM_TYPE_LABEL = { visual:{th:'ตรวจสภาพ',en:'Visual'}, measurement:{th:'ค่าที่วัด',en:'Measurement'}, photo:{th:'ถ่ายรูป+อ่านค่า',en:'Photo+Reading'} };
+let omCurItems = [];       // working checklist items for the open New/Edit OM form
+let omCurEquipPhotos = []; // equipment baseline photos for the open form
+let omCurStart = null;
+let omTplWorkingItems = []; // working items list for the open Checklist Setup modal
+
+function omTemplatesData(){ return fmKindData('omTemplates') || fmDB('omTemplates') || []; }
+function omScheduleData(){ return fmKindData('omSchedule') || fmDB('omSchedule') || []; }
+function omRecordsData(){ return (fmKindData('omRecords') || fmDB('omRecords') || []).slice().sort(function(a,b){ return new Date(b.submittedDate||0) - new Date(a.submittedDate||0); }); }
+
+function omSubTabs(active){
   const th = ST.lang==='th';
-  if (ST.modLoading.omRecords) return fmEmpty(th?'กำลังโหลด...':'Loading...');
-  const om = (fmKindData('omRecords') || fmDB('omRecords')).slice().sort(function(a,b){ return new Date(b.submittedDate||0) - new Date(a.submittedDate||0); });
-  if(!om.length) return fmEmpty(th?'ยังไม่มีบันทึก OM':'No OM records yet');
+  const om = omRecordsData();
+  const pendingCount = om.filter(function(o){ return o.status==='pending'; }).length;
+  const rejectedCount = om.filter(function(o){ return o.status==='rejected'; }).length;
+  const tabs = [
+    { k:'overview', label: th?'ภาพรวม':'Overview' },
+    { k:'inprogress', label: th?'กำลังทำ/รออนุมัติ':'In Progress', badge: pendingCount+rejectedCount },
+    { k:'closed', label: th?'ปิดงาน':'Closed' },
+    { k:'evaluate', label: th?'ประเมิน & อนุมัติ':'Evaluate & Approve', badge: pendingCount },
+    { k:'checklist', label: th?'🧾 ตั้งค่า Checklist':'Checklist Setup' },
+    { k:'setting', label: th?'⚙ OM Setting':'OM Setting' },
+  ];
+  function pill(k, label, badge){
+    const isActive = active===k;
+    const badgeHtml = badge ? '<span style="margin-left:5px;background:#ef4444;color:#fff;font-size:12px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px">'+(badge>99?'99+':badge)+'</span>' : '';
+    return '<div class="tap" data-act="om-sub" data-sub="'+k+'" style="flex-shrink:0;display:flex;align-items:center;font-size:11.5px;font-weight:600;padding:7px 11px;border-radius:20px;border:1px solid '+(isActive?'var(--color-accent)':'var(--color-divider)')+';background:'+(isActive?'var(--color-accent)':'transparent')+';color:'+(isActive?'#fff':'var(--color-text)')+'">'+esc(label)+badgeHtml+'</div>';
+  }
+  return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+    +'<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;flex:1">'
+    + tabs.map(function(x){ return pill(x.k, x.label, x.badge); }).join('')
+    +'</div>'
+    +'<div class="tap" data-act="refresh-om" title="'+(th?'รีเฟรชข้อมูล':'Refresh')+'" style="flex-shrink:0;width:30px;height:30px;border-radius:50%;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;'+(ST.modLoading.omRecords?'opacity:.5':'')+'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7"></path><path d="M21 3v6h-6"></path></svg></div>'
+    +'</div>';
+}
+
+function omListCard(o, th){
   const stMap = { pending:[th?'รออนุมัติ':'Pending','orange'], approved:[th?'อนุมัติแล้ว':'Approved','green'], rejected:[th?'ส่งกลับแก้ไข':'Sent back','red'] };
-  return '<div style="display:flex;flex-direction:column;gap:8px">' + om.slice(0,20).map(function(o){
-    const st = stMap[o.status] || [o.status||'—','gray'];
-    const abnormalCount = Array.isArray(o.linkedWRs) ? o.linkedWRs.length : 0;
+  const st = stMap[o.status] || [o.status||'—','gray'];
+  const abCount = Array.isArray(o.items) ? o.items.filter(function(x){ return x.result==='abnormal'; }).length : 0;
+  return '<div class="tap blueprint" data-act="om-detail-open" data-id="'+esc(o.id)+'" style="padding:11px 12px;display:flex;flex-direction:column;gap:4px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(o.id||'OM')+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
+    +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(o.templateName||o.assetId||'')+'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+(o.assetId?fmChip(o.assetId,'gray'):'')+(o.person?fmChip(o.person,'gray'):'')+(abCount?fmChip((th?'ผิดปกติ ':'Abnormal ')+abCount,'red'):fmChip(th?'ปกติทั้งหมด':'All normal','green'))+'</div>'
+    +'</div>';
+}
+function omListHtml(list, th, emptyMsg){
+  if(!list.length) return fmEmpty(emptyMsg);
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + list.slice(0,30).map(function(o){ return omListCard(o, th); }).join('') + '</div>';
+}
+
+function omOverview(){
+  const th = ST.lang==='th';
+  const om = omRecordsData();
+  const today = new Date().toDateString();
+  const todayCount = om.filter(function(o){ return o.submittedDate && new Date(o.submittedDate).toDateString()===today; }).length;
+  const pendingCount = om.filter(function(o){ return o.status==='pending'; }).length;
+  const abnormalTotal = om.reduce(function(s,o){ return s+(Array.isArray(o.linkedWRs)?o.linkedWRs.length:0); },0);
+  const latestByAsset = {};
+  om.forEach(function(o){ if(!latestByAsset[o.assetId]) latestByAsset[o.assetId]=o; });
+  const latestList = Object.values(latestByAsset);
+  const readyCount = latestList.filter(function(o){ return o.readiness==='ready'; }).length;
+  const availPct = latestList.length ? Math.round(readyCount/latestList.length*1000)/10 : null;
+  const btn = '<div style="display:flex"><div class="tap" data-act="om-new-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'เริ่มทำ OM':'Start OM')+'</div></div>';
+  return btn
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">'
+    + statCard(th?'ความพร้อมใช้งาน':'Availability', availPct!=null?availPct+'%':'—', 'closed') + statCard(th?'ทำวันนี้':'Done Today', todayCount, 'new')
+    + statCard(th?'รออนุมัติ':'Pending', pendingCount, 'inprogress') + statCard(th?'พบผิดปกติสะสม':'Abnormal (total)', abnormalTotal, 'evaluate')
+    +'</div>'
+    +'<div style="margin-top:10px">'+omListHtml(om, th, th?'ยังไม่มีบันทึก OM':'No OM records yet')+'</div>';
+}
+function omInProgress(){ const th=ST.lang==='th'; return omListHtml(omRecordsData().filter(function(o){ return o.status==='pending'||o.status==='rejected'; }), th, th?'ไม่มีงาน OM ที่ค้างอยู่':'Nothing pending'); }
+function omClosed(){ const th=ST.lang==='th'; return omListHtml(omRecordsData().filter(function(o){ return o.status==='approved'; }), th, th?'ยังไม่มี OM ที่อนุมัติแล้ว':'No approved OM yet'); }
+function omEvaluate(){ const th=ST.lang==='th'; return omListHtml(omRecordsData().filter(function(o){ return o.status==='pending'||o.status==='approved'; }), th, th?'ยังไม่มี OM ที่ส่งเข้ามา':'Nothing submitted yet'); }
+
+function omChecklistSetup(){
+  const th = ST.lang==='th';
+  const tpls = omTemplatesData();
+  const btn = '<div style="display:flex"><div class="tap" data-act="om-tpl-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'เพิ่ม Checklist ใหม่':'Add Checklist')+'</div></div>';
+  if(!tpls.length) return btn + fmEmpty(th?'ยังไม่มี Checklist':'No checklists yet');
+  return btn + '<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">' + tpls.map(function(t){
     return fmCard(
-      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(o.id||'OM')+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
-      +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(o.templateName||o.assetId||'')+'</div>'
-      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+(o.sys?fmChip(o.sys,'gray'):'')+(o.person?fmChip(o.person,'gray'):'')+(abnormalCount?fmChip((th?'ผิดปกติ ':'Abnormal ')+abnormalCount,'red'):'')+'</div>'
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(t.sys||'')+' — '+esc(t.name||'(ยังไม่ตั้งชื่อ)')+'</span>'+fmChip((t.items||[]).length+' '+(th?'หัวข้อ':'items'), (t.items||[]).length?'gray':'red')+'</div>'
+      +'<div style="font-size:12px;color:var(--color-neutral-600)">'+esc(t.formCode||'')+'</div>'
+      +'<div style="display:flex;gap:8px;margin-top:4px">'
+      +'<div class="tap" data-act="om-tpl-open" data-id="'+esc(t.id)+'" style="font-size:12px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--color-divider)">✏ '+(th?'แก้ไข':'Edit')+'</div>'
+      +'<div class="tap" data-act="om-tpl-delete" data-id="'+esc(t.id)+'" style="font-size:12px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--danger);color:var(--danger)">🗑</div>'
+      +'</div>'
     );
   }).join('') + '</div>';
+}
+
+function omSetting(){
+  const th = ST.lang==='th';
+  const sched = omScheduleData();
+  const btn = '<div style="display:flex"><div class="tap" data-act="om-sched-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'เพิ่มรายการเวร':'Add Item')+'</div></div>';
+  if(!sched.length) return btn + fmEmpty(th?'ยังไม่มีรายการเวร M/A/N':'No shift items yet');
+  const shifts = [{k:'M',label:'🌅 Morning'},{k:'A',label:'🌇 Afternoon'},{k:'N',label:'🌙 Night'}];
+  let html = btn;
+  shifts.forEach(function(sh){
+    const items = sched.filter(function(s){ return s.shift===sh.k; }).sort(function(a,b){ return (a.time||'').localeCompare(b.time||''); });
+    if(!items.length) return;
+    html += '<div style="margin-top:12px"><h4 style="font-size:14px;margin-bottom:6px">'+sh.label+' <span style="font-size:11px;color:var(--color-neutral-600);font-weight:400">('+items.filter(function(i){return i.enabled;}).length+'/'+items.length+' '+(th?'ใช้งาน':'active')+')</span></h4>'
+      +'<div style="display:flex;flex-direction:column;gap:6px">' + items.map(function(it){
+        return fmCard(
+          '<div style="display:flex;justify-content:space-between;align-items:center;'+(it.enabled?'':'opacity:.5')+'"><span style="font-family:var(--font-heading);font-size:13px">'+esc(it.time||'-')+' — '+esc(it.desc||'')+'</span></div>'
+          +'<div style="font-size:11px;color:var(--color-neutral-600)">'+esc(it.section||'')+(it.formCode?' · '+esc(it.formCode):'')+'</div>'
+          +'<div style="display:flex;gap:8px;margin-top:4px">'
+          +'<div class="tap" data-act="om-sched-toggle" data-id="'+esc(it.id)+'" style="font-size:12px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--color-divider)">'+(it.enabled?(th?'✖ ปิดใช้งาน':'Disable'):(th?'✔ เปิดใช้งาน':'Enable'))+'</div>'
+          +'<div class="tap" data-act="om-sched-open" data-id="'+esc(it.id)+'" style="font-size:12px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--color-divider)">✏</div>'
+          +'<div class="tap" data-act="om-sched-delete" data-id="'+esc(it.id)+'" style="font-size:12px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--danger);color:var(--danger)">🗑</div>'
+          +'</div>'
+        );
+      }).join('') + '</div></div>';
+  });
+  return html;
+}
+
+function fmOM(){
+  const th = ST.lang==='th';
+  const sub = ST.omSub || 'overview';
+  if (ST.modLoading.omRecords) return omSubTabs(sub) + fmEmpty(th?'กำลังโหลด...':'Loading...');
+  let body = '';
+  if(sub==='overview') body = omOverview();
+  else if(sub==='inprogress') body = omInProgress();
+  else if(sub==='closed') body = omClosed();
+  else if(sub==='evaluate') body = omEvaluate();
+  else if(sub==='checklist') body = omChecklistSetup();
+  else if(sub==='setting') body = omSetting();
+  return '<div style="display:flex;flex-direction:column;gap:10px">' + omSubTabs(sub) + body + '</div>'
+    + omFormOverlay() + omDetailOverlay() + omTplOverlay() + omSchedOverlay();
+}
+
+/* ── New / Edit OM ── */
+function omOnAssetChange(assetId){
+  ST.omFormAssetId = assetId;
+  const a = fmAssetFor(assetId);
+  const infoEl = document.getElementById('om-asset-info');
+  if(infoEl){
+    if(a){ infoEl.style.display='block'; infoEl.innerHTML = '<div style="font-weight:700;font-size:13px">'+esc(a.id)+' — '+esc(a.name||'')+'</div><div style="font-size:11px;color:var(--color-neutral-600)">'+esc([a.building,a.floor,a.zone,a.room].filter(Boolean).join(' / ')||'-')+'</div>'; }
+    else infoEl.style.display='none';
+  }
+  const match = a && a.sys ? omTemplatesData().find(function(t){ return t.sys===a.sys; }) : null;
+  if(match){
+    ST.omFormTemplateId = match.id;
+    const sel = document.getElementById('om-f-template'); if(sel) sel.value = match.id;
+    omLoadTemplateItems(match.id);
+  }
+}
+function omOnTemplateChange(templateId){ ST.omFormTemplateId = templateId; omLoadTemplateItems(templateId); }
+function omLoadTemplateItems(templateId){
+  const t = omTemplatesData().find(function(x){ return String(x.id)===String(templateId); });
+  omCurItems = t ? (t.items||[]).map(function(it){ return Object.assign({}, it, {result:'normal', value:'', detail:'', photo:null}); }) : [];
+  omRenderItemsList();
+}
+function omRenderItemsList(){ const el = document.getElementById('om-items-list'); if(el) el.innerHTML = omItemsHtml(); }
+function omItemsHtml(){
+  const th = ST.lang==='th';
+  if(!omCurItems.length) return '<div style="font-size:12px;color:var(--color-neutral-600);padding:10px 0">'+(th?'เลือก Asset และ Checklist ก่อนครับ':'Select an Asset and Checklist first')+'</div>';
+  return omCurItems.map(function(item,i){
+    const isAb = item.result==='abnormal';
+    const outOfRange = (item.type==='measurement'||item.type==='photo') && item.value!=='' && item.value!=null &&
+      ((item.min!=null && parseFloat(item.value)<item.min) || (item.max!=null && parseFloat(item.value)>item.max));
+    return '<div class="blueprint" style="padding:10px 11px;margin-bottom:8px;border-left:3px solid '+(isAb?'var(--danger)':'var(--color-divider)')+'"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+      +'<div style="font-weight:700;font-size:13px;margin-bottom:6px">'+(i+1)+'. '+esc(item.label||'')+'</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
+      +'<div class="tap" onclick="omSetItemResult('+i+',\'normal\')" style="font-size:12px;font-weight:600;padding:5px 10px;border-radius:6px;'+(item.result==='normal'?'background:var(--green);color:#fff':'border:1px solid var(--color-divider)')+'">✅ '+(th?'ปกติ':'Normal')+'</div>'
+      +'<div class="tap" onclick="omSetItemResult('+i+',\'abnormal\')" style="font-size:12px;font-weight:600;padding:5px 10px;border-radius:6px;'+(isAb?'background:var(--danger);color:#fff':'border:1px solid var(--color-divider)')+'">⚠ '+(th?'ผิดปกติ':'Abnormal')+'</div>'
+      + ((item.type==='measurement'||item.type==='photo') ? '<input class="input" style="width:90px;padding:6px" type="number" placeholder="'+(th?'ค่าที่วัด':'value')+'" value="'+esc(item.value)+'" onchange="omSetItemValue('+i+',this.value)">'
+        +'<span style="font-size:11px;color:var(--color-neutral-600)">'+esc(item.unit||'')+(item.min!=null||item.max!=null?' ('+(item.min??'-')+'–'+(item.max??'-')+')':'')+'</span>'
+        + (outOfRange?fmChip(th?'นอกเกณฑ์':'Out of range','red'):'') : '')
+      + (item.type==='photo' ? '<input type="file" accept="image/*" capture="environment" style="max-width:150px;font-size:11px" onchange="omHandleItemPhoto('+i+',this)">' : '')
+      +'</div>'
+      + (item.photo ? '<img src="'+item.photo+'" style="width:64px;height:64px;object-fit:cover;border-radius:6px;margin-top:6px">' : '')
+      + (isAb ? '<textarea class="input" rows="2" placeholder="'+(th?'รายละเอียดอาการผิดปกติ':'Describe the issue')+'" style="margin-top:8px" oninput="omSetItemDetail('+i+',this.value)">'+esc(item.detail||'')+'</textarea>' : '')
+      +'</div>';
+  }).join('');
+}
+function omSetItemResult(i,val){ omCurItems[i].result = val; omRenderItemsList(); }
+function omSetItemValue(i,val){ omCurItems[i].value = val; omRenderItemsList(); }
+function omSetItemDetail(i,val){ omCurItems[i].detail = val; }
+function omHandleItemPhoto(i,inputEl){
+  const file = inputEl.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){ omCurItems[i].photo = ev.target.result; omRenderItemsList(); };
+  reader.readAsDataURL(file);
+}
+function omRenderEquipPhotos(){ const el = document.getElementById('om-equip-photo-list'); if(el) el.innerHTML = omEquipPhotosThumbHtml(); }
+function omEquipPhotosThumbHtml(){
+  return omCurEquipPhotos.map(function(p,i){
+    return '<div style="position:relative;display:inline-block;margin:0 6px 6px 0"><img src="'+p+'" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--color-divider)">'
+      +'<span onclick="omCurEquipPhotos.splice('+i+',1);omRenderEquipPhotos()" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">✕</span></div>';
+  }).join('');
+}
+function omHandleEquipPhotos(inputEl){
+  const files = Array.prototype.slice.call(inputEl.files||[]);
+  files.forEach(function(f){
+    const reader = new FileReader();
+    reader.onload = function(ev){ omCurEquipPhotos.push(ev.target.result); omRenderEquipPhotos(); };
+    reader.readAsDataURL(f);
+  });
+  inputEl.value = '';
+}
+function omEquipPhotosHtml(th){
+  const assetId = ST.omFormAssetId;
+  const prevWithPhotos = assetId && omRecordsData().some(function(o){ return o.assetId===assetId && Array.isArray(o.equipmentPhotos) && o.equipmentPhotos.length>=2; });
+  return '<div class="field"><label>'+(th?'รูปอุปกรณ์ (ของจริง)':'Equipment photos')+' '+(prevWithPhotos?'':'<span style="color:var(--danger)">'+(th?'* ครั้งแรกของเครื่องนี้ ต้องมีอย่างน้อย 2 รูป':'* first time — at least 2 photos required')+'</span>')+'</label>'
+    +'<input type="file" accept="image/*" capture="environment" multiple onchange="omHandleEquipPhotos(this)">'
+    +'<div id="om-equip-photo-list" style="margin-top:6px">'+omEquipPhotosThumbHtml()+'</div></div>';
+}
+function omFormOverlay(){
+  if(!ST.omFormOpen) return '';
+  const th = ST.lang==='th';
+  const assets = (ST.modData.fm && ST.modData.fm.assets) || [];
+  const tpls = omTemplatesData();
+  const editing = !!ST.omFormEditId;
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div style="font-weight:700;font-size:17px">'+(editing?(th?'✏ แก้ไข OM':'✏ Edit OM'):(th?'🧾 เริ่มทำ OM':'🧾 New OM'))+'</div>'
+    +'<div class="tap" data-act="om-new-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div>'
+    +'</div>'
+    +'<div class="field"><label>Asset</label><select class="input" id="om-f-asset" onchange="omOnAssetChange(this.value)">'
+    +'<option value="">'+(th?'-- เลือก Asset --':'-- Select Asset --')+'</option>'
+    + assets.map(function(a){ return '<option value="'+esc(a.id)+'" '+(String(a.id)===String(ST.omFormAssetId)?'selected':'')+'>'+esc(a.id)+' — '+esc(a.name||'')+'</option>'; }).join('')
+    +'</select></div>'
+    +'<div id="om-asset-info" style="display:none;margin:-6px 0 10px 2px"></div>'
+    +'<div class="field"><label>Checklist</label><select class="input" id="om-f-template" onchange="omOnTemplateChange(this.value)">'
+    +'<option value="">'+(th?'-- เลือก Checklist --':'-- Select Checklist --')+'</option>'
+    + tpls.map(function(t){ return '<option value="'+esc(t.id)+'" '+(String(t.id)===String(ST.omFormTemplateId)?'selected':'')+'>'+esc(t.sys)+' — '+esc(t.name)+'</option>'; }).join('')
+    +'</select></div>'
+    +'<div class="field"><label>'+(th?'ผู้ตรวจสอบ':'Inspector')+'</label><input class="input" id="om-f-person" value="'+esc(ST.omFormPerson||'')+'" placeholder="'+(th?'ชื่อ-นามสกุล':'Full name')+'"></div>'
+    +'<div class="field"><label>'+(th?'ความพร้อมใช้งาน':'Readiness')+'</label><select class="input" id="om-f-readiness">'
+    +'<option value="ready" '+(ST.omFormReadiness!=='temp'&&ST.omFormReadiness!=='down'?'selected':'')+'>🟢 '+(th?'พร้อมใช้งาน':'Ready')+'</option>'
+    +'<option value="temp" '+(ST.omFormReadiness==='temp'?'selected':'')+'>🟡 '+(th?'ใช้งานชั่วคราว':'Temporary')+'</option>'
+    +'<option value="down" '+(ST.omFormReadiness==='down'?'selected':'')+'>🔴 '+(th?'หยุดซ่อมทันที':'Down')+'</option>'
+    +'</select></div>'
+    + omEquipPhotosHtml(th)
+    +'<div id="om-items-list" style="margin-top:6px">'+omItemsHtml()+'</div>'
+    +'<div class="tap" data-act="om-new-submit" style="margin-top:14px;text-align:center;font-size:15px;font-weight:700;padding:12px;border-radius:10px;background:var(--color-accent);color:#fff;'+(ST.omFormBusy?'opacity:.6':'')+'">'+(ST.omFormBusy?(th?'กำลังส่ง...':'Submitting...'):(th?'✅ ส่งรายงาน OM':'✅ Submit OM'))+'</div>'
+  );
+}
+function omNewOpen(){
+  if(!omScheduleData().some(function(s){ return s.enabled; })){
+    toast(ST.lang==='th'?'⚠ ยังไม่ได้ตั้งค่า OM Setting (ตารางเวร) กรุณาไปที่ "⚙ OM Setting" ก่อนครับ':'⚠ Set up OM Setting (shift schedule) first');
+    ST.omSub = 'setting'; render(); return;
+  }
+  ST.omFormOpen = true; ST.omFormEditId = null; ST.omFormAssetId=''; ST.omFormTemplateId=''; ST.omFormPerson=''; ST.omFormReadiness='ready'; ST.omFormBusy=false;
+  omCurItems = []; omCurEquipPhotos = []; omCurStart = new Date();
+  render();
+  if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets();
+}
+function omEditOpen(id){
+  const o = omRecordsData().find(function(x){ return String(x.id)===String(id); }); if(!o) return;
+  ST.omFormOpen = true; ST.omFormEditId = o.id; ST.omFormAssetId = o.assetId; ST.omFormTemplateId = o.templateId;
+  ST.omFormPerson = o.person||''; ST.omFormReadiness = o.readiness||'ready'; ST.omFormBusy=false;
+  omCurItems = JSON.parse(JSON.stringify(o.items||[]));
+  omCurEquipPhotos = Array.isArray(o.equipmentPhotos) ? o.equipmentPhotos.slice() : [];
+  omCurStart = o.startTime ? new Date(o.startTime) : new Date();
+  ST.omDetailId = null;
+  render();
+  if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets();
+}
+function omNewClose(){ ST.omFormOpen = false; render(); }
+async function omCreateWRFromItem(om, item){
+  const th = ST.lang==='th';
+  const a = fmAssetFor(om.assetId);
+  try{
+    const wo = await api('/work-orders', { method:'POST', body: JSON.stringify({
+      asset_id: null, wo_type:'CM', title: ('[OM] '+item.label).slice(0,80),
+      description: '[OM] '+item.label+(item.detail?': '+item.detail:''),
+      priority:'urgent', reporter_name: 'ระบบ OM ('+(om.person||'')+')', module:'mobile'
+    }) });
+    try{
+      await api('/work-orders/sync', { method:'POST', body: JSON.stringify({ items:[{
+        id: wo.wo_no, assetId: om.assetId, desc:'[OM] '+item.label+(item.detail?': '+item.detail:''),
+        type:'CM', priority:'urgent', reporter:'ระบบ OM ('+(om.person||'')+')', status:'open',
+        building:a&&a.building, floor:a&&a.floor, zone:a&&a.zone, room:a&&a.room,
+        sourceOM: om.id, sourceOMItem: item.label
+      }] }) });
+    }catch(e){}
+    return wo.wo_no;
+  }catch(e){ return null; }
+}
+async function omSubmit(){
+  const th = ST.lang==='th';
+  const assetId = (document.getElementById('om-f-asset')||{}).value;
+  const templateId = (document.getElementById('om-f-template')||{}).value;
+  if(!assetId){ toast(th?'กรุณาเลือก Asset ก่อนครับ':'Please select an Asset'); return; }
+  if(!templateId){ toast(th?'กรุณาเลือก Checklist ก่อนครับ':'Please select a Checklist'); return; }
+  if(!omCurItems.length){ toast(th?'Checklist นี้ยังไม่มีหัวข้อตรวจสอบ':'This checklist has no items'); return; }
+  const person = (document.getElementById('om-f-person')||{}).value.trim();
+  if(!person){ toast(th?'กรุณาระบุชื่อผู้ตรวจสอบครับ':'Please enter the inspector name'); return; }
+  const prevWithPhotos = omRecordsData().some(function(o){ return o.assetId===assetId && Array.isArray(o.equipmentPhotos) && o.equipmentPhotos.length>=2; });
+  if(!prevWithPhotos && omCurEquipPhotos.length<2){ toast(th?'⚠ ครั้งแรกของเครื่องนี้ ต้องแนบรูปอุปกรณ์อย่างน้อย 2 รูป':'⚠ First time — attach at least 2 equipment photos'); return; }
+  const t = omTemplatesData().find(function(x){ return String(x.id)===String(templateId); });
+  const readiness = (document.getElementById('om-f-readiness')||{}).value || 'ready';
+  ST.omFormBusy = true; render();
+  const endTime = new Date();
+  const durationMin = omCurStart ? Math.round((endTime-omCurStart)/60000) : null;
+  const isEdit = !!ST.omFormEditId;
+  const recId = isEdit ? ST.omFormEditId : ('OM-'+Date.now());
+  const om = {
+    id: recId, assetId, templateId, templateName: t?t.name:'', sys: t?t.sys:'',
+    items: JSON.parse(JSON.stringify(omCurItems)),
+    equipmentPhotos: omCurEquipPhotos.length ? omCurEquipPhotos.slice() : (omRecordsData().find(function(o){ return o.assetId===assetId; })||{}).equipmentPhotos || [],
+    readiness, person, startTime: omCurStart?omCurStart.toISOString():null, endTime: endTime.toISOString(), durationMin,
+    status:'pending', submittedDate: endTime.toISOString(),
+    reviewedBy:null, reviewedDate:null, rejectReason:null, linkedWRs:[]
+  };
+  const abnormalItems = omCurItems.filter(function(x){ return x.result==='abnormal'; });
+  for(let idx=0; idx<abnormalItems.length; idx++){
+    const wrId = await omCreateWRFromItem(om, abnormalItems[idx]);
+    if(wrId) om.linkedWRs.push(wrId);
+  }
+  try{
+    await fmSyncKind('omRecords', om);
+    ST.omFormOpen = false; ST.omFormBusy = false;
+    render();
+    toast(abnormalItems.length
+      ? (th?('✅ ส่ง OM '+recId+' เรียบร้อย — พบผิดปกติ '+abnormalItems.length+' หัวข้อ สร้าง WR อัตโนมัติแล้ว รออนุมัติ'):('✅ Submitted '+recId+' — '+abnormalItems.length+' abnormal, WR auto-created, pending approval'))
+      : (th?('✅ ส่ง OM '+recId+' เรียบร้อย — ไม่พบความผิดปกติ รออนุมัติ'):('✅ Submitted '+recId+' — no issues, pending approval')));
+  }catch(err){
+    ST.omFormBusy = false; render();
+    toast((th?'ส่งไม่สำเร็จ: ':'Submit failed: ')+(err.message||err));
+  }
+}
+
+/* ── Detail / Evaluate & Approve (unified: Approve/Reject show whenever
+   status is pending, Edit shows whenever status is rejected — so it works
+   whether the record was opened from Overview, In Progress, Closed or the
+   Evaluate & Approve tab) ── */
+function omDetailOpen(id){ ST.omDetailId = id; ST.omEvalBusy = false; render(); }
+function omDetailClose(){ ST.omDetailId = null; render(); }
+function omDetailOverlay(){
+  if(!ST.omDetailId) return '';
+  const th = ST.lang==='th';
+  const o = omRecordsData().find(function(x){ return String(x.id)===String(ST.omDetailId); });
+  if(!o) return '';
+  const stMap = { pending:[th?'รออนุมัติ':'Pending','orange'], approved:[th?'อนุมัติแล้ว':'Approved','green'], rejected:[th?'ส่งกลับแก้ไข':'Sent back','red'] };
+  const st = stMap[o.status] || [o.status,'gray'];
+  const abList = (o.items||[]).filter(function(x){ return x.result==='abnormal'; });
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    +'<div style="font-weight:700;font-size:17px">'+esc(o.id)+'</div>'
+    +'<div class="tap" data-act="om-detail-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+fmChip(th?st[0]:st[1], st[2])+(o.assetId?fmChip(o.assetId,'gray'):'')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'Checklist':'Checklist')+':</b> '+esc(o.templateName||'-')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ผู้ตรวจ':'Inspector')+':</b> '+esc(o.person||'-')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ความพร้อม':'Readiness')+':</b> '+(o.readiness==='ready'?'🟢':o.readiness==='temp'?'🟡':'🔴')+' '+esc(o.readiness||'-')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ระยะเวลา':'Duration')+':</b> '+(o.durationMin!=null?o.durationMin+(th?' นาที':' min'):'-')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:10px"><b>'+(th?'วันที่ส่ง':'Submitted')+':</b> '+(o.submittedDate?new Date(o.submittedDate).toLocaleString(th?'th-TH':'en-US'):'-')+'</div>'
+    + (o.status==='rejected' && o.rejectReason ? '<div style="background:rgba(239,68,68,.08);border:1px solid var(--danger);border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:10px">↩ '+esc(o.rejectReason)+'</div>' : '')
+    + (o.status==='approved' && o.reviewedBy ? '<div style="font-size:13px;color:var(--green);margin-bottom:10px">✅ '+(th?'อนุมัติโดย ':'Approved by ')+esc(o.reviewedBy)+'</div>' : '')
+    + (o.linkedWRs && o.linkedWRs.length ? '<div style="background:rgba(234,179,8,.1);border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:10px">🔧 '+(th?'สร้าง WR อัตโนมัติ: ':'Auto-created WR: ')+esc(o.linkedWRs.join(', '))+'</div>' : '')
+    +'<div style="font-weight:700;font-size:14px;margin-bottom:6px">'+(th?'หัวข้อตรวจสอบ':'Checklist items')+' ('+(o.items||[]).length+')</div>'
+    + (o.items||[]).map(function(it,i){
+        return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--color-divider)">'
+          +'<span>'+(i+1)+'. '+esc(it.label)+(it.value!=null&&it.value!==''?' — '+esc(it.value)+' '+esc(it.unit||''):'')+'</span>'
+          + (it.result==='abnormal'?fmChip(th?'ผิดปกติ':'Abnormal','red'):fmChip(th?'ปกติ':'OK','green'))
+          +'</div>'
+          + (it.result==='abnormal' && it.detail ? '<div style="font-size:12px;color:var(--color-neutral-700);padding:2px 0 4px">— '+esc(it.detail)+'</div>' : '');
+      }).join('')
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">'
+    + (o.status==='pending' ? '<div class="tap" data-act="om-approve" data-id="'+esc(o.id)+'" style="flex:1;text-align:center;font-size:14px;font-weight:700;padding:11px;border-radius:10px;background:var(--green);color:#fff;'+(ST.omEvalBusy?'opacity:.6':'')+'">✅ '+(th?'อนุมัติ':'Approve')+'</div>' : '')
+    + (o.status==='pending' ? '<div class="tap" data-act="om-reject" data-id="'+esc(o.id)+'" style="flex:1;text-align:center;font-size:14px;font-weight:700;padding:11px;border-radius:10px;border:1px solid var(--danger);color:var(--danger)">↩ '+(th?'ส่งกลับแก้ไข':'Reject')+'</div>' : '')
+    + (o.status==='rejected' ? '<div class="tap" data-act="om-edit-open" data-id="'+esc(o.id)+'" style="flex:1;text-align:center;font-size:14px;font-weight:700;padding:11px;border-radius:10px;background:var(--color-accent);color:#fff">✏ '+(th?'แก้ไข':'Edit')+'</div>' : '')
+    +'</div>'
+  );
+}
+async function omApprove(id){
+  if(ST.omEvalBusy) return;
+  const th = ST.lang==='th';
+  const o = omRecordsData().find(function(x){ return String(x.id)===String(id); }); if(!o) return;
+  ST.omEvalBusy = true; render();
+  const updated = Object.assign({}, o, { status:'approved', reviewedBy: (getUser()&&getUser().full_name)||(th?'หัวหน้างาน':'Supervisor'), reviewedDate: new Date().toISOString() });
+  try{ await fmSyncKind('omRecords', updated); ST.omEvalBusy=false; ST.omDetailId=null; render(); toast(th?('✅ อนุมัติ '+id+' เรียบร้อยครับ'):('✅ Approved '+id)); }
+  catch(err){ ST.omEvalBusy=false; render(); toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+async function omReject(id){
+  if(ST.omEvalBusy) return;
+  const th = ST.lang==='th';
+  const reason = prompt(th?'เหตุผลที่ส่งกลับให้ช่างแก้ไข (สั้นๆ):':'Reason for sending back:');
+  if(reason===null) return;
+  if(!reason.trim()){ toast(th?'กรุณาระบุเหตุผลก่อนครับ':'Please enter a reason'); return; }
+  const o = omRecordsData().find(function(x){ return String(x.id)===String(id); }); if(!o) return;
+  ST.omEvalBusy = true; render();
+  const updated = Object.assign({}, o, { status:'rejected', rejectReason: reason.trim(), rejectDate: new Date().toISOString() });
+  try{ await fmSyncKind('omRecords', updated); ST.omEvalBusy=false; ST.omDetailId=null; render(); toast(th?('↩ ส่งกลับ '+id+' ให้แก้ไขแล้ว'):('↩ Sent '+id+' back for correction')); }
+  catch(err){ ST.omEvalBusy=false; render(); toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+
+/* ── Checklist Setup (template CRUD) ── */
+function omTplItemsHtml(){
+  const th = ST.lang==='th';
+  if(!omTplWorkingItems.length) return '<div style="font-size:12px;color:var(--color-neutral-600);padding:6px 0">'+(th?'ยังไม่มีหัวข้อ — กด "+ เพิ่มหัวข้อ"':'No items yet — tap "+ Add item"')+'</div>';
+  return omTplWorkingItems.map(function(item,i){
+    return '<div class="blueprint" style="padding:8px 10px;margin-bottom:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+      +'<input class="input" style="flex:2;min-width:140px;padding:6px" placeholder="'+(th?'ชื่อหัวข้อตรวจสอบ':'Item name')+'" value="'+esc(item.label||'')+'" onchange="omTplUpdateItem('+i+',\'label\',this.value)">'
+      +'<select class="input" style="width:130px;padding:6px" onchange="omTplUpdateItem('+i+',\'type\',this.value)">'
+      +'<option value="visual" '+(item.type==='visual'?'selected':'')+'>'+(th?'ตรวจสภาพ':'Visual')+'</option>'
+      +'<option value="measurement" '+(item.type==='measurement'?'selected':'')+'>'+(th?'ค่าที่วัด':'Measurement')+'</option>'
+      +'<option value="photo" '+(item.type==='photo'?'selected':'')+'>'+(th?'ถ่ายรูป+อ่านค่า':'Photo+Reading')+'</option>'
+      +'</select>'
+      + (item.type==='measurement'||item.type==='photo' ? '<input class="input" style="width:60px;padding:6px" placeholder="'+(th?'หน่วย':'unit')+'" value="'+esc(item.unit||'')+'" onchange="omTplUpdateItem('+i+',\'unit\',this.value)">'
+        +'<input class="input" style="width:60px;padding:6px" type="number" placeholder="Min" value="'+(item.min??'')+'" onchange="omTplUpdateItem('+i+',\'min\',this.value)">'
+        +'<input class="input" style="width:60px;padding:6px" type="number" placeholder="Max" value="'+(item.max??'')+'" onchange="omTplUpdateItem('+i+',\'max\',this.value)">' : '')
+      +'<div class="tap" onclick="omTplRemoveItem('+i+')" style="font-size:12px;font-weight:700;padding:5px 9px;border-radius:6px;border:1px solid var(--danger);color:var(--danger)">✕</div>'
+      +'</div>';
+  }).join('');
+}
+function omTplRenderItems(){ const el = document.getElementById('om-tpl-items'); if(el) el.innerHTML = omTplItemsHtml(); }
+function omTplUpdateItem(i,key,val){
+  if(!omTplWorkingItems[i]) return;
+  if(key==='min'||key==='max') omTplWorkingItems[i][key] = val===''?null:parseFloat(val);
+  else omTplWorkingItems[i][key] = val;
+  if(key==='type') omTplRenderItems();
+}
+function omTplAddItem(){ omTplWorkingItems.push({ id:'itm'+Date.now()+Math.floor(Math.random()*1000), label:'', type:'visual', unit:'', min:null, max:null }); omTplRenderItems(); }
+function omTplRemoveItem(i){ omTplWorkingItems.splice(i,1); omTplRenderItems(); }
+function omTplOpen(id){
+  const t = id ? omTemplatesData().find(function(x){ return String(x.id)===String(id); }) : null;
+  ST.omTplEditId = id || null;
+  ST.omTplOpen = true; ST.omTplName = t?t.name:''; ST.omTplSys = t?t.sys:'AC'; ST.omTplFormCode = t?t.formCode:'';
+  omTplWorkingItems = t ? JSON.parse(JSON.stringify(t.items||[])) : [];
+  render();
+}
+function omTplClose(){ ST.omTplOpen = false; render(); }
+function omTplOverlay(){
+  if(!ST.omTplOpen) return '';
+  const th = ST.lang==='th';
+  const sysOpts = ['AC','SN','EE','FP','GE','WWT','BS','MATV','OTH'];
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div style="font-weight:700;font-size:17px">'+(ST.omTplEditId?(th?'✏ แก้ไข Checklist':'✏ Edit Checklist'):(th?'🧾 เพิ่ม Checklist ใหม่':'🧾 New Checklist'))+'</div>'
+    +'<div class="tap" data-act="om-tpl-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +'<div class="field"><label>'+(th?'ชื่อ Checklist':'Checklist name')+'</label><input class="input" id="om-tpl-name" value="'+esc(ST.omTplName||'')+'"></div>'
+    +'<div class="field"><label>System</label><select class="input" id="om-tpl-sys">'+sysOpts.map(function(s){ return '<option value="'+s+'" '+(ST.omTplSys===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select></div>'
+    +'<div class="field"><label>Form No.</label><input class="input" id="om-tpl-formcode" value="'+esc(ST.omTplFormCode||'')+'"></div>'
+    +'<div style="font-weight:700;font-size:14px;margin:10px 0 6px">'+(th?'หัวข้อตรวจสอบ':'Checklist items')+'</div>'
+    +'<div id="om-tpl-items">'+omTplItemsHtml()+'</div>'
+    +'<div class="tap" onclick="omTplAddItem()" style="text-align:center;font-size:13px;font-weight:600;padding:9px;border-radius:8px;border:1px dashed var(--color-divider);margin-bottom:12px">+ '+(th?'เพิ่มหัวข้อ':'Add item')+'</div>'
+    +'<div class="tap" data-act="om-tpl-save" style="text-align:center;font-size:15px;font-weight:700;padding:12px;border-radius:10px;background:var(--color-accent);color:#fff">'+(th?'บันทึก':'Save')+'</div>'
+  );
+}
+async function omTplSave(){
+  const th = ST.lang==='th';
+  const name = (document.getElementById('om-tpl-name')||{}).value.trim();
+  if(!name){ toast(th?'กรุณาตั้งชื่อ Checklist ก่อนครับ':'Please name the checklist'); return; }
+  const sys = (document.getElementById('om-tpl-sys')||{}).value;
+  const formCode = (document.getElementById('om-tpl-formcode')||{}).value.trim();
+  omTplWorkingItems.forEach(function(it,i){ if(!it.id) it.id = 'itm'+Date.now()+i; });
+  const tpl = { id: ST.omTplEditId || ('TPL-'+Date.now()), name, sys, formCode, items: omTplWorkingItems };
+  try{ await fmSyncKind('omTemplates', tpl); ST.omTplOpen=false; render(); toast(th?'✅ บันทึก Checklist แล้ว':'✅ Checklist saved'); }
+  catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+async function omTplDelete(id){
+  const th = ST.lang==='th';
+  if(!confirm(th?'ลบ Checklist นี้ใช่หรือไม่?':'Delete this checklist?')) return;
+  try{ await fmDeleteKind('omTemplates', id); render(); toast(th?'🗑 ลบแล้ว':'🗑 Deleted'); }
+  catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+
+/* ── OM Setting (M/A/N shift schedule CRUD) ── */
+function omSchedOpen(id){
+  const it = id ? omScheduleData().find(function(x){ return String(x.id)===String(id); }) : null;
+  ST.omSchedEditId = id || null; ST.omSchedOpen = true;
+  ST.omSchedShift = it?it.shift:'M'; ST.omSchedSection = it?it.section:''; ST.omSchedDesc = it?it.desc:'';
+  ST.omSchedStandard = it?it.standard:''; ST.omSchedTime = it?it.time:''; ST.omSchedFormCode = it?it.formCode:''; ST.omSchedFreq = it?it.freq:'daily';
+  render();
+}
+function omSchedClose(){ ST.omSchedOpen = false; render(); }
+function omSchedOverlay(){
+  if(!ST.omSchedOpen) return '';
+  const th = ST.lang==='th';
+  const tpls = omTemplatesData();
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div style="font-weight:700;font-size:17px">'+(ST.omSchedEditId?(th?'✏ แก้ไขรายการเวร':'✏ Edit shift item'):(th?'+ เพิ่มรายการเวร':'+ Add shift item'))+'</div>'
+    +'<div class="tap" data-act="om-sched-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +'<div class="field"><label>'+(th?'กะ':'Shift')+'</label><select class="input" id="om-sc-shift">'
+    +'<option value="M" '+(ST.omSchedShift==='M'?'selected':'')+'>🌅 Morning (M)</option>'
+    +'<option value="A" '+(ST.omSchedShift==='A'?'selected':'')+'>🌇 Afternoon (A)</option>'
+    +'<option value="N" '+(ST.omSchedShift==='N'?'selected':'')+'>🌙 Night (N)</option></select></div>'
+    +'<div class="field"><label>'+(th?'หมวด':'Section')+'</label><input class="input" id="om-sc-section" value="'+esc(ST.omSchedSection||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'รายการตรวจ':'Description')+'</label><input class="input" id="om-sc-desc" value="'+esc(ST.omSchedDesc||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'มาตรฐาน':'Standard')+'</label><input class="input" id="om-sc-standard" value="'+esc(ST.omSchedStandard||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'เวลา':'Time')+'</label><input class="input" type="time" id="om-sc-time" value="'+esc(ST.omSchedTime||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'ผูก Checklist (ถ้ามี)':'Linked checklist (optional)')+'</label><select class="input" id="om-sc-formcode">'
+    +'<option value="">-- '+(th?'ไม่ผูก':'None')+' --</option>'
+    + tpls.map(function(t){ return '<option value="'+esc(t.formCode||'')+'" '+(ST.omSchedFormCode===t.formCode?'selected':'')+'>'+esc(t.formCode||'')+' — '+esc(t.name)+'</option>'; }).join('')
+    +'</select></div>'
+    +'<div class="field"><label>'+(th?'ความถี่':'Frequency')+'</label><select class="input" id="om-sc-freq">'
+    +'<option value="daily" '+(ST.omSchedFreq==='daily'?'selected':'')+'>'+(th?'ทุกวัน':'Daily')+'</option>'
+    +'<option value="weekly" '+(ST.omSchedFreq==='weekly'?'selected':'')+'>'+(th?'ทุกสัปดาห์':'Weekly')+'</option>'
+    +'<option value="monthly" '+(ST.omSchedFreq==='monthly'?'selected':'')+'>'+(th?'ทุกเดือน':'Monthly')+'</option>'
+    +'</select></div>'
+    +'<div class="tap" data-act="om-sched-save" style="text-align:center;font-size:15px;font-weight:700;padding:12px;border-radius:10px;background:var(--color-accent);color:#fff;margin-top:8px">'+(th?'บันทึก':'Save')+'</div>'
+  );
+}
+async function omSchedSave(){
+  const th = ST.lang==='th';
+  const desc = (document.getElementById('om-sc-desc')||{}).value.trim();
+  if(!desc){ toast(th?'กรุณากรอกรายการตรวจก่อนครับ':'Please enter a description'); return; }
+  const existing = ST.omSchedEditId ? omScheduleData().find(function(x){ return String(x.id)===String(ST.omSchedEditId); }) : null;
+  const item = {
+    id: ST.omSchedEditId || ('sch-'+Date.now()),
+    shift: (document.getElementById('om-sc-shift')||{}).value,
+    section: (document.getElementById('om-sc-section')||{}).value.trim(),
+    desc, standard: (document.getElementById('om-sc-standard')||{}).value.trim(),
+    time: (document.getElementById('om-sc-time')||{}).value,
+    formCode: (document.getElementById('om-sc-formcode')||{}).value,
+    freq: (document.getElementById('om-sc-freq')||{}).value,
+    enabled: existing ? existing.enabled : true
+  };
+  try{ await fmSyncKind('omSchedule', item); ST.omSchedOpen=false; render(); toast(th?'✅ บันทึกแล้ว':'✅ Saved'); }
+  catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+async function omSchedDelete(id){
+  const th = ST.lang==='th';
+  if(!confirm(th?'ลบรายการนี้ใช่หรือไม่?':'Delete this item?')) return;
+  try{ await fmDeleteKind('omSchedule', id); render(); toast(th?'🗑 ลบแล้ว':'🗑 Deleted'); }
+  catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+async function omSchedToggle(id){
+  const it = omScheduleData().find(function(x){ return String(x.id)===String(id); }); if(!it) return;
+  const updated = Object.assign({}, it, { enabled: !it.enabled });
+  try{ await fmSyncKind('omSchedule', updated); render(); }catch(err){ toast(err.message||String(err)); }
 }
 
 function fmPPM(){
@@ -2239,9 +2779,28 @@ document.addEventListener('click', function(e){
     else if(ST.fmSub==='ppm') loadFmKind('ppm');
     else if(ST.fmSub==='ma') loadFmKind('ma');
     else if(ST.fmSub==='inv') loadFmKind('inv');
-    else if(ST.fmSub==='om') loadFmKind('omRecords');
+    else if(ST.fmSub==='om'){ ST.omSub='overview'; loadFmKind('omRecords'); loadFmKind('omTemplates'); loadFmKind('omSchedule'); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
   }
   else if(act==='refresh-wr'){ loadFmWR(); }
+  else if(act==='refresh-om'){ loadFmKind('omRecords'); loadFmKind('omTemplates'); loadFmKind('omSchedule'); }
+  else if(act==='om-sub'){ ST.omSub = el.getAttribute('data-sub'); render(); }
+  else if(act==='om-new-open'){ omNewOpen(); }
+  else if(act==='om-new-close'){ omNewClose(); }
+  else if(act==='om-new-submit'){ if(!ST.omFormBusy) omSubmit(); }
+  else if(act==='om-detail-open'){ omDetailOpen(el.getAttribute('data-id')); }
+  else if(act==='om-detail-close'){ omDetailClose(); }
+  else if(act==='om-edit-open'){ omEditOpen(el.getAttribute('data-id')); }
+  else if(act==='om-approve'){ omApprove(el.getAttribute('data-id')); }
+  else if(act==='om-reject'){ omReject(el.getAttribute('data-id')); }
+  else if(act==='om-tpl-open'){ omTplOpen(el.getAttribute('data-id')); }
+  else if(act==='om-tpl-close'){ omTplClose(); }
+  else if(act==='om-tpl-save'){ omTplSave(); }
+  else if(act==='om-tpl-delete'){ omTplDelete(el.getAttribute('data-id')); }
+  else if(act==='om-sched-open'){ omSchedOpen(el.getAttribute('data-id')); }
+  else if(act==='om-sched-close'){ omSchedClose(); }
+  else if(act==='om-sched-save'){ omSchedSave(); }
+  else if(act==='om-sched-delete'){ omSchedDelete(el.getAttribute('data-id')); }
+  else if(act==='om-sched-toggle'){ omSchedToggle(el.getAttribute('data-id')); }
   else if(act==='wr-sub'){
     const sub = el.getAttribute('data-sub');
     if(sub==='__more__'){ ST.wrMoreOpen = true; }
