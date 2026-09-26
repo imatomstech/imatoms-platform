@@ -3714,19 +3714,586 @@ function fmMA(){
     + maContractFormOverlay() + maContractDetailOverlay() + maVisitFormOverlay() + maVisitDetailOverlay();
 }
 
-function fmInv(){
+/* ══════════════ Inventory — core parity with the webapp:
+   Item List (CRUD), Receive (FIFO in), Issue (out, ref WR/PM/MA + block
+   over-issue), ROP forecast (table, no chart), Setting (inline Min/Max/
+   ROP/Lead Time). Value Summary, Dead Stock, Asset History_Inventory and
+   Availability analytics are Desktop-only, per the user's explicit "core
+   complete" scope decision — same treatment OM/PPM/MA's analytics-only
+   tabs got. Items/tx are read via the same generic /fm-records/inv and
+   /fm-records/invtx kinds the Reliability Module already seeds & syncs
+   to the backend. FIFO cost-layer math (ensureLots/addLot/consumeFIFO)
+   is ported verbatim from Desktop so both apps agree on unit cost. */
+const INV_SYS = ['AC','BAS','EL','EC','EE','FA','FP','SN','VN','WWT','TR','GE','OTH'];
+const INV_USAGE = ['GEN','RM','PM','MA'];
+
+function invItemsData(){ return (fmKindData('inv') || fmDB('inv') || []).slice(); }
+function invTxData(){ return (fmKindData('invtx') || fmDB('invtx') || []).slice(); }
+function invEnsureLots(item){
+  if(!Array.isArray(item.lots) || !item.lots.length){
+    item.lots = (item.qty>0) ? [{ qty:item.qty, cost:item.price||0, date:item.createdDate||new Date().toISOString(), ref:'init' }] : [];
+  }
+  return item.lots;
+}
+function invAddLot(item, qty, cost, date, ref){
+  invEnsureLots(item);
+  item.lots.push({ qty:qty, cost:cost, date:date, ref:ref });
+  item.qty = (item.qty||0) + qty;
+  item.price = invUnitCost(item);
+}
+function invConsumeFIFO(item, qty){
+  invEnsureLots(item);
+  let remain = qty, cost = 0;
+  while(remain>0 && item.lots.length){
+    const lot = item.lots[0];
+    const take = Math.min(lot.qty, remain);
+    cost += take*lot.cost; lot.qty -= take; remain -= take;
+    if(lot.qty<=0) item.lots.shift();
+  }
+  const consumedQty = qty - remain;
+  item.qty = Math.max(0, (item.qty||0) - consumedQty);
+  item.price = invUnitCost(item);
+  return { consumedQty:consumedQty, consumedCost:cost, avgCost: consumedQty ? cost/consumedQty : 0 };
+}
+function invItemValue(item){
+  invEnsureLots(item);
+  if(item.lots.length) return item.lots.reduce(function(s,l){ return s+l.qty*l.cost; }, 0);
+  return (item.qty||0)*(item.price||0);
+}
+function invUnitCost(item){
+  invEnsureLots(item);
+  const totalQty = item.lots.reduce(function(s,l){ return s+l.qty; }, 0);
+  if(!totalQty) return item.price||0;
+  const totalCost = item.lots.reduce(function(s,l){ return s+l.qty*l.cost; }, 0);
+  return totalCost/totalQty;
+}
+function invResolveAsset(refType, refId){
+  if(!refId) return null;
+  if(refType==='WR'){ const w = wrData().find(function(x){ return String(x.id)===String(refId); }); return w ? w.assetId : null; }
+  if(refType==='PM'){ const p = ppmData().find(function(x){ return String(x.id)===String(refId); }); return p ? p.assetId : null; }
+  if(refType==='MA'){ const v = maVisitsData().find(function(x){ return String(x.id)===String(refId); }); return v ? v.assetId : null; }
+  return null;
+}
+function invAvgMonthlyUsage(partId){
+  const now = new Date();
+  const cutoff = new Date(now.getFullYear(), now.getMonth()-6, now.getDate());
+  const sum = invTxData().filter(function(t){ return String(t.partId)===String(partId) && t.type==='issue' && t.fulfilled!==false && t.date && new Date(t.date)>=cutoff; })
+    .reduce(function(s,t){ return s+(t.qty||0); }, 0);
+  return sum/6;
+}
+function invLastMovementDate(partId){
+  const txs = invTxData().filter(function(t){ return String(t.partId)===String(partId) && (t.type==='receive' || (t.type==='issue' && t.fulfilled!==false)); });
+  if(!txs.length) return null;
+  return txs.reduce(function(latest,t){ return (!latest || new Date(t.date)>new Date(latest)) ? t.date : latest; }, null);
+}
+function invSubTabs(active){
   const th = ST.lang==='th';
-  if (ST.modLoading.inv) return fmEmpty(th?'กำลังโหลด...':'Loading...');
-  const inv = fmKindData('inv') || fmDB('inv');
-  if(!inv.length) return fmEmpty(th?'ไม่มีรายการในคลัง':'No inventory items');
-  return '<div style="display:flex;flex-direction:column;gap:8px">' + inv.slice(0,25).map(function(i){
-    const low = (i.qty||0) < (i.min||0);
+  const items = invItemsData();
+  const belowRop = items.filter(function(i){ return (i.qty||0)<=(i.rop||0); }).length;
+  const tabs=[
+    {k:'overview',label:th?'ภาพรวม':'Overview'},
+    {k:'list',label:th?'รายการอะไหล่':'Item List',badge:belowRop},
+    {k:'receive',label:th?'รับเข้า':'Receive'},
+    {k:'issue',label:th?'เบิกจ่าย':'Issue'},
+    {k:'rop',label:th?'คาดการณ์สั่งซื้อ':'ROP Forecast'},
+    {k:'availability',label:th?'ประสิทธิภาพจ่าย':'Availability'},
+    {k:'valuesummary',label:th?'สรุปมูลค่ารายเดือน':'Value Summary'},
+    {k:'deadstock',label:'Dead Stock'},
+    {k:'history',label:th?'ประวัติตาม Asset':'Asset History'},
+    {k:'setting',label:th?'ตั้งค่า':'Setting'},
+  ];
+  function pill(k,label,badge){
+    const isActive=active===k;
+    const badgeHtml = badge ? '<span style="margin-left:5px;background:#ef4444;color:#fff;font-size:12px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px">'+(badge>99?'99+':badge)+'</span>' : '';
+    return '<div class="tap" data-act="inv-sub" data-sub="'+k+'" style="flex-shrink:0;display:flex;align-items:center;font-size:11.5px;font-weight:600;padding:7px 11px;border-radius:20px;border:1px solid '+(isActive?'var(--color-accent)':'var(--color-divider)')+';background:'+(isActive?'var(--color-accent)':'transparent')+';color:'+(isActive?'#fff':'var(--color-text)')+'">'+esc(label)+badgeHtml+'</div>';
+  }
+  return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+    +'<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;flex:1">'
+    + tabs.map(function(x){ return pill(x.k,x.label,x.badge); }).join('')
+    +'</div>'
+    +'<div class="tap" data-act="refresh-inv" title="'+(th?'รีเฟรชข้อมูล':'Refresh')+'" style="flex-shrink:0;width:30px;height:30px;border-radius:50%;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;'+(ST.modLoading.inv?'opacity:.5':'')+'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7"></path><path d="M21 3v6h-6"></path></svg></div>'
+    +'</div>';
+}
+function invItemCard(i, th){
+  const low = (i.qty||0) <= (i.rop||0);
+  return '<div class="tap blueprint" data-act="inv-item-detail-open" data-id="'+esc(i.id)+'" style="padding:11px 12px;display:flex;flex-direction:column;gap:4px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(i.id)+'</span>'+fmChip(low?(th?'ต่ำกว่า ROP':'Below ROP'):(th?'ปกติ':'OK'), low?'red':'green')+'</div>'
+    +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(i.name||'')+'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip((th?'คงเหลือ ':'Qty ')+(i.qty||0)+' '+(i.unit||''),'gray')+fmChip(fmMoney(invItemValue(i)),'gray')+(i.sys?fmChip(i.sys,'gray'):'')+'</div>'
+    +'</div>';
+}
+function invItemsHtml(list, th, emptyMsg){
+  if(!list.length) return fmEmpty(emptyMsg);
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + list.slice(0,40).map(function(i){ return invItemCard(i, th); }).join('') + '</div>';
+}
+function invTxCard(t, th){
+  const isReceive = t.type==='receive';
+  const badge = isReceive ? [th?'รับเข้า':'Receive','green'] : (t.fulfilled===false ? [th?'ของไม่พอ':'Insufficient','red'] : [th?'เบิกจ่าย':'Issue','sky']);
+  return '<div class="blueprint" style="padding:11px 12px;display:flex;flex-direction:column;gap:4px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:14px">'+esc(t.partName||t.partId||'')+'</span>'+fmChip(badge[0], badge[1])+'</div>'
+    +'<div style="font-size:13px;color:var(--color-neutral-700)">'+esc(t.date||'')+(t.ref?(' · '+(isReceive?(th?'PO ':'PO ')+esc(t.ref):(t.refType?esc(t.refType)+' '+esc(t.ref):esc(t.ref)))):'')+'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip((isReceive?(th?'จำนวน ':'Qty '):(th?'เบิก ':'Qty '))+(t.qty||0),'gray')+fmChip(fmMoney(t.totalCost||0),'gray')+(t.person?fmChip(t.person,'gray'):'')+'</div>'
+    +'</div>';
+}
+function invOverview(){
+  const th = ST.lang==='th';
+  const items = invItemsData();
+  const totalSKU = items.length;
+  const totalValue = items.reduce(function(s,i){ return s+invItemValue(i); }, 0);
+  const belowRop = items.filter(function(i){ return (i.qty||0)<=(i.rop||0); }).length;
+  const btn = '<div style="display:flex;gap:8px;flex-wrap:wrap"><div class="tap" data-act="inv-item-new-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'อะไหล่ใหม่':'New Item')+'</div><div class="tap" data-act="inv-receive-new-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;border:1px solid var(--color-accent);color:var(--color-accent);text-align:center">📥 '+(th?'รับเข้า':'Receive')+'</div><div class="tap" data-act="inv-issue-new-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;border:1px solid var(--color-accent);color:var(--color-accent);text-align:center">📤 '+(th?'เบิกจ่าย':'Issue')+'</div></div>';
+  const recent = invTxData().slice().sort(function(a,b){ return new Date(b.date||0)-new Date(a.date||0); }).slice(0,8);
+  return btn
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">'
+    + statCard(th?'จำนวนรายการ':'Total SKUs', totalSKU) + statCard(th?'มูลค่าคงเหลือ':'Total Value', fmMoney(totalValue)) + statCard(th?'ต่ำกว่า ROP':'Below ROP', belowRop)
+    +'</div>'
+    +'<div style="margin-top:10px"><h4 style="font-size:15px;margin-bottom:6px">'+(th?'รายการเคลื่อนไหวล่าสุด':'Recent Transactions')+'</h4>'+(recent.length ? '<div style="display:flex;flex-direction:column;gap:8px">'+recent.map(function(t){ return invTxCard(t, th); }).join('')+'</div>' : fmEmpty(th?'ยังไม่มีรายการเคลื่อนไหว':'No transactions yet'))+'</div>';
+}
+function invList(){
+  const th = ST.lang==='th';
+  const btn = '<div style="display:flex"><div class="tap" data-act="inv-item-new-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'อะไหล่ใหม่':'New Item')+'</div></div>';
+  return btn + '<div style="margin-top:10px">'+invItemsHtml(invItemsData(), th, th?'ยังไม่มีรายการอะไหล่':'No inventory items yet')+'</div>';
+}
+function invReceive(){
+  const th = ST.lang==='th';
+  const btn = '<div style="display:flex"><div class="tap" data-act="inv-receive-new-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'รับเข้าคลัง':'New Receive')+'</div></div>';
+  const list = invTxData().filter(function(t){ return t.type==='receive'; }).sort(function(a,b){ return new Date(b.date||0)-new Date(a.date||0); });
+  return btn + '<div style="margin-top:10px">'+(list.length ? '<div style="display:flex;flex-direction:column;gap:8px">'+list.slice(0,40).map(function(t){ return invTxCard(t, th); }).join('')+'</div>' : fmEmpty(th?'ยังไม่มีประวัติรับเข้า':'No receive history yet'))+'</div>';
+}
+function invIssue(){
+  const th = ST.lang==='th';
+  const btn = '<div style="display:flex"><div class="tap" data-act="inv-issue-new-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'เบิกจ่ายอะไหล่':'New Issue')+'</div></div>';
+  const list = invTxData().filter(function(t){ return t.type==='issue'; }).sort(function(a,b){ return new Date(b.date||0)-new Date(a.date||0); });
+  return btn + '<div style="margin-top:10px">'+(list.length ? '<div style="display:flex;flex-direction:column;gap:8px">'+list.slice(0,40).map(function(t){ return invTxCard(t, th); }).join('')+'</div>' : fmEmpty(th?'ยังไม่มีประวัติเบิกจ่าย':'No issue history yet'))+'</div>';
+}
+function invROP(){
+  const th = ST.lang==='th';
+  const items = invItemsData();
+  if(!items.length) return fmEmpty(th?'ยังไม่มีรายการอะไหล่':'No inventory items yet');
+  const rows = items.map(function(i){
+    const avgUse = invAvgMonthlyUsage(i.id);
+    const daysLeft = avgUse>0 ? Math.round((i.qty||0)/(avgUse/30)) : null;
+    let orderByStr = '—';
+    if(daysLeft!=null){ const d=new Date(); d.setDate(d.getDate()+(daysLeft-(i.leadTimeDays||0))); orderByStr = d.toISOString().slice(0,10); }
+    const needOrder = (i.qty||0)<=(i.rop||0) || (daysLeft!=null && daysLeft<=(i.leadTimeDays||0));
+    const suggestQty = Math.max((i.max||0)-(i.qty||0), 0);
+    return { item:i, daysLeft:daysLeft, orderByStr:orderByStr, needOrder:needOrder, suggestQty:suggestQty };
+  }).sort(function(a,b){ if(a.needOrder!==b.needOrder) return a.needOrder?-1:1; return (a.daysLeft==null?9999:a.daysLeft)-(b.daysLeft==null?9999:b.daysLeft); });
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + rows.map(function(r){
+    const i = r.item;
     return fmCard(
-      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(i.code||i.id)+'</span>'+fmChip(low?(th?'ใกล้หมด':'Low'):(th?'ปกติ':'OK'), low?'red':'green')+'</div>'
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(i.id)+'</span>'+fmChip(r.needOrder?(th?'ควรสั่งซื้อ':'Order now'):(th?'ยังไม่ต้องสั่ง':'OK'), r.needOrder?'red':'green')+'</div>'
       +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(i.name||'')+'</div>'
-      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip((th?'คงเหลือ ':'Qty ')+(i.qty||0)+' '+(i.unit||''),'gray')+fmChip(fmMoney((i.qty||0)*(i.price||0)),'gray')+'</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'
+      + fmChip((th?'คงเหลือ ':'Qty ')+(i.qty||0)+' '+(i.unit||''),'gray')
+      + fmChip('ROP '+(i.rop||0),'gray')
+      + fmChip((th?'ใช้หมดใน ':'Runs out in ')+(r.daysLeft!=null?r.daysLeft+(th?' วัน':'d'):'—'),'gray')
+      + fmChip((th?'สั่งภายใน ':'Order by ')+r.orderByStr,'gray')
+      + (r.suggestQty>0?fmChip((th?'แนะนำสั่ง ':'Suggest ')+r.suggestQty+' '+(i.unit||''),'orange'):'')
+      +'</div>'
     );
   }).join('') + '</div>';
+}
+/* ── Availability / Issue-efficiency (service level) ── */
+function invAvailability(){
+  const th = ST.lang==='th';
+  const issueTx = invTxData().filter(function(t){ return t.type==='issue'; });
+  const fulfilled = issueTx.filter(function(t){ return t.fulfilled!==false; }).length;
+  const failed = issueTx.filter(function(t){ return t.fulfilled===false; }).length;
+  const availPct = (fulfilled+failed) ? Math.round((fulfilled/(fulfilled+failed))*1000)/10 : null;
+  const byPart = {};
+  issueTx.forEach(function(t){
+    const k = t.partId; byPart[k] = byPart[k] || { partId:k, partName:t.partName, fulfilled:0, failed:0 };
+    if(t.fulfilled===false) byPart[k].failed++; else byPart[k].fulfilled++;
+  });
+  const rows = Object.keys(byPart).map(function(k){ return byPart[k]; }).filter(function(r){ return r.failed>0; })
+    .sort(function(a,b){ return b.failed-a.failed; });
+  const kpi = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">'
+    + statCard(th?'คำขอเบิกทั้งหมด':'Total Requests', fulfilled+failed)
+    + statCard(th?'สำเร็จ':'Fulfilled', fulfilled)
+    + statCard(th?'ความพร้อมจ่าย (%)':'Availability (%)', availPct!=null?availPct+'%':'—')
+    +'</div>';
+  const table = rows.length ? '<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">' + rows.map(function(r){
+    const rate = Math.round((r.failed/(r.fulfilled+r.failed))*1000)/10;
+    return fmCard(
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(r.partName||r.partId)+'</span>'+fmChip((th?'ของไม่พอ ':'Fail ')+r.failed+(th?' ครั้ง':'x'),'red')+'</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip((th?'สำเร็จ ':'OK ')+r.fulfilled,'green')+fmChip((th?'อัตราของไม่พอ ':'Fail rate ')+rate+'%','orange')+'</div>'
+    );
+  }).join('') + '</div>' : '<div style="margin-top:10px">'+fmEmpty(th?'ไม่มีรายการเบิกที่ของไม่พอ':'No parts with failed issues')+'</div>';
+  return kpi + '<div style="margin-top:10px"><h4 style="font-size:15px;margin-bottom:6px">'+(th?'อะไหล่ที่ของไม่พอบ่อย':'Parts with frequent shortages')+'</h4></div>' + table;
+}
+/* ── Value Summary (monthly) ── */
+function invSetValueMonth(val){ ST.invValueMonth = val; render(); }
+function invValueSummary(){
+  const th = ST.lang==='th';
+  ST.invValueMonth = ST.invValueMonth || new Date().toISOString().slice(0,7);
+  const parts = ST.invValueMonth.split('-'); const y = parseInt(parts[0]), m = parseInt(parts[1]);
+  function inMonth(t){ if(!t.date) return false; const d = new Date(t.date); return !isNaN(d) && d.getFullYear()===y && (d.getMonth()+1)===m; }
+  const txs = invTxData();
+  const inVal = txs.filter(function(t){ return t.type==='receive' && inMonth(t); }).reduce(function(s,t){ return s+(t.totalCost||0); }, 0);
+  const outVal = txs.filter(function(t){ return t.type==='issue' && t.fulfilled!==false && inMonth(t); }).reduce(function(s,t){ return s+(t.totalCost||0); }, 0);
+  const items = invItemsData();
+  const closeVal = items.reduce(function(s,i){ return s+invItemValue(i); }, 0);
+  let openVal = closeVal - inVal + outVal; if(openVal<0) openVal = 0;
+  function groupSum(field){
+    const map = {};
+    txs.filter(function(t){ return t.type==='issue' && t.fulfilled!==false && inMonth(t); }).forEach(function(t){
+      const k = t[field] || '—'; map[k] = (map[k]||0) + (t.totalCost||0);
+    });
+    return map;
+  }
+  const byBuilding = groupSum('building'), bySys = groupSum('sys'), byRefType = groupSum('refType');
+  function breakdownHtml(map, title){
+    const keys = Object.keys(map);
+    if(!keys.length) return '';
+    return '<div style="margin-top:10px"><h4 style="font-size:14px;margin-bottom:6px">'+title+'</h4>'
+      + '<div style="display:flex;flex-direction:column;gap:6px">' + keys.map(function(k){
+        return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px">'+esc(k)+'</span>'+fmChip(fmMoney(map[k]),'gray')+'</div>');
+      }).join('') + '</div></div>';
+  }
+  const picker = '<div class="field"><label>'+(th?'เดือน':'Month')+'</label><input class="input" type="month" value="'+esc(ST.invValueMonth)+'" onchange="invSetValueMonth(this.value)"></div>';
+  const kpi = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">'
+    + statCard(th?'ยอดยกมา':'Opening', fmMoney(openVal)) + statCard(th?'รับเข้าเดือนนี้':'In (Receive)', fmMoney(inVal))
+    + statCard(th?'เบิกจ่ายเดือนนี้':'Out (Issue)', fmMoney(outVal)) + statCard(th?'ยอดคงเหลือ':'Closing', fmMoney(closeVal))
+    +'</div>';
+  return picker + kpi
+    + breakdownHtml(byBuilding, th?'แยกตามอาคาร':'By Building')
+    + breakdownHtml(bySys, th?'แยกตามระบบ':'By System')
+    + breakdownHtml(byRefType, th?'แยกตามประเภทงาน (WR/PM/MA)':'By Reference Type (WR/PM/MA)');
+}
+/* ── Dead Stock ── */
+function invDeadStock(){
+  const th = ST.lang==='th';
+  const items = invItemsData();
+  if(!items.length) return fmEmpty(th?'ยังไม่มีรายการอะไหล่':'No inventory items yet');
+  const now = new Date();
+  const rows = items.map(function(i){
+    const last = invLastMovementDate(i.id);
+    const monthsSince = last ? Math.floor((now-new Date(last))/(30*86400000)) : Infinity;
+    return { item:i, monthsSince:monthsSince, last:last };
+  }).filter(function(r){ return r.monthsSince>=6; }).sort(function(a,b){ return b.monthsSince-a.monthsSince; });
+  const buckets = [6,12,18,24,30,36];
+  const bucketCounts = buckets.map(function(b, idx){
+    const nextB = buckets[idx+1];
+    const count = rows.filter(function(r){ return r.monthsSince>=b && (nextB==null || r.monthsSince<nextB); }).length;
+    return { label:(nextB!=null?(b+'-'+(nextB-1)):(b+'+'))+(th?' เดือน':'mo'), count:count };
+  });
+  const kpi = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">' + bucketCounts.map(function(b){ return statCard(b.label, b.count); }).join('') + '</div>';
+  const totalDeadValue = rows.reduce(function(s,r){ return s+invItemValue(r.item); }, 0);
+  const table = '<div style="margin-top:10px">' + rows.map(function(r){
+    const i = r.item;
+    const color = r.monthsSince>=24 ? 'red' : (r.monthsSince>=12 ? 'orange' : 'sky');
+    const monthsLabel = r.monthsSince===Infinity ? (th?'ไม่เคยเคลื่อนไหว':'Never moved') : (r.monthsSince+(th?' เดือน':'mo'));
+    return fmCard(
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(i.id)+'</span>'+fmChip(monthsLabel, color)+'</div>'
+      +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(i.name||'')+'</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+fmChip((th?'คงเหลือ ':'Qty ')+(i.qty||0)+' '+(i.unit||''),'gray')+fmChip(fmMoney(invItemValue(i)),'gray')+'</div>'
+    );
+  }).join('') + '</div>';
+  return kpi + '<div style="margin-top:10px">'+statCard(th?'มูลค่ารวม Dead Stock':'Total Dead Stock Value', fmMoney(totalDeadValue))+'</div>'
+    + '<div style="margin-top:10px"><h4 style="font-size:15px;margin-bottom:6px">'+(th?'รายการ Dead Stock':'Dead Stock Items')+'</h4>'+(rows.length ? table : fmEmpty(th?'ไม่มีรายการ Dead Stock':'No dead stock items'))+'</div>';
+}
+/* ── Asset History_Inventory ── */
+function invSetHistoryAsset(id){ ST.invHistoryAssetId = id; render(); }
+function invAssetHistory(){
+  const th = ST.lang==='th';
+  const assets = (ST.modData.fm && ST.modData.fm.assets) || [];
+  const selectedId = ST.invHistoryAssetId || '';
+  const picker = '<div class="field"><label>'+(th?'เลือก Asset':'Select Asset')+'</label><select class="input" onchange="invSetHistoryAsset(this.value)">'
+    +'<option value="">'+(th?'-- เลือก Asset --':'-- Select asset --')+'</option>'
+    + assets.map(function(a){ return '<option value="'+esc(a.id)+'" '+(String(a.id)===String(selectedId)?'selected':'')+'>'+esc(a.id)+' — '+esc(a.name||'')+'</option>'; }).join('')
+    +'</select></div>';
+  if(!selectedId) return picker + fmEmpty(th?'กรุณาเลือก Asset เพื่อดูประวัติการใช้อะไหล่':'Select an asset to see its parts history');
+  const txs = invTxData().filter(function(t){ return t.type==='issue' && t.fulfilled!==false && String(t.assetId)===String(selectedId); })
+    .sort(function(a,b){ return new Date(b.date||0)-new Date(a.date||0); });
+  const totalCost = txs.reduce(function(s,t){ return s+(t.totalCost||0); }, 0);
+  const kpi = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">'+statCard(th?'จำนวนครั้งที่เบิก':'Times Issued', txs.length)+statCard(th?'ต้นทุนสะสม':'Cumulative Cost', fmMoney(totalCost))+'</div>';
+  const list = txs.length ? '<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">' + txs.map(function(t){ return invTxCard(t, th); }).join('') + '</div>' : '<div style="margin-top:10px">'+fmEmpty(th?'ยังไม่มีการเบิกอะไหล่สำหรับ Asset นี้':'No parts issued to this asset yet')+'</div>';
+  return picker + kpi + list;
+}
+function invSetting(){
+  const th = ST.lang==='th';
+  const items = invItemsData();
+  if(!items.length) return fmEmpty(th?'ยังไม่มีรายการอะไหล่':'No inventory items yet');
+  function numField(id, field, val, label){
+    return '<div style="flex:1;min-width:70px"><div style="font-size:11px;color:var(--color-neutral-600);margin-bottom:2px">'+label+'</div><input class="input" type="number" value="'+(val||0)+'" style="padding:6px 8px;font-size:13px" onchange="invUpdateSetting(\''+esc(id)+'\',\''+field+'\',this.value)"></div>';
+  }
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + items.map(function(i){
+    return fmCard(
+      '<div style="font-family:var(--font-heading);font-size:15px;margin-bottom:4px">'+esc(i.id)+' — '+esc(i.name||'')+'</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      + numField(i.id,'min',i.min,th?'Min':'Min')
+      + numField(i.id,'max',i.max,th?'Max':'Max')
+      + numField(i.id,'rop',i.rop,'ROP')
+      + numField(i.id,'leadTimeDays',i.leadTimeDays,th?'Lead(วัน)':'Lead(d)')
+      +'</div>'
+    );
+  }).join('') + '</div>';
+}
+async function invUpdateSetting(id, field, value){
+  const items = invItemsData();
+  const item = items.find(function(x){ return String(x.id)===String(id); }); if(!item) return;
+  item[field] = parseInt(value)||0;
+  try{ await fmSyncKind('inv', item); }catch(e){}
+  render();
+}
+
+/* ── Item CRUD ── */
+function invItemFormOverlay(){
+  if(!ST.invFormOpen) return '';
+  const th = ST.lang==='th';
+  const editing = !!ST.invFormEditId;
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div style="font-weight:700;font-size:17px">'+(editing?(th?'✏ แก้ไขอะไหล่':'✏ Edit Item'):(th?'📦 เพิ่มอะไหล่ใหม่':'📦 New Item'))+'</div>'
+    +'<div class="tap" data-act="inv-item-new-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +(!editing ? '<div class="field"><label>Part No.</label><input class="input" id="inv-f-id" value="" placeholder="'+(th?'เว้นว่างเพื่อสร้างอัตโนมัติ':'Leave blank to auto-generate')+'"></div>' : '')
+    +'<div class="field"><label>'+(th?'ชื่ออะไหล่':'Name')+' *</label><input class="input" id="inv-f-name" value="'+esc(ST.invFormName||'')+'"></div>'
+    +'<div class="field"><label>Brand</label><input class="input" id="inv-f-brand" value="'+esc(ST.invFormBrand||'')+'"></div>'
+    +'<div class="field"><label>Model</label><input class="input" id="inv-f-model" value="'+esc(ST.invFormModel||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'ระบบ':'System')+'</label><select class="input" id="inv-f-sys">'+INV_SYS.map(function(s){ return '<option value="'+s+'" '+(ST.invFormSys===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select></div>'
+    +'<div class="field"><label>'+(th?'ใช้กับงานประเภท':'Usage type')+'</label><select class="input" id="inv-f-usage">'+INV_USAGE.map(function(u){ return '<option value="'+u+'" '+(ST.invFormUsage===u?'selected':'')+'>'+u+'</option>'; }).join('')+'</select></div>'
+    +'<div class="field"><label>'+(th?'หน่วย':'Unit')+'</label><input class="input" id="inv-f-unit" value="'+esc(ST.invFormUnit||'ชิ้น')+'"></div>'
+    +'<div class="field"><label>'+(th?'ตำแหน่งจัดเก็บ':'Location')+'</label><input class="input" id="inv-f-location" value="'+esc(ST.invFormLocation||'')+'"></div>'
+    +'<div style="display:flex;gap:6px"><div class="field" style="flex:1"><label>Min</label><input class="input" type="number" id="inv-f-min" value="'+(ST.invFormMin!=null?ST.invFormMin:2)+'"></div>'
+    +'<div class="field" style="flex:1"><label>Max</label><input class="input" type="number" id="inv-f-max" value="'+(ST.invFormMax!=null?ST.invFormMax:20)+'"></div>'
+    +'<div class="field" style="flex:1"><label>ROP</label><input class="input" type="number" id="inv-f-rop" value="'+(ST.invFormRop!=null?ST.invFormRop:5)+'"></div></div>'
+    +'<div class="field"><label>'+(th?'Lead Time (วัน)':'Lead Time (days)')+'</label><input class="input" type="number" id="inv-f-lead" value="'+(ST.invFormLead!=null?ST.invFormLead:7)+'"></div>'
+    + (!editing ? '<div class="field"><label>'+(th?'ราคาต่อหน่วยเริ่มต้น':'Initial unit price')+'</label><input class="input" type="number" id="inv-f-price" value="'+(ST.invFormPrice||0)+'"></div>' : '')
+    +'<div class="tap" data-act="inv-item-submit" style="margin-top:14px;text-align:center;font-size:15px;font-weight:700;padding:12px;border-radius:10px;background:var(--color-accent);color:#fff;'+(ST.invFormBusy?'opacity:.6':'')+'">'+(ST.invFormBusy?(th?'กำลังบันทึก...':'Saving...'):(th?'💾 บันทึกอะไหล่':'💾 Save Item'))+'</div>'
+  );
+}
+function invItemNewOpen(){
+  ST.invFormOpen=true; ST.invFormEditId=null; ST.invFormName=''; ST.invFormBrand=''; ST.invFormModel='';
+  ST.invFormSys='OTH'; ST.invFormUsage='GEN'; ST.invFormUnit='ชิ้น'; ST.invFormLocation='';
+  ST.invFormMin=2; ST.invFormMax=20; ST.invFormRop=5; ST.invFormLead=7; ST.invFormPrice=0; ST.invFormBusy=false;
+  render();
+}
+function invItemEditOpen(id){
+  const i = invItemsData().find(function(x){ return String(x.id)===String(id); }); if(!i) return;
+  ST.invFormOpen=true; ST.invFormEditId=i.id; ST.invFormName=i.name||''; ST.invFormBrand=i.brand||''; ST.invFormModel=i.model||'';
+  ST.invFormSys=i.sys||'OTH'; ST.invFormUsage=i.usageType||'GEN'; ST.invFormUnit=i.unit||'ชิ้น'; ST.invFormLocation=i.location||'';
+  ST.invFormMin=i.min!=null?i.min:2; ST.invFormMax=i.max!=null?i.max:20; ST.invFormRop=i.rop!=null?i.rop:5; ST.invFormLead=i.leadTimeDays!=null?i.leadTimeDays:7;
+  ST.invFormBusy=false;
+  ST.invItemDetailId = null;
+  render();
+}
+function invItemNewClose(){ ST.invFormOpen=false; render(); }
+async function invItemSubmit(){
+  const th = ST.lang==='th';
+  const name = (document.getElementById('inv-f-name')||{}).value.trim();
+  if(!name){ toast(th?'กรุณากรอกชื่ออะไหล่':'Please enter the item name'); return; }
+  const isEdit = !!ST.invFormEditId;
+  let id = isEdit ? ST.invFormEditId : ((document.getElementById('inv-f-id')||{}).value||'').trim();
+  if(!id) id = 'PRT-'+Date.now();
+  ST.invFormBusy=true; render();
+  const existing = isEdit ? invItemsData().find(function(x){ return String(x.id)===String(id); }) : null;
+  const item = Object.assign({}, existing, {
+    id, name, brand:(document.getElementById('inv-f-brand')||{}).value.trim(), model:(document.getElementById('inv-f-model')||{}).value.trim(),
+    sys:(document.getElementById('inv-f-sys')||{}).value, usageType:(document.getElementById('inv-f-usage')||{}).value,
+    unit:(document.getElementById('inv-f-unit')||{}).value.trim()||'ชิ้น', location:(document.getElementById('inv-f-location')||{}).value.trim(),
+    min:parseInt((document.getElementById('inv-f-min')||{}).value)||0, max:parseInt((document.getElementById('inv-f-max')||{}).value)||0,
+    rop:parseInt((document.getElementById('inv-f-rop')||{}).value)||0, leadTimeDays:parseInt((document.getElementById('inv-f-lead')||{}).value)||7
+  });
+  if(!isEdit){
+    item.qty = 0; item.lots = []; item.price = parseFloat((document.getElementById('inv-f-price')||{}).value)||0;
+    item.createdDate = new Date().toISOString();
+  }
+  try{
+    await fmSyncKind('inv', item);
+    ST.invFormOpen=false; ST.invFormBusy=false; render();
+    toast(th?('✅ บันทึกอะไหล่ '+id+' เรียบร้อย'):('✅ Saved item '+id));
+  }catch(err){
+    ST.invFormBusy=false; render();
+    toast((th?'บันทึกไม่สำเร็จ: ':'Save failed: ')+(err.message||err));
+  }
+}
+async function invItemDelete(id){
+  const th = ST.lang==='th';
+  if(!confirm(th?'ลบอะไหล่นี้ใช่หรือไม่?':'Delete this item?')) return;
+  try{ await fmDeleteKind('inv', id); ST.invItemDetailId=null; render(); toast(th?'🗑 ลบแล้ว':'🗑 Deleted'); }
+  catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+function invItemDetailOpen(id){ ST.invItemDetailId = id; render(); }
+function invItemDetailClose(){ ST.invItemDetailId = null; render(); }
+function invItemDetailOverlay(){
+  if(!ST.invItemDetailId) return '';
+  const th = ST.lang==='th';
+  const i = invItemsData().find(function(x){ return String(x.id)===String(ST.invItemDetailId); }); if(!i) return '';
+  const low = (i.qty||0) <= (i.rop||0);
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    +'<div style="font-weight:700;font-size:17px">'+esc(i.id)+'</div>'
+    +'<div class="tap" data-act="inv-item-detail-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+fmChip(low?(th?'ต่ำกว่า ROP':'Below ROP'):(th?'ปกติ':'OK'), low?'red':'green')+(i.sys?fmChip(i.sys,'gray'):'')+(i.usageType?fmChip(i.usageType,'gray'):'')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ชื่อ':'Name')+':</b> '+esc(i.name||'-')+'</div>'
+    + (i.brand ? '<div style="font-size:14px;margin-bottom:4px"><b>Brand:</b> '+esc(i.brand)+'</div>' : '')
+    + (i.model ? '<div style="font-size:14px;margin-bottom:4px"><b>Model:</b> '+esc(i.model)+'</div>' : '')
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'คงเหลือ':'On hand')+':</b> '+(i.qty||0)+' '+esc(i.unit||'')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'มูลค่า':'Value')+':</b> '+fmMoney(invItemValue(i))+' ('+fmMoney(invUnitCost(i))+'/'+esc(i.unit||'')+')</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>Min/Max/ROP:</b> '+(i.min||0)+' / '+(i.max||0)+' / '+(i.rop||0)+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ตำแหน่งจัดเก็บ':'Location')+':</b> '+esc(i.location||'-')+'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">'
+    +'<div class="tap" data-act="inv-item-edit-open" data-id="'+esc(i.id)+'" style="flex:1;text-align:center;font-size:14px;font-weight:700;padding:11px;border-radius:10px;background:var(--color-accent);color:#fff">✏ '+(th?'แก้ไข':'Edit')+'</div>'
+    +'<div class="tap" data-act="inv-item-delete" data-id="'+esc(i.id)+'" style="flex-shrink:0;text-align:center;font-size:14px;font-weight:700;padding:11px 12px;border-radius:10px;border:1px solid var(--danger);color:var(--danger)">🗑</div>'
+    +'</div>'
+  );
+}
+
+/* ── Receive (FIFO stock-in) ── */
+function invReceiveFormOverlay(){
+  if(!ST.invReceiveOpen) return '';
+  const th = ST.lang==='th';
+  const items = invItemsData();
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div style="font-weight:700;font-size:17px">📥 '+(th?'รับเข้าคลัง':'Receive Stock')+'</div>'
+    +'<div class="tap" data-act="inv-receive-new-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +'<div class="field"><label>Part No. *</label><select class="input" id="inv-r-part">'
+    +'<option value="">'+(th?'-- เลือกอะไหล่ --':'-- Select item --')+'</option>'
+    + items.map(function(i){ return '<option value="'+esc(i.id)+'">'+esc(i.id)+' — '+esc(i.name||'')+' ('+(i.qty||0)+' '+esc(i.unit||'')+')</option>'; }).join('')
+    +'</select></div>'
+    +'<div class="field"><label>'+(th?'จำนวน':'Qty')+' *</label><input class="input" type="number" id="inv-r-qty" min="1"></div>'
+    +'<div class="field"><label>'+(th?'ต้นทุนต่อหน่วย':'Unit cost')+' *</label><input class="input" type="number" id="inv-r-cost" min="0"></div>'
+    +'<div class="field"><label>'+(th?'เลขที่ PR/PO':'PR/PO No.')+' *</label><input class="input" id="inv-r-ref"></div>'
+    +'<div class="field"><label>'+(th?'ผู้รับ':'Received by')+'</label><input class="input" id="inv-r-person" value="'+esc((getUser()&&getUser().full_name)||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'วันที่รับ':'Date')+'</label><input class="input" type="date" id="inv-r-date" value="'+new Date().toISOString().slice(0,10)+'"></div>'
+    +'<div class="field"><label>'+(th?'หมายเหตุ':'Note')+'</label><textarea class="input" id="inv-r-note" rows="2"></textarea></div>'
+    +'<div class="tap" data-act="inv-receive-submit" style="margin-top:14px;text-align:center;font-size:15px;font-weight:700;padding:12px;border-radius:10px;background:var(--color-accent);color:#fff;'+(ST.invReceiveBusy?'opacity:.6':'')+'">'+(ST.invReceiveBusy?(th?'กำลังบันทึก...':'Saving...'):(th?'✅ บันทึกรับเข้า':'✅ Save Receive'))+'</div>'
+  );
+}
+function invReceiveNewOpen(){ ST.invReceiveOpen=true; ST.invReceiveBusy=false; render(); }
+function invReceiveNewClose(){ ST.invReceiveOpen=false; render(); }
+async function invReceiveSubmit(){
+  const th = ST.lang==='th';
+  const partId = (document.getElementById('inv-r-part')||{}).value;
+  if(!partId){ toast(th?'กรุณาเลือกอะไหล่':'Please select an item'); return; }
+  const qty = parseFloat((document.getElementById('inv-r-qty')||{}).value);
+  if(!qty || qty<1){ toast(th?'กรุณาระบุจำนวน':'Please enter a valid qty'); return; }
+  const cost = parseFloat((document.getElementById('inv-r-cost')||{}).value);
+  if(isNaN(cost) || cost<0){ toast(th?'กรุณาระบุต้นทุนต่อหน่วย':'Please enter a valid unit cost'); return; }
+  const ref = (document.getElementById('inv-r-ref')||{}).value.trim();
+  if(!ref){ toast(th?'กรุณาระบุเลขที่ PR/PO':'Please enter the PR/PO number'); return; }
+  const item = invItemsData().find(function(x){ return String(x.id)===String(partId); }); if(!item) return;
+  const date = (document.getElementById('inv-r-date')||{}).value || new Date().toISOString().slice(0,10);
+  const person = (document.getElementById('inv-r-person')||{}).value.trim();
+  const note = (document.getElementById('inv-r-note')||{}).value.trim();
+  ST.invReceiveBusy=true; render();
+  invAddLot(item, qty, cost, date, ref);
+  const tx = { id:'RCV-'+Date.now(), date, type:'receive', partId:item.id, partName:item.name, qty, unitCost:cost, totalCost:qty*cost, ref, person, note, fulfilled:true };
+  try{
+    await fmSyncKind('inv', item);
+    await fmSyncKind('invtx', tx);
+    ST.invReceiveOpen=false; ST.invReceiveBusy=false; render();
+    toast(th?('✅ รับเข้า '+item.id+' เรียบร้อย'):('✅ Received '+item.id));
+  }catch(err){
+    ST.invReceiveBusy=false; render();
+    toast((th?'บันทึกไม่สำเร็จ: ':'Save failed: ')+(err.message||err));
+  }
+}
+
+/* ── Issue (FIFO stock-out, ref WR/PM/MA + block over-issue) ── */
+function invIssueRefOptions(refType){
+  const th = ST.lang==='th';
+  if(refType==='WR') return wrData().map(function(w){ return '<option value="'+esc(w.id)+'">'+esc(w.id)+' — '+esc(w.desc||'')+'</option>'; }).join('');
+  if(refType==='PM') return ppmData().map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.id)+' — '+esc(p.assetId||'')+'</option>'; }).join('');
+  if(refType==='MA') return maVisitsData().map(function(v){ return '<option value="'+esc(v.id)+'">'+esc(v.id)+' — '+esc(v.vendor||'')+'</option>'; }).join('');
+  return '';
+}
+function invOnIssueRefTypeChange(refType){
+  ST.invIssueRefType = refType;
+  const wrap = document.getElementById('inv-i-ref-wrap');
+  if(!wrap) return;
+  const th = ST.lang==='th';
+  if(refType==='OTHER'){
+    wrap.innerHTML = '<input class="input" id="inv-i-ref" placeholder="'+(th?'ระบุอ้างอิง':'Enter reference')+'">';
+  }else{
+    wrap.innerHTML = '<select class="input" id="inv-i-ref"><option value="">'+(th?'-- เลือกอ้างอิง --':'-- Select reference --')+'</option>'+invIssueRefOptions(refType)+'</select>';
+  }
+}
+function invOnIssuePartChange(partId){
+  ST.invIssuePartId = partId;
+  const item = invItemsData().find(function(x){ return String(x.id)===String(partId); });
+  const hint = document.getElementById('inv-i-hint');
+  if(hint) hint.textContent = item ? ((ST.lang==='th'?'คงเหลือ ':'On hand: ')+(item.qty||0)+' '+(item.unit||'')) : '';
+}
+function invIssueFormOverlay(){
+  if(!ST.invIssueOpen) return '';
+  const th = ST.lang==='th';
+  const items = invItemsData();
+  const refType = ST.invIssueRefType || 'WR';
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div style="font-weight:700;font-size:17px">📤 '+(th?'เบิกจ่ายอะไหล่':'Issue Stock')+'</div>'
+    +'<div class="tap" data-act="inv-issue-new-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +'<div class="field"><label>Part No. *</label><select class="input" id="inv-i-part" onchange="invOnIssuePartChange(this.value)">'
+    +'<option value="">'+(th?'-- เลือกอะไหล่ --':'-- Select item --')+'</option>'
+    + items.map(function(i){ return '<option value="'+esc(i.id)+'" '+(String(i.id)===String(ST.invIssuePartId)?'selected':'')+'>'+esc(i.id)+' — '+esc(i.name||'')+'</option>'; }).join('')
+    +'</select><div id="inv-i-hint" style="font-size:12px;color:var(--color-neutral-600);margin-top:3px"></div></div>'
+    +'<div class="field"><label>'+(th?'จำนวนที่เบิก':'Qty to issue')+' *</label><input class="input" type="number" id="inv-i-qty" min="1"></div>'
+    +'<div class="field"><label>'+(th?'อ้างอิงประเภท':'Reference type')+' *</label><select class="input" id="inv-i-reftype" onchange="invOnIssueRefTypeChange(this.value)">'
+    + ['WR','PM','MA','OTHER'].map(function(r){ return '<option value="'+r+'" '+(refType===r?'selected':'')+'>'+r+'</option>'; }).join('')
+    +'</select></div>'
+    +'<div class="field"><label>'+(th?'เลขที่อ้างอิง':'Reference No.')+' *</label><div id="inv-i-ref-wrap"><select class="input" id="inv-i-ref"><option value="">'+(th?'-- เลือกอ้างอิง --':'-- Select reference --')+'</option>'+invIssueRefOptions(refType)+'</select></div></div>'
+    +'<div class="field"><label>'+(th?'ผู้เบิก':'Requested by')+'</label><input class="input" id="inv-i-person" value="'+esc((getUser()&&getUser().full_name)||'')+'"></div>'
+    +'<div class="tap" data-act="inv-issue-submit" style="margin-top:14px;text-align:center;font-size:15px;font-weight:700;padding:12px;border-radius:10px;background:var(--color-accent);color:#fff;'+(ST.invIssueBusy?'opacity:.6':'')+'">'+(ST.invIssueBusy?(th?'กำลังบันทึก...':'Saving...'):(th?'✅ บันทึกเบิกจ่าย':'✅ Save Issue'))+'</div>'
+  );
+}
+function invIssueNewOpen(){ ST.invIssueOpen=true; ST.invIssueBusy=false; ST.invIssueRefType='WR'; ST.invIssuePartId=''; render(); }
+function invIssueNewClose(){ ST.invIssueOpen=false; render(); }
+async function invIssueSubmit(){
+  const th = ST.lang==='th';
+  const partId = (document.getElementById('inv-i-part')||{}).value;
+  if(!partId){ toast(th?'กรุณาเลือกอะไหล่':'Please select an item'); return; }
+  const qty = parseFloat((document.getElementById('inv-i-qty')||{}).value);
+  if(!qty || qty<1){ toast(th?'กรุณาระบุจำนวน':'Please enter a valid qty'); return; }
+  const refType = (document.getElementById('inv-i-reftype')||{}).value;
+  const refId = (document.getElementById('inv-i-ref')||{}).value.trim();
+  if(!refId){ toast(th?'กรุณาระบุเลขที่อ้างอิง':'Please enter a reference'); return; }
+  const person = (document.getElementById('inv-i-person')||{}).value.trim();
+  const item = invItemsData().find(function(x){ return String(x.id)===String(partId); }); if(!item) return;
+  const date = new Date().toISOString().slice(0,10);
+  const available = item.qty||0;
+  ST.invIssueBusy=true; render();
+  if(available < qty){
+    const tx = { id:'ISS-'+Date.now(), date, type:'issue', partId:item.id, partName:item.name, qty:0, requestedQty:qty, unitCost:0, totalCost:0, refType, ref:refId, assetId:null, person, note:(th?('ของไม่พอ (คงเหลือ '+available+')'):('Insufficient stock (on hand '+available+')')), fulfilled:false };
+    try{ await fmSyncKind('invtx', tx); }catch(e){}
+    ST.invIssueBusy=false; render();
+    toast(th?('⚠️ ของไม่พอ — คงเหลือเพียง '+available+' '+(item.unit||'')):('⚠️ Insufficient stock — only '+available+' '+(item.unit||'')+' left'));
+    return;
+  }
+  const consumed = invConsumeFIFO(item, qty);
+  const assetId = invResolveAsset(refType, refId);
+  const asset = fmAssetFor(assetId);
+  const tx = { id:'ISS-'+Date.now(), date, type:'issue', partId:item.id, partName:item.name, qty, requestedQty:qty, unitCost:consumed.avgCost, totalCost:consumed.consumedCost, refType, ref:refId, assetId:assetId, building:(asset&&asset.building)||'', sys:(asset&&asset.sys)||item.sys||'', person, note:'', fulfilled:true };
+  try{
+    await fmSyncKind('inv', item);
+    await fmSyncKind('invtx', tx);
+    ST.invIssueOpen=false; ST.invIssueBusy=false; render();
+    toast(th?('✅ เบิกจ่าย '+item.id+' เรียบร้อย'):('✅ Issued '+item.id));
+  }catch(err){
+    ST.invIssueBusy=false; render();
+    toast((th?'บันทึกไม่สำเร็จ: ':'Save failed: ')+(err.message||err));
+  }
+}
+
+function fmInv(){
+  const th = ST.lang==='th';
+  const sub = ST.invSub || 'overview';
+  if (ST.modLoading.inv) return invSubTabs(sub) + fmEmpty(th?'กำลังโหลด...':'Loading...');
+  let body='';
+  if(sub==='overview') body = invOverview();
+  else if(sub==='list') body = invList();
+  else if(sub==='receive') body = invReceive();
+  else if(sub==='issue') body = invIssue();
+  else if(sub==='rop') body = invROP();
+  else if(sub==='availability') body = invAvailability();
+  else if(sub==='valuesummary') body = invValueSummary();
+  else if(sub==='deadstock') body = invDeadStock();
+  else if(sub==='history') body = invAssetHistory();
+  else if(sub==='setting') body = invSetting();
+  return '<div style="display:flex;flex-direction:column;gap:10px">' + invSubTabs(sub) + body + '</div>'
+    + invItemFormOverlay() + invItemDetailOverlay() + invReceiveFormOverlay() + invIssueFormOverlay();
 }
 
 function screenModuleFM(){
@@ -3911,7 +4478,12 @@ document.addEventListener('click', function(e){
     if(ST.fmSub==='wr') loadFmWR();
     else if(ST.fmSub==='ppm'){ ST.ppmSub='overview'; loadFmKind('ppm'); loadFmKind('ppmTemplates'); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
     else if(ST.fmSub==='ma'){ ST.maSub='overview'; loadFmKind('ma'); loadFmKind('maVisits'); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
-    else if(ST.fmSub==='inv') loadFmKind('inv');
+    else if(ST.fmSub==='inv'){
+      ST.invSub='overview'; loadFmKind('inv'); loadFmKind('invtx');
+      if(!(ST.modData.fm && ST.modData.fm.wr && ST.modData.fm.wr.length)) loadFmWR();
+      loadFmKind('ppm'); loadFmKind('maVisits');
+      if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets();
+    }
     else if(ST.fmSub==='om'){ ST.omSub='overview'; loadFmKind('omRecords'); loadFmKind('omTemplates'); loadFmKind('omSchedule'); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
   }
   else if(act==='refresh-wr'){ loadFmWR(); }
@@ -3972,6 +4544,21 @@ document.addEventListener('click', function(e){
   else if(act==='ma-visit-edit-open'){ maVisitEditOpen(el.getAttribute('data-id')); }
   else if(act==='ma-approve'){ maApprove(el.getAttribute('data-id')); }
   else if(act==='ma-reject'){ maReject(el.getAttribute('data-id')); }
+  else if(act==='refresh-inv'){ loadFmKind('inv'); loadFmKind('invtx'); }
+  else if(act==='inv-sub'){ ST.invSub = el.getAttribute('data-sub'); render(); }
+  else if(act==='inv-item-new-open'){ invItemNewOpen(); }
+  else if(act==='inv-item-new-close'){ invItemNewClose(); }
+  else if(act==='inv-item-submit'){ if(!ST.invFormBusy) invItemSubmit(); }
+  else if(act==='inv-item-detail-open'){ invItemDetailOpen(el.getAttribute('data-id')); }
+  else if(act==='inv-item-detail-close'){ invItemDetailClose(); }
+  else if(act==='inv-item-edit-open'){ invItemEditOpen(el.getAttribute('data-id')); }
+  else if(act==='inv-item-delete'){ invItemDelete(el.getAttribute('data-id')); }
+  else if(act==='inv-receive-new-open'){ invReceiveNewOpen(); }
+  else if(act==='inv-receive-new-close'){ invReceiveNewClose(); }
+  else if(act==='inv-receive-submit'){ if(!ST.invReceiveBusy) invReceiveSubmit(); }
+  else if(act==='inv-issue-new-open'){ invIssueNewOpen(); }
+  else if(act==='inv-issue-new-close'){ invIssueNewClose(); }
+  else if(act==='inv-issue-submit'){ if(!ST.invIssueBusy) invIssueSubmit(); }
   else if(act==='wr-sub'){
     const sub = el.getAttribute('data-sub');
     if(sub==='__more__'){ ST.wrMoreOpen = true; }
