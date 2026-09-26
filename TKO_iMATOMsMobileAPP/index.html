@@ -2560,21 +2560,596 @@ async function omSchedToggle(id){
   try{ await fmSyncKind('omSchedule', updated); render(); }catch(err){ toast(err.message||String(err)); }
 }
 
-function fmPPM(){
+/* ══════════════ PPM (Preventive Maintenance) — core parity with the webapp:
+   Plan (New/Edit + lists), Start, Complete (checklist+parts+cost+signature+
+   rating), Evaluate & Approve (dual Manager/Director role), Template Setup.
+   Six analytics-only desktop tabs (SLA/Recurring/Re-Operation/Summarize/
+   Reliability Chart/Notify) are intentionally out of scope for Mobile, per
+   the user's explicit "core complete" scope decision. Templates are read
+   from /fm-records/ppmTemplates, which the Reliability Module already
+   seeds & pushes to the backend — Mobile doesn't hardcode any templates. */
+const PM_SUBTYPES = { R:{th:'เปลี่ยนอะไหล่',en:'Replacement'}, A:{th:'ปรับตั้ง',en:'Adjustment'}, L:{th:'หล่อลื่น',en:'Lubricant'}, C:{th:'ทำความสะอาด',en:'Cleaning'}, T:{th:'ขันแน่น',en:'Tighten'}, CB:{th:'ตรวจวัดสภาพ',en:'Condition Base'} };
+let ppmCurItems = [];        // working sub-items for the open New/Edit Plan form (also reused, pre-filled, for the Complete-PM form)
+let ppmCurImages = [];       // checklist scan images for the open New/Edit Plan form
+let ppmTplWorkingItems = []; // working items for the open Template Setup modal
+let ppmTplWorkingImages = [];
+let ppmClosePartsUsed = [];  // parts used in the open Complete-PM form
+let ppmCloseStars = 0;
+let ppmCloseSigDrawing = false, ppmCloseSigLast = null;
+
+function ppmData(){ return (fmKindData('ppm') || fmDB('ppm') || []).slice(); }
+function ppmTemplatesData(){ return fmKindData('ppmTemplates') || fmDB('ppmTemplates') || []; }
+function ppmSorted(){ return ppmData().sort(function(a,b){ return new Date(a.planDate||0) - new Date(b.planDate||0); }); }
+function ppmIsOverdue(p){ return !!(p.planDate && new Date(p.planDate) < new Date() && p.status!=='done' && p.status!=='approved_pm'); }
+
+function ppmSubTabs(active){
   const th = ST.lang==='th';
-  if (ST.modLoading.ppm) return fmEmpty(th?'กำลังโหลด...':'Loading...');
-  const ppm = (fmKindData('ppm') || fmDB('ppm')).slice().sort(function(a,b){ return new Date(a.planDate||0) - new Date(b.planDate||0); });
-  const stMap = { planned:['กำหนดการ','Planned','orange'], done:['เสร็จสิ้น','Done','green'], overdue:['เกินกำหนด','Overdue','red'], inprogress:['กำลังทำ','In Progress','sky'] };
-  if(!ppm.length) return fmEmpty(th?'ไม่มีแผนงาน PM':'No PM plans');
-  return '<div style="display:flex;flex-direction:column;gap:8px">' + ppm.slice(0,20).map(function(p){
-    const overdue = p.planDate && new Date(p.planDate) < new Date() && p.status!=='done';
-    const st = stMap[overdue ? 'overdue' : p.status] || [p.status,p.status,'gray'];
+  const ppm = ppmData();
+  const openCount = ppm.filter(function(p){ return p.status==='planned'||p.status==='inprogress'; }).length;
+  const evalCount = ppm.filter(function(p){ return p.status==='done'; }).length;
+  const tabs = [
+    { k:'overview', label: th?'ภาพรวม':'Overview' },
+    { k:'inprogress', label: th?'แผนงาน/กำลังทำ':'Plan/In Progress', badge: openCount },
+    { k:'closed', label: th?'เสร็จสิ้น':'Done' },
+    { k:'evaluate', label: th?'ประเมิน & อนุมัติ':'Evaluate & Approve', badge: evalCount },
+    { k:'template', label: th?'🧾 ตั้งค่า Template':'Template Setup' },
+  ];
+  function pill(k,label,badge){
+    const isActive = active===k;
+    const badgeHtml = badge ? '<span style="margin-left:5px;background:#ef4444;color:#fff;font-size:12px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px">'+(badge>99?'99+':badge)+'</span>' : '';
+    return '<div class="tap" data-act="ppm-sub" data-sub="'+k+'" style="flex-shrink:0;display:flex;align-items:center;font-size:11.5px;font-weight:600;padding:7px 11px;border-radius:20px;border:1px solid '+(isActive?'var(--color-accent)':'var(--color-divider)')+';background:'+(isActive?'var(--color-accent)':'transparent')+';color:'+(isActive?'#fff':'var(--color-text)')+'">'+esc(label)+badgeHtml+'</div>';
+  }
+  return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+    +'<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;flex:1">'
+    + tabs.map(function(x){ return pill(x.k,x.label,x.badge); }).join('')
+    +'</div>'
+    +'<div class="tap" data-act="refresh-ppm" title="'+(th?'รีเฟรชข้อมูล':'Refresh')+'" style="flex-shrink:0;width:30px;height:30px;border-radius:50%;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;'+(ST.modLoading.ppm?'opacity:.5':'')+'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7"></path><path d="M21 3v6h-6"></path></svg></div>'
+    +'</div>';
+}
+function ppmListCard(p, th){
+  const overdue = ppmIsOverdue(p);
+  const stMap = { planned:[th?'แผนงาน':'Planned','orange'], inprogress:[th?'กำลังทำ':'In Progress','sky'], done:[th?'เสร็จสิ้น':'Done','green'], approved_pm:[th?'อนุมัติแล้ว':'Approved','green'], overdue:[th?'เกินกำหนด':'Overdue','red'] };
+  const st = stMap[overdue?'overdue':p.status] || [p.status||'—','gray'];
+  return '<div class="tap blueprint" data-act="ppm-detail-open" data-id="'+esc(p.id)+'" style="padding:11px 12px;display:flex;flex-direction:column;gap:4px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(p.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
+    +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(p.name||'')+'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+(p.system?fmChip(p.system,'gray'):'')+(p.planDate?fmChip(p.planDate,'gray'):'')+(p.assign?fmChip(p.assign,'gray'):'')+'</div>'
+    +'</div>';
+}
+function ppmListHtml(list, th, emptyMsg){
+  if(!list.length) return fmEmpty(emptyMsg);
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + list.slice(0,30).map(function(p){ return ppmListCard(p, th); }).join('') + '</div>';
+}
+function ppmOverview(){
+  const th = ST.lang==='th';
+  const ppm = ppmSorted();
+  const overdueCount = ppm.filter(ppmIsOverdue).length;
+  const dueSoonCount = ppm.filter(function(p){ if(p.status==='done'||p.status==='approved_pm'||!p.planDate) return false; const d=Math.round((new Date(p.planDate)-new Date())/86400000); return d>=0&&d<=30; }).length;
+  const doneThisMonth = ppm.filter(function(p){ if(!p.actualDate) return false; const d=new Date(p.actualDate), n=new Date(); return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear(); }).length;
+  const pendingEval = ppm.filter(function(p){ return p.status==='done'; }).length;
+  const btn = '<div style="display:flex"><div class="tap" data-act="ppm-new-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'เพิ่มแผน PM':'New Plan')+'</div></div>';
+  return btn
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">'
+    + statCard(th?'เกินกำหนด':'Overdue', overdueCount, 'evaluate') + statCard(th?'ใกล้ถึงกำหนด (30 วัน)':'Due in 30d', dueSoonCount, 'inprogress')
+    + statCard(th?'เสร็จเดือนนี้':'Done this month', doneThisMonth, 'closed') + statCard(th?'รอประเมิน':'Pending eval', pendingEval, 'new')
+    +'</div>'
+    +'<div style="margin-top:10px">'+ppmListHtml(ppm, th, th?'ยังไม่มีแผนงาน PM':'No PM plans yet')+'</div>';
+}
+function ppmInProgress(){ const th=ST.lang==='th'; return ppmListHtml(ppmSorted().filter(function(p){ return p.status==='planned'||p.status==='inprogress'; }), th, th?'ไม่มีแผนงานที่ค้างอยู่':'Nothing pending'); }
+function ppmClosedList(){ const th=ST.lang==='th'; return ppmListHtml(ppmSorted().filter(function(p){ return p.status==='done'||p.status==='approved_pm'; }), th, th?'ยังไม่มีงานที่เสร็จสิ้น':'Nothing done yet'); }
+function ppmEvaluateList(){ const th=ST.lang==='th'; return ppmListHtml(ppmSorted().filter(function(p){ return p.status==='done'||p.status==='approved_pm'; }), th, th?'ยังไม่มีงานที่ส่งประเมิน':'Nothing to evaluate yet'); }
+
+/* ── New / Edit Plan ── */
+function ppmToggleTrigger(){
+  const v = (document.querySelector('input[name="ppmf-trigger"]:checked')||{}).value || 'freq';
+  const freqBlock = document.getElementById('ppmf-freq-block');
+  const hrsBlock = document.getElementById('ppmf-hours-block');
+  if(freqBlock) freqBlock.style.display = (v==='freq'||v==='both') ? '' : 'none';
+  if(hrsBlock) hrsBlock.style.display = (v==='hours'||v==='both') ? '' : 'none';
+}
+function ppmCalcNextDate(){
+  const hrs = parseFloat((document.getElementById('ppmf-trighrs')||{}).value)||0;
+  const hrsDay = parseFloat((document.getElementById('ppmf-hrsday')||{}).value)||8;
+  const hint = document.getElementById('ppmf-hint'); if(!hint) return;
+  const th = ST.lang==='th';
+  if(!hrs){ hint.textContent = th?'กรอกชั่วโมงเพื่อคำนวณวันถัดไป':'Enter hours to calculate the next date'; return; }
+  const days = Math.ceil(hrs/(hrsDay||8));
+  const next = new Date(); next.setDate(next.getDate()+days);
+  hint.textContent = th ? ('อีกประมาณ '+days+' วัน — วันที่ '+next.toLocaleDateString('th-TH')) : ('~'+days+' days — '+next.toLocaleDateString('en-US'));
+}
+function ppmItemsHtml(){
+  const th = ST.lang==='th';
+  if(!ppmCurItems.length) return '<div style="font-size:12px;color:var(--color-neutral-600);padding:6px 0">'+(th?'ยังไม่มีหัวข้อตรวจสอบ — กด "+ เพิ่มหัวข้อ"':'No items yet — tap "+ Add item"')+'</div>';
+  return ppmCurItems.map(function(item,i){
+    return '<div class="blueprint" style="padding:8px 10px;margin-bottom:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+      +'<input class="input" style="flex:2;min-width:140px;padding:6px" placeholder="'+(th?'รายการตรวจสอบ':'Item description')+'" value="'+esc(item.desc||'')+'" onchange="ppmUpdateItem('+i+',\'desc\',this.value)">'
+      +'<select class="input" style="width:120px;padding:6px" onchange="ppmUpdateItem('+i+',\'type\',this.value)">'
+      + Object.keys(PM_SUBTYPES).map(function(k){ return '<option value="'+k+'" '+(item.type===k?'selected':'')+'>'+(th?PM_SUBTYPES[k].th:PM_SUBTYPES[k].en)+'</option>'; }).join('')
+      +'</select>'
+      +'<input class="input" style="width:60px;padding:6px" placeholder="'+(th?'หน่วย':'unit')+'" value="'+esc(item.unit||'')+'" onchange="ppmUpdateItem('+i+',\'unit\',this.value)">'
+      +'<input class="input" style="width:60px;padding:6px" type="number" placeholder="Min" value="'+(item.stdMin??'')+'" onchange="ppmUpdateItem('+i+',\'stdMin\',this.value)">'
+      +'<input class="input" style="width:60px;padding:6px" type="number" placeholder="Max" value="'+(item.stdMax??'')+'" onchange="ppmUpdateItem('+i+',\'stdMax\',this.value)">'
+      + (item.type==='R' ? '<input class="input" style="width:110px;padding:6px" type="number" placeholder="'+(th?'แจ้งล่วงหน้า (ด.)':'Notify (mo)')+'" value="'+(item.notifyMonths??'')+'" onchange="ppmUpdateItem('+i+',\'notifyMonths\',this.value)">' : '')
+      +'<div class="tap" onclick="ppmRemoveItem('+i+')" style="font-size:12px;font-weight:700;padding:5px 9px;border-radius:6px;border:1px solid var(--danger);color:var(--danger)">✕</div>'
+      +'</div>';
+  }).join('');
+}
+function ppmRenderItems(){ const el = document.getElementById('ppm-items-list'); if(el) el.innerHTML = ppmItemsHtml(); }
+function ppmUpdateItem(i,key,val){
+  if(!ppmCurItems[i]) return;
+  if(key==='stdMin'||key==='stdMax'||key==='notifyMonths') ppmCurItems[i][key] = val===''?null:parseFloat(val);
+  else ppmCurItems[i][key] = val;
+  if(key==='type') ppmRenderItems();
+}
+function ppmAddItem(){ ppmCurItems.push({ id:'sub'+Date.now()+Math.floor(Math.random()*1000), type:'C', desc:'', stdOp:'between', unit:'', stdMin:null, stdMax:null }); ppmRenderItems(); }
+function ppmRemoveItem(i){ ppmCurItems.splice(i,1); ppmRenderItems(); }
+function ppmImagesThumbHtml(){
+  return ppmCurImages.map(function(p,i){
+    return '<div style="position:relative;display:inline-block;margin:0 6px 6px 0"><img src="'+p.src+'" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--color-divider)">'
+      +'<span onclick="ppmCurImages.splice('+i+',1);ppmRenderImages()" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">✕</span></div>';
+  }).join('');
+}
+function ppmRenderImages(){ const el = document.getElementById('ppm-scan-list'); if(el) el.innerHTML = ppmImagesThumbHtml(); }
+function ppmHandleImages(inputEl){
+  const files = Array.prototype.slice.call(inputEl.files||[]);
+  files.forEach(function(f){
+    const reader = new FileReader();
+    reader.onload = function(ev){ ppmCurImages.push({ src: ev.target.result, name: f.name }); ppmRenderImages(); };
+    reader.readAsDataURL(f);
+  });
+  inputEl.value = '';
+}
+function ppmOnTemplateChange(templateId){
+  const t = ppmTemplatesData().find(function(x){ return String(x.id)===String(templateId); });
+  if(!t) return;
+  ppmCurItems = (t.items||[]).map(function(it,i){ return { id:'sub'+Date.now()+i, type:'C', desc:it.label||'', unit:it.unit||'', stdMin:(it.min==null?null:it.min), stdMax:(it.max==null?null:it.max), stdOp:'between' }; });
+  ppmCurImages = (t.images||[]).map(function(im){ return Object.assign({}, im); });
+  ppmRenderItems(); ppmRenderImages();
+}
+function ppmFormOverlay(){
+  if(!ST.ppmFormOpen) return '';
+  const th = ST.lang==='th';
+  const assets = (ST.modData.fm && ST.modData.fm.assets) || [];
+  const tpls = ppmTemplatesData();
+  const editing = !!ST.ppmFormEditId;
+  const sysOpts = ['AC','BAS','EL','EC','EE','FA','FP','SN','VN','WWT','TR'];
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div style="font-weight:700;font-size:17px">'+(editing?(th?'✏ แก้ไขแผน PM':'✏ Edit PM Plan'):(th?'📅 เพิ่มแผน PM':'📅 New PM Plan'))+'</div>'
+    +'<div class="tap" data-act="ppm-new-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +'<div class="field"><label>Asset</label><select class="input" id="ppm-f-asset">'
+    +'<option value="">'+(th?'-- เลือก Asset --':'-- Select Asset --')+'</option>'
+    + assets.map(function(a){ return '<option value="'+esc(a.id)+'" '+(String(a.id)===String(ST.ppmFormAssetId)?'selected':'')+'>'+esc(a.id)+' — '+esc(a.name||'')+'</option>'; }).join('')
+    +'</select></div>'
+    +'<div class="field"><label>'+(th?'ชื่องาน PM':'PM job name')+'</label><input class="input" id="ppm-f-name" value="'+esc(ST.ppmFormName||'')+'" placeholder="'+(th?'เช่น เปลี่ยนน้ำมันเครื่อง':'e.g. Oil change')+'"></div>'
+    +'<div class="field"><label>'+(th?'ระบบงาน':'System')+'</label><select class="input" id="ppm-f-system"><option value="">—</option>'+sysOpts.map(function(s){ return '<option value="'+s+'" '+(ST.ppmFormSystem===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select></div>'
+    +'<div class="field"><label>'+(th?'ความเร่งด่วน':'Priority')+'</label><select class="input" id="ppm-f-priority">'
+    +'<option value="normal" '+(ST.ppmFormPriority!=='urgently'&&ST.ppmFormPriority!=='critical'?'selected':'')+'>🟢 Normal</option>'
+    +'<option value="urgently" '+(ST.ppmFormPriority==='urgently'?'selected':'')+'>🟡 Urgently</option>'
+    +'<option value="critical" '+(ST.ppmFormPriority==='critical'?'selected':'')+'>🔴 Critical</option></select></div>'
+    +'<div class="field"><label>'+(th?'กำหนดการทำ PM ตาม':'Trigger by')+'</label><div style="display:flex;gap:12px;flex-wrap:wrap">'
+    +'<label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="radio" name="ppmf-trigger" value="freq" '+(ST.ppmFormTrigger!=='hours'&&ST.ppmFormTrigger!=='both'?'checked':'')+' onchange="ppmToggleTrigger()"> '+(th?'ความถี่':'Frequency')+'</label>'
+    +'<label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="radio" name="ppmf-trigger" value="hours" '+(ST.ppmFormTrigger==='hours'?'checked':'')+' onchange="ppmToggleTrigger()"> '+(th?'ชั่วโมงทำงาน':'Operating hours')+'</label>'
+    +'<label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="radio" name="ppmf-trigger" value="both" '+(ST.ppmFormTrigger==='both'?'checked':'')+' onchange="ppmToggleTrigger()"> '+(th?'ทั้งคู่':'Both')+'</label>'
+    +'</div></div>'
+    +'<div id="ppmf-freq-block" style="display:'+(ST.ppmFormTrigger==='hours'?'none':'')+'">'
+    +'<div class="field"><label>'+(th?'ความถี่':'Frequency')+'</label><select class="input" id="ppm-f-freq">'+['รายวัน','รายสัปดาห์','รายเดือน','ราย 3 เดือน','ราย 6 เดือน','รายปี','กำหนดเอง'].map(function(f){ return '<option '+(ST.ppmFormFreq===f?'selected':'')+'>'+f+'</option>'; }).join('')+'</select></div>'
+    +'<div class="field"><label>'+(th?'วันแผน':'Plan date')+'</label><input class="input" type="date" id="ppm-f-plandate" value="'+esc(ST.ppmFormPlanDate||'')+'"></div>'
+    +'</div>'
+    +'<div id="ppmf-hours-block" style="display:'+(ST.ppmFormTrigger==='freq'||!ST.ppmFormTrigger?'none':'')+'">'
+    +'<div class="field"><label>'+(th?'ทุก (ชั่วโมง)':'Every (hours)')+'</label><input class="input" type="number" id="ppmf-trighrs" value="'+(ST.ppmFormTrigHrs||'')+'" oninput="ppmCalcNextDate()"></div>'
+    +'<div class="field"><label>'+(th?'ชม.ทำงาน/วัน':'Working hrs/day')+'</label><input class="input" type="number" id="ppmf-hrsday" value="'+(ST.ppmFormHrsDay||8)+'" step="0.5" oninput="ppmCalcNextDate()"></div>'
+    +'<div id="ppmf-hint" style="font-size:12px;color:var(--color-neutral-600);margin:-4px 0 10px 2px">'+(th?'กรอกชั่วโมงเพื่อคำนวณวันถัดไป':'Enter hours to calculate the next date')+'</div>'
+    +'</div>'
+    +'<div class="field"><label>'+(th?'โหลดจาก Template':'Load from Template')+'</label><select class="input" id="ppm-f-template" onchange="ppmOnTemplateChange(this.value)">'
+    +'<option value="">-- '+(th?'เลือก Template':'Select Template')+' --</option>'
+    + tpls.map(function(t){ return '<option value="'+esc(t.id)+'">'+esc(t.sys||'')+' — '+esc(t.name)+'</option>'; }).join('')
+    +'</select></div>'
+    +'<div style="font-weight:700;font-size:14px;margin:10px 0 6px">'+(th?'หัวข้อการตรวจสอบ PM':'PM checklist items')+'</div>'
+    +'<div id="ppm-items-list">'+ppmItemsHtml()+'</div>'
+    +'<div class="tap" onclick="ppmAddItem()" style="text-align:center;font-size:13px;font-weight:600;padding:9px;border-radius:8px;border:1px dashed var(--color-divider);margin-bottom:10px">+ '+(th?'เพิ่มหัวข้อ':'Add item')+'</div>'
+    +'<div class="field"><label>'+(th?'หรือแนบรูปสแกน Checklist':'Or attach checklist scan')+'</label>'
+    +'<input type="file" accept="image/*" capture="environment" multiple onchange="ppmHandleImages(this)">'
+    +'<div id="ppm-scan-list" style="margin-top:6px">'+ppmImagesThumbHtml()+'</div></div>'
+    +'<div class="field"><label>'+(th?'ผู้รับผิดชอบ':'Assigned to')+'</label><input class="input" id="ppm-f-assign" value="'+esc(ST.ppmFormAssign||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'เบอร์โทร':'Phone')+'</label><input class="input" type="tel" id="ppm-f-phone" value="'+esc(ST.ppmFormPhone||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'ค่ามาตรฐานทั่วไป':'General standard')+'</label><input class="input" id="ppm-f-std" value="'+esc(ST.ppmFormStd||'')+'"></div>'
+    +'<div class="tap" data-act="ppm-new-submit" style="margin-top:14px;text-align:center;font-size:15px;font-weight:700;padding:12px;border-radius:10px;background:var(--color-accent);color:#fff;'+(ST.ppmFormBusy?'opacity:.6':'')+'">'+(ST.ppmFormBusy?(th?'กำลังบันทึก...':'Saving...'):(th?'💾 บันทึกแผน PM':'💾 Save PM Plan'))+'</div>'
+  );
+}
+function ppmNewOpen(){
+  ST.ppmFormOpen = true; ST.ppmFormEditId = null; ST.ppmFormAssetId=''; ST.ppmFormName=''; ST.ppmFormSystem=''; ST.ppmFormPriority='normal';
+  ST.ppmFormTrigger='freq'; ST.ppmFormFreq='รายเดือน'; ST.ppmFormPlanDate=''; ST.ppmFormTrigHrs=''; ST.ppmFormHrsDay=8;
+  ST.ppmFormAssign=''; ST.ppmFormPhone=''; ST.ppmFormStd=''; ST.ppmFormBusy=false;
+  ppmCurItems = []; ppmCurImages = [];
+  render();
+  if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets();
+}
+function ppmEditOpen(id){
+  const p = ppmData().find(function(x){ return String(x.id)===String(id); }); if(!p) return;
+  ST.ppmFormOpen = true; ST.ppmFormEditId = p.id; ST.ppmFormAssetId = p.assetId||''; ST.ppmFormName = p.name||'';
+  ST.ppmFormSystem = p.system||''; ST.ppmFormPriority = p.priority||'normal'; ST.ppmFormTrigger = p.trigger||'freq';
+  ST.ppmFormFreq = p.freq||'รายเดือน'; ST.ppmFormPlanDate = p.planDate||''; ST.ppmFormTrigHrs = p.triggerHrs||''; ST.ppmFormHrsDay = p.hrsDay||8;
+  ST.ppmFormAssign = p.assign||''; ST.ppmFormPhone = p.phone||''; ST.ppmFormStd = p.std||''; ST.ppmFormBusy=false;
+  ppmCurItems = JSON.parse(JSON.stringify(p.subItems||[]));
+  ppmCurImages = Array.isArray(p.checklistImages) ? p.checklistImages.slice() : [];
+  ST.ppmDetailId = null;
+  render();
+  if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets();
+}
+function ppmNewClose(){ ST.ppmFormOpen = false; render(); }
+async function ppmSubmit(){
+  const th = ST.lang==='th';
+  const name = (document.getElementById('ppm-f-name')||{}).value.trim();
+  if(!name){ toast(th?'กรุณากรอกชื่องาน PM':'Please enter the PM job name'); return; }
+  const trigger = (document.querySelector('input[name="ppmf-trigger"]:checked')||{}).value || 'freq';
+  const isEdit = !!ST.ppmFormEditId;
+  const existing = isEdit ? ppmData().find(function(x){ return String(x.id)===String(ST.ppmFormEditId); }) : null;
+  const id = isEdit ? ST.ppmFormEditId : ('PPM-'+Date.now());
+  ST.ppmFormBusy = true; render();
+  const item = Object.assign({}, existing, {
+    id, assetId:(document.getElementById('ppm-f-asset')||{}).value, name,
+    system:(document.getElementById('ppm-f-system')||{}).value, priority:(document.getElementById('ppm-f-priority')||{}).value,
+    trigger, freq:(document.getElementById('ppm-f-freq')||{}).value,
+    triggerHrs: parseInt((document.getElementById('ppmf-trighrs')||{}).value)||0,
+    hrsDay: parseFloat((document.getElementById('ppmf-hrsday')||{}).value)||8,
+    planDate:(document.getElementById('ppm-f-plandate')||{}).value,
+    assign:(document.getElementById('ppm-f-assign')||{}).value, phone:(document.getElementById('ppm-f-phone')||{}).value,
+    std:(document.getElementById('ppm-f-std')||{}).value,
+    status: existing ? existing.status : 'planned',
+    subItems: JSON.parse(JSON.stringify(ppmCurItems)), checklistImages: ppmCurImages.slice(),
+    measured: existing?existing.measured:'', mtbf: existing?existing.mtbf:0, cost: existing?existing.cost:0, daysDiff: existing?existing.daysDiff:null
+  });
+  try{
+    await fmSyncKind('ppm', item);
+    ST.ppmFormOpen = false; ST.ppmFormBusy = false; render();
+    toast(th?('✅ บันทึกแผน '+id+' เรียบร้อย'):('✅ Saved plan '+id));
+  }catch(err){
+    ST.ppmFormBusy = false; render();
+    toast((th?'บันทึกไม่สำเร็จ: ':'Save failed: ')+(err.message||err));
+  }
+}
+
+/* ── Detail / Start / Delete / Evaluate & Approve ── */
+function ppmDetailOpen(id){ ST.ppmDetailId = id; render(); }
+function ppmDetailClose(){ ST.ppmDetailId = null; render(); }
+function ppmDetailOverlay(){
+  if(!ST.ppmDetailId) return '';
+  const th = ST.lang==='th';
+  const p = ppmData().find(function(x){ return String(x.id)===String(ST.ppmDetailId); }); if(!p) return '';
+  const overdue = ppmIsOverdue(p);
+  const stMap = { planned:[th?'แผนงาน':'Planned','orange'], inprogress:[th?'กำลังทำ':'In Progress','sky'], done:[th?'เสร็จสิ้น':'Done','green'], approved_pm:[th?'อนุมัติแล้ว':'Approved','green'], overdue:[th?'เกินกำหนด':'Overdue','red'] };
+  const st = stMap[overdue?'overdue':p.status] || [p.status,'gray'];
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    +'<div style="font-weight:700;font-size:17px">'+esc(p.id)+'</div>'
+    +'<div class="tap" data-act="ppm-detail-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+fmChip(th?st[0]:st[1], st[2])+(p.assetId?fmChip(p.assetId,'gray'):'')+(p.priority?fmChip(p.priority,'gray'):'')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ชื่องาน':'Name')+':</b> '+esc(p.name||'-')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ระบบ':'System')+':</b> '+esc(p.system||'-')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'กำหนดการ':'Schedule')+':</b> '+(p.trigger==='hours'?(th?'ทุก '+(p.triggerHrs||0)+' ชม.':'every '+(p.triggerHrs||0)+' hrs'):esc(p.freq||'-'))+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'วันแผน':'Plan date')+':</b> '+esc(p.planDate||'-')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ผู้รับผิดชอบ':'Assigned')+':</b> '+esc(p.assign||'-')+'</div>'
+    + (p.subItems&&p.subItems.length ? '<div style="font-weight:700;font-size:14px;margin:10px 0 6px">'+(th?'หัวข้อตรวจสอบ':'Checklist items')+' ('+p.subItems.length+')</div>'
+      + p.subItems.map(function(it,i){
+          return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--color-divider)">'
+            +'<span>'+(i+1)+'. '+esc(it.desc||'')+' ('+(PM_SUBTYPES[it.type]?(th?PM_SUBTYPES[it.type].th:PM_SUBTYPES[it.type].en):(it.type||''))+')'+(it.measured!=null&&it.measured!==''?' — '+esc(it.measured)+' '+esc(it.unit||''):'')+'</span>'
+            + ((p.status==='done'||p.status==='approved_pm') && it.type!=='CB' ? fmChip(it.checked?(th?'ทำแล้ว':'Done'):(th?'ยังไม่ทำ':'Not done'), it.checked?'green':'gray') : '')
+            +'</div>';
+        }).join('') : '')
+    + (p.checklistImages&&p.checklistImages.length ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'+p.checklistImages.map(function(im){ return '<img src="'+im.src+'" style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--color-divider)">'; }).join('')+'</div>' : '')
+    + ((p.status==='done'||p.status==='approved_pm') ? (
+        '<div style="margin-top:10px;font-size:14px"><b>'+(th?'รายละเอียด':'Detail')+':</b> '+esc(p.detail||'-')+'</div>'
+        +'<div style="font-size:14px"><b>'+(th?'ค่าใช้จ่ายรวม':'Total cost')+':</b> '+fmMoney((p.laborCost||0)+(p.partsCost||0)+(p.travelCost||0))+'</div>'
+        + (p.satisfaction ? '<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ความพึงพอใจ':'Satisfaction')+':</b> '+'★'.repeat(p.satisfaction)+'☆'.repeat(5-p.satisfaction)+'</div>' : '')
+        + (p.evalNote ? '<div style="font-size:13px;color:var(--color-neutral-700);margin-bottom:4px">📝 '+esc(p.evalNote)+'</div>' : '')
+        + (p.approvedBy ? '<div style="font-size:13px;color:var(--green);margin-bottom:4px">✅ '+(th?'อนุมัติโดย ':'Approved by ')+esc(p.approvedBy)+'</div>' : '')
+      ) : '')
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">'
+    + ((p.status==='planned'||overdue) ? '<div class="tap" data-act="ppm-start" data-id="'+esc(p.id)+'" style="flex:1;text-align:center;font-size:14px;font-weight:700;padding:11px;border-radius:10px;background:var(--color-accent);color:#fff">▶ '+(th?'เริ่มงาน':'Start')+'</div>' : '')
+    + (p.status==='inprogress' ? '<div class="tap" data-act="ppm-close-open" data-id="'+esc(p.id)+'" style="flex:1;text-align:center;font-size:14px;font-weight:700;padding:11px;border-radius:10px;background:var(--green);color:#fff">✅ '+(th?'ปิดงาน':'Complete')+'</div>' : '')
+    + ((p.status==='planned'||overdue) ? '<div class="tap" data-act="ppm-edit-open" data-id="'+esc(p.id)+'" style="flex:1;text-align:center;font-size:14px;font-weight:700;padding:11px;border-radius:10px;border:1px solid var(--color-divider)">✏ '+(th?'แก้ไข':'Edit')+'</div>' : '')
+    + (p.status==='done' ? '<div class="tap" data-act="ppm-approve" data-id="'+esc(p.id)+'" data-role="manager" style="flex:1;text-align:center;font-size:12.5px;font-weight:700;padding:11px 4px;border-radius:10px;background:var(--green);color:#fff">✅ Manager</div>' : '')
+    + (p.status==='done' ? '<div class="tap" data-act="ppm-approve" data-id="'+esc(p.id)+'" data-role="director" style="flex:1;text-align:center;font-size:12.5px;font-weight:700;padding:11px 4px;border-radius:10px;background:var(--color-accent);color:#fff">⭐ Director</div>' : '')
+    + ((p.status==='done'||p.status==='approved_pm') ? '<div class="tap" data-act="ppm-note" data-id="'+esc(p.id)+'" style="flex-shrink:0;text-align:center;font-size:14px;font-weight:700;padding:11px 12px;border-radius:10px;border:1px solid var(--color-divider)">📝</div>' : '')
+    + '<div class="tap" data-act="ppm-delete" data-id="'+esc(p.id)+'" style="flex-shrink:0;text-align:center;font-size:14px;font-weight:700;padding:11px 12px;border-radius:10px;border:1px solid var(--danger);color:var(--danger)">🗑</div>'
+    +'</div>'
+  );
+}
+async function ppmStart(id){
+  const th = ST.lang==='th';
+  const p = ppmData().find(function(x){ return String(x.id)===String(id); }); if(!p) return;
+  const updated = Object.assign({}, p, { status:'inprogress', startTime: new Date().toISOString() });
+  try{ await fmSyncKind('ppm', updated); ST.ppmDetailId=null; render(); toast(th?'▶ เริ่มงานแล้ว':'▶ Started'); }
+  catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+async function ppmDelete(id){
+  const th = ST.lang==='th';
+  if(!confirm(th?'ลบแผนงานนี้ใช่หรือไม่?':'Delete this plan?')) return;
+  try{ await fmDeleteKind('ppm', id); ST.ppmDetailId=null; render(); toast(th?'🗑 ลบแล้ว':'🗑 Deleted'); }
+  catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+async function ppmApprove(id, role){
+  if(ST.ppmEvalBusy) return;
+  const th = ST.lang==='th';
+  const p = ppmData().find(function(x){ return String(x.id)===String(id); }); if(!p) return;
+  ST.ppmEvalBusy = true; render();
+  const roleLabel = role==='director' ? (th?'ผู้อำนวยการ':'Director') : (th?'ผู้จัดการ':'Manager');
+  const name = (getUser()&&getUser().full_name) || roleLabel;
+  const updated = Object.assign({}, p, { status:'approved_pm', approvedBy: roleLabel+': '+name });
+  try{ await fmSyncKind('ppm', updated); ST.ppmEvalBusy=false; ST.ppmDetailId=null; render(); toast(th?('✅ อนุมัติ '+id+' เรียบร้อยครับ'):('✅ Approved '+id)); }
+  catch(err){ ST.ppmEvalBusy=false; render(); toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+async function ppmEditNote(id){
+  const th = ST.lang==='th';
+  const p = ppmData().find(function(x){ return String(x.id)===String(id); }); if(!p) return;
+  const note = window.prompt(th?'บันทึกผลการประเมิน:':'Evaluation note:', p.evalNote||'');
+  if(note===null) return;
+  const updated = Object.assign({}, p, { evalNote: note.trim() });
+  try{ await fmSyncKind('ppm', updated); render(); toast(th?'📝 บันทึกแล้ว':'📝 Saved'); }
+  catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+
+/* ── Complete PM (Close) ── */
+function ppmCloseOpen(id){
+  const p = ppmData().find(function(x){ return String(x.id)===String(id); }); if(!p) return;
+  ppmClosePartsUsed = []; ppmCloseStars = 0; ppmCloseSigDrawing=false; ppmCloseSigLast=null;
+  ppmCurItems = JSON.parse(JSON.stringify(p.subItems||[]));
+  ST.ppmDetailId = null;
+  ST.ppmCloseId = id; ST.ppmCloseBusy = false;
+  render();
+  if(!(ST.modData.fm && ST.modData.fm.inv)) loadFmKind('inv');
+}
+function ppmCloseClose(){ ST.ppmCloseId = null; render(); }
+function ppmCloseItemsHtml(){
+  const th = ST.lang==='th';
+  if(!ppmCurItems.length) return '<div style="font-size:12px;color:var(--color-neutral-600);padding:6px 0">'+(th?'แผนนี้ไม่มีหัวข้อตรวจสอบ':'This plan has no checklist items')+'</div>';
+  return ppmCurItems.map(function(item,i){
+    const isCB = item.type==='CB';
+    const outOfRange = isCB && item.measured!=null && item.measured!=='' &&
+      ((item.stdOp==='less' && parseFloat(item.measured)>=parseFloat(item.stdMin)) ||
+       (item.stdOp==='greater' && parseFloat(item.measured)<=parseFloat(item.stdMin)) ||
+       (item.stdOp!=='less' && item.stdOp!=='greater' && ((item.stdMin!=null&&parseFloat(item.measured)<parseFloat(item.stdMin))||(item.stdMax!=null&&parseFloat(item.measured)>parseFloat(item.stdMax)))));
+    return '<div class="blueprint" style="padding:9px 10px;margin-bottom:6px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'
+      +'<span style="font-size:13px;font-weight:600">'+(i+1)+'. '+esc(item.desc||'')+'</span>'
+      + (isCB
+        ? '<input class="input" style="width:90px;padding:6px" type="number" placeholder="'+(th?'ค่าที่วัด':'value')+'" value="'+esc(item.measured||'')+'" onchange="ppmCloseSetMeasured('+i+',this.value)">'
+        : '<div class="tap" onclick="ppmCloseToggleChecked('+i+')" style="font-size:12px;font-weight:600;padding:5px 10px;border-radius:6px;'+(item.checked?'background:var(--green);color:#fff':'border:1px solid var(--color-divider)')+'">'+(item.checked?'✅ '+(th?'ทำแล้ว':'Done'):'☐ '+(th?'ยังไม่ทำ':'Mark done'))+'</div>')
+      +'</div>'
+      + (isCB ? '<div style="font-size:11px;color:var(--color-neutral-600);margin-top:4px">'+esc(item.unit||'')+(item.stdMin!=null||item.stdMax!=null?' ('+(item.stdMin??'-')+'–'+(item.stdMax??'-')+')':'')+'</div>'+(outOfRange?fmChip(th?'นอกเกณฑ์':'Out of range','red'):'') : '')
+      +'</div>';
+  }).join('');
+}
+function ppmCloseRenderItems(){ const el = document.getElementById('ppm-cl-items'); if(el) el.innerHTML = ppmCloseItemsHtml(); }
+function ppmCloseToggleChecked(i){ ppmCurItems[i].checked = !ppmCurItems[i].checked; ppmCloseRenderItems(); }
+function ppmCloseSetMeasured(i,val){ ppmCurItems[i].measured = val; ppmCloseRenderItems(); }
+function ppmClosePartsCost(){ return ppmClosePartsUsed.reduce(function(s,p){ return s+(p.price||0)*(p.qty||1); }, 0); }
+function ppmCloseRecalcCost(){
+  const lb = parseFloat((document.getElementById('ppm-cl-labor')||{}).value)||0;
+  const tv = parseFloat((document.getElementById('ppm-cl-travel')||{}).value)||0;
+  const pc = ppmClosePartsCost();
+  const pcEl = document.getElementById('ppm-cl-parts-cost'); if(pcEl) pcEl.value = pc;
+  const totalEl = document.getElementById('ppm-cl-total'); if(totalEl) totalEl.textContent = fmMoney(lb+tv+pc);
+}
+function ppmCloseAddPart(selectEl){
+  const invId = selectEl.value; if(!invId) return;
+  const inv = (ST.modData.fm && ST.modData.fm.inv) || [];
+  const item = inv.find(function(i){ return String(i.id)===String(invId); });
+  selectEl.value = ''; if(!item) return;
+  ppmClosePartsUsed.push({ id:item.id, code:item.code||item.id, name:item.name, price:item.price||0, qty:1, unit:item.unit||'' });
+  renderPpmClosePartsChips(); ppmCloseRecalcCost();
+}
+function renderPpmClosePartsChips(){
+  const list = document.getElementById('ppm-cl-parts-list'); if(!list) return;
+  list.innerHTML = '';
+  ppmClosePartsUsed.forEach(function(item){
+    const chip = document.createElement('span');
+    chip.style.cssText = 'font-size:12px;font-weight:600;color:var(--color-accent-700);border:1px solid var(--color-accent-700);padding:3px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px';
+    chip.textContent = (item.code||item.id) + ' ' + fmMoney(item.price||0);
+    const x = document.createElement('span'); x.textContent=' ✕'; x.style.cursor='pointer';
+    x.onclick = function(){ ppmClosePartsUsed = ppmClosePartsUsed.filter(function(p){return p.id!==item.id;}); chip.remove(); ppmCloseRecalcCost(); };
+    chip.appendChild(x);
+    list.appendChild(chip);
+  });
+}
+function ppmCloseRecalcDuration(){
+  const s = document.getElementById('ppm-cl-start'); const e = document.getElementById('ppm-cl-end');
+  const mttrEl = document.getElementById('ppm-cl-mttr');
+  if(s && e && s.value && e.value && mttrEl){
+    const m = Math.round((new Date(e.value)-new Date(s.value))/60000);
+    mttrEl.textContent = (isFinite(m)&&m>=0? Math.round((m/60)*100)/100 : '—') + ' ' + (ST.lang==='th'?'ชม.':'h');
+  }
+}
+function ppmCloseSetStar(n){
+  ppmCloseStars = n;
+  const wrap = document.getElementById('ppm-cl-stars'); if(!wrap) return;
+  Array.prototype.forEach.call(wrap.children, function(s,i){ s.textContent = (i<n) ? '★' : '☆'; });
+}
+function ppmCloseSigInit(){
+  const canvas = document.getElementById('ppm-cl-sigpad');
+  if(!canvas || canvas._ppmBound) return;
+  canvas._ppmBound = true;
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#1d1f20'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  function down(e){ ppmCloseSigDrawing = true; ppmCloseSigLast = wrCloseSigPos(canvas, e); e.preventDefault(); }
+  function move(e){
+    if(!ppmCloseSigDrawing) return;
+    const p = wrCloseSigPos(canvas, e);
+    ctx.beginPath(); ctx.moveTo(ppmCloseSigLast.x, ppmCloseSigLast.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    ppmCloseSigLast = p; e.preventDefault();
+  }
+  function up(){ ppmCloseSigDrawing = false; }
+  canvas.addEventListener('mousedown', down); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+  canvas.addEventListener('touchstart', down, {passive:false}); canvas.addEventListener('touchmove', move, {passive:false}); canvas.addEventListener('touchend', up);
+}
+function ppmCloseSigClear(){ const c=document.getElementById('ppm-cl-sigpad'); if(c) c.getContext('2d').clearRect(0,0,c.width,c.height); }
+function ppmCloseOverlay(){
+  if(!ST.ppmCloseId) return '';
+  const th = ST.lang==='th';
+  const p = ppmData().find(function(x){ return String(x.id)===String(ST.ppmCloseId); }); if(!p) return '';
+  const inv = (ST.modData.fm && ST.modData.fm.inv) || [];
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    +'<span style="font-family:var(--font-heading);font-size:17px">✅ '+(th?'ปิดงาน PM':'Complete PM')+' — '+esc(p.id)+'</span>'
+    +'<div class="tap" data-act="ppm-close-cancel" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--color-surface);flex-shrink:0">✕</div></div>'
+    +'<div style="font-size:14px;font-weight:600;margin-bottom:10px">'+esc(p.name||'')+'</div>'
+    + wrFormField('เวลาเริ่ม','Start time', th, '<input id="ppm-cl-start" type="datetime-local" style="'+wrInputStyle+'" oninput="ppmCloseRecalcDuration()">')
+    + wrFormField('เวลาเสร็จ','End time', th, '<input id="ppm-cl-end" type="datetime-local" style="'+wrInputStyle+'" oninput="ppmCloseRecalcDuration()">')
+    +'<div class="blueprint" style="padding:8px;text-align:center;margin-bottom:10px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:12px;color:var(--color-neutral-600)">'+(th?'ระยะเวลาทำงาน':'Duration')+'</div><div id="ppm-cl-mttr" style="font-weight:700;color:var(--sky);font-size:16px">— '+(th?'ชม.':'h')+'</div></div>'
+    + wrFormField('ผู้ปฏิบัติงาน','Person', th, '<input id="ppm-cl-person" style="'+wrInputStyle+'" value="'+esc(p.person||'')+'">')
+    +'<div style="font-weight:700;font-size:14px;margin:10px 0 6px">'+(th?'หัวข้อตรวจสอบ':'Checklist items')+'</div>'
+    +'<div id="ppm-cl-items">'+ppmCloseItemsHtml()+'</div>'
+    + wrFormField('อะไหล่ที่ใช้ (จากคลัง)','Parts used', th,
+        '<select id="ppm-cl-parts-select" style="'+wrInputStyle+'" onchange="ppmCloseAddPart(this)">'
+        +'<option value="">-- '+(th?'เลือกอะไหล่':'Select part')+' --</option>'
+        + inv.map(function(i){ return '<option value="'+i.id+'">'+esc((i.code||i.id)+' — '+(i.name||'')+' (฿'+(i.price||0)+')')+'</option>'; }).join('')
+        +'</select><div id="ppm-cl-parts-list" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px"></div>')
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
+      + wrFormField('ค่าแรง (฿)','Labor (฿)', th, '<input id="ppm-cl-labor" type="number" value="0" style="'+wrInputStyle+'" oninput="ppmCloseRecalcCost()">')
+      + wrFormField('ค่าอะไหล่ (฿)','Parts (฿)', th, '<input id="ppm-cl-parts-cost" type="number" value="0" readonly style="'+wrInputStyle+';opacity:.7">')
+      + wrFormField('ค่าเดินทาง (฿)','Travel (฿)', th, '<input id="ppm-cl-travel" type="number" value="0" style="'+wrInputStyle+'" oninput="ppmCloseRecalcCost()">')
+    +'</div>'
+    +'<div class="blueprint" style="padding:8px;text-align:center;margin:8px 0"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><div style="font-size:12px;color:var(--color-neutral-600)">'+(th?'มูลค่ารวม':'Total cost')+'</div><div id="ppm-cl-total" style="font-weight:700;color:var(--green);font-size:16px">฿0</div></div>'
+    + wrFormField('รายละเอียดการดำเนินการ','Detail', th, '<textarea id="ppm-cl-detail" rows="2" style="'+wrInputStyle+';resize:vertical"></textarea>')
+    + wrFormField('ลายเซ็นผู้ปฏิบัติงาน','Signature', th,
+        '<canvas id="ppm-cl-sigpad" width="440" height="110" style="width:100%;height:110px;border:1px solid var(--color-divider);border-radius:8px;background:#fff;touch-action:none"></canvas>'
+        +'<div class="tap" data-act="ppm-close-sig-clear" style="display:inline-block;margin-top:6px;font-size:13px;font-weight:600;padding:6px 10px;border-radius:8px;border:1px solid var(--color-divider)">🗑 '+(th?'ล้างลายเซ็น':'Clear')+'</div>')
+    + wrFormField('ความพึงพอใจ','Satisfaction', th,
+        '<div id="ppm-cl-stars" style="font-size:24px;letter-spacing:4px">'
+        + [1,2,3,4,5].map(function(n){ return '<span class="tap" data-act="ppm-close-star" data-n="'+n+'" style="cursor:pointer">☆</span>'; }).join('')
+        +'</div>')
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">'
+      +'<div class="tap" data-act="ppm-close-cancel" style="font-size:14.5px;font-weight:600;padding:10px 16px;border-radius:8px;text-align:center;border:1px solid var(--color-divider)">'+(th?'ยกเลิก':'Cancel')+'</div>'
+      +'<div class="tap" data-act="ppm-close-submit" style="font-size:14.5px;font-weight:700;padding:10px 16px;border-radius:8px;text-align:center;background:var(--color-accent);color:#fff'+(ST.ppmCloseBusy?';opacity:.6':'')+'">'+(ST.ppmCloseBusy?(th?'กำลังบันทึก...':'Saving...'):(th?'✅ ยืนยันปิดงาน':'✅ Confirm Complete'))+'</div>'
+    +'</div>'
+  );
+}
+async function ppmCloseSubmit(){
+  const th = ST.lang==='th';
+  const p = ppmData().find(function(x){ return String(x.id)===String(ST.ppmCloseId); }); if(!p) return;
+  const startVal = (document.getElementById('ppm-cl-start')||{}).value;
+  const endVal = (document.getElementById('ppm-cl-end')||{}).value;
+  const person = (document.getElementById('ppm-cl-person')||{}).value.trim();
+  const labor = parseFloat((document.getElementById('ppm-cl-labor')||{}).value)||0;
+  const travel = parseFloat((document.getElementById('ppm-cl-travel')||{}).value)||0;
+  const partsCost = ppmClosePartsCost();
+  const detail = (document.getElementById('ppm-cl-detail')||{}).value || '';
+  const mttrHrs = (startVal && endVal) ? Math.round(((new Date(endVal)-new Date(startVal))/3600000)*100)/100 : 0;
+  const now = new Date();
+  const daysDiff = p.planDate ? Math.round((now - new Date(p.planDate))/86400000) : null;
+  ST.ppmCloseBusy = true; render();
+  const sigCanvas = document.getElementById('ppm-cl-sigpad');
+  const updated = Object.assign({}, p, {
+    status:'done', startTime: startVal?new Date(startVal).toISOString():p.startTime, endTime: endVal?new Date(endVal).toISOString():now.toISOString(),
+    actualDate: now.toISOString(), person: person||p.person, subItems: JSON.parse(JSON.stringify(ppmCurItems)),
+    pmClosedParts: ppmClosePartsUsed.slice(), laborCost: labor, partsCost: partsCost, travelCost: travel,
+    cost: labor+partsCost+travel, mttrHrs, daysDiff, detail: detail||p.detail,
+    signature: sigCanvas?sigCanvas.toDataURL():p.signature, satisfaction: ppmCloseStars||p.satisfaction||0
+  });
+  try{
+    await fmSyncKind('ppm', updated);
+    ST.ppmCloseId = null; ST.ppmCloseBusy=false; render();
+    toast(th?('✅ ปิดงาน '+p.id+' เรียบร้อย รอประเมิน'):('✅ Completed '+p.id+' — pending evaluation'));
+  }catch(err){
+    ST.ppmCloseBusy=false; render();
+    toast((th?'บันทึกไม่สำเร็จ: ':'Save failed: ')+(err.message||err));
+  }
+}
+
+/* ── Template Setup ── */
+function ppmTemplateSetup(){
+  const th = ST.lang==='th';
+  const tpls = ppmTemplatesData();
+  const btn = '<div style="display:flex"><div class="tap" data-act="ppm-tpl-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'เพิ่ม Template ใหม่':'Add Template')+'</div></div>';
+  if(!tpls.length) return btn + fmEmpty(th?'ยังไม่มี Template':'No templates yet');
+  return btn + '<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">' + tpls.map(function(t){
     return fmCard(
-      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(p.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
-      +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(p.name||'')+'</div>'
-      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+(p.sys?fmChip(p.sys,'gray'):'')+(p.planDate?fmChip(p.planDate,'gray'):'')+(p.assign?fmChip(p.assign,'gray'):'')+'</div>'
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(t.sys||'')+' — '+esc(t.name||'(ยังไม่ตั้งชื่อ)')+'</span>'+fmChip((t.items||[]).length+' '+(th?'หัวข้อ':'items'), (t.items||[]).length?'gray':'red')+'</div>'
+      +'<div style="font-size:12px;color:var(--color-neutral-600)">'+esc(t.formCode||'')+'</div>'
+      +'<div style="display:flex;gap:8px;margin-top:4px">'
+      +'<div class="tap" data-act="ppm-tpl-open" data-id="'+esc(t.id)+'" style="font-size:12px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--color-divider)">✏ '+(th?'แก้ไข':'Edit')+'</div>'
+      +'<div class="tap" data-act="ppm-tpl-delete" data-id="'+esc(t.id)+'" style="font-size:12px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--danger);color:var(--danger)">🗑</div>'
+      +'</div>'
     );
   }).join('') + '</div>';
+}
+function ppmTplItemsHtml(){
+  const th = ST.lang==='th';
+  if(!ppmTplWorkingItems.length) return '<div style="font-size:12px;color:var(--color-neutral-600);padding:6px 0">'+(th?'ยังไม่มีหัวข้อ — กด "+ เพิ่มหัวข้อ"':'No items yet — tap "+ Add item"')+'</div>';
+  return ppmTplWorkingItems.map(function(item,i){
+    return '<div class="blueprint" style="padding:8px 10px;margin-bottom:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+      +'<input class="input" style="flex:2;min-width:140px;padding:6px" placeholder="'+(th?'ชื่อหัวข้อ':'Item name')+'" value="'+esc(item.label||'')+'" onchange="ppmTplUpdateItem('+i+',\'label\',this.value)">'
+      +'<input class="input" style="width:60px;padding:6px" placeholder="'+(th?'หน่วย':'unit')+'" value="'+esc(item.unit||'')+'" onchange="ppmTplUpdateItem('+i+',\'unit\',this.value)">'
+      +'<input class="input" style="width:60px;padding:6px" type="number" placeholder="Min" value="'+(item.min??'')+'" onchange="ppmTplUpdateItem('+i+',\'min\',this.value)">'
+      +'<input class="input" style="width:60px;padding:6px" type="number" placeholder="Max" value="'+(item.max??'')+'" onchange="ppmTplUpdateItem('+i+',\'max\',this.value)">'
+      +'<div class="tap" onclick="ppmTplRemoveItem('+i+')" style="font-size:12px;font-weight:700;padding:5px 9px;border-radius:6px;border:1px solid var(--danger);color:var(--danger)">✕</div>'
+      +'</div>';
+  }).join('');
+}
+function ppmTplRenderItems(){ const el = document.getElementById('ppm-tpl-items'); if(el) el.innerHTML = ppmTplItemsHtml(); }
+function ppmTplUpdateItem(i,key,val){
+  if(!ppmTplWorkingItems[i]) return;
+  if(key==='min'||key==='max') ppmTplWorkingItems[i][key] = val===''?null:parseFloat(val);
+  else ppmTplWorkingItems[i][key] = val;
+}
+function ppmTplAddItem(){ ppmTplWorkingItems.push({ label:'', unit:'', min:null, max:null }); ppmTplRenderItems(); }
+function ppmTplRemoveItem(i){ ppmTplWorkingItems.splice(i,1); ppmTplRenderItems(); }
+function ppmTplOpen(id){
+  const t = id ? ppmTemplatesData().find(function(x){ return String(x.id)===String(id); }) : null;
+  ST.ppmTplEditId = id || null;
+  ST.ppmTplOpen = true; ST.ppmTplName = t?t.name:''; ST.ppmTplSys = t?t.sys:'AC'; ST.ppmTplFormCode = t?t.formCode:'';
+  ppmTplWorkingItems = t ? JSON.parse(JSON.stringify(t.items||[])) : [];
+  ppmTplWorkingImages = t && Array.isArray(t.images) ? t.images.slice() : [];
+  render();
+}
+function ppmTplClose(){ ST.ppmTplOpen = false; render(); }
+function ppmTplOverlay(){
+  if(!ST.ppmTplOpen) return '';
+  const th = ST.lang==='th';
+  const sysOpts = ['AC','BAS','EL','EC','EE','FA','FP','SN','VN','WWT','TR'];
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div style="font-weight:700;font-size:17px">'+(ST.ppmTplEditId?(th?'✏ แก้ไข Template':'✏ Edit Template'):(th?'🧾 เพิ่ม Template ใหม่':'🧾 New Template'))+'</div>'
+    +'<div class="tap" data-act="ppm-tpl-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +'<div class="field"><label>'+(th?'ชื่อ Template':'Template name')+'</label><input class="input" id="ppm-tpl-name" value="'+esc(ST.ppmTplName||'')+'"></div>'
+    +'<div class="field"><label>System</label><select class="input" id="ppm-tpl-sys">'+sysOpts.map(function(s){ return '<option value="'+s+'" '+(ST.ppmTplSys===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select></div>'
+    +'<div class="field"><label>Form No.</label><input class="input" id="ppm-tpl-formcode" value="'+esc(ST.ppmTplFormCode||'')+'"></div>'
+    +'<div style="font-weight:700;font-size:14px;margin:10px 0 6px">'+(th?'หัวข้อตรวจสอบ':'Checklist items')+'</div>'
+    +'<div id="ppm-tpl-items">'+ppmTplItemsHtml()+'</div>'
+    +'<div class="tap" onclick="ppmTplAddItem()" style="text-align:center;font-size:13px;font-weight:600;padding:9px;border-radius:8px;border:1px dashed var(--color-divider);margin-bottom:12px">+ '+(th?'เพิ่มหัวข้อ':'Add item')+'</div>'
+    +'<div class="tap" data-act="ppm-tpl-save" style="text-align:center;font-size:15px;font-weight:700;padding:12px;border-radius:10px;background:var(--color-accent);color:#fff">'+(th?'บันทึก':'Save')+'</div>'
+  );
+}
+async function ppmTplSave(){
+  const th = ST.lang==='th';
+  const name = (document.getElementById('ppm-tpl-name')||{}).value.trim();
+  if(!name){ toast(th?'กรุณาตั้งชื่อ Template ก่อนครับ':'Please name the template'); return; }
+  const sys = (document.getElementById('ppm-tpl-sys')||{}).value;
+  const formCode = (document.getElementById('ppm-tpl-formcode')||{}).value.trim();
+  const tpl = { id: ST.ppmTplEditId || ('PPMTPL-'+Date.now()), name, sys, formCode, items: ppmTplWorkingItems, images: ppmTplWorkingImages||[] };
+  try{ await fmSyncKind('ppmTemplates', tpl); ST.ppmTplOpen=false; render(); toast(th?'✅ บันทึก Template แล้ว':'✅ Template saved'); }
+  catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+async function ppmTplDelete(id){
+  const th = ST.lang==='th';
+  if(!confirm(th?'ลบ Template นี้ใช่หรือไม่?':'Delete this template?')) return;
+  try{ await fmDeleteKind('ppmTemplates', id); render(); toast(th?'🗑 ลบแล้ว':'🗑 Deleted'); }
+  catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+
+function fmPPM(){
+  const th = ST.lang==='th';
+  const sub = ST.ppmSub || 'overview';
+  if (ST.modLoading.ppm) return ppmSubTabs(sub) + fmEmpty(th?'กำลังโหลด...':'Loading...');
+  let body = '';
+  if(sub==='overview') body = ppmOverview();
+  else if(sub==='inprogress') body = ppmInProgress();
+  else if(sub==='closed') body = ppmClosedList();
+  else if(sub==='evaluate') body = ppmEvaluateList();
+  else if(sub==='template') body = ppmTemplateSetup();
+  return '<div style="display:flex;flex-direction:column;gap:10px">' + ppmSubTabs(sub) + body + '</div>'
+    + ppmFormOverlay() + ppmDetailOverlay() + ppmCloseOverlay() + ppmTplOverlay();
 }
 
 function fmMA(){
@@ -2751,6 +3326,18 @@ function bindFormHandlers(){
     wrCloseSigInit();
   }
   if (ST.wrEvalId) { wrEvalSigInit(); wrEvalTechSigInit(); }
+
+  // Complete PM (Close PPM) overlay — same imperative-binding rationale as
+  // the WR Close Detail above (typing/drawing/adding parts shouldn't need a
+  // full render(), which would wipe the signature canvas).
+  if (ST.ppmCloseId) {
+    const pl = document.getElementById('ppm-cl-labor'); if(pl) pl.addEventListener('input', ppmCloseRecalcCost);
+    const pt = document.getElementById('ppm-cl-travel'); if(pt) pt.addEventListener('input', ppmCloseRecalcCost);
+    const ps = document.getElementById('ppm-cl-start'); if(ps) ps.addEventListener('input', ppmCloseRecalcDuration);
+    const pe = document.getElementById('ppm-cl-end'); if(pe) pe.addEventListener('input', ppmCloseRecalcDuration);
+    renderPpmClosePartsChips();
+    ppmCloseSigInit();
+  }
 }
 
 document.addEventListener('click', function(e){
@@ -2776,7 +3363,7 @@ document.addEventListener('click', function(e){
   else if(act==='fm-sub'){
     ST.fmSub = el.getAttribute('data-sub'); if(ST.fmSub!=='wr') ST.wrSub='overview'; render();
     if(ST.fmSub==='wr') loadFmWR();
-    else if(ST.fmSub==='ppm') loadFmKind('ppm');
+    else if(ST.fmSub==='ppm'){ ST.ppmSub='overview'; loadFmKind('ppm'); loadFmKind('ppmTemplates'); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
     else if(ST.fmSub==='ma') loadFmKind('ma');
     else if(ST.fmSub==='inv') loadFmKind('inv');
     else if(ST.fmSub==='om'){ ST.omSub='overview'; loadFmKind('omRecords'); loadFmKind('omTemplates'); loadFmKind('omSchedule'); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
@@ -2801,6 +3388,27 @@ document.addEventListener('click', function(e){
   else if(act==='om-sched-save'){ omSchedSave(); }
   else if(act==='om-sched-delete'){ omSchedDelete(el.getAttribute('data-id')); }
   else if(act==='om-sched-toggle'){ omSchedToggle(el.getAttribute('data-id')); }
+  else if(act==='refresh-ppm'){ loadFmKind('ppm'); loadFmKind('ppmTemplates'); }
+  else if(act==='ppm-sub'){ ST.ppmSub = el.getAttribute('data-sub'); render(); }
+  else if(act==='ppm-new-open'){ ppmNewOpen(); }
+  else if(act==='ppm-new-close'){ ppmNewClose(); }
+  else if(act==='ppm-new-submit'){ if(!ST.ppmFormBusy) ppmSubmit(); }
+  else if(act==='ppm-detail-open'){ ppmDetailOpen(el.getAttribute('data-id')); }
+  else if(act==='ppm-detail-close'){ ppmDetailClose(); }
+  else if(act==='ppm-edit-open'){ ppmEditOpen(el.getAttribute('data-id')); }
+  else if(act==='ppm-start'){ ppmStart(el.getAttribute('data-id')); }
+  else if(act==='ppm-delete'){ ppmDelete(el.getAttribute('data-id')); }
+  else if(act==='ppm-approve'){ ppmApprove(el.getAttribute('data-id'), el.getAttribute('data-role')); }
+  else if(act==='ppm-note'){ ppmEditNote(el.getAttribute('data-id')); }
+  else if(act==='ppm-close-open'){ ppmCloseOpen(el.getAttribute('data-id')); }
+  else if(act==='ppm-close-cancel'){ ppmCloseClose(); }
+  else if(act==='ppm-close-submit'){ if(!ST.ppmCloseBusy) ppmCloseSubmit(); }
+  else if(act==='ppm-close-sig-clear'){ ppmCloseSigClear(); }
+  else if(act==='ppm-close-star'){ ppmCloseSetStar(parseInt(el.getAttribute('data-n'))); }
+  else if(act==='ppm-tpl-open'){ ppmTplOpen(el.getAttribute('data-id')); }
+  else if(act==='ppm-tpl-close'){ ppmTplClose(); }
+  else if(act==='ppm-tpl-save'){ ppmTplSave(); }
+  else if(act==='ppm-tpl-delete'){ ppmTplDelete(el.getAttribute('data-id')); }
   else if(act==='wr-sub'){
     const sub = el.getAttribute('data-sub');
     if(sub==='__more__'){ ST.wrMoreOpen = true; }
