@@ -3212,20 +3212,506 @@ function fmPPM(){
     + ppmFormOverlay() + ppmDetailOverlay() + ppmCloseOverlay() + ppmTplOverlay();
 }
 
-function fmMA(){
+/* ══════════════ MA (Maintenance Agreement) — core parity with the webapp:
+   Contract Register (CRUD), New Visit (log+submit), In Progress/Closed,
+   Evaluate & Approve (4-criteria rating), Performance/Scorecard. PM
+   Schedule, Renewal Tracking, Cost Summary, and Asset History_MA are
+   Desktop-only, per the user's explicit "core complete" scope decision —
+   the same treatment PPM's analytics-only tabs got. Contracts/visits are
+   read via the same generic /fm-records/ma and /fm-records/maVisits kinds
+   the Reliability Module already seeds & syncs to the backend. */
+let maFormAssetIds = [];   // working multi-select asset list for the open Contract form
+let maFormFiles = [];      // {src,name} contract attachments for the open Contract form
+let maVisitCurPhotos = []; // {src,name} for the open Visit form
+
+function maContractsData(){ return (fmKindData('ma') || fmDB('ma') || []).slice(); }
+function maVisitsData(){ return (fmKindData('maVisits') || fmDB('maVisits') || []).slice(); }
+function maAssetIds(m){ return Array.isArray(m.assetIds) ? m.assetIds : (m.assetId ? [m.assetId] : []); }
+function computeMAStatus(m){
+  if(!m.end) return 'active';
+  const daysLeft = (new Date(m.end) - new Date())/86400000;
+  if(daysLeft<0) return 'expired';
+  if(daysLeft<=90) return 'expiring';
+  return 'active';
+}
+function computeVisitScore(v){
+  const vals=[v.ratingPunctuality,v.ratingQuality,v.ratingResponse,v.ratingCleanliness].map(Number).filter(function(n){ return !isNaN(n); });
+  return vals.length ? Math.round((vals.reduce(function(s,x){ return s+x; },0)/vals.length)*10)/10 : null;
+}
+function maSubTabs(active){
   const th = ST.lang==='th';
-  if (ST.modLoading.ma) return fmEmpty(th?'กำลังโหลด...':'Loading...');
-  const ma = fmKindData('ma') || fmDB('ma');
+  const visits = maVisitsData();
+  const pendingCount = visits.filter(function(v){ return v.status==='pending'||v.status==='rejected'; }).length;
+  const evalCount = visits.filter(function(v){ return v.status==='pending'; }).length;
+  const tabs=[
+    {k:'overview',label:th?'ภาพรวม':'Overview'},
+    {k:'register',label:th?'ทะเบียนสัญญา':'Contract Register'},
+    {k:'inprogress',label:th?'กำลังทำ/รออนุมัติ':'In Progress',badge:pendingCount},
+    {k:'closed',label:th?'ปิดงาน':'Closed'},
+    {k:'evaluate',label:th?'ประเมิน & อนุมัติ':'Evaluate & Approve',badge:evalCount},
+    {k:'performance',label:th?'ผลงานผู้รับเหมา':'Performance'},
+  ];
+  function pill(k,label,badge){
+    const isActive=active===k;
+    const badgeHtml = badge ? '<span style="margin-left:5px;background:#ef4444;color:#fff;font-size:12px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px">'+(badge>99?'99+':badge)+'</span>' : '';
+    return '<div class="tap" data-act="ma-sub" data-sub="'+k+'" style="flex-shrink:0;display:flex;align-items:center;font-size:11.5px;font-weight:600;padding:7px 11px;border-radius:20px;border:1px solid '+(isActive?'var(--color-accent)':'var(--color-divider)')+';background:'+(isActive?'var(--color-accent)':'transparent')+';color:'+(isActive?'#fff':'var(--color-text)')+'">'+esc(label)+badgeHtml+'</div>';
+  }
+  return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+    +'<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;flex:1">'
+    + tabs.map(function(x){ return pill(x.k,x.label,x.badge); }).join('')
+    +'</div>'
+    +'<div class="tap" data-act="refresh-ma" title="'+(th?'รีเฟรชข้อมูล':'Refresh')+'" style="flex-shrink:0;width:30px;height:30px;border-radius:50%;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;'+(ST.modLoading.ma?'opacity:.5':'')+'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7"></path><path d="M21 3v6h-6"></path></svg></div>'
+    +'</div>';
+}
+function maContractCard(m, th){
+  const st = computeMAStatus(m);
   const stMap = { active:[th?'ใช้งานอยู่':'Active','green'], expiring:[th?'ใกล้หมดอายุ':'Expiring','orange'], expired:[th?'หมดอายุ':'Expired','red'] };
-  if(!ma.length) return fmEmpty(th?'ยังไม่มีสัญญา MA':'No MA contracts');
-  return '<div style="display:flex;flex-direction:column;gap:8px">' + ma.map(function(m){
-    const st = stMap[m.status] || [m.status,'gray'];
+  const s = stMap[st] || [st,'gray'];
+  const aids = maAssetIds(m);
+  return '<div class="tap blueprint" data-act="ma-contract-detail-open" data-id="'+esc(m.id)+'" style="padding:11px 12px;display:flex;flex-direction:column;gap:4px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(m.id)+'</span>'+fmChip(th?s[0]:s[1], s[2])+'</div>'
+    +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(m.vendor||'')+'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+(m.end?fmChip((th?'ถึง ':'to ')+m.end,'gray'):'')+fmChip(fmMoney(m.value||0),'gray')+(aids.length?fmChip(aids.length+' '+(th?'อุปกรณ์':'assets'),'gray'):'')+'</div>'
+    +'</div>';
+}
+function maContractsHtml(list, th, emptyMsg){
+  if(!list.length) return fmEmpty(emptyMsg);
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + list.slice(0,30).map(function(m){ return maContractCard(m, th); }).join('') + '</div>';
+}
+function maVisitCard(v, th){
+  const stMap = { pending:[th?'รออนุมัติ':'Pending','orange'], approved:[th?'อนุมัติแล้ว':'Approved','green'], rejected:[th?'ส่งกลับแก้ไข':'Sent back','red'] };
+  const st = stMap[v.status] || [v.status||'—','gray'];
+  return '<div class="tap blueprint" data-act="ma-visit-detail-open" data-id="'+esc(v.id)+'" style="padding:11px 12px;display:flex;flex-direction:column;gap:4px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(v.id)+'</span>'+fmChip(th?st[0]:st[1], st[2])+'</div>'
+    +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(v.vendor||'')+' — '+esc(v.assetId||'')+'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+(v.visitDate?fmChip(v.visitDate,'gray'):'')+(v.technician?fmChip(v.technician,'gray'):'')+'</div>'
+    +'</div>';
+}
+function maVisitsHtml(list, th, emptyMsg){
+  if(!list.length) return fmEmpty(emptyMsg);
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + list.slice(0,30).map(function(v){ return maVisitCard(v, th); }).join('') + '</div>';
+}
+function maOverview(){
+  const th = ST.lang==='th';
+  const contracts = maContractsData();
+  const active = contracts.filter(function(m){ return computeMAStatus(m)==='active'; }).length;
+  const expiring = contracts.filter(function(m){ return computeMAStatus(m)==='expiring'; }).length;
+  const expired = contracts.filter(function(m){ return computeMAStatus(m)==='expired'; }).length;
+  const totalValue = contracts.reduce(function(s,m){ return s+(m.value||0); }, 0);
+  const approvedScores = maVisitsData().filter(function(v){ return v.status==='approved'; }).map(computeVisitScore).filter(function(s){ return s!=null; });
+  const avgScore = approvedScores.length ? Math.round((approvedScores.reduce(function(s,v){ return s+v; },0)/approvedScores.length)*10)/10 : null;
+  const btn = '<div style="display:flex;gap:8px;flex-wrap:wrap"><div class="tap" data-act="ma-contract-new-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'สัญญาใหม่':'New Contract')+'</div><div class="tap" data-act="ma-visit-new-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;border:1px solid var(--color-accent);color:var(--color-accent);text-align:center">+ '+(th?'บันทึกการเข้างาน':'Log Visit')+'</div></div>';
+  return btn
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">'
+    + statCard(th?'ใช้งานอยู่':'Active', active) + statCard(th?'ใกล้หมดอายุ':'Expiring', expiring)
+    + statCard(th?'หมดอายุ':'Expired', expired) + statCard(th?'คะแนนเฉลี่ย':'Avg Score', avgScore!=null?avgScore+'/5':'—')
+    +'</div>'
+    +'<div style="margin-top:2px">'+statCard(th?'มูลค่าสัญญารวม':'Total Contract Value', fmMoney(totalValue))+'</div>'
+    +'<div style="margin-top:10px"><h4 style="font-size:15px;margin-bottom:6px">'+(th?'สัญญาทั้งหมด':'All Contracts')+'</h4>'+maContractsHtml(contracts, th, th?'ยังไม่มีสัญญา MA':'No MA contracts yet')+'</div>';
+}
+function maRegister(){
+  const th = ST.lang==='th';
+  const btn = '<div style="display:flex"><div class="tap" data-act="ma-contract-new-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'สัญญาใหม่':'New Contract')+'</div></div>';
+  return btn + '<div style="margin-top:10px">'+maContractsHtml(maContractsData(), th, th?'ยังไม่มีสัญญา MA':'No MA contracts yet')+'</div>';
+}
+function maInProgress(){ const th=ST.lang==='th'; return maVisitsHtml(maVisitsData().filter(function(v){ return v.status==='pending'||v.status==='rejected'; }).sort(function(a,b){ return new Date(b.visitDate||0)-new Date(a.visitDate||0); }), th, th?'ไม่มีงานค้างอยู่':'Nothing pending'); }
+function maClosed(){ const th=ST.lang==='th'; return maVisitsHtml(maVisitsData().filter(function(v){ return v.status==='approved'; }).sort(function(a,b){ return new Date(b.visitDate||0)-new Date(a.visitDate||0); }), th, th?'ยังไม่มีงานที่อนุมัติแล้ว':'No approved visits yet'); }
+function maEvaluateList(){ const th=ST.lang==='th'; return maVisitsHtml(maVisitsData().filter(function(v){ return v.status==='pending'||v.status==='approved'; }).sort(function(a,b){ return new Date(b.visitDate||0)-new Date(a.visitDate||0); }), th, th?'ยังไม่มีงานที่ส่งเข้ามา':'Nothing submitted yet'); }
+
+/* ── Contract Register (CRUD) ── */
+function maAssetCheckboxesHtml(){
+  const th = ST.lang==='th';
+  const assets = (ST.modData.fm && ST.modData.fm.assets) || [];
+  if(!assets.length) return '<div style="font-size:12px;color:var(--color-neutral-600)">'+(th?'ไม่มีข้อมูล Asset':'No assets')+'</div>';
+  return '<div style="max-height:170px;overflow-y:auto;border:1px solid var(--color-divider);border-radius:8px;padding:8px">' + assets.map(function(a){
+    const checked = maFormAssetIds.indexOf(a.id)!==-1;
+    return '<label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px"><input type="checkbox" '+(checked?'checked':'')+' onchange="maToggleAsset(\''+a.id+'\',this.checked)"> '+esc(a.id)+' — '+esc(a.name||'')+'</label>';
+  }).join('') + '</div>';
+}
+function maToggleAsset(id, checked){
+  if(checked){ if(maFormAssetIds.indexOf(id)===-1) maFormAssetIds.push(id); }
+  else{ maFormAssetIds = maFormAssetIds.filter(function(x){ return x!==id; }); }
+}
+function maFilesThumbHtml(){
+  return maFormFiles.map(function(f,i){
+    const isImg = /^data:image/.test(f.src||'');
+    return '<div style="position:relative;display:inline-block;margin:0 6px 6px 0">'
+      + (isImg ? '<img src="'+f.src+'" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--color-divider)">'
+                : '<div style="width:64px;height:64px;border-radius:6px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-size:22px">📄</div>')
+      +'<span onclick="maFormFiles.splice('+i+',1);maRenderFiles()" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">✕</span></div>';
+  }).join('');
+}
+function maRenderFiles(){ const el=document.getElementById('ma-file-list'); if(el) el.innerHTML = maFilesThumbHtml(); }
+function maHandleFiles(inputEl){
+  const files = Array.prototype.slice.call(inputEl.files||[]);
+  files.forEach(function(f){
+    const reader = new FileReader();
+    reader.onload = function(ev){ maFormFiles.push({ src: ev.target.result, name: f.name }); maRenderFiles(); };
+    reader.readAsDataURL(f);
+  });
+  inputEl.value = '';
+}
+function maContractFormOverlay(){
+  if(!ST.maFormOpen) return '';
+  const th = ST.lang==='th';
+  const editing = !!ST.maFormEditId;
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div style="font-weight:700;font-size:17px">'+(editing?(th?'✏ แก้ไขสัญญา':'✏ Edit Contract'):(th?'📄 เพิ่มสัญญาใหม่':'📄 New Contract'))+'</div>'
+    +'<div class="tap" data-act="ma-contract-new-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +'<div class="field"><label>'+(th?'เลขที่สัญญา':'Contract No.')+'</label><input class="input" id="ma-f-contractno" value="'+esc(ST.maFormContractNo||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'ผู้ให้บริการ (Vendor)':'Vendor')+' *</label><input class="input" id="ma-f-vendor" value="'+esc(ST.maFormVendor||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'Asset ที่อยู่ในสัญญานี้':'Assets covered')+' *</label>'+maAssetCheckboxesHtml()+'</div>'
+    +'<div class="field"><label>'+(th?'ประเภทสัญญา':'Type')+'</label><select class="input" id="ma-f-type">'
+    +['Full Service','Parts Only','Labor Only','PM Only'].map(function(t){ return '<option value="'+t+'" '+(ST.maFormType===t?'selected':'')+'>'+t+'</option>'; }).join('')
+    +'</select></div>'
+    +'<div class="field"><label>'+(th?'มูลค่าสัญญา (฿)':'Contract Value (฿)')+' *</label><input class="input" type="number" id="ma-f-value" value="'+(ST.maFormValue||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'วันเริ่มสัญญา':'Start date')+' *</label><input class="input" type="date" id="ma-f-start" value="'+esc(ST.maFormStart||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'วันหมดสัญญา':'End date')+' *</label><input class="input" type="date" id="ma-f-end" value="'+esc(ST.maFormEnd||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'ความถี่ PM ในสัญญา':'PM Frequency')+'</label><select class="input" id="ma-f-pmfreq">'
+    +['รายเดือน','ราย 3 เดือน','ราย 6 เดือน','รายปี'].map(function(f){ return '<option '+(ST.maFormPmFreq===f?'selected':'')+'>'+f+'</option>'; }).join('')
+    +'</select></div>'
+    +'<div class="field"><label>'+(th?'เบอร์ติดต่อ Vendor':'Vendor contact')+'</label><input class="input" type="tel" id="ma-f-contact" value="'+esc(ST.maFormContact||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'ขอบเขตงานตามสัญญา':'Scope of work')+'</label><textarea class="input" id="ma-f-scope" rows="3">'+esc(ST.maFormScope||'')+'</textarea></div>'
+    +'<div class="field"><label>'+(th?'แนบไฟล์สัญญา (รูป/PDF)':'Attach contract files')+'</label>'
+    +'<input type="file" accept="image/*,.pdf" multiple onchange="maHandleFiles(this)">'
+    +'<div id="ma-file-list" style="margin-top:6px">'+maFilesThumbHtml()+'</div></div>'
+    +'<div class="tap" data-act="ma-contract-submit" style="margin-top:14px;text-align:center;font-size:15px;font-weight:700;padding:12px;border-radius:10px;background:var(--color-accent);color:#fff;'+(ST.maFormBusy?'opacity:.6':'')+'">'+(ST.maFormBusy?(th?'กำลังบันทึก...':'Saving...'):(th?'💾 บันทึกสัญญา':'💾 Save Contract'))+'</div>'
+  );
+}
+function maContractNewOpen(){
+  ST.maFormOpen=true; ST.maFormEditId=null; ST.maFormContractNo=''; ST.maFormVendor=''; ST.maFormType='Full Service';
+  ST.maFormValue=''; ST.maFormStart=''; ST.maFormEnd=''; ST.maFormPmFreq='รายเดือน'; ST.maFormContact=''; ST.maFormScope=''; ST.maFormBusy=false;
+  maFormAssetIds=[]; maFormFiles=[];
+  render();
+  if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets();
+}
+function maContractEditOpen(id){
+  const m = maContractsData().find(function(x){ return String(x.id)===String(id); }); if(!m) return;
+  ST.maFormOpen=true; ST.maFormEditId=m.id; ST.maFormContractNo=m.contractNo||''; ST.maFormVendor=m.vendor||''; ST.maFormType=m.type||'Full Service';
+  ST.maFormValue=m.value||''; ST.maFormStart=m.start||''; ST.maFormEnd=m.end||''; ST.maFormPmFreq=m.pmFreq||'รายเดือน'; ST.maFormContact=m.contact||''; ST.maFormScope=m.scopeNote||''; ST.maFormBusy=false;
+  maFormAssetIds = maAssetIds(m).slice();
+  maFormFiles = Array.isArray(m.files) ? m.files.slice() : [];
+  ST.maContractDetailId = null;
+  render();
+  if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets();
+}
+function maContractNewClose(){ ST.maFormOpen=false; render(); }
+async function maContractSubmit(){
+  const th = ST.lang==='th';
+  const vendor = (document.getElementById('ma-f-vendor')||{}).value.trim();
+  if(!vendor){ toast(th?'กรุณากรอกชื่อผู้ให้บริการ':'Please enter the vendor name'); return; }
+  if(!maFormAssetIds.length){ toast(th?'กรุณาเลือก Asset อย่างน้อย 1 รายการ':'Please select at least 1 asset'); return; }
+  const start = (document.getElementById('ma-f-start')||{}).value;
+  const end = (document.getElementById('ma-f-end')||{}).value;
+  if(!start||!end){ toast(th?'กรุณาระบุวันเริ่ม/วันหมดสัญญา':'Please enter start and end dates'); return; }
+  const isEdit = !!ST.maFormEditId;
+  const id = isEdit ? ST.maFormEditId : ('MA-'+Date.now());
+  ST.maFormBusy=true; render();
+  const item = {
+    id, contractNo:(document.getElementById('ma-f-contractno')||{}).value.trim(), vendor,
+    assetIds: maFormAssetIds.slice(), type:(document.getElementById('ma-f-type')||{}).value,
+    value: parseFloat((document.getElementById('ma-f-value')||{}).value)||0, start, end,
+    pmFreq:(document.getElementById('ma-f-pmfreq')||{}).value, contact:(document.getElementById('ma-f-contact')||{}).value.trim(),
+    scopeNote:(document.getElementById('ma-f-scope')||{}).value.trim(), files: maFormFiles.slice()
+  };
+  item.status = computeMAStatus(item);
+  try{
+    await fmSyncKind('ma', item);
+    ST.maFormOpen=false; ST.maFormBusy=false; render();
+    toast(th?('✅ บันทึกสัญญา '+id+' เรียบร้อย'):('✅ Saved contract '+id));
+  }catch(err){
+    ST.maFormBusy=false; render();
+    toast((th?'บันทึกไม่สำเร็จ: ':'Save failed: ')+(err.message||err));
+  }
+}
+async function maContractDelete(id){
+  const th = ST.lang==='th';
+  if(!confirm(th?'ลบสัญญานี้ใช่หรือไม่?':'Delete this contract?')) return;
+  try{ await fmDeleteKind('ma', id); ST.maContractDetailId=null; render(); toast(th?'🗑 ลบแล้ว':'🗑 Deleted'); }
+  catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+function maContractDetailOpen(id){ ST.maContractDetailId = id; render(); }
+function maContractDetailClose(){ ST.maContractDetailId = null; render(); }
+function maContractDetailOverlay(){
+  if(!ST.maContractDetailId) return '';
+  const th = ST.lang==='th';
+  const m = maContractsData().find(function(x){ return String(x.id)===String(ST.maContractDetailId); }); if(!m) return '';
+  const st = computeMAStatus(m);
+  const stMap = { active:[th?'ใช้งานอยู่':'Active','green'], expiring:[th?'ใกล้หมดอายุ':'Expiring','orange'], expired:[th?'หมดอายุ':'Expired','red'] };
+  const s = stMap[st] || [st,'gray'];
+  const aids = maAssetIds(m);
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    +'<div style="font-weight:700;font-size:17px">'+esc(m.id)+'</div>'
+    +'<div class="tap" data-act="ma-contract-detail-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+fmChip(th?s[0]:s[1], s[2])+(m.contractNo?fmChip(m.contractNo,'gray'):'')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ผู้ให้บริการ':'Vendor')+':</b> '+esc(m.vendor||'-')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ประเภท':'Type')+':</b> '+esc(m.type||'-')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'มูลค่า':'Value')+':</b> '+fmMoney(m.value||0)+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ระยะเวลา':'Period')+':</b> '+esc(m.start||'-')+' → '+esc(m.end||'-')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ความถี่ PM':'PM Freq')+':</b> '+esc(m.pmFreq||'-')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ติดต่อ':'Contact')+':</b> '+esc(m.contact||'-')+'</div>'
+    + (m.scopeNote ? '<div style="font-size:13px;color:var(--color-neutral-700);margin-bottom:4px">'+esc(m.scopeNote)+'</div>' : '')
+    +'<div style="font-size:13px;color:var(--color-neutral-600);margin:6px 0"><b>'+(th?'Asset':'Assets')+' ('+aids.length+'):</b> '+esc(aids.join(', ')||'-')+'</div>'
+    + (m.files&&m.files.length ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'+m.files.map(function(f){ return /^data:image/.test(f.src||'') ? '<img src="'+f.src+'" style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--color-divider)">' : '<div style="font-size:12px;padding:6px 8px;border:1px solid var(--color-divider);border-radius:6px">📄 '+esc(f.name||'')+'</div>'; }).join('')+'</div>' : '')
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">'
+    +'<div class="tap" data-act="ma-contract-edit-open" data-id="'+esc(m.id)+'" style="flex:1;text-align:center;font-size:14px;font-weight:700;padding:11px;border-radius:10px;background:var(--color-accent);color:#fff">✏ '+(th?'แก้ไข':'Edit')+'</div>'
+    +'<div class="tap" data-act="ma-contract-delete" data-id="'+esc(m.id)+'" style="flex-shrink:0;text-align:center;font-size:14px;font-weight:700;padding:11px 12px;border-radius:10px;border:1px solid var(--danger);color:var(--danger)">🗑</div>'
+    +'</div>'
+  );
+}
+
+/* ── New Visit (log+submit) ── */
+function maVisitPhotosThumbHtml(){
+  return maVisitCurPhotos.map(function(p,i){
+    return '<div style="position:relative;display:inline-block;margin:0 6px 6px 0"><img src="'+p.src+'" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--color-divider)">'
+      +'<span onclick="maVisitCurPhotos.splice('+i+',1);maVisitRenderPhotos()" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">✕</span></div>';
+  }).join('');
+}
+function maVisitRenderPhotos(){ const el=document.getElementById('ma-visit-photo-list'); if(el) el.innerHTML = maVisitPhotosThumbHtml(); }
+function maVisitPhotoHandle(inputEl){
+  const files = Array.prototype.slice.call(inputEl.files||[]);
+  files.forEach(function(f){
+    const reader = new FileReader();
+    reader.onload = function(ev){ maVisitCurPhotos.push({ src: ev.target.result, name: f.name }); maVisitRenderPhotos(); };
+    reader.readAsDataURL(f);
+  });
+  inputEl.value = '';
+}
+function maOnVisitContractChange(contractId){
+  ST.maVisitFormContractId = contractId;
+  const m = maContractsData().find(function(x){ return String(x.id)===String(contractId); });
+  const aids = m ? maAssetIds(m) : [];
+  const assetSel = document.getElementById('ma-v-asset');
+  if(assetSel){
+    const th = ST.lang==='th';
+    const assets = (ST.modData.fm && ST.modData.fm.assets) || [];
+    assetSel.innerHTML = '<option value="">'+(th?'-- เลือก Asset --':'-- Select Asset --')+'</option>'
+      + assets.filter(function(a){ return aids.indexOf(a.id)!==-1; }).map(function(a){ return '<option value="'+esc(a.id)+'">'+esc(a.id)+' — '+esc(a.name||'')+'</option>'; }).join('');
+  }
+  const techEl = document.getElementById('ma-v-technician');
+  if(techEl && !techEl.value && m) techEl.value = m.vendor||'';
+}
+function maVisitFormOverlay(){
+  if(!ST.maVisitFormOpen) return '';
+  const th = ST.lang==='th';
+  const contracts = maContractsData();
+  const editing = !!ST.maVisitFormEditId;
+  const assets = (ST.modData.fm && ST.modData.fm.assets) || [];
+  const curContract = contracts.find(function(x){ return String(x.id)===String(ST.maVisitFormContractId); });
+  const aids = curContract ? maAssetIds(curContract) : [];
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div style="font-weight:700;font-size:17px">'+(editing?(th?'✏ แก้ไขการเข้างาน':'✏ Edit Visit'):(th?'🧾 บันทึกการเข้างาน':'🧾 Log Visit'))+'</div>'
+    +'<div class="tap" data-act="ma-visit-new-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +'<div class="field"><label>'+(th?'สัญญา':'Contract')+' *</label><select class="input" id="ma-v-contract" onchange="maOnVisitContractChange(this.value)">'
+    +'<option value="">'+(th?'-- เลือกสัญญา --':'-- Select Contract --')+'</option>'
+    + contracts.map(function(m){ return '<option value="'+esc(m.id)+'" '+(String(m.id)===String(ST.maVisitFormContractId)?'selected':'')+'>'+esc(m.id)+' — '+esc(m.vendor||'')+'</option>'; }).join('')
+    +'</select></div>'
+    +'<div class="field"><label>Asset *</label><select class="input" id="ma-v-asset">'
+    +'<option value="">'+(th?'-- เลือก Asset --':'-- Select Asset --')+'</option>'
+    + assets.filter(function(a){ return aids.indexOf(a.id)!==-1; }).map(function(a){ return '<option value="'+esc(a.id)+'" '+(String(a.id)===String(ST.maVisitFormAssetId)?'selected':'')+'>'+esc(a.id)+' — '+esc(a.name||'')+'</option>'; }).join('')
+    +'</select></div>'
+    +'<div class="field"><label>'+(th?'วันนัดหมาย':'Scheduled date')+'</label><input class="input" type="date" id="ma-v-scheduled" value="'+esc(ST.maVisitFormScheduled||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'วันที่เข้างานจริง':'Actual visit date')+' *</label><input class="input" type="date" id="ma-v-visitdate" value="'+esc(ST.maVisitFormVisitDate||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'ช่าง/ทีมงาน':'Technician')+'</label><input class="input" id="ma-v-technician" value="'+esc(ST.maVisitFormTechnician||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'ผู้รับงานฝั่งโรงพยาบาล':'Receiving person')+'</label><input class="input" id="ma-v-person" value="'+esc(ST.maVisitFormPerson||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'งานที่ดำเนินการ':'Work done')+'</label><textarea class="input" id="ma-v-workdone" rows="2">'+esc(ST.maVisitFormWorkDone||'')+'</textarea></div>'
+    +'<div class="field"><label>'+(th?'ปัญหาที่พบ/ข้อเสนอแนะ':'Findings / recommendations')+'</label><textarea class="input" id="ma-v-findings" rows="2">'+esc(ST.maVisitFormFindings||'')+'</textarea></div>'
+    +'<div class="field"><label>'+(th?'รูปหลักฐาน':'Evidence photos')+'</label>'
+    +'<input type="file" accept="image/*" capture="environment" multiple onchange="maVisitPhotoHandle(this)">'
+    +'<div id="ma-visit-photo-list" style="margin-top:6px">'+maVisitPhotosThumbHtml()+'</div></div>'
+    +'<div class="tap" data-act="ma-visit-submit" style="margin-top:14px;text-align:center;font-size:15px;font-weight:700;padding:12px;border-radius:10px;background:var(--color-accent);color:#fff;'+(ST.maVisitFormBusy?'opacity:.6':'')+'">'+(ST.maVisitFormBusy?(th?'กำลังส่ง...':'Submitting...'):(th?'✅ ส่งบันทึกการเข้างาน':'✅ Submit Visit Log'))+'</div>'
+  );
+}
+function maVisitNewOpen(){
+  ST.maVisitFormOpen=true; ST.maVisitFormEditId=null; ST.maVisitFormContractId=''; ST.maVisitFormAssetId='';
+  ST.maVisitFormScheduled=''; ST.maVisitFormVisitDate=new Date().toISOString().slice(0,10); ST.maVisitFormTechnician='';
+  ST.maVisitFormPerson=''; ST.maVisitFormWorkDone=''; ST.maVisitFormFindings=''; ST.maVisitFormBusy=false;
+  maVisitCurPhotos=[];
+  render();
+  if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets();
+}
+function maVisitEditOpen(id){
+  const v = maVisitsData().find(function(x){ return String(x.id)===String(id); }); if(!v) return;
+  ST.maVisitFormOpen=true; ST.maVisitFormEditId=v.id; ST.maVisitFormContractId=v.contractId||''; ST.maVisitFormAssetId=v.assetId||'';
+  ST.maVisitFormScheduled=v.scheduledDate||''; ST.maVisitFormVisitDate=v.visitDate||''; ST.maVisitFormTechnician=v.technician||'';
+  ST.maVisitFormPerson=v.person||''; ST.maVisitFormWorkDone=v.workDone||''; ST.maVisitFormFindings=v.findings||''; ST.maVisitFormBusy=false;
+  maVisitCurPhotos = Array.isArray(v.photos) ? v.photos.slice() : [];
+  ST.maVisitDetailId=null;
+  render();
+  if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets();
+}
+function maVisitNewClose(){ ST.maVisitFormOpen=false; render(); }
+async function maVisitSubmit(){
+  const th = ST.lang==='th';
+  const contractId = (document.getElementById('ma-v-contract')||{}).value;
+  if(!contractId){ toast(th?'กรุณาเลือกสัญญาก่อนครับ':'Please select a contract'); return; }
+  const assetId = (document.getElementById('ma-v-asset')||{}).value;
+  if(!assetId){ toast(th?'กรุณาเลือก Asset ก่อนครับ':'Please select an asset'); return; }
+  const visitDate = (document.getElementById('ma-v-visitdate')||{}).value;
+  if(!visitDate){ toast(th?'กรุณาระบุวันที่เข้างาน':'Please enter the visit date'); return; }
+  const m = maContractsData().find(function(x){ return String(x.id)===String(contractId); });
+  const isEdit = !!ST.maVisitFormEditId;
+  const existing = isEdit ? maVisitsData().find(function(x){ return String(x.id)===String(ST.maVisitFormEditId); }) : null;
+  const id = isEdit ? ST.maVisitFormEditId : ('MAV-'+Date.now());
+  ST.maVisitFormBusy=true; render();
+  const item = Object.assign({}, existing, {
+    id, contractId, assetId, vendor: m?m.vendor:((existing&&existing.vendor)||''),
+    scheduledDate:(document.getElementById('ma-v-scheduled')||{}).value, visitDate,
+    technician:(document.getElementById('ma-v-technician')||{}).value.trim(), person:(document.getElementById('ma-v-person')||{}).value.trim(),
+    workDone:(document.getElementById('ma-v-workdone')||{}).value.trim(), findings:(document.getElementById('ma-v-findings')||{}).value.trim(),
+    photos: maVisitCurPhotos.slice(),
+    status:'pending', rejectReason:null, reviewedBy:null, reviewedDate:null
+  });
+  try{
+    await fmSyncKind('maVisits', item);
+    ST.maVisitFormOpen=false; ST.maVisitFormBusy=false; render();
+    toast(th?('✅ บันทึกการเข้างาน '+id+' เรียบร้อย รออนุมัติ'):('✅ Saved visit '+id+' — pending approval'));
+  }catch(err){
+    ST.maVisitFormBusy=false; render();
+    toast((th?'ส่งไม่สำเร็จ: ':'Submit failed: ')+(err.message||err));
+  }
+}
+
+/* ── Evaluate & Approve (4-criteria rating, unified detail overlay) ── */
+function maVisitDetailOpen(id){ ST.maVisitDetailId = id; ST.maEvalBusy=false; render(); }
+function maVisitDetailClose(){ ST.maVisitDetailId = null; render(); }
+function maVisitDetailOverlay(){
+  if(!ST.maVisitDetailId) return '';
+  const th = ST.lang==='th';
+  const v = maVisitsData().find(function(x){ return String(x.id)===String(ST.maVisitDetailId); }); if(!v) return '';
+  const stMap = { pending:[th?'รออนุมัติ':'Pending','orange'], approved:[th?'อนุมัติแล้ว':'Approved','green'], rejected:[th?'ส่งกลับแก้ไข':'Sent back','red'] };
+  const st = stMap[v.status] || [v.status,'gray'];
+  const score = computeVisitScore(v);
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    +'<div style="font-weight:700;font-size:17px">'+esc(v.id)+'</div>'
+    +'<div class="tap" data-act="ma-visit-detail-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+fmChip(th?st[0]:st[1], st[2])+(v.assetId?fmChip(v.assetId,'gray'):'')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ผู้ให้บริการ':'Vendor')+':</b> '+esc(v.vendor||'-')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ช่าง':'Technician')+':</b> '+esc(v.technician||'-')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'วันที่เข้างาน':'Visit date')+':</b> '+esc(v.visitDate||'-')+'</div>'
+    +'<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'งานที่ดำเนินการ':'Work done')+':</b> '+esc(v.workDone||'-')+'</div>'
+    + (v.findings ? '<div style="font-size:14px;margin-bottom:4px"><b>'+(th?'ปัญหาที่พบ':'Findings')+':</b> '+esc(v.findings)+'</div>' : '')
+    + (v.photos && v.photos.length ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">'+v.photos.map(function(p){ return '<img src="'+p.src+'" style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--color-divider)">'; }).join('')+'</div>' : '')
+    + (v.status==='rejected' && v.rejectReason ? '<div style="background:rgba(239,68,68,.08);border:1px solid var(--danger);border-radius:8px;padding:8px 10px;font-size:13px;margin:8px 0">↩ '+esc(v.rejectReason)+'</div>' : '')
+    + (v.status==='approved' ? (
+        '<div style="font-weight:700;font-size:14px;margin:10px 0 6px">'+(th?'ผลการประเมิน':'Evaluation')+'</div>'
+        +'<div style="font-size:13px;margin-bottom:2px">⏱ '+(th?'ตรงเวลา':'Punctuality')+': '+(v.ratingPunctuality||'-')+'/5</div>'
+        +'<div style="font-size:13px;margin-bottom:2px">🔧 '+(th?'คุณภาพงาน':'Quality')+': '+(v.ratingQuality||'-')+'/5</div>'
+        +'<div style="font-size:13px;margin-bottom:2px">📞 '+(th?'การตอบสนอง':'Responsiveness')+': '+(v.ratingResponse||'-')+'/5</div>'
+        +'<div style="font-size:13px;margin-bottom:2px">🧹 '+(th?'ความสะอาด':'Cleanliness')+': '+(v.ratingCleanliness||'-')+'/5</div>'
+        + (score!=null ? '<div style="font-size:14px;font-weight:700;margin-top:4px;color:var(--green)">'+(th?'คะแนนรวม ':'Overall ')+score+'/5</div>' : '')
+        + (v.comment ? '<div style="font-size:13px;color:var(--color-neutral-700);margin-top:4px">📝 '+esc(v.comment)+'</div>' : '')
+        + (v.reviewedBy ? '<div style="font-size:13px;color:var(--green);margin-top:4px">✅ '+(th?'อนุมัติโดย ':'Approved by ')+esc(v.reviewedBy)+'</div>' : '')
+      ) : '')
+    + (v.status==='pending' ? (
+        '<div style="font-weight:700;font-size:14px;margin:12px 0 6px">'+(th?'ให้คะแนนก่อนอนุมัติ':'Rate before approving')+'</div>'
+        +'<div class="field"><label>⏱ '+(th?'ตรงเวลา':'Punctuality')+'</label><select class="input" id="ma-ev-punc">'+[1,2,3,4,5].map(function(n){ return '<option value="'+n+'" '+(n===3?'selected':'')+'>'+n+'</option>'; }).join('')+'</select></div>'
+        +'<div class="field"><label>🔧 '+(th?'คุณภาพงาน':'Quality')+'</label><select class="input" id="ma-ev-qual">'+[1,2,3,4,5].map(function(n){ return '<option value="'+n+'" '+(n===3?'selected':'')+'>'+n+'</option>'; }).join('')+'</select></div>'
+        +'<div class="field"><label>📞 '+(th?'การตอบสนอง':'Responsiveness')+'</label><select class="input" id="ma-ev-resp">'+[1,2,3,4,5].map(function(n){ return '<option value="'+n+'" '+(n===3?'selected':'')+'>'+n+'</option>'; }).join('')+'</select></div>'
+        +'<div class="field"><label>🧹 '+(th?'ความสะอาด':'Cleanliness')+'</label><select class="input" id="ma-ev-clean">'+[1,2,3,4,5].map(function(n){ return '<option value="'+n+'" '+(n===3?'selected':'')+'>'+n+'</option>'; }).join('')+'</select></div>'
+        +'<div class="field"><label>'+(th?'ความเห็นเพิ่มเติม':'Comment')+'</label><textarea class="input" id="ma-ev-comment" rows="2"></textarea></div>'
+      ) : '')
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">'
+    + (v.status==='pending' ? '<div class="tap" data-act="ma-approve" data-id="'+esc(v.id)+'" style="flex:1;text-align:center;font-size:14px;font-weight:700;padding:11px;border-radius:10px;background:var(--green);color:#fff;'+(ST.maEvalBusy?'opacity:.6':'')+'">✅ '+(th?'อนุมัติ':'Approve')+'</div>' : '')
+    + (v.status==='pending' ? '<div class="tap" data-act="ma-reject" data-id="'+esc(v.id)+'" style="flex:1;text-align:center;font-size:14px;font-weight:700;padding:11px;border-radius:10px;border:1px solid var(--danger);color:var(--danger)">↩ '+(th?'ส่งกลับแก้ไข':'Reject')+'</div>' : '')
+    + (v.status==='rejected' ? '<div class="tap" data-act="ma-visit-edit-open" data-id="'+esc(v.id)+'" style="flex:1;text-align:center;font-size:14px;font-weight:700;padding:11px;border-radius:10px;background:var(--color-accent);color:#fff">✏ '+(th?'แก้ไข':'Edit')+'</div>' : '')
+    +'</div>'
+  );
+}
+async function maApprove(id){
+  if(ST.maEvalBusy) return;
+  const th = ST.lang==='th';
+  const v = maVisitsData().find(function(x){ return String(x.id)===String(id); }); if(!v) return;
+  const punc = parseInt((document.getElementById('ma-ev-punc')||{}).value)||3;
+  const qual = parseInt((document.getElementById('ma-ev-qual')||{}).value)||3;
+  const resp = parseInt((document.getElementById('ma-ev-resp')||{}).value)||3;
+  const clean = parseInt((document.getElementById('ma-ev-clean')||{}).value)||3;
+  const comment = (document.getElementById('ma-ev-comment')||{}).value.trim();
+  ST.maEvalBusy = true; render();
+  const updated = Object.assign({}, v, {
+    status:'approved', ratingPunctuality:punc, ratingQuality:qual, ratingResponse:resp, ratingCleanliness:clean, comment,
+    reviewedBy:(getUser()&&getUser().full_name)||(th?'วิศวกรไซต์':'Site engineer'), reviewedDate:new Date().toISOString(),
+    rejectReason:null
+  });
+  try{ await fmSyncKind('maVisits', updated); ST.maEvalBusy=false; ST.maVisitDetailId=null; render(); toast(th?('✅ อนุมัติ '+id+' เรียบร้อยครับ'):('✅ Approved '+id)); }
+  catch(err){ ST.maEvalBusy=false; render(); toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+async function maReject(id){
+  if(ST.maEvalBusy) return;
+  const th = ST.lang==='th';
+  const reason = window.prompt(th?'เหตุผลที่ส่งกลับให้แก้ไข (สั้นๆ):':'Reason for sending back:');
+  if(reason===null) return;
+  if(!reason.trim()){ toast(th?'กรุณาระบุเหตุผลก่อนครับ':'Please enter a reason'); return; }
+  const v = maVisitsData().find(function(x){ return String(x.id)===String(id); }); if(!v) return;
+  ST.maEvalBusy = true; render();
+  const updated = Object.assign({}, v, { status:'rejected', rejectReason:reason.trim(), reviewedBy:null, reviewedDate:null });
+  try{ await fmSyncKind('maVisits', updated); ST.maEvalBusy=false; ST.maVisitDetailId=null; render(); toast(th?('↩ ส่งกลับ '+id+' ให้แก้ไขแล้ว'):('↩ Sent '+id+' back for correction')); }
+  catch(err){ ST.maEvalBusy=false; render(); toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+
+/* ── Performance / Scorecard (grouped by vendor) ── */
+function maPerformance(){
+  const th = ST.lang==='th';
+  const visits = maVisitsData();
+  const byVendor = {};
+  visits.forEach(function(v){ const k=v.vendor||'—'; (byVendor[k]=byVendor[k]||[]).push(v); });
+  const vendors = Object.keys(byVendor);
+  if(!vendors.length) return fmEmpty(th?'ยังไม่มีข้อมูลผลงาน':'No performance data yet');
+  const rows = vendors.map(function(vendor){
+    const vs = byVendor[vendor];
+    const withSched = vs.filter(function(v){ return v.scheduledDate; });
+    const onTime = withSched.filter(function(v){ return v.visitDate && new Date(v.visitDate) <= new Date(v.scheduledDate); });
+    const onTimePct = withSched.length ? Math.round((onTime.length/withSched.length)*1000)/10 : null;
+    const approved = vs.filter(function(v){ return v.status==='approved'; });
+    function avgOf(field){
+      const vals = approved.map(function(v){ return Number(v[field]); }).filter(function(n){ return n; });
+      return vals.length ? Math.round((vals.reduce(function(s,x){ return s+x; },0)/vals.length)*10)/10 : null;
+    }
+    const avgPunc=avgOf('ratingPunctuality'), avgQual=avgOf('ratingQuality'), avgResp=avgOf('ratingResponse'), avgClean=avgOf('ratingCleanliness');
+    const scores = approved.map(computeVisitScore).filter(function(s){ return s!=null; });
+    const avgOverall = scores.length ? Math.round((scores.reduce(function(s,x){ return s+x; },0)/scores.length)*10)/10 : null;
+    const reworkCount = vs.filter(function(v){ return v.status==='rejected' || v.rejectReason; }).length;
+    return { vendor:vendor, count:vs.length, onTimePct:onTimePct, avgPunc:avgPunc, avgQual:avgQual, avgResp:avgResp, avgClean:avgClean, avgOverall:avgOverall, reworkCount:reworkCount };
+  }).sort(function(a,b){ return (b.avgOverall||0)-(a.avgOverall||0); });
+  function gradeOf(avg){
+    if(avg==null) return [th?'ยังไม่มีข้อมูล':'No data','gray'];
+    if(avg>=4.5) return [th?'🟢 ดีเยี่ยม':'🟢 Excellent','green'];
+    if(avg>=3.5) return [th?'🔵 ดี':'🔵 Good','sky'];
+    if(avg>=2.5) return [th?'🟡 ปานกลาง':'🟡 Moderate','orange'];
+    return [th?'🔴 ควรพิจารณา':'🔴 Reconsider','red'];
+  }
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + rows.map(function(r){
+    const g = gradeOf(r.avgOverall);
     return fmCard(
-      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(m.id)+'</span>'+fmChip(st[0], st[1])+'</div>'
-      +'<div style="font-size:14px;color:var(--color-neutral-800)">'+esc(m.vendor||'')+'</div>'
-      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+(m.end?fmChip((th?'ถึง ':'to ')+m.end,'gray'):'')+fmChip(fmMoney(m.value),'gray')+'</div>'
+      '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-heading);font-size:15px">'+esc(r.vendor)+'</span>'+fmChip(g[0], g[1])+'</div>'
+      +'<div style="font-size:13px;color:var(--color-neutral-700);margin:2px 0">'+(th?'งานทั้งหมด ':'Visits ')+r.count+(r.onTimePct!=null?(' · '+(th?'ตรงเวลา ':'on-time ')+r.onTimePct+'%'):'')+(r.reworkCount?(' · '+(th?'แก้ไขซ้ำ ':'rework ')+r.reworkCount):'')+'</div>'
+      + (r.avgOverall!=null ? '<div style="height:8px;border-radius:5px;overflow:hidden;background:var(--color-neutral-200);margin:6px 0"><div style="width:'+Math.round(r.avgOverall/5*100)+'%;height:100%;background:var(--color-accent)"></div></div>' : '')
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      + (r.avgOverall!=null?fmChip((th?'รวม ':'Overall ')+r.avgOverall+'/5','gray'):'')
+      + (r.avgPunc!=null?fmChip('⏱ '+r.avgPunc,'gray'):'') + (r.avgQual!=null?fmChip('🔧 '+r.avgQual,'gray'):'')
+      + (r.avgResp!=null?fmChip('📞 '+r.avgResp,'gray'):'') + (r.avgClean!=null?fmChip('🧹 '+r.avgClean,'gray'):'')
+      +'</div>'
     );
   }).join('') + '</div>';
+}
+
+function fmMA(){
+  const th = ST.lang==='th';
+  const sub = ST.maSub || 'overview';
+  if (ST.modLoading.ma) return maSubTabs(sub) + fmEmpty(th?'กำลังโหลด...':'Loading...');
+  let body='';
+  if(sub==='overview') body = maOverview();
+  else if(sub==='register') body = maRegister();
+  else if(sub==='inprogress') body = maInProgress();
+  else if(sub==='closed') body = maClosed();
+  else if(sub==='evaluate') body = maEvaluateList();
+  else if(sub==='performance') body = maPerformance();
+  return '<div style="display:flex;flex-direction:column;gap:10px">' + maSubTabs(sub) + body + '</div>'
+    + maContractFormOverlay() + maContractDetailOverlay() + maVisitFormOverlay() + maVisitDetailOverlay();
 }
 
 function fmInv(){
@@ -3424,7 +3910,7 @@ document.addEventListener('click', function(e){
     ST.fmSub = el.getAttribute('data-sub'); if(ST.fmSub!=='wr') ST.wrSub='overview'; render();
     if(ST.fmSub==='wr') loadFmWR();
     else if(ST.fmSub==='ppm'){ ST.ppmSub='overview'; loadFmKind('ppm'); loadFmKind('ppmTemplates'); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
-    else if(ST.fmSub==='ma') loadFmKind('ma');
+    else if(ST.fmSub==='ma'){ ST.maSub='overview'; loadFmKind('ma'); loadFmKind('maVisits'); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
     else if(ST.fmSub==='inv') loadFmKind('inv');
     else if(ST.fmSub==='om'){ ST.omSub='overview'; loadFmKind('omRecords'); loadFmKind('omTemplates'); loadFmKind('omSchedule'); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
   }
@@ -3469,6 +3955,23 @@ document.addEventListener('click', function(e){
   else if(act==='ppm-tpl-close'){ ppmTplClose(); }
   else if(act==='ppm-tpl-save'){ ppmTplSave(); }
   else if(act==='ppm-tpl-delete'){ ppmTplDelete(el.getAttribute('data-id')); }
+  else if(act==='refresh-ma'){ loadFmKind('ma'); loadFmKind('maVisits'); }
+  else if(act==='ma-sub'){ ST.maSub = el.getAttribute('data-sub'); render(); }
+  else if(act==='ma-contract-new-open'){ maContractNewOpen(); }
+  else if(act==='ma-contract-new-close'){ maContractNewClose(); }
+  else if(act==='ma-contract-submit'){ if(!ST.maFormBusy) maContractSubmit(); }
+  else if(act==='ma-contract-detail-open'){ maContractDetailOpen(el.getAttribute('data-id')); }
+  else if(act==='ma-contract-detail-close'){ maContractDetailClose(); }
+  else if(act==='ma-contract-edit-open'){ maContractEditOpen(el.getAttribute('data-id')); }
+  else if(act==='ma-contract-delete'){ maContractDelete(el.getAttribute('data-id')); }
+  else if(act==='ma-visit-new-open'){ maVisitNewOpen(); }
+  else if(act==='ma-visit-new-close'){ maVisitNewClose(); }
+  else if(act==='ma-visit-submit'){ if(!ST.maVisitFormBusy) maVisitSubmit(); }
+  else if(act==='ma-visit-detail-open'){ maVisitDetailOpen(el.getAttribute('data-id')); }
+  else if(act==='ma-visit-detail-close'){ maVisitDetailClose(); }
+  else if(act==='ma-visit-edit-open'){ maVisitEditOpen(el.getAttribute('data-id')); }
+  else if(act==='ma-approve'){ maApprove(el.getAttribute('data-id')); }
+  else if(act==='ma-reject'){ maReject(el.getAttribute('data-id')); }
   else if(act==='wr-sub'){
     const sub = el.getAttribute('data-sub');
     if(sub==='__more__'){ ST.wrMoreOpen = true; }
