@@ -6585,23 +6585,47 @@ function renderPPM(){
   document.getElementById('ppm-rel').textContent=avgRel?avgRel+'%':'—';
   document.getElementById('ppm-cost').textContent=fmtCurrency(pmCost);
 
-  // Charts
-  const mos=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.'];
+  // Charts — real 8-month history computed from ppmList, not random noise.
+  // MTBF/Reliability per month use records CLOSED that month (actualDate);
+  // Compliance per month is done-vs-due among PMs whose planDate fell that
+  // month (so a month with nothing due/closed yet has no real data point —
+  // those gaps are forward-filled from the last known month, or from the
+  // overall KPI average if no history exists at all, so the line stays
+  // readable instead of dropping to zero).
+  const moNamesTh=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const nowD=new Date();
+  const monthKeys=[],mos=[];
+  for(let i=7;i>=0;i--){ const d=new Date(nowD.getFullYear(),nowD.getMonth()-i,1); monthKeys.push(d.getFullYear()+'-'+d.getMonth()); mos.push(moNamesTh[d.getMonth()]); }
+  const sameMonth=(dateStr,key)=>{ if(!dateStr)return false; const d=new Date(dateStr); return !isNaN(d)&&(d.getFullYear()+'-'+d.getMonth())===key; };
+  const fillGaps=(arr,fallback)=>{ let last=null; return arr.map(v=>{ if(v==null) v=(last!=null?last:fallback); last=v; return v; }); };
+  const mtbfByMonth=monthKeys.map(key=>{
+    const vals=ppmList.filter(p=>p.mtbf&&sameMonth(p.actualDate,key)).map(p=>p.mtbf);
+    return vals.length?Math.round(vals.reduce((s,v)=>s+v,0)/vals.length):null;
+  });
+  const compByMonth=monthKeys.map(key=>{
+    const due=ppmList.filter(p=>sameMonth(p.planDate,key));
+    if(!due.length)return null;
+    const doneInMonth=due.filter(p=>p.status==='done'||p.status==='approved_pm').length;
+    return Math.round(doneInMonth/due.length*100);
+  });
+  const relByMonth=mtbfByMonth.map(v=>v?parseFloat((Math.exp(-8760/v)*100).toFixed(1)):null);
+  const mtbfSeries=fillGaps(mtbfByMonth,avgMTBF||0);
+  const compSeries=fillGaps(compByMonth,total?Math.round(done/total*100):0);
+  const relSeries=fillGaps(relByMonth,avgRel?parseFloat(avgRel):0);
+
   destroyChart('mtbf');
   charts.mtbf=new Chart(document.getElementById('chartMTBF'),{
-    type:'line',data:{labels:mos,datasets:[{label:'MTBF(hrs)',data:mos.map((_,i)=>avgMTBF?Math.round(avgMTBF*(0.9+Math.random()*0.2)):Math.floor(Math.random()*400)+900),borderColor:'#22C55E',fill:true,backgroundColor:'rgba(34,197,94,.1)',tension:.4,pointRadius:3}]},
+    type:'line',data:{labels:mos,datasets:[{label:'MTBF(hrs)',data:mtbfSeries,borderColor:'#22C55E',fill:true,backgroundColor:'rgba(34,197,94,.1)',tension:.4,pointRadius:3}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E'},grid:{color:'#21262D'}}}}
   });
   destroyChart('pmcomp');
-  const compData=mos.map(()=>total?Math.round(done/total*100*(0.9+Math.random()*.2)):Math.floor(Math.random()*20)+75);
   charts.pmcomp=new Chart(document.getElementById('chartPMComp'),{
-    type:'bar',data:{labels:mos,datasets:[{label:'Compliance%',data:compData,backgroundColor:compData.map(v=>v>=90?'#22C55E':v>=75?'#EAB308':'#EF4444'),borderRadius:4}]},
+    type:'bar',data:{labels:mos,datasets:[{label:'Compliance%',data:compSeries,backgroundColor:compSeries.map(v=>v>=90?'#22C55E':v>=75?'#EAB308':'#EF4444'),borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E',callback:v=>v+'%'},grid:{color:'#21262D'},max:100}}}
   });
   destroyChart('reltrend');
-  const relData=mos.map((_,i)=>avgRel>0?parseFloat((parseFloat(avgRel)*(0.95+Math.random()*.1)).toFixed(1)):parseFloat((85+Math.random()*10).toFixed(1)));
   charts.reltrend=new Chart(document.getElementById('chartRelTrend'),{
-    type:'line',data:{labels:mos,datasets:[{label:'Reliability%',data:relData,borderColor:'#14B8A6',fill:true,backgroundColor:'rgba(20,184,166,.1)',tension:.4,pointRadius:3},{label:'Target 90%',data:mos.map(()=>90),borderColor:'#EAB308',borderDash:[4,4],fill:false,pointRadius:0}]},
+    type:'line',data:{labels:mos,datasets:[{label:'Reliability%',data:relSeries,borderColor:'#14B8A6',fill:true,backgroundColor:'rgba(20,184,166,.1)',tension:.4,pointRadius:3},{label:'Target 90%',data:mos.map(()=>90),borderColor:'#EAB308',borderDash:[4,4],fill:false,pointRadius:0}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8B949E',font:{size:10}}}},scales:{x:{ticks:{color:'#8B949E',font:{size:10}}},y:{ticks:{color:'#8B949E',callback:v=>v+'%'},grid:{color:'#21262D'},min:60,max:100}}}
   });
 
