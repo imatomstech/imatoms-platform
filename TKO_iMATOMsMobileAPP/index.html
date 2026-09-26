@@ -2620,18 +2620,78 @@ function ppmListHtml(list, th, emptyMsg){
   if(!list.length) return fmEmpty(emptyMsg);
   return '<div style="display:flex;flex-direction:column;gap:8px">' + list.slice(0,30).map(function(p){ return ppmListCard(p, th); }).join('') + '</div>';
 }
+// Real-data trend series for the dashboard below — same 8-month grouping
+// and simple MTBF-based reliability formula (R = e^(-8760/MTBF)) already
+// used in the Desktop Reliability Module's PPM dashboard, so both apps
+// agree. Months with nothing closed/due yet forward-fill from the last
+// known month (or the overall average) instead of showing a gap/zero.
+function ppmMonthlyStats(){
+  const ppm = ppmData();
+  const moNamesTh=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const nowD = new Date();
+  const monthKeys=[], mos=[];
+  for(let i=7;i>=0;i--){ const d=new Date(nowD.getFullYear(), nowD.getMonth()-i, 1); monthKeys.push(d.getFullYear()+'-'+d.getMonth()); mos.push(moNamesTh[d.getMonth()]); }
+  const sameMonth = function(dateStr,key){ if(!dateStr) return false; const d=new Date(dateStr); return !isNaN(d) && (d.getFullYear()+'-'+d.getMonth())===key; };
+  const fillGaps = function(arr,fallback){ let last=null; return arr.map(function(v){ if(v==null) v=(last!=null?last:fallback); last=v; return v; }); };
+  const done = ppm.filter(function(p){ return p.status==='done'||p.status==='approved_pm'; }).length;
+  const total = ppm.length;
+  const allMTBF = ppm.filter(function(p){ return p.mtbf; }).map(function(p){ return p.mtbf; });
+  const avgMTBF = allMTBF.length ? Math.round(allMTBF.reduce(function(s,v){ return s+v; },0)/allMTBF.length) : 0;
+  const avgRel = avgMTBF>0 ? parseFloat((Math.exp(-8760/avgMTBF)*100).toFixed(1)) : 0;
+  const pmCost = ppm.reduce(function(s,p){ return s+(p.cost||0); }, 0);
+  const mtbfByMonth = monthKeys.map(function(key){
+    const vals = ppm.filter(function(p){ return p.mtbf && sameMonth(p.actualDate, key); }).map(function(p){ return p.mtbf; });
+    return vals.length ? Math.round(vals.reduce(function(s,v){ return s+v; },0)/vals.length) : null;
+  });
+  const compByMonth = monthKeys.map(function(key){
+    const due = ppm.filter(function(p){ return sameMonth(p.planDate, key); });
+    if(!due.length) return null;
+    const doneInMonth = due.filter(function(p){ return p.status==='done'||p.status==='approved_pm'; }).length;
+    return Math.round(doneInMonth/due.length*100);
+  });
+  const relByMonth = mtbfByMonth.map(function(v){ return v ? parseFloat((Math.exp(-8760/v)*100).toFixed(1)) : null; });
+  return {
+    mos: mos, total: total, done: done, avgMTBF: avgMTBF, avgRel: avgRel, pmCost: pmCost,
+    mtbfSeries: fillGaps(mtbfByMonth, avgMTBF||0),
+    compSeries: fillGaps(compByMonth, total?Math.round(done/total*100):0),
+    relSeries: fillGaps(relByMonth, avgRel||0)
+  };
+}
+// Sparkline with an added dashed horizontal target line (used for the
+// Reliability trend, mirroring the desktop chart's dashed "Target 90%").
+function ppmDualSpark(values, targetVal, color){
+  if(!values.length) return '';
+  const w=280,h=54,pad=4;
+  const allVals = values.concat([targetVal]);
+  const max=Math.max.apply(null, allVals), min=Math.min.apply(null, allVals);
+  const range=(max-min)||1;
+  const step = values.length>1 ? (w-pad*2)/(values.length-1) : 0;
+  const pts = values.map(function(v,i){ const x=pad+step*i; const y=h-pad-((v-min)/range)*(h-pad*2); return x+','+y; }).join(' ');
+  const ty = h-pad-((targetVal-min)/range)*(h-pad*2);
+  return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none">'
+    +'<line x1="'+pad+'" y1="'+ty+'" x2="'+(w-pad)+'" y2="'+ty+'" stroke="#EAB308" stroke-width="1.5" stroke-dasharray="4,3"/>'
+    +'<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2"/>'
+    +'</svg>';
+}
 function ppmOverview(){
   const th = ST.lang==='th';
   const ppm = ppmSorted();
   const overdueCount = ppm.filter(ppmIsOverdue).length;
-  const dueSoonCount = ppm.filter(function(p){ if(p.status==='done'||p.status==='approved_pm'||!p.planDate) return false; const d=Math.round((new Date(p.planDate)-new Date())/86400000); return d>=0&&d<=30; }).length;
-  const doneThisMonth = ppm.filter(function(p){ if(!p.actualDate) return false; const d=new Date(p.actualDate), n=new Date(); return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear(); }).length;
-  const pendingEval = ppm.filter(function(p){ return p.status==='done'; }).length;
+  const stats = ppmMonthlyStats();
   const btn = '<div style="display:flex"><div class="tap" data-act="ppm-new-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'เพิ่มแผน PM':'New Plan')+'</div></div>';
   return btn
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">'
-    + statCard(th?'เกินกำหนด':'Overdue', overdueCount, 'evaluate') + statCard(th?'ใกล้ถึงกำหนด (30 วัน)':'Due in 30d', dueSoonCount, 'inprogress')
-    + statCard(th?'เสร็จเดือนนี้':'Done this month', doneThisMonth, 'closed') + statCard(th?'รอประเมิน':'Pending eval', pendingEval, 'new')
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">'
+    + statCard('MTBF ('+(th?'ชม.':'hrs')+')', stats.avgMTBF?stats.avgMTBF.toLocaleString():'—')
+    + statCard(th?'ความน่าเชื่อถือ (%)':'Reliability (%)', stats.avgMTBF>0?stats.avgRel+'%':'—')
+    + statCard(th?'PM ทั้งหมด':'PM Total', stats.total)
+    + statCard(th?'เสร็จสิ้น':'Completed', stats.done)
+    + statCard(th?'เกินกำหนด':'Overdue', overdueCount)
+    + statCard(th?'ค่าใช้จ่ายรวม':'All PM Cost', fmMoney(stats.pmCost))
+    +'</div>'
+    +'<div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">'
+    + fmCard('<div style="font-size:13px;font-weight:600;margin-bottom:4px">'+(th?'แนวโน้ม MTBF (8 เดือน)':'MTBF Trend (8mo)')+'</div>' + wrSpark(stats.mtbfSeries, 'var(--green)'))
+    + fmCard('<div style="font-size:13px;font-weight:600;margin-bottom:4px">'+(th?'PM Compliance (%)':'PM Compliance (%)')+'</div>' + wrSpark(stats.compSeries, 'var(--sky)'))
+    + fmCard('<div style="font-size:13px;font-weight:600;margin-bottom:4px">'+(th?'แนวโน้ม Reliability (%) · เส้นประ = เป้าหมาย 90%':'Reliability Trend (%) · dashed = Target 90%')+'</div>' + ppmDualSpark(stats.relSeries, 90, 'var(--color-accent)'))
     +'</div>'
     +'<div style="margin-top:10px">'+ppmListHtml(ppm, th, th?'ยังไม่มีแผนงาน PM':'No PM plans yet')+'</div>';
 }
