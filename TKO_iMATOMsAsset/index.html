@@ -9,9 +9,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{
-  --bg0:#040c1c; --bg1:#071A3E; --bg2:#0D2554; --card:#0D2554;
+  --bg0:#040c1c; --bg1:#071A3E; --bg2:#0D2554; --bg3:#123067; --bg4:#173880; --card:#0D2554;
   --border:#173880; --text:#e6edf7; --text2:#8fa1bd; --text3:#5b6c88;
-  --amber:#F59E0B; --amber2:#D97706; --green:#22C55E; --red:#EF4444; --sky:#38BDF8; --purple:#A855F7; --orange:#F97316;
+  --amber:#F59E0B; --amber2:#D97706; --green:#22C55E; --yellow:#EAB308; --red:#EF4444; --sky:#38BDF8; --purple:#A855F7; --orange:#F97316;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Noto Sans Thai','Segoe UI',sans-serif;background:var(--bg0);color:var(--text);min-height:100vh}
@@ -25,6 +25,7 @@ body{font-family:'Noto Sans Thai','Segoe UI',sans-serif;background:var(--bg0);co
 .btn{cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--text);padding:6px 12px;border-radius:8px;font-size:13px}
 .btn:hover{border-color:var(--amber)}
 .btn-pri{background:var(--amber);color:#1a1200;border-color:var(--amber);font-weight:700}
+.btn-sm{padding:4px 9px;font-size:12px}
 #layout{display:flex;min-height:calc(100vh - 48px)}
 #sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--border);background:var(--bg1);padding:14px 10px}
 #sidebar .item{padding:10px 12px;border-radius:8px;font-size:13.5px;color:var(--text2);cursor:pointer;margin-bottom:4px;display:flex;align-items:center;gap:8px}
@@ -33,31 +34,55 @@ body{font-family:'Noto Sans Thai','Segoe UI',sans-serif;background:var(--bg0);co
 #main{flex:1;padding:20px;overflow-x:auto}
 h2{font-size:19px;margin-bottom:4px}
 .sub{color:var(--text2);font-size:13px;margin-bottom:16px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.toolbar input,.toolbar select{padding:7px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12.5px}
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px}
-.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accentc,var(--amber))}
 .kpi-card .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
 .kpi-card .val{font-family:'Orbitron',sans-serif;font-size:22px;margin-top:4px}
 .kpi-card .sub2{font-size:11.5px;color:var(--text3);margin-top:2px}
-table{width:100%;border-collapse:collapse;font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
 th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
-th{color:var(--text3);font-weight:600;font-size:11.5px;text-transform:uppercase}
+th{color:var(--text3);font-weight:600;font-size:11px;text-transform:uppercase}
 tr:hover td{background:rgba(255,255,255,.02)}
-.chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;border:1px solid currentColor}
-.chip-green{color:var(--green)} .chip-red{color:var(--red)} .chip-amber{color:var(--amber)} .chip-sky{color:var(--sky)} .chip-gray{color:var(--text3)}
+.chip,.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:12px;border:1px solid currentColor}
+.chip-green,.badge-green{color:var(--green)} .chip-red,.badge-red{color:var(--red)} .chip-amber,.badge-amber{color:var(--amber)} .chip-yellow,.badge-yellow{color:var(--yellow)} .chip-sky,.badge-blue{color:var(--sky)} .chip-teal,.badge-teal{color:#2DD4BF} .chip-orange,.badge-orange{color:var(--orange)} .chip-gray,.badge-gray{color:var(--text3)}
+.tag{background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-family:monospace;font-size:11.5px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
+.card-sm{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px}
+.metric-row{display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px dashed var(--border)}
+.metric-row:last-child{border-bottom:none}
 .field{margin-bottom:10px}
 .field label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px}
 .field input,.field select,.field textarea{width:100%;padding:8px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px}
 .row{display:flex;gap:10px;flex-wrap:wrap}
-.row .field{flex:1;min-width:140px}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:100}
-.modal{background:var(--bg1);border:1px solid var(--border);border-radius:12px;padding:20px;width:100%;max-width:520px;max-height:88vh;overflow-y:auto}
+.row .field{flex:1;min-width:130px}
+.row3 .field{flex:1;min-width:100px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:14px}
+.modal{background:var(--bg1);border:1px solid var(--border);border-radius:12px;padding:20px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto}
+.modal.modal-lg{max-width:680px}
 .modal h3{margin-bottom:14px}
+.modal-tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--border)}
+.modal-tabs .mt-item{padding:8px 12px;font-size:12.5px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent}
+.modal-tabs .mt-item.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:700}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--amber);padding:10px 18px;border-radius:8px;font-size:13px;z-index:200}
 .bar-track{height:8px;border-radius:4px;background:var(--bg2);overflow:hidden;margin-top:6px}
 .bar-fill{height:100%}
+.progress{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%}
 .empty{text-align:center;padding:30px;color:var(--text3);font-size:13px}
 a.tap{cursor:pointer}
+.lc-bar{display:flex;gap:6px;margin:14px 0}
+.lc-step{flex:1;padding:10px 6px;text-align:center;border-radius:8px;font-size:11.5px;font-weight:700;border:1px solid var(--border)}
+.lc-step.lc-green{background:rgba(34,197,94,.14);color:var(--green);border-color:var(--green)}
+.lc-step.lc-yellow{background:rgba(234,179,8,.14);color:var(--yellow);border-color:var(--yellow)}
+.lc-step.lc-gray{background:var(--bg2);color:var(--text3)}
+.lc-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.qr-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;gap:14px}
+.qr-box{background:#fff;padding:8px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+@media print{ #topbar,#sidebar,.toolbar,.btn{display:none !important} #main{padding:0} }
 </style>
 </head>
 <body>
@@ -109,14 +134,66 @@ async function syncKind(kind, item){ try{ await api('/fm-records/'+kind+'/sync',
 async function deleteKind(kind, id){ try{ await api('/fm-records/'+kind+'/'+encodeURIComponent(id), {method:'DELETE'}); }catch(e){} }
 async function loadWR(){ try{ return await api('/work-orders'); }catch(e){ return []; } }
 
-const ST = { lang:'th', tab:'overview', assets:[], assetGroups:[], wr:[], ppm:[], ma:[], maVisits:[], inv:[], invtx:[],
-  formOpen:false, editId:null, grpFormOpen:false, grpEditId:null, loaded:false };
+const ST = { lang:'th', tab:'overview', assets:[], assetGroups:[], assetInspections:[], wr:[], ppm:[], ma:[], maVisits:[], inv:[], invtx:[],
+  formOpen:false, editId:null, afTab:'general',
+  grpFormOpen:false, grpEditId:null,
+  lcAssetId:null,
+  inspModalOpen:false, inspAssetId:null,
+  calcOpen:false, calcResult:null,
+  qrQ:'', qrDept:'', regQ:'', regStatus:'', regDept:'', regPhase:'',
+  loaded:false };
 
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function fmt(n){ return '฿'+Math.round(n||0).toLocaleString(); }
+function fmtDate(d){ if(!d) return '-'; const dt=new Date(d); return isNaN(dt) ? '-' : dt.toLocaleDateString('th-TH'); }
 function toast(msg){
   const el = document.createElement('div'); el.className='toast'; el.textContent=msg;
   document.body.appendChild(el); setTimeout(function(){ el.remove(); }, 2600);
+}
+
+/* ── Dept / Type taxonomy (matches Desktop FM Reliability Module) ── */
+const DEPTS = ['วิศวกรรม','ผลิต','คุณภาพ','ซ่อมบำรุง','สาธารณูปโภค'];
+const ASSET_TYPES = ['เครื่องจักร','ยานพาหนะ','อุปกรณ์ IT','เครื่องมือวัด','อาคาร/โครงสร้าง','อื่นๆ'];
+const PHASES = ['Planning','Acquisition','Operation','Maintenance','Disposal','Value Add'];
+const PHASE_TH = {Planning:'วางแผน',Acquisition:'จัดหา',Operation:'ใช้งาน',Maintenance:'บำรุงรักษา',Disposal:'จำหน่าย','Value Add':'มูลค่า'};
+const PHASE_COLOR = {Planning:'blue',Acquisition:'teal',Operation:'green',Maintenance:'yellow',Disposal:'red'};
+
+/* ── System / Sub-System taxonomy + 2-letter sub-codes (ported from
+   Reliability Module's SYS_LIST / SUBSYS_CODE, used for the
+   PREFIX-SYS-SUBCODE-seq Asset ID scheme) ── */
+const SUBSYS_CODE = {
+  AC:{Chiller:'CH',CoolingTower:'CT',AHU:'AH',FCU:'FC',PAU:'PA',SplitAC:'SA','Pump-CHW':'PC','Pump-CW':'PW','VRF-VRV':'VR',ExhaustFan:'EF',VentilationFan:'VF'},
+  EE:{MDB:'MD',DistributionBoard:'DB',Transformer:'TF',CapacitorBank:'CB','ATS-STS':'AT',SolarPV:'SP',Inverter:'IV',LVPanel:'LV'},
+  EL:{PassengerLift:'PL',ServiceLift:'SL',Escalator:'ES',Dumbwaiter:'DW',CarLift:'CL'},
+  FA:{FACP:'FC',SmokeDetector:'SD',HeatDetector:'HD',Sprinkler:'SP',PullStation:'PS',AlarmBell:'AB'},
+  FP:{FirePump:'FP',JockeyPump:'JP',SprinklerValve:'SV',FireCabinet:'FC',PortableExtinguisher:'PE','FM200-Gas':'FM'},
+  BAS:{Controller:'CT',DDC:'DD',Sensor:'SN',Gateway:'GW',BACnetPanel:'BP',SCADA:'SC'},
+  SN:{WaterPump:'WP',PressureTank:'PT',WaterMeter:'WM',SumpPump:'SP',SewagePump:'SG',GreaseTrap:'GT'},
+  TR:{Conveyor:'CV',LoadingDock:'LD',Turntable:'TT'},
+  WWT:{STP:'ST',AerationTank:'AT',Clarifier:'CL',ChemicalDosing:'CD',UVSystem:'UV'},
+  GE:{Generator:'GN',ATS:'AT',UPS:'UP',BatteryBank:'BB',Charger:'CH'},
+  CV:{Structure:'ST',Roof:'RF',Waterproof:'WP',Facade:'FC',Road:'RD',Parking:'PK'},
+  IT:{Server:'SV',Switch:'SW',Router:'RT',Firewall:'FW',AccessPoint:'AP',CCTVRecorder:'CR',NAS:'NS'},
+  SG:{CCTVCamera:'CC',AccessControl:'AC',GuardTour:'GT',Intercom:'IC',BoomGate:'BG'},
+  PL:{PoolPump:'PP',FilterSystem:'FS',ChemicalSystem:'CS',Landscaping:'LS',Irrigation:'IR'},
+  LT:{EmergencyLight:'EL',ExitSign:'ES',StreetLight:'SL',FloodLight:'FL',PanelBoard:'PB'}
+};
+const SYS_LIST = Object.keys(SUBSYS_CODE);
+function subsysList(sys){ return Object.keys(SUBSYS_CODE[sys]||{}); }
+function suggestAssetId(prefix, sys, subsys){
+  prefix = (prefix||'AST').toUpperCase().trim() || 'AST';
+  if(!sys || !subsys) return '';
+  const code = (SUBSYS_CODE[sys]||{})[subsys] || subsys.slice(0,2).toUpperCase();
+  const stem = prefix+'-'+sys+'-'+code+'-';
+  let max = 0;
+  ST.assets.forEach(function(a){
+    if(String(a.id||'').indexOf(stem)===0){
+      const n = parseInt(String(a.id).slice(stem.length),10);
+      if(!isNaN(n) && n>max) max = n;
+    }
+  });
+  const seq = String(max+1).padStart(2,'0');
+  return stem+seq;
 }
 
 /* ── Asset normalization (ported from Reliability Module's normalizeAsset) ── */
@@ -129,23 +206,33 @@ function normalizeAsset(a){
   const calcNbv = Math.max(salvage, cost - (cost>0 ? (cost-salvage)/life : 0)*yearsOwned);
   const nbv = a.nbv>0 ? a.nbv : Math.round(calcNbv);
   const accDep = a.accDep>0 ? a.accDep : Math.round(cost - nbv);
-  const efficiency = a.efficiency!=null ? a.efficiency : 85;
-  return Object.assign({}, a, { buyDate, life, cost, nbv, accDep, efficiency, yearsOwned, salvage,
+  const efficiency = a.efficiency!=null ? a.efficiency : (a.eff!=null ? a.eff : 85);
+  const location = a.location || [a.building,a.floor,a.zone,a.room].filter(Boolean).join(' / ');
+  return Object.assign({}, a, { buyDate, life, cost, nbv, accDep, efficiency, yearsOwned, salvage, location,
     status: a.status || (efficiency>=80?'green':efficiency>=60?'yellow':'red') });
 }
 function assetsNorm(){ return ST.assets.map(normalizeAsset); }
+function statusBadge(s, th){
+  const map = { green:['badge-green', th?'ปกติ':'Good'], yellow:['badge-yellow', th?'ควรตรวจสอบ':'Watch'], red:['badge-red', th?'ควรพิจารณา':'Critical'] };
+  const x = map[s] || map.green;
+  return '<span class="badge '+x[0]+'">'+x[1]+'</span>';
+}
+function phaseBadge(p){
+  const c = PHASE_COLOR[p] || 'gray';
+  return '<span class="badge badge-'+c+'">'+(p||'-')+'</span>';
+}
 
 /* ── Depreciation calculator (straight-line / declining-balance, ported) ── */
 function calcDep(cost, salvage, life, yr, method){
   life = life||10; yr = Math.min(yr, life);
   if(method==='db'){
-    const rate = 2/life; let bv = cost; let accDep = 0;
-    for(let i=0;i<yr;i++){ const d = bv*rate; accDep += d; bv -= d; }
-    return { accDep: Math.round(accDep), nbv: Math.round(Math.max(bv, salvage)) };
+    let rate = 2/life, bv = cost, accDep = 0;
+    for(let i=0;i<yr;i++){ let d = bv*rate; if(bv-d<salvage) d = Math.max(0,bv-salvage); accDep += d; bv -= d; }
+    return { accDep: Math.round(accDep), nbv: Math.round(Math.max(bv, salvage)), rate: Math.round((2/life)*1000)/10 };
   }
   const depYr = (cost-salvage)/life;
   const accDep = depYr*yr;
-  return { accDep: Math.round(accDep), nbv: Math.round(Math.max(cost-accDep, salvage)) };
+  return { accDep: Math.round(accDep), nbv: Math.round(Math.max(cost-accDep, salvage)), rate: Math.round((1/life)*1000)/10 };
 }
 
 /* ── Predictive cross-module metrics (reuse the same formulas already
@@ -172,7 +259,6 @@ function calcAvailabilityKN(){
   groups.forEach(function(g){
     const members = (g.assetIds||[]).map(function(id){ return byId[id]; }).filter(Boolean);
     const online = members.filter(function(a){ return (a.online!==false); }).length;
-    const n = g.n || members.length || 1;
     const k = g.k || 1;
     sum += online>=k ? 100 : Math.round((online/k)*100);
   });
@@ -196,14 +282,18 @@ function calcInventoryAvailabilityPct(){
   return Math.round((fulfilled/(fulfilled+failed))*100*10)/10;
 }
 
-/* ── Sidebar / nav ── */
+/* ── Sidebar / nav — order matches the Desktop FM Reliability Module's
+   "Asset Life-Cycle Management" submenu (Overview Value Add, Lifecycle
+   Tracker, QR Code Assets, Annual Review, Asset ID & Register), with
+   our own Predictive Overview dashboard first and Asset Groups (K/N)
+   appended as the new redundancy feature. ── */
 const NAV = [
   {k:'overview', icon:'📊', th:'ภาพรวมคาดการณ์', en:'Predictive Overview'},
-  {k:'register', icon:'🗂️', th:'ทะเบียนสินทรัพย์', en:'Asset Register'},
-  {k:'lifecycle', icon:'⏳', th:'วงจรชีวิตสินทรัพย์', en:'Lifecycle Tracker'},
-  {k:'qr', icon:'🔳', th:'QR Code สินทรัพย์', en:'QR Code Assets'},
-  {k:'review', icon:'📋', th:'ตรวจสอบประจำปี', en:'Annual Review'},
-  {k:'valuation', icon:'💰', th:'มูลค่าสินทรัพย์', en:'Overview Value Add'},
+  {k:'valuation', icon:'💰', th:'Overview Value Add', en:'Overview Value Add'},
+  {k:'lifecycle', icon:'⏳', th:'Lifecycle Tracker', en:'Lifecycle Tracker'},
+  {k:'qr', icon:'🔳', th:'QR Code Assets', en:'QR Code Assets'},
+  {k:'review', icon:'🔍', th:'Annual Review', en:'Annual Review'},
+  {k:'register', icon:'🗂️', th:'Asset ID & Register', en:'Asset ID & Register'},
   {k:'groups', icon:'🔗', th:'กลุ่มสำรอง (K/N)', en:'Asset Groups (K/N)'},
 ];
 function renderSidebar(){
@@ -249,31 +339,74 @@ function renderOverview(){
     + metricCard(th?'% ผลงานผู้รับเหมา MA':'% MA Performance', maPerf, 'var(--amber)')
     + metricCard(th?'% ความพร้อมจ่ายอะไหล่':'% Inventory Availability', invAvail, 'var(--orange)')
     +'</div></div>'
-    + (assets.length===0 ? '<div class="empty">'+(th?'ยังไม่มีข้อมูลสินทรัพย์ — เริ่มที่ "ทะเบียนสินทรัพย์"':'No asset data yet — start at "Asset Register"')+'</div>' : '');
+    + (assets.length===0 ? '<div class="empty">'+(th?'ยังไม่มีข้อมูลสินทรัพย์ — เริ่มที่ "Asset ID & Register"':'No asset data yet — start at "Asset ID & Register"')+'</div>' : '');
 }
 
-/* ── Asset Register (CRUD) ── */
+/* ── Asset ID & Register (CRUD, 3-tab modal, SYS/SUBSYS ID scheme) ── */
 function assetForm(){
   if(!ST.formOpen) return '';
   const th = ST.lang==='th';
   const editing = !!ST.editId;
   const a = editing ? ST.assets.find(function(x){ return String(x.id)===String(ST.editId); }) || {} : {};
-  return '<div class="modal-bg"><div class="modal"><h3>'+(editing?(th?'✏ แก้ไขสินทรัพย์':'✏ Edit Asset'):(th?'+ เพิ่มสินทรัพย์':'+ New Asset'))+'</h3>'
-    + (!editing ? '<div class="field"><label>Asset ID</label><input id="af-id" placeholder="'+(th?'เว้นว่างเพื่อสร้างอัตโนมัติ':'Leave blank to auto-generate')+'"></div>' : '')
+  const tabs = [['general', th?'ทั่วไป':'General'], ['technical', th?'เทคนิค':'Technical'], ['financial', th?'การเงิน':'Financial']];
+  const sysOpts = SYS_LIST.map(function(s){ return '<option value="'+s+'" '+(a.sys===s?'selected':'')+'>'+s+'</option>'; }).join('');
+  const subsysOpts = subsysList(a.sys||SYS_LIST[0]).map(function(s){ return '<option value="'+s+'" '+(a.subsys===s?'selected':'')+'>'+s+'</option>'; }).join('');
+
+  const general = '<div id="aftab-general" style="'+(ST.afTab==='general'?'':'display:none')+'">'
+    + (!editing ? '<div class="row"><div class="field"><label>Prefix</label><input id="af-idpfx" value="AST"></div>'
+      + '<div class="field" style="flex:2"><label>Asset ID</label><div style="display:flex;gap:6px"><input id="af-id" placeholder="'+(th?'กด Gen ID':'Click Gen ID')+'"><div class="btn btn-sm" onclick="genAssetId()">🔄 Gen ID</div></div></div></div>' : '')
     +'<div class="field"><label>'+(th?'ชื่อสินทรัพย์':'Name')+' *</label><input id="af-name" value="'+esc(a.name||'')+'"></div>'
-    +'<div class="row"><div class="field"><label>'+(th?'ระบบ':'System')+'</label><input id="af-sys" value="'+esc(a.sys||'')+'"></div>'
-    +'<div class="field"><label>'+(th?'ที่ตั้ง':'Location')+'</label><input id="af-location" value="'+esc(a.location||'')+'"></div></div>'
-    +'<div class="row"><div class="field"><label>'+(th?'วันที่ซื้อ':'Purchase date')+'</label><input type="date" id="af-buydate" value="'+esc(a.buyDate||'')+'"></div>'
-    +'<div class="field"><label>'+(th?'อายุการใช้งาน (ปี)':'Useful life (yrs)')+'</label><input type="number" id="af-life" value="'+(a.life||10)+'"></div></div>'
+    +'<div class="row"><div class="field"><label>'+(th?'ระบบ (System)':'System')+'</label><select id="af-sys" onchange="afSysChanged()">'+sysOpts+'</select></div>'
+    +'<div class="field"><label>'+(th?'ระบบย่อย (Sub-System)':'Sub-System')+'</label><select id="af-subsys">'+subsysOpts+'</select></div></div>'
+    +'<div class="row"><div class="field"><label>'+(th?'ประเภท':'Type')+'</label><select id="af-type">'+ASSET_TYPES.map(function(t){ return '<option '+(a.type===t?'selected':'')+'>'+t+'</option>'; }).join('')+'</select></div>'
+    +'<div class="field"><label>'+(th?'แผนก':'Dept')+'</label><select id="af-dept">'+DEPTS.map(function(d){ return '<option '+(a.dept===d?'selected':'')+'>'+d+'</option>'; }).join('')+'</select></div></div>'
+    +'<div class="row row3"><div class="field"><label>'+(th?'อาคาร':'Building')+'</label><input id="af-building" value="'+esc(a.building||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'ชั้น':'Floor')+'</label><input id="af-floor" value="'+esc(a.floor||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'โซน':'Zone')+'</label><input id="af-zone" value="'+esc(a.zone||'')+'"></div></div>'
+    +'<div class="field"><label>'+(th?'ห้อง/จุดติดตั้ง':'Room / Location note')+'</label><input id="af-room" value="'+esc(a.room||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'ระยะวงจรชีวิต (Phase)':'Lifecycle Phase')+'</label><select id="af-phase">'+PHASES.slice(0,5).map(function(p){ return '<option value="'+p+'" '+(a.phase===p?'selected':'')+'>'+(th?PHASE_TH[p]:p)+'</option>'; }).join('')+'</select></div>'
+    +'</div>';
+
+  const technical = '<div id="aftab-technical" style="'+(ST.afTab==='technical'?'':'display:none')+'">'
+    +'<div class="row"><div class="field"><label>'+(th?'ยี่ห้อ':'Brand')+'</label><input id="af-brand" value="'+esc(a.brand||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'รุ่น':'Model')+'</label><input id="af-model" value="'+esc(a.model||'')+'"></div></div>'
+    +'<div class="field"><label>Serial No.</label><input id="af-serial" value="'+esc(a.serial||'')+'"></div>'
+    +'<div class="row"><div class="field"><label>'+(th?'อายุการใช้งาน (ปี)':'Useful life (yrs)')+'</label><input type="number" id="af-life" value="'+(a.life||10)+'"></div>'
+    +'<div class="field"><label>'+(th?'ประสิทธิภาพ (%)':'Efficiency (%)')+'</label><input type="number" id="af-eff" value="'+(a.efficiency!=null?a.efficiency:85)+'"></div></div>'
+    +'<div class="field"><label>'+(th?'สถานะ':'Status')+'</label><select id="af-status"><option value="green" '+(a.status==='green'?'selected':'')+'>🟢 '+(th?'ปกติ':'Good')+'</option><option value="yellow" '+(a.status==='yellow'?'selected':'')+'>🟡 '+(th?'ควรตรวจสอบ':'Watch')+'</option><option value="red" '+(a.status==='red'?'selected':'')+'>🔴 '+(th?'ควรพิจารณา':'Critical')+'</option></select></div>'
+    +'</div>';
+
+  const financial = '<div id="aftab-financial" style="'+(ST.afTab==='financial'?'':'display:none')+'">'
     +'<div class="row"><div class="field"><label>'+(th?'ราคาซื้อ':'Cost')+'</label><input type="number" id="af-cost" value="'+(a.cost||0)+'"></div>'
-    +'<div class="field"><label>'+(th?'มูลค่าซาก':'Salvage value')+'</label><input type="number" id="af-salvage" value="'+(a.salvage||0)+'"></div></div>'
-    +'<div class="field"><label>'+(th?'ประสิทธิภาพ (%)':'Efficiency (%)')+'</label><input type="number" id="af-eff" value="'+(a.efficiency!=null?a.efficiency:85)+'"></div>'
+    +'<div class="field"><label>'+(th?'วันที่ซื้อ':'Purchase date')+'</label><input type="date" id="af-buydate" value="'+esc(a.buyDate||'')+'"></div></div>'
+    +'<div class="row"><div class="field"><label>'+(th?'มูลค่าซาก':'Salvage value')+'</label><input type="number" id="af-salvage" value="'+(a.salvage||0)+'"></div>'
+    +'<div class="field"><label>'+(th?'วิธีคิดค่าเสื่อม':'Dep. method')+'</label><select id="af-depmethod"><option value="sl" '+(a.depMethod==='sl'||!a.depMethod?'selected':'')+'>Straight Line</option><option value="db" '+(a.depMethod==='db'?'selected':'')+'>Double Declining</option><option value="soy" '+(a.depMethod==='soy'?'selected':'')+'>Sum of Years</option></select></div></div>'
+    +'<div class="field"><label>'+(th?'ราคาทดแทน':'Replacement cost')+'</label><input type="number" id="af-replacecost" value="'+(a.replaceCost||0)+'"></div>'
+    +'<div class="field"><label>'+(th?'หมายเหตุ':'Note')+'</label><textarea id="af-note" rows="2">'+esc(a.note||'')+'</textarea></div>'
+    +'</div>';
+
+  return '<div class="modal-bg"><div class="modal modal-lg"><h3>'+(editing?(th?'✏ แก้ไขสินทรัพย์':'✏ Edit Asset')+' — '+esc(a.id||''):(th?'+ เพิ่มสินทรัพย์':'+ New Asset'))+'</h3>'
+    +'<div class="modal-tabs">'+tabs.map(function(t){ return '<div class="mt-item'+(ST.afTab===t[0]?' active':'')+'" onclick="afSetTab(\''+t[0]+'\')">'+t[1]+'</div>'; }).join('')+'</div>'
+    + general + technical + financial
     +'<div style="display:flex;gap:8px;margin-top:14px">'
     +'<div class="btn btn-pri" style="flex:1;text-align:center" onclick="submitAsset()">'+(th?'💾 บันทึก':'💾 Save')+'</div>'
     +'<div class="btn" onclick="closeAssetForm()">'+(th?'ยกเลิก':'Cancel')+'</div></div>'
     +'</div></div>';
 }
-function openAssetForm(id){ ST.formOpen=true; ST.editId=id||null; render(); }
+function afSetTab(t){ ST.afTab=t; render(); }
+function afSysChanged(){
+  const sys = document.getElementById('af-sys').value;
+  const sel = document.getElementById('af-subsys');
+  sel.innerHTML = subsysList(sys).map(function(s){ return '<option value="'+s+'">'+s+'</option>'; }).join('');
+}
+function genAssetId(){
+  const prefix = document.getElementById('af-idpfx').value;
+  const sys = document.getElementById('af-sys').value;
+  const subsys = document.getElementById('af-subsys').value;
+  const id = suggestAssetId(prefix, sys, subsys);
+  document.getElementById('af-id').value = id;
+}
+function openAssetForm(id){ ST.formOpen=true; ST.editId=id||null; ST.afTab='general'; render(); }
 function closeAssetForm(){ ST.formOpen=false; render(); }
 async function submitAsset(){
   const th = ST.lang==='th';
@@ -281,13 +414,30 @@ async function submitAsset(){
   if(!name){ toast(th?'กรุณากรอกชื่อสินทรัพย์':'Please enter a name'); return; }
   const isEdit = !!ST.editId;
   let id = isEdit ? ST.editId : (document.getElementById('af-id').value||'').trim();
-  if(!id) id = 'AST-'+Date.now();
-  const existing = isEdit ? ST.assets.find(function(x){ return String(x.id)===String(id); }) : {};
+  if(!id) id = suggestAssetId(document.getElementById('af-idpfx').value, document.getElementById('af-sys').value, document.getElementById('af-subsys').value) || ('AST-'+Date.now());
+  const existing = isEdit ? (ST.assets.find(function(x){ return String(x.id)===String(id); }) || {}) : {};
+  const building = document.getElementById('af-building').value.trim();
+  const floor = document.getElementById('af-floor').value.trim();
+  const zone = document.getElementById('af-zone').value.trim();
+  const room = document.getElementById('af-room').value.trim();
+  const cost = parseFloat(document.getElementById('af-cost').value)||0;
+  const salvage = parseFloat(document.getElementById('af-salvage').value)||0;
+  const life = parseInt(document.getElementById('af-life').value)||10;
+  const buyDate = document.getElementById('af-buydate').value;
+  const ageYr = buyDate ? Math.max(0,(new Date()-new Date(buyDate))/(365.25*86400000)) : 0;
+  const depPerYr = life ? (cost-salvage)/life : 0;
+  const accDep = Math.min(depPerYr*ageYr, Math.max(0,cost-salvage));
+  const nbv = Math.max(cost-accDep, salvage);
   const item = Object.assign({}, existing, {
-    id, name, sys: document.getElementById('af-sys').value.trim(), location: document.getElementById('af-location').value.trim(),
-    buyDate: document.getElementById('af-buydate').value, life: parseInt(document.getElementById('af-life').value)||10,
-    cost: parseFloat(document.getElementById('af-cost').value)||0, salvage: parseFloat(document.getElementById('af-salvage').value)||0,
-    efficiency: parseInt(document.getElementById('af-eff').value)||85
+    id, name, sys: document.getElementById('af-sys').value, subsys: document.getElementById('af-subsys').value,
+    type: document.getElementById('af-type').value, dept: document.getElementById('af-dept').value,
+    building, floor, zone, room, location: [building,floor,zone,room].filter(Boolean).join(' / '),
+    phase: document.getElementById('af-phase').value,
+    brand: document.getElementById('af-brand').value.trim(), model: document.getElementById('af-model').value.trim(), serial: document.getElementById('af-serial').value.trim(),
+    life, efficiency: parseInt(document.getElementById('af-eff').value)||85, status: document.getElementById('af-status').value,
+    cost, buyDate, salvage, depMethod: document.getElementById('af-depmethod').value, replaceCost: parseFloat(document.getElementById('af-replacecost').value)||0,
+    note: document.getElementById('af-note').value.trim(),
+    nbv: Math.round(nbv), accDep: Math.round(accDep)
   });
   await syncKind('assets', item);
   const idx = ST.assets.findIndex(function(x){ return String(x.id)===String(id); });
@@ -305,77 +455,215 @@ async function deleteAsset(id){
 }
 function renderRegister(){
   const th = ST.lang==='th';
-  const assets = assetsNorm();
-  const statusChip = {green:['chip-green', th?'ปกติ':'Good'], yellow:['chip-amber', th?'ควรตรวจสอบ':'Watch'], red:['chip-red', th?'ควรพิจารณา':'Critical']};
+  let assets = assetsNorm();
+  if(ST.regQ) assets = assets.filter(function(a){ const q=ST.regQ.toLowerCase(); return (a.id+a.name+(a.dept||'')+(a.location||'')).toLowerCase().indexOf(q)>=0; });
+  if(ST.regStatus) assets = assets.filter(function(a){ return a.status===ST.regStatus; });
+  if(ST.regDept) assets = assets.filter(function(a){ return a.dept===ST.regDept; });
+  if(ST.regPhase) assets = assets.filter(function(a){ return a.phase===ST.regPhase; });
   document.getElementById('main').innerHTML =
     '<h2>'+(th?'ทะเบียนสินทรัพย์ (Asset ID & Register)':'Asset ID & Register')+'</h2>'
-    +'<div class="sub">'+assets.length+' '+(th?'รายการ':'items')+'</div>'
-    +'<div class="btn btn-pri" style="display:inline-block;margin-bottom:14px" onclick="openAssetForm()">+ '+(th?'เพิ่มสินทรัพย์':'New Asset')+'</div>'
-    + (assets.length ? '<table><tr><th>ID</th><th>'+(th?'ชื่อ':'Name')+'</th><th>'+(th?'ระบบ':'Sys')+'</th><th>'+(th?'อายุ (ปี)':'Age (yr)')+'</th><th>NBV</th><th>'+(th?'สถานะ':'Status')+'</th><th></th></tr>'
+    +'<div class="sub">'+assets.length+' / '+ST.assets.length+' '+(th?'รายการ':'items')+'</div>'
+    +'<div class="toolbar">'
+    +'<div class="btn btn-pri" onclick="openAssetForm()">+ '+(th?'เพิ่มสินทรัพย์':'New Asset')+'</div>'
+    +'<input placeholder="'+(th?'ค้นหา ID/ชื่อ/สถานที่':'Search ID/name/location')+'" value="'+esc(ST.regQ)+'" oninput="ST.regQ=this.value;render()">'
+    +'<select onchange="ST.regStatus=this.value;render()"><option value="">'+(th?'สถานะทั้งหมด':'All status')+'</option><option value="green" '+(ST.regStatus==='green'?'selected':'')+'>🟢 '+(th?'ปกติ':'Good')+'</option><option value="yellow" '+(ST.regStatus==='yellow'?'selected':'')+'>🟡 '+(th?'ควรตรวจสอบ':'Watch')+'</option><option value="red" '+(ST.regStatus==='red'?'selected':'')+'>🔴 '+(th?'ควรพิจารณา':'Critical')+'</option></select>'
+    +'<select onchange="ST.regDept=this.value;render()"><option value="">'+(th?'แผนกทั้งหมด':'All depts')+'</option>'+DEPTS.map(function(d){return '<option '+(ST.regDept===d?'selected':'')+'>'+d+'</option>';}).join('')+'</select>'
+    +'<select onchange="ST.regPhase=this.value;render()"><option value="">'+(th?'Phase ทั้งหมด':'All phases')+'</option>'+PHASES.slice(0,5).map(function(p){return '<option value="'+p+'" '+(ST.regPhase===p?'selected':'')+'>'+(th?PHASE_TH[p]:p)+'</option>';}).join('')+'</select>'
+    +'</div>'
+    + (assets.length ? '<table><tr><th>Asset ID</th><th>'+(th?'ชื่อ':'Name')+'</th><th>'+(th?'ประเภท':'Type')+'</th><th>'+(th?'แผนก':'Dept')+'</th><th>'+(th?'สถานที่':'Location')+'</th><th>Phase</th><th>'+(th?'ประสิทธิภาพ':'Eff.')+'</th><th>'+(th?'สถานะ':'Status')+'</th><th>NBV</th><th></th></tr>'
       + assets.map(function(a){
-          const s = statusChip[a.status] || statusChip.green;
-          return '<tr><td>'+esc(a.id)+'</td><td>'+esc(a.name||'')+'</td><td>'+esc(a.sys||'-')+'</td><td>'+(Math.round(a.yearsOwned*10)/10)+'</td><td>'+fmt(a.nbv)+'</td>'
-            +'<td><span class="chip '+s[0]+'">'+s[1]+'</span></td>'
-            +'<td><a class="tap" style="margin-right:8px" onclick="openAssetForm(\''+esc(a.id)+'\')">✏</a><a class="tap" onclick="deleteAsset(\''+esc(a.id)+'\')">🗑</a></td></tr>';
+          const effColor = a.efficiency>=80?'var(--green)':a.efficiency>=60?'var(--amber)':'var(--red)';
+          return '<tr><td><span class="tag">'+esc(a.id)+'</span></td><td>'+esc(a.name||'')+(a.brand||a.model?'<div style="color:var(--text3);font-size:11px">'+esc(a.brand||'')+' '+esc(a.model||'')+'</div>':'')+'</td><td>'+esc(a.type||'-')+'</td><td>'+esc(a.dept||'-')+'</td><td>'+esc(a.location||'-')+'</td><td>'+phaseBadge(a.phase)+'</td>'
+            +'<td style="min-width:70px">'+a.efficiency+'%<div class="bar-track"><div class="bar-fill" style="width:'+a.efficiency+'%;background:'+effColor+'"></div></div></td>'
+            +'<td>'+statusBadge(a.status, th)+'</td><td>'+fmt(a.nbv)+'</td>'
+            +'<td><a class="tap" style="margin-right:8px" onclick="openAssetForm(\''+esc(a.id)+'\')">✏</a><a class="tap" style="margin-right:8px" onclick="setTab(\'qr\');ST.qrQ=\''+esc(a.id)+'\'">📱</a><a class="tap" onclick="deleteAsset(\''+esc(a.id)+'\')">🗑</a></td></tr>';
         }).join('') + '</table>'
-      : '<div class="empty">'+(th?'ยังไม่มีสินทรัพย์ในทะเบียน':'No assets registered yet')+'</div>')
+      : '<div class="empty">'+(th?'ไม่พบสินทรัพย์ตามเงื่อนไข':'No assets match the filters')+'</div>')
     + assetForm();
 }
 
-/* ── Lifecycle Tracker ── */
+/* ── Lifecycle Tracker (6-stage bar + 6 detail cards, per-asset) ── */
 function renderLifecycle(){
   const th = ST.lang==='th';
-  const assets = assetsNorm().slice().sort(function(a,b){ return b.yearsOwned-a.yearsOwned; });
+  const assets = assetsNorm();
+  if(!ST.lcAssetId && assets.length) ST.lcAssetId = assets[0].id;
+  const a = assets.find(function(x){ return String(x.id)===String(ST.lcAssetId); });
+  const opts = assets.map(function(x){ return '<option value="'+esc(x.id)+'" '+(String(x.id)===String(ST.lcAssetId)?'selected':'')+'>'+esc(x.id)+' — '+esc(x.name||'')+'</option>'; }).join('');
+
+  let body = '<div class="empty">'+(th?'ยังไม่มีสินทรัพย์ — เพิ่มในทะเบียนก่อน':'No assets yet — add one in the register first')+'</div>';
+  if(a){
+    const currentIdx = PHASES.indexOf(a.phase);
+    const bar = PHASES.map(function(p,i){
+      const cls = i<currentIdx ? 'lc-green' : (i===currentIdx ? 'lc-yellow' : 'lc-gray');
+      return '<div class="lc-step '+cls+'">'+(i+1)+'. '+(th?PHASE_TH[p]:p)+'</div>';
+    }).join('');
+    const wrCount = ST.wr.filter(function(w){ return String(w.assetId)===String(a.id); }).length;
+    const ppmCount = ST.ppm.filter(function(p){ return String(p.assetId)===String(a.id); }).length;
+    const ageYr = a.yearsOwned; const lifeLeft = Math.max(0, a.life - ageYr);
+    const depYr = a.life ? (a.cost-a.salvage)/a.life : 0;
+    body = '<div class="lc-bar">'+bar+'</div>'
+      +'<div class="lc-cards">'
+      +'<div class="card-sm"><b>1. '+(th?'วางแผน':'Planning')+'</b>'
+        +'<div class="metric-row"><span>'+(th?'ประเภท':'Type')+'</span><b>'+esc(a.type||'-')+'</b></div>'
+        +'<div class="metric-row"><span>'+(th?'อายุการใช้งานมาตรฐาน':'Std. life')+'</span><b>'+a.life+' '+(th?'ปี':'yr')+'</b></div>'
+        +'<div class="metric-row"><span>'+(th?'วิธีคิดค่าเสื่อม':'Dep. method')+'</span><b>'+(a.depMethod||'sl').toUpperCase()+'</b></div></div>'
+      +'<div class="card-sm"><b>2. '+(th?'จัดหา':'Acquisition')+'</b>'
+        +'<div class="metric-row"><span>'+(th?'ราคาซื้อ':'Cost')+'</span><b>'+fmt(a.cost)+'</b></div>'
+        +'<div class="metric-row"><span>'+(th?'วันที่ซื้อ':'Purchase date')+'</span><b>'+fmtDate(a.buyDate)+'</b></div>'
+        +'<div class="metric-row"><span>'+(th?'ยี่ห้อ/รุ่น':'Brand/Model')+'</span><b>'+esc(a.brand||'-')+' '+esc(a.model||'')+'</b></div></div>'
+      +'<div class="card-sm"><b>3. '+(th?'ใช้งาน':'Operation')+'</b>'
+        +'<div class="metric-row"><span>'+(th?'แผนก':'Dept')+'</span><b>'+esc(a.dept||'-')+'</b></div>'
+        +'<div class="metric-row"><span>'+(th?'สถานที่':'Location')+'</span><b>'+esc(a.location||'-')+'</b></div>'
+        +'<div class="metric-row"><span>'+(th?'ประสิทธิภาพ':'Efficiency')+'</span><b style="color:var(--green)">'+a.efficiency+'%</b></div></div>'
+      +'<div class="card-sm"><b>4. '+(th?'บำรุงรักษา':'Maintenance')+'</b>'
+        +'<div class="metric-row"><span>WR '+(th?'ที่เกี่ยวข้อง':'linked')+'</span><b>'+wrCount+'</b></div>'
+        +'<div class="metric-row"><span>PM '+(th?'ที่มีแผน':'planned')+'</span><b>'+ppmCount+'</b></div>'
+        +'<div class="metric-row"><span>'+(th?'สถานะ':'Status')+'</span>'+statusBadge(a.status, th)+'</div></div>'
+      +'<div class="card-sm"><b>5. '+(th?'จำหน่าย':'Disposal')+'</b>'
+        +'<div class="metric-row"><span>'+(th?'อายุปัจจุบัน':'Current age')+'</span><b>'+(Math.round(ageYr*10)/10)+' '+(th?'ปี':'yr')+'</b></div>'
+        +'<div class="metric-row"><span>'+(th?'อายุคงเหลือ':'Life remaining')+'</span><b style="color:'+(lifeLeft<2?'var(--red)':'var(--text)')+'">'+(Math.round(lifeLeft*10)/10)+' '+(th?'ปี':'yr')+'</b></div>'
+        +'<div class="metric-row"><span>'+(th?'สถานะปลดระวาง':'Disposal status')+'</span>'+(a.phase==='Disposal' ? '<span class="badge badge-red">'+(th?'กำลังดำเนินการ':'In progress')+'</span>' : '<span class="badge badge-gray">'+(th?'ยังไม่ถึงกำหนด':'Not due')+'</span>')+'</div></div>'
+      +'<div class="card-sm"><b>6. '+(th?'มูลค่า':'Value Add')+'</b>'
+        +'<div class="metric-row"><span>'+(th?'ค่าเสื่อม/ปี':'Dep./yr')+'</span><b>'+fmt(depYr)+'</b></div>'
+        +'<div class="metric-row"><span>'+(th?'ค่าเสื่อมสะสม':'Acc. Dep.')+'</span><b style="color:var(--red)">'+fmt(a.accDep)+'</b></div>'
+        +'<div class="metric-row"><span>'+(th?'มูลค่าสุทธิ (NBV)':'Net Book Value')+'</span><b style="color:var(--green)">'+fmt(a.nbv)+'</b></div>'
+        +'<div class="metric-row"><span>'+(th?'มูลค่าซาก':'Salvage')+'</span><b>'+fmt(a.salvage)+'</b></div></div>'
+      +'</div>';
+  }
+
   document.getElementById('main').innerHTML =
-    '<h2>'+(th?'ตัวติดตามวงจรชีวิตสินทรัพย์':'Lifecycle Tracker')+'</h2>'
-    +'<div class="sub">'+(th?'แสดงความคืบหน้าอายุการใช้งานเทียบกับอายุใช้งานที่กำหนด':'Age progress vs. designated useful life')+'</div>'
-    + (assets.length ? assets.map(function(a){
-        const pct = a.life ? Math.min(100, Math.round((a.yearsOwned/a.life)*100)) : 0;
-        const color = pct>=90?'var(--red)':pct>=70?'var(--amber)':'var(--green)';
-        const remain = Math.max(0, Math.round((a.life-a.yearsOwned)*10)/10);
-        return '<div class="card"><div style="display:flex;justify-content:space-between"><b>'+esc(a.id)+' — '+esc(a.name||'')+'</b><span style="color:'+color+'">'+pct+'%</span></div>'
-          +'<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+color+'"></div></div>'
-          +'<div class="sub2" style="margin-top:6px;color:var(--text3);font-size:12px">'+(th?'ซื้อเมื่อ ':'Purchased ')+esc(a.buyDate||'-')+' · '+(th?'เหลืออีก ':'')+remain+' '+(th?'ปี ก่อนครบอายุใช้งาน':'yrs remaining')+'</div></div>';
-      }).join('') : '<div class="empty">'+(th?'ยังไม่มีสินทรัพย์':'No assets yet')+'</div>');
+    '<h2>⏳ '+(th?'ตัวติดตามวงจรชีวิตสินทรัพย์':'Asset Lifecycle Tracker')+'</h2>'
+    +'<div class="sub">'+(th?'ติดตามวงจรชีวิตสินทรัพย์ทั้ง 6 ระยะ พร้อม Status 3 ระดับ':'Tracks 6 lifecycle stages with 3-level status')+'</div>'
+    + (assets.length ? '<div class="toolbar"><select onchange="ST.lcAssetId=this.value;render()">'+opts+'</select></div>' : '')
+    + body;
 }
 
-/* ── QR Code Assets ── */
+/* ── QR Code Assets (grid, search+dept filter, print, ID-only payload) ── */
 function renderQR(){
   const th = ST.lang==='th';
-  const assets = assetsNorm();
+  let assets = assetsNorm();
+  if(ST.qrQ) assets = assets.filter(function(a){ const q=ST.qrQ.toLowerCase(); return (a.id+a.name).toLowerCase().indexOf(q)>=0; });
+  if(ST.qrDept) assets = assets.filter(function(a){ return a.dept===ST.qrDept; });
   document.getElementById('main').innerHTML =
-    '<h2>'+(th?'QR Code สินทรัพย์':'QR Code Assets')+'</h2>'
-    +'<div class="sub">'+(th?'สแกนเพื่อเปิดข้อมูลสินทรัพย์โดยตรง':'Scan to jump straight to an asset\'s record')+'</div>'
-    +'<div class="kpi-grid" id="qr-grid">'
-    + assets.map(function(a){ return '<div class="kpi-card" style="text-align:center"><div id="qr-'+esc(a.id)+'" style="display:flex;justify-content:center;margin-bottom:8px"></div><div style="font-size:12.5px">'+esc(a.id)+'</div><div style="font-size:11px;color:var(--text3)">'+esc(a.name||'')+'</div></div>'; }).join('')
+    '<h2>📱 '+(th?'QR Code สินทรัพย์':'QR Code Assets')+'</h2>'
+    +'<div class="sub">'+(th?'สแกนเพื่ออ้างอิง Asset ID โดยตรง':'Scan to reference the Asset ID directly')+'</div>'
+    +'<div class="toolbar">'
+    +'<input placeholder="'+(th?'ค้นหา ID/ชื่อ':'Search ID/name')+'" value="'+esc(ST.qrQ)+'" oninput="ST.qrQ=this.value;render()">'
+    +'<select onchange="ST.qrDept=this.value;render()"><option value="">'+(th?'แผนกทั้งหมด':'All depts')+'</option>'+DEPTS.map(function(d){return '<option '+(ST.qrDept===d?'selected':'')+'>'+d+'</option>';}).join('')+'</select>'
+    +'<div class="btn" onclick="window.print()">🖨 '+(th?'พิมพ์ทั้งหมด':'Print All')+'</div>'
     +'</div>'
-    + (assets.length===0 ? '<div class="empty">'+(th?'ยังไม่มีสินทรัพย์':'No assets yet')+'</div>' : '');
+    +'<div class="qr-grid" id="qr-grid">'
+    + assets.map(function(a){ return '<div class="qr-card"><div class="qr-box" id="qr-'+esc(a.id)+'"></div><div><div style="font-weight:700;font-size:14.5px">'+esc(a.name||'')+'</div><div class="tag" style="margin:4px 0;display:inline-block">'+esc(a.id)+'</div><div style="font-size:12px;color:var(--text2)">'+esc(a.dept||'-')+'</div><div style="font-size:12px;color:var(--text2)">'+esc(a.location||'-')+'</div><div style="font-size:12px;color:var(--green);margin-top:2px">'+fmt(a.nbv)+'</div><div style="margin-top:4px">'+statusBadge(a.status, th)+'</div></div></div>'; }).join('')
+    +'</div>'
+    + (assets.length===0 ? '<div class="empty">'+(th?'ไม่พบสินทรัพย์':'No matching assets')+'</div>' : '');
   setTimeout(function(){
     assets.forEach(function(a){
       const el = document.getElementById('qr-'+a.id);
-      if(el && window.QRCode) new QRCode(el, { text: window.location.origin+'/TKO_iMATOMsAsset/?asset='+encodeURIComponent(a.id), width:96, height:96 });
+      if(el && window.QRCode) new QRCode(el, { text: String(a.id), width:88, height:88, correctLevel: QRCode.CorrectLevel.M });
     });
   }, 30);
 }
 
-/* ── Annual Review ── */
+/* ── Annual Review (KPIs + result vocab + inspect modal) ── */
+const INSP_RESULT_LABEL = {
+  found:['badge-green','✅ พบ/ปกติ','✅ Found/OK'],
+  moved:['badge-yellow','📍 ย้ายที่','📍 Moved'],
+  damaged:['badge-orange','⚠ ชำรุด','⚠ Damaged'],
+  missing:['badge-red','❌ ไม่พบ','❌ Missing']
+};
+function inspectionFor(assetId){ return ST.assetInspections.find(function(x){ return String(x.assetId)===String(assetId); }); }
 function renderReview(){
   const th = ST.lang==='th';
   const assets = assetsNorm();
   const thisYear = new Date().getFullYear();
+  const rows = assets.map(function(a){ return { a:a, insp: inspectionFor(a.id) }; });
+  const done = rows.filter(function(r){ return r.insp && r.insp.result==='found'; }).length;
+  const issue = rows.filter(function(r){ return r.insp && r.insp.result && r.insp.result!=='found'; }).length;
+  const pending = rows.length - done - issue;
+  const pct = rows.length ? Math.round(((done+issue)/rows.length)*100) : 0;
+
   document.getElementById('main').innerHTML =
-    '<h2>'+(th?'ตรวจสอบประจำปี':'Annual Review')+'</h2>'
-    +'<div class="sub">'+(th?'สถานะการตรวจสอบสินทรัพย์ประจำปี '+thisYear:'Asset inspection status for '+thisYear)+'</div>'
-    + (assets.length ? '<table><tr><th>ID</th><th>'+(th?'ชื่อ':'Name')+'</th><th>'+(th?'ตรวจล่าสุด':'Last reviewed')+'</th><th>'+(th?'สถานะ':'Status')+'</th></tr>'
-      + assets.map(function(a){
-          const reviewed = a.lastReviewDate && new Date(a.lastReviewDate).getFullYear()===thisYear;
-          return '<tr><td>'+esc(a.id)+'</td><td>'+esc(a.name||'')+'</td><td>'+esc(a.lastReviewDate||'-')+'</td>'
-            +'<td><span class="chip '+(reviewed?'chip-green':'chip-red')+'">'+(reviewed?(th?'ตรวจแล้ว':'Reviewed'):(th?'ยังไม่ตรวจ':'Pending'))+'</span></td></tr>';
+    '<h2>🔍 '+(th?'ตรวจสอบประจำปี':'Annual Review')+'</h2>'
+    +'<div class="sub">'+(th?'Annual Asset Verification — ระบุ Asset ID เพื่ออัปเดตสถานะ':'Annual Asset Verification — enter Asset ID to update status')+'</div>'
+    +'<div class="kpi-grid">'
+    + '<div class="kpi-card"><div class="lbl">'+(th?'ตรวจแล้ว':'Reviewed')+'</div><div class="val" style="color:var(--green)">'+done+'</div></div>'
+    + '<div class="kpi-card"><div class="lbl">'+(th?'ยังไม่ตรวจ':'Pending')+'</div><div class="val" style="color:var(--yellow)">'+pending+'</div></div>'
+    + '<div class="kpi-card"><div class="lbl">'+(th?'ไม่พบ/ผิดปกติ':'Issues')+'</div><div class="val" style="color:var(--red)">'+issue+'</div></div>'
+    +'</div>'
+    +'<div style="margin-bottom:12px"><div style="font-size:12.5px;color:var(--text2);margin-bottom:4px">'+(done+issue)+' / '+rows.length+' '+(th?'รายการ':'items')+' ('+pct+'%) — '+thisYear+'</div><div class="progress"><div class="progress-fill" style="width:'+pct+'%;background:var(--green)"></div></div></div>'
+    + (rows.length ? '<table><tr><th>Asset ID</th><th>'+(th?'ชื่อ':'Name')+'</th><th>'+(th?'แผนก':'Dept')+'</th><th>'+(th?'สถานที่':'Location')+'</th><th>'+(th?'ผลตรวจสอบ':'Result')+'</th><th>'+(th?'วันที่ตรวจ':'Insp. date')+'</th><th>'+(th?'ผู้ตรวจ':'Inspector')+'</th><th></th></tr>'
+      + rows.map(function(r){
+          const insp = r.insp; const res = insp && insp.result;
+          const lbl = res && INSP_RESULT_LABEL[res] ? '<span class="badge '+INSP_RESULT_LABEL[res][0]+'">'+(th?INSP_RESULT_LABEL[res][1]:INSP_RESULT_LABEL[res][2])+'</span>' : '<span class="badge badge-gray">'+(th?'รอตรวจ':'Pending')+'</span>';
+          return '<tr><td><span class="tag">'+esc(r.a.id)+'</span></td><td>'+esc(r.a.name||'')+'</td><td>'+esc(r.a.dept||'-')+'</td><td>'+esc(r.a.location||'-')+'</td><td>'+lbl+'</td><td>'+fmtDate(insp&&insp.inspDate)+'</td><td>'+esc((insp&&insp.inspector)||'-')+'</td>'
+            +'<td><div class="btn btn-sm" onclick="openInspect(\''+esc(r.a.id)+'\')">'+(th?'ตรวจ':'Inspect')+'</div></td></tr>';
         }).join('') + '</table>'
-      : '<div class="empty">'+(th?'ยังไม่มีสินทรัพย์':'No assets yet')+'</div>');
+      : '<div class="empty">'+(th?'ยังไม่มีสินทรัพย์':'No assets yet')+'</div>')
+    + inspectModal();
+}
+function inspectModal(){
+  if(!ST.inspModalOpen) return '';
+  const th = ST.lang==='th';
+  const a = assetsNorm().find(function(x){ return String(x.id)===String(ST.inspAssetId); });
+  const insp = inspectionFor(ST.inspAssetId) || {};
+  if(!a) return '';
+  return '<div class="modal-bg"><div class="modal"><h3>🔍 '+(th?'ตรวจสอบสินทรัพย์':'Inspect Asset')+'</h3>'
+    +'<div class="card-sm" style="margin-bottom:12px"><div class="metric-row"><span>Asset ID</span><b class="tag">'+esc(a.id)+'</b></div>'
+    +'<div class="metric-row"><span>'+(th?'ชื่อ':'Name')+'</span><b>'+esc(a.name||'')+'</b></div>'
+    +'<div class="metric-row"><span>'+(th?'สถานที่เดิม':'Registered location')+'</span><b>'+esc(a.location||'-')+'</b></div></div>'
+    +'<div class="field"><label>'+(th?'ผลตรวจสอบ':'Result')+'</label><select id="insp-result" onchange="toggleInspMoved()">'
+      +'<option value="found" '+(insp.result==='found'?'selected':'')+'>✅ '+(th?'พบ/ปกติ':'Found/OK')+'</option>'
+      +'<option value="moved" '+(insp.result==='moved'?'selected':'')+'>📍 '+(th?'ย้ายที่':'Moved')+'</option>'
+      +'<option value="damaged" '+(insp.result==='damaged'?'selected':'')+'>⚠ '+(th?'ชำรุด':'Damaged')+'</option>'
+      +'<option value="missing" '+(insp.result==='missing'?'selected':'')+'>❌ '+(th?'ไม่พบ':'Missing')+'</option>'
+    +'</select></div>'
+    +'<div id="insp-location-row" style="'+(insp.result==='moved'?'':'display:none')+'">'
+    +'<div class="row"><div class="field"><label>'+(th?'สถานที่ใหม่':'New location')+'</label><input id="insp-new-location" value="'+esc(insp.newLocation||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'แผนกใหม่':'New dept')+'</label><select id="insp-new-dept">'+DEPTS.map(function(d){return '<option '+((insp.newDept||a.dept)===d?'selected':'')+'>'+d+'</option>';}).join('')+'</select></div></div></div>'
+    +'<div class="field"><label>'+(th?'ผู้ตรวจ':'Inspector')+'</label><input id="insp-inspector" value="'+esc(insp.inspector||(getUser()?(getUser().full_name||getUser().username):''))+'"></div>'
+    +'<div class="field"><label>'+(th?'หมายเหตุ':'Remark')+'</label><textarea id="insp-remark" rows="2">'+esc(insp.remark||'')+'</textarea></div>'
+    +'<div style="display:flex;gap:8px;margin-top:14px">'
+    +'<div class="btn btn-pri" style="flex:1;text-align:center" onclick="saveInspection()">'+(th?'💾 บันทึก':'💾 Save')+'</div>'
+    +'<div class="btn" onclick="closeInspect()">'+(th?'ยกเลิก':'Cancel')+'</div></div>'
+    +'</div></div>';
+}
+function openInspect(id){ ST.inspModalOpen=true; ST.inspAssetId=id; render(); }
+function closeInspect(){ ST.inspModalOpen=false; render(); }
+function toggleInspMoved(){
+  const v = document.getElementById('insp-result').value;
+  document.getElementById('insp-location-row').style.display = v==='moved' ? 'block' : 'none';
+}
+async function saveInspection(){
+  const th = ST.lang==='th';
+  const assetId = ST.inspAssetId;
+  const a = ST.assets.find(function(x){ return String(x.id)===String(assetId); });
+  const result = document.getElementById('insp-result').value;
+  const inspector = document.getElementById('insp-inspector').value.trim();
+  const remark = document.getElementById('insp-remark').value.trim();
+  const existing = inspectionFor(assetId) || { id:'INSP-'+assetId, assetId:assetId };
+  const item = Object.assign({}, existing, { result, inspDate: new Date().toISOString(), inspector, remark });
+  if(result==='moved'){
+    const newLocation = document.getElementById('insp-new-location').value.trim();
+    const newDept = document.getElementById('insp-new-dept').value;
+    item.newLocation = newLocation; item.newDept = newDept;
+    if(a){ a.location = newLocation || a.location; a.dept = newDept || a.dept;
+      const parts = newLocation.split('/').map(function(s){return s.trim();});
+      if(parts[0]) a.building=parts[0]; if(parts[1]) a.floor=parts[1]; if(parts[2]) a.zone=parts[2]; if(parts[3]) a.room=parts[3];
+      await syncKind('assets', a);
+    }
+  }
+  await syncKind('inspections', item);
+  const idx = ST.assetInspections.findIndex(function(x){ return String(x.assetId)===String(assetId); });
+  if(idx>=0) ST.assetInspections[idx]=item; else ST.assetInspections.unshift(item);
+  ST.inspModalOpen=false; render();
+  if(result==='missing' || result==='damaged'){
+    toast(th?'🔔 บันทึกแล้ว — ระบบจะแจ้งฝ่ายบัญชีและผู้บริหาร (Demo)':'🔔 Saved — Finance & management will be notified (Demo)');
+  } else {
+    toast(th?'✅ บันทึกผลตรวจสอบแล้ว':'✅ Inspection saved');
+  }
 }
 
-/* ── Valuation (Overview Value Add) ── */
+/* ── Overview Value Add (KPIs + table + calculator modal) ── */
 function renderValuation(){
   const th = ST.lang==='th';
   const assets = assetsNorm();
@@ -386,18 +674,46 @@ function renderValuation(){
   document.getElementById('main').innerHTML =
     '<h2>💰 '+(th?'มูลค่าสินทรัพย์ (Overview Value Add)':'Overview Value Add')+'</h2>'
     +'<div class="sub">'+(th?'คำนวณค่าเสื่อมราคา มูลค่า ณ ปัจจุบัน และมูลค่าคงเหลือ':'Depreciation, current value, and net book value')+'</div>'
+    +'<div class="toolbar"><div class="btn btn-pri" onclick="ST.calcOpen=true;ST.calcResult=null;render()">🧮 '+(th?'คำนวณค่าเสื่อม':'Calculate Depreciation')+'</div></div>'
     +'<div class="kpi-grid">'
     + '<div class="kpi-card"><div class="lbl">'+(th?'ราคาซื้อรวม':'Original Cost')+'</div><div class="val">'+fmt(totalCost)+'</div></div>'
     + '<div class="kpi-card"><div class="lbl">'+(th?'ค่าเสื่อมสะสม':'Accumulated Dep.')+'</div><div class="val" style="color:var(--red)">'+fmt(totalAccDep)+'</div></div>'
     + '<div class="kpi-card"><div class="lbl">'+(th?'มูลค่าสุทธิตามบัญชี':'Net Book Value')+'</div><div class="val" style="color:var(--green)">'+fmt(totalNbv)+'</div></div>'
     + '<div class="kpi-card"><div class="lbl">'+(th?'อายุเฉลี่ย':'Avg Asset Age')+'</div><div class="val">'+avgAge+' '+(th?'ปี':'yrs')+'</div></div>'
     +'</div>'
-    + (assets.length ? '<table><tr><th>ASSET ID</th><th>'+(th?'ชื่อ':'Name')+'</th><th>'+(th?'ราคาซื้อ':'Cost')+'</th><th>'+(th?'อายุใช้งาน':'Life')+'</th><th>'+(th?'ค่าเสื่อม/ปี':'Dep./yr')+'</th><th>'+(th?'ค่าเสื่อมสะสม':'Acc. Dep.')+'</th><th>NBV</th></tr>'
+    + (assets.length ? '<table><tr><th>ASSET ID</th><th>'+(th?'ชื่อ':'Name')+'</th><th>'+(th?'ราคาซื้อ':'Cost')+'</th><th>'+(th?'อายุใช้งาน':'Life')+'</th><th>'+(th?'ค่าเสื่อม/ปี':'Dep./yr')+'</th><th>'+(th?'ค่าเสื่อมสะสม':'Acc. Dep.')+'</th><th>NBV</th><th>'+(th?'ประสิทธิภาพ':'Efficiency')+'</th></tr>'
       + assets.map(function(a){
-          const depYr = a.life ? Math.round((a.cost-a.salvage)/a.life) : 0;
-          return '<tr><td>'+esc(a.id)+'</td><td>'+esc(a.name||'')+'</td><td>'+fmt(a.cost)+'</td><td>'+a.life+' '+(th?'ปี':'yr')+'</td><td>'+fmt(depYr)+'</td><td>'+fmt(a.accDep)+'</td><td>'+fmt(a.nbv)+'</td></tr>';
+          const depYr = a.life ? (a.cost-a.salvage)/a.life : 0;
+          const effColor = a.efficiency>=80?'var(--green)':a.efficiency>=60?'var(--amber)':'var(--red)';
+          return '<tr><td><span class="tag">'+esc(a.id)+'</span></td><td>'+esc(a.name||'')+'</td><td>'+fmt(a.cost)+'</td><td>'+a.life+' '+(th?'ปี':'yr')+'</td><td>'+fmt(depYr)+'</td><td style="color:var(--red)">'+fmt(a.accDep)+'</td><td style="color:var(--green);font-weight:700">'+fmt(a.nbv)+'</td>'
+            +'<td style="min-width:70px">'+a.efficiency+'%<div class="bar-track"><div class="bar-fill" style="width:'+a.efficiency+'%;background:'+effColor+'"></div></div></td></tr>';
         }).join('') + '</table>'
-      : '<div class="empty">'+(th?'ยังไม่มีสินทรัพย์':'No assets yet')+'</div>');
+      : '<div class="empty">'+(th?'ยังไม่มีสินทรัพย์':'No assets yet')+'</div>')
+    + calcModal();
+}
+function calcModal(){
+  if(!ST.calcOpen) return '';
+  const th = ST.lang==='th';
+  const r = ST.calcResult;
+  return '<div class="modal-bg"><div class="modal"><h3>🧮 '+(th?'คำนวณค่าเสื่อมราคา':'Depreciation Calculator')+'</h3>'
+    +'<div class="row"><div class="field"><label>'+(th?'ราคาซื้อ':'Cost')+'</label><input type="number" id="dep-cost" value="100000"></div>'
+    +'<div class="field"><label>'+(th?'มูลค่าซาก':'Salvage')+'</label><input type="number" id="dep-salvage" value="0"></div></div>'
+    +'<div class="row"><div class="field"><label>'+(th?'อายุใช้งาน (ปี)':'Life (yrs)')+'</label><input type="number" id="dep-life" value="10"></div>'
+    +'<div class="field"><label>'+(th?'ปีที่ต้องการดู':'Year to view')+'</label><input type="number" id="dep-year" value="3"></div></div>'
+    +'<div class="field"><label>'+(th?'วิธี':'Method')+'</label><select id="dep-method"><option value="sl">Straight Line</option><option value="db">Double Declining</option></select></div>'
+    +'<div class="btn btn-pri" style="width:100%;text-align:center;margin-bottom:10px" onclick="runCalcDep()">'+(th?'คำนวณ':'Calculate')+'</div>'
+    + (r ? '<div class="card-sm"><div class="metric-row"><span>'+(th?'อัตราค่าเสื่อม/ปี':'Rate/yr')+'</span><b>'+r.rate+'%</b></div><div class="metric-row"><span>'+(th?'ค่าเสื่อมสะสม':'Acc. Dep.')+'</span><b style="color:var(--red)">'+fmt(r.accDep)+'</b></div><div class="metric-row"><span>NBV</span><b style="color:var(--green)">'+fmt(r.nbv)+'</b></div></div>' : '')
+    +'<div class="btn" style="width:100%;text-align:center;margin-top:10px" onclick="ST.calcOpen=false;render()">'+(th?'ปิด':'Close')+'</div>'
+    +'</div></div>';
+}
+function runCalcDep(){
+  const cost = parseFloat(document.getElementById('dep-cost').value)||0;
+  const salvage = parseFloat(document.getElementById('dep-salvage').value)||0;
+  const life = parseInt(document.getElementById('dep-life').value)||10;
+  const yr = parseInt(document.getElementById('dep-year').value)||1;
+  const method = document.getElementById('dep-method').value;
+  ST.calcResult = calcDep(cost, salvage, life, yr, method);
+  render();
 }
 
 /* ── Asset Groups (K-of-N redundancy) ── */
@@ -431,7 +747,6 @@ async function submitGroup(){
   const name = document.getElementById('gf-name').value.trim();
   if(!name){ toast(th?'กรุณากรอกชื่อกลุ่ม':'Please enter a group name'); return; }
   const assetIds = Array.prototype.slice.call(document.querySelectorAll('.gf-asset:checked')).map(function(el){ return el.value; });
-  // apply any online/offline toggles made in this form back onto the asset records
   const onlineToggles = Array.prototype.slice.call(document.querySelectorAll('.gf-online'));
   for(const t of onlineToggles){
     const aid = t.getAttribute('data-id');
@@ -482,7 +797,7 @@ function renderGroups(){
 /* ── main render dispatcher ── */
 function render(){
   renderSidebar();
-  const fn = { overview:renderOverview, register:renderRegister, lifecycle:renderLifecycle, qr:renderQR, review:renderReview, valuation:renderValuation, groups:renderGroups }[ST.tab];
+  const fn = { overview:renderOverview, valuation:renderValuation, lifecycle:renderLifecycle, qr:renderQR, review:renderReview, register:renderRegister, groups:renderGroups }[ST.tab];
   if(fn) fn();
   const u = getUser();
   document.getElementById('userLabel').textContent = u ? (u.full_name||u.username||'') : '';
@@ -494,11 +809,11 @@ async function init(){
   if(!token){ return; } // stays on #login-gate, which links back to root hub login
   document.getElementById('login-gate').style.display='none';
   document.getElementById('app-shell').style.display='block';
-  const [assets, assetGroups, ppm, ma, maVisits, inv, invtx, wr] = await Promise.all([
-    loadKind('assets'), loadKind('assetGroups'), loadKind('ppm'), loadKind('ma'), loadKind('maVisits'),
+  const [assets, assetGroups, assetInspections, ppm, ma, maVisits, inv, invtx, wr] = await Promise.all([
+    loadKind('assets'), loadKind('assetGroups'), loadKind('inspections'), loadKind('ppm'), loadKind('ma'), loadKind('maVisits'),
     loadKind('inv'), loadKind('invtx'), loadWR()
   ]);
-  ST.assets = assets||[]; ST.assetGroups = assetGroups||[]; ST.ppm = ppm||[]; ST.ma = ma||[]; ST.maVisits = maVisits||[];
+  ST.assets = assets||[]; ST.assetGroups = assetGroups||[]; ST.assetInspections = assetInspections||[]; ST.ppm = ppm||[]; ST.ma = ma||[]; ST.maVisits = maVisits||[];
   ST.inv = inv||[]; ST.invtx = invtx||[]; ST.wr = wr||[];
   ST.loaded = true;
   render();

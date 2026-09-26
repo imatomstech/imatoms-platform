@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0D1117">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -193,6 +194,13 @@ const ST = {
   wrEvalBusy: false,
   wrTechPickerId: null, // dbId of the WR currently showing the technician picker (Accept flow)
   wrTechPickerBusy: false,
+  assetSub: 'overview', // Asset module sub-tab: overview|register|lifecycle|qr|review|valuation|groups
+  assetFormOpen: false, assetFormEditId: null, assetFormBusy: false,
+  assetRegQ: '',
+  assetLcId: null, // Asset ID currently selected in Lifecycle Tracker
+  assetQrQ: '',
+  assetInspId: null, // Asset ID currently shown in the Annual Review inspect overlay
+  assetGrpFormOpen: false, assetGrpFormEditId: null, assetGrpFormBusy: false,
 };
 
 function setLang(l){ ST.lang = l; try{ localStorage.setItem(LS.lang, l); }catch(e){} render(); }
@@ -4374,20 +4382,79 @@ function screenModuleBOT(){
 }
 
 /* ══════════════ iMATOMs Asset — Asset Life-Cycle Management (module 6):
-   read-only predictive dashboard pulling from the same generic
-   /fm-records/assets + /fm-records/assetGroups kinds the new
-   TKO_iMATOMsAsset webapp reads/writes, plus the same cross-module
-   metrics (Reliability-MTBF from PPM, Maintainability-MTTR from WR,
-   MA Performance, Inventory Availability) already computed elsewhere
-   in this file — reused here, not recalculated differently. Full
-   CRUD (Asset Register/Lifecycle/QR/Annual Review/Valuation/Asset
-   Groups) lives in the webapp; Mobile is a lightweight pull-through. */
+   shares the same generic /fm-records/assets, /fm-records/assetGroups and
+   /fm-records/inspections kinds the TKO_iMATOMsAsset webapp AND the Desktop
+   FM Reliability Module's own Asset Life-Cycle pages read/write — so an
+   asset added here shows up in both, and vice versa. Mirrors the webapp's
+   sub-pages (Overview Value Add, Lifecycle Tracker, QR Code Assets, Annual
+   Review, Asset ID & Register, plus the new Asset Groups K/N) as subtabs,
+   condensed for a phone screen; the predictive dashboard lives on Overview. */
 function assetsDataM(){ return (fmKindData('assets') || fmDB('assets') || []).slice(); }
 function assetGroupsDataM(){ return (fmKindData('assetGroups') || fmDB('assetGroups') || []).slice(); }
+function assetInspectionsDataM(){ return (fmKindData('inspections') || fmDB('inspections') || []).slice(); }
 function assetYearsOwned(a){
   const d = a.buyDate || a.installDate; if(!d) return 0;
   const dt = new Date(d); if(isNaN(dt)) return 0;
   return Math.max(0, (new Date()-dt)/(365.25*86400000));
+}
+function normalizeAssetM(a){
+  const buyDate = a.buyDate || a.installDate || null;
+  const life = a.life || a.lifeYears || 10;
+  const cost = a.cost || 0;
+  const salvage = a.salvage || 0;
+  const yearsOwned = assetYearsOwned(a);
+  const calcNbv = Math.max(salvage, cost - (cost>0 ? (cost-salvage)/life : 0)*yearsOwned);
+  const nbv = a.nbv>0 ? a.nbv : Math.round(calcNbv);
+  const accDep = a.accDep>0 ? a.accDep : Math.round(cost - nbv);
+  const efficiency = a.efficiency!=null ? a.efficiency : (a.eff!=null ? a.eff : 85);
+  const location = a.location || [a.building,a.floor,a.zone,a.room].filter(Boolean).join(' / ');
+  return Object.assign({}, a, { buyDate, life, cost, nbv, accDep, efficiency, yearsOwned, salvage, location,
+    status: a.status || (efficiency>=80?'green':efficiency>=60?'yellow':'red') });
+}
+function assetsNormM(){ return assetsDataM().map(normalizeAssetM); }
+function assetStatusChipM(s, th){
+  const map = { green:[th?'ปกติ':'Good','green'], yellow:[th?'ควรตรวจสอบ':'Watch','orange'], red:[th?'ควรพิจารณา':'Critical','red'] };
+  const x = map[s] || map.green;
+  return fmChip(x[0], x[1]);
+}
+const ASSET_PHASES_M = ['Planning','Acquisition','Operation','Maintenance','Disposal'];
+const ASSET_PHASE_TH_M = {Planning:'วางแผน',Acquisition:'จัดหา',Operation:'ใช้งาน',Maintenance:'บำรุงรักษา',Disposal:'จำหน่าย'};
+const ASSET_DEPTS_M = ['วิศวกรรม','ผลิต','คุณภาพ','ซ่อมบำรุง','สาธารณูปโภค'];
+/* Same System/Sub-System taxonomy + 2-letter sub-codes as the webapp, so an
+   Asset ID generated on Mobile follows the identical PREFIX-SYS-SUBCODE-seq
+   scheme as the webapp and the Desktop FM Reliability Module. */
+const ASSET_SUBSYS_CODE_M = {
+  AC:{Chiller:'CH',CoolingTower:'CT',AHU:'AH',FCU:'FC',PAU:'PA',SplitAC:'SA','Pump-CHW':'PC','Pump-CW':'PW','VRF-VRV':'VR',ExhaustFan:'EF',VentilationFan:'VF'},
+  EE:{MDB:'MD',DistributionBoard:'DB',Transformer:'TF',CapacitorBank:'CB','ATS-STS':'AT',SolarPV:'SP',Inverter:'IV',LVPanel:'LV'},
+  EL:{PassengerLift:'PL',ServiceLift:'SL',Escalator:'ES',Dumbwaiter:'DW',CarLift:'CL'},
+  FA:{FACP:'FC',SmokeDetector:'SD',HeatDetector:'HD',Sprinkler:'SP',PullStation:'PS',AlarmBell:'AB'},
+  FP:{FirePump:'FP',JockeyPump:'JP',SprinklerValve:'SV',FireCabinet:'FC',PortableExtinguisher:'PE','FM200-Gas':'FM'},
+  BAS:{Controller:'CT',DDC:'DD',Sensor:'SN',Gateway:'GW',BACnetPanel:'BP',SCADA:'SC'},
+  SN:{WaterPump:'WP',PressureTank:'PT',WaterMeter:'WM',SumpPump:'SP',SewagePump:'SG',GreaseTrap:'GT'},
+  TR:{Conveyor:'CV',LoadingDock:'LD',Turntable:'TT'},
+  WWT:{STP:'ST',AerationTank:'AT',Clarifier:'CL',ChemicalDosing:'CD',UVSystem:'UV'},
+  GE:{Generator:'GN',ATS:'AT',UPS:'UP',BatteryBank:'BB',Charger:'CH'},
+  CV:{Structure:'ST',Roof:'RF',Waterproof:'WP',Facade:'FC',Road:'RD',Parking:'PK'},
+  IT:{Server:'SV',Switch:'SW',Router:'RT',Firewall:'FW',AccessPoint:'AP',CCTVRecorder:'CR',NAS:'NS'},
+  SG:{CCTVCamera:'CC',AccessControl:'AC',GuardTour:'GT',Intercom:'IC',BoomGate:'BG'},
+  PL:{PoolPump:'PP',FilterSystem:'FS',ChemicalSystem:'CS',Landscaping:'LS',Irrigation:'IR'},
+  LT:{EmergencyLight:'EL',ExitSign:'ES',StreetLight:'SL',FloodLight:'FL',PanelBoard:'PB'}
+};
+const ASSET_SYS_LIST_M = Object.keys(ASSET_SUBSYS_CODE_M);
+function assetSubsysListM(sys){ return Object.keys(ASSET_SUBSYS_CODE_M[sys]||{}); }
+function suggestAssetIdM(prefix, sys, subsys){
+  prefix = (prefix||'AST').toUpperCase().trim() || 'AST';
+  if(!sys || !subsys) return '';
+  const code = (ASSET_SUBSYS_CODE_M[sys]||{})[subsys] || subsys.slice(0,2).toUpperCase();
+  const stem = prefix+'-'+sys+'-'+code+'-';
+  let max = 0;
+  assetsDataM().forEach(function(a){
+    if(String(a.id||'').indexOf(stem)===0){
+      const n = parseInt(String(a.id).slice(stem.length),10);
+      if(!isNaN(n) && n>max) max = n;
+    }
+  });
+  return stem+String(max+1).padStart(2,'0');
 }
 function assetReliabilityPct(){
   const vals = ppmData().filter(function(p){ return p.mtbf; }).map(function(p){ return p.mtbf; });
@@ -4427,20 +4494,38 @@ function assetInventoryAvailPct(){
   if(!(ok+bad)) return null;
   return Math.round((ok/(ok+bad))*100*10)/10;
 }
-function screenModuleAsset(){
+
+function assetSubTabs(active){
   const th = ST.lang==='th';
-  const mods = opsModules(); const m = mods.find(function(x){return x.key==='asset';});
-  const assets = assetsDataM();
+  const tabs = [
+    { k:'overview', label: th?'ภาพรวม':'Overview' },
+    { k:'valuation', label: th?'มูลค่า':'Value Add' },
+    { k:'lifecycle', label: th?'วงจรชีวิต':'Lifecycle' },
+    { k:'qr', label:'QR' },
+    { k:'review', label: th?'ตรวจประจำปี':'Annual Review' },
+    { k:'register', label: th?'ทะเบียน':'Register' },
+    { k:'groups', label: th?'กลุ่มสำรอง':'Groups' },
+  ];
+  return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+    +'<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;flex:1">'
+    + tabs.map(function(x){
+        return '<div class="tap" data-act="asset-sub" data-sub="'+x.k+'" style="flex-shrink:0;font-size:13px;font-weight:600;padding:7px 11px;border-radius:20px;border:1px solid '+(active===x.k?'var(--color-accent)':'var(--color-divider)')+';background:'+(active===x.k?'var(--color-accent)':'transparent')+';color:'+(active===x.k?'#fff':'var(--color-text)')+'">'+esc(x.label)+'</div>';
+      }).join('')
+    +'</div>'
+    +'<div class="tap" data-act="asset-refresh" title="'+(th?'รีเฟรชข้อมูล':'Refresh')+'" style="flex-shrink:0;width:30px;height:30px;border-radius:50%;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7"></path><path d="M21 3v6h-6"></path></svg></div>'
+    +'</div>';
+}
+
+/* ── Overview (predictive dashboard) ── */
+function assetOverview(){
+  const th = ST.lang==='th';
+  const assets = assetsNormM();
   const totalCost = assets.reduce(function(s,a){ return s+(a.cost||0); },0);
   const totalNbv = assets.reduce(function(s,a){ return s+(a.nbv||0); },0);
-  const avgAge = assets.length ? Math.round((assets.reduce(function(s,a){ return s+assetYearsOwned(a); },0)/assets.length)*10)/10 : 0;
+  const avgAge = assets.length ? Math.round((assets.reduce(function(s,a){ return s+a.yearsOwned; },0)/assets.length)*10)/10 : 0;
   const rel = assetReliabilityPct(), maint = assetMaintainabilityPct(), avail = assetAvailabilityKN(), maPerf = assetMAPerformancePct(), invAvail = assetInventoryAvailPct();
-  function metric(label, val){
-    return statCard(label, val!=null?val+'%':'—');
-  }
-  return '<div class="stack">'
-    + modHeader(m.name, 'asset')
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+  function metric(label, val){ return statCard(label, val!=null?val+'%':'—'); }
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + statCard(th?'สินทรัพย์ทั้งหมด':'Total Assets', assets.length) + statCard(th?'อายุเฉลี่ย (ปี)':'Avg Age (yr)', avgAge)
     + statCard(th?'มูลค่าซื้อรวม':'Original Cost', fmMoney(totalCost)) + statCard(th?'มูลค่าคงเหลือ':'Net Book Value', fmMoney(totalNbv))
     +'</div>'
@@ -4452,7 +4537,349 @@ function screenModuleAsset(){
     + metric(th?'% ผลงาน MA':'% MA Performance', maPerf)
     + metric(th?'% พร้อมจ่ายอะไหล่':'% Inventory Availability', invAvail)
     +'</div></div>'
-    +'<a class="tap" data-act="open-full-app" data-key="asset" style="display:block;text-align:center;margin-top:14px;font-size:14px;font-weight:700;padding:11px;border-radius:10px;background:var(--color-accent);color:#fff;text-decoration:none">'+(th?'เปิดเว็บแอปฉบับเต็ม':'Open Full Web App')+' →</a>'
+    +'<a class="tap" data-act="open-full-app" data-key="asset" style="display:block;text-align:center;margin-top:14px;font-size:14px;font-weight:700;padding:11px;border-radius:10px;background:var(--color-accent);color:#fff;text-decoration:none">'+(th?'เปิดเว็บแอปฉบับเต็ม':'Open Full Web App')+' →</a>';
+}
+
+/* ── Asset ID & Register (CRUD) ── */
+function assetFormOverlay(){
+  if(!ST.assetFormOpen) return '';
+  const th = ST.lang==='th';
+  const editing = !!ST.assetFormEditId;
+  const a = editing ? (assetsDataM().find(function(x){ return String(x.id)===String(ST.assetFormEditId); }) || {}) : {};
+  const sys = a.sys || ASSET_SYS_LIST_M[0];
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div style="font-weight:700;font-size:17px">'+(editing?(th?'✏ แก้ไขสินทรัพย์':'✏ Edit Asset'):(th?'+ เพิ่มสินทรัพย์':'+ New Asset'))+'</div>'
+    +'<div class="tap" data-act="asset-new-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    + (!editing ? '<div class="field"><label>Asset ID</label><div style="display:flex;gap:6px"><input class="input" id="a-f-id" placeholder="'+(th?'กด Gen ID':'Tap Gen ID')+'"><div class="tap" data-act="asset-gen-id" style="flex-shrink:0;font-size:13px;font-weight:700;padding:9px 12px;border-radius:8px;border:1px solid var(--color-divider)">🔄</div></div></div>' : '<div class="field"><label>Asset ID</label><input class="input" value="'+esc(a.id)+'" disabled></div>')
+    +'<div class="field"><label>'+(th?'ชื่อสินทรัพย์':'Name')+' *</label><input class="input" id="a-f-name" value="'+esc(a.name||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'ระบบ (System)':'System')+'</label><select class="input" id="a-f-sys" onchange="assetSysChangedM()">'+ASSET_SYS_LIST_M.map(function(s){ return '<option value="'+s+'" '+(sys===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select></div>'
+    +'<div class="field"><label>'+(th?'ระบบย่อย (Sub-System)':'Sub-System')+'</label><select class="input" id="a-f-subsys">'+assetSubsysListM(sys).map(function(s){ return '<option value="'+s+'" '+(a.subsys===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select></div>'
+    +'<div class="field"><label>'+(th?'แผนก':'Dept')+'</label><select class="input" id="a-f-dept">'+ASSET_DEPTS_M.map(function(d){ return '<option '+(a.dept===d?'selected':'')+'>'+d+'</option>'; }).join('')+'</select></div>'
+    +'<div class="field"><label>'+(th?'สถานที่ (อาคาร/ชั้น/โซน/ห้อง)':'Location (Bldg/Floor/Zone/Room)')+'</label><input class="input" id="a-f-location" value="'+esc(a.location||'')+'" placeholder="'+(th?'เช่น อาคาร A / ชั้น 2 / โซน B / ห้องเครื่อง':'e.g. Bldg A / Fl 2 / Zone B / Plant Rm')+'"></div>'
+    +'<div class="field"><label>'+(th?'ระยะวงจรชีวิต':'Lifecycle Phase')+'</label><select class="input" id="a-f-phase">'+ASSET_PHASES_M.map(function(p){ return '<option value="'+p+'" '+(a.phase===p?'selected':'')+'>'+(th?ASSET_PHASE_TH_M[p]:p)+'</option>'; }).join('')+'</select></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<div class="field" style="flex:1"><label>'+(th?'ราคาซื้อ':'Cost')+'</label><input class="input" type="number" id="a-f-cost" value="'+(a.cost||0)+'"></div>'
+    +'<div class="field" style="flex:1"><label>'+(th?'อายุใช้งาน (ปี)':'Life (yr)')+'</label><input class="input" type="number" id="a-f-life" value="'+(a.life||10)+'"></div></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<div class="field" style="flex:1"><label>'+(th?'วันที่ซื้อ':'Purchase date')+'</label><input class="input" type="date" id="a-f-buydate" value="'+esc(a.buyDate||'')+'"></div>'
+    +'<div class="field" style="flex:1"><label>'+(th?'ประสิทธิภาพ %':'Efficiency %')+'</label><input class="input" type="number" id="a-f-eff" value="'+(a.efficiency!=null?a.efficiency:85)+'"></div></div>'
+    +'<div class="tap" data-act="asset-submit" style="margin-top:10px;text-align:center;font-size:15px;font-weight:700;padding:12px;border-radius:10px;background:var(--color-accent);color:#fff;'+(ST.assetFormBusy?'opacity:.6':'')+'">'+(ST.assetFormBusy?(th?'กำลังบันทึก...':'Saving...'):(th?'💾 บันทึก':'💾 Save'))+'</div>'
+  );
+}
+function assetSysChangedM(){
+  const sys = (document.getElementById('a-f-sys')||{}).value;
+  const sel = document.getElementById('a-f-subsys');
+  if(sel) sel.innerHTML = assetSubsysListM(sys).map(function(s){ return '<option value="'+s+'">'+s+'</option>'; }).join('');
+}
+function assetGenIdM(){
+  const prefix='AST', sys=(document.getElementById('a-f-sys')||{}).value, subsys=(document.getElementById('a-f-subsys')||{}).value;
+  const el = document.getElementById('a-f-id'); if(el) el.value = suggestAssetIdM(prefix, sys, subsys);
+}
+function assetNewOpenM(){ ST.assetFormOpen=true; ST.assetFormEditId=null; ST.assetFormBusy=false; render(); }
+function assetEditOpenM(id){ ST.assetFormOpen=true; ST.assetFormEditId=id; ST.assetFormBusy=false; render(); }
+function assetNewCloseM(){ ST.assetFormOpen=false; render(); }
+async function assetSubmitM(){
+  const th = ST.lang==='th';
+  const name = (document.getElementById('a-f-name')||{}).value.trim();
+  if(!name){ toast(th?'กรุณากรอกชื่อสินทรัพย์':'Please enter a name'); return; }
+  const isEdit = !!ST.assetFormEditId;
+  let id = isEdit ? ST.assetFormEditId : ((document.getElementById('a-f-id')||{}).value||'').trim();
+  const sys = (document.getElementById('a-f-sys')||{}).value, subsys = (document.getElementById('a-f-subsys')||{}).value;
+  if(!id) id = suggestAssetIdM('AST', sys, subsys) || ('AST-'+Date.now());
+  const existing = isEdit ? (assetsDataM().find(function(x){ return String(x.id)===String(id); }) || {}) : {};
+  const cost = parseFloat((document.getElementById('a-f-cost')||{}).value)||0;
+  const life = parseInt((document.getElementById('a-f-life')||{}).value)||10;
+  const buyDate = (document.getElementById('a-f-buydate')||{}).value;
+  const salvage = existing.salvage||0;
+  const ageYr = buyDate ? Math.max(0,(new Date()-new Date(buyDate))/(365.25*86400000)) : 0;
+  const depPerYr = life ? (cost-salvage)/life : 0;
+  const accDep = Math.min(depPerYr*ageYr, Math.max(0,cost-salvage));
+  const nbv = Math.max(cost-accDep, salvage);
+  const item = Object.assign({}, existing, {
+    id, name, sys, subsys, dept: (document.getElementById('a-f-dept')||{}).value,
+    location: (document.getElementById('a-f-location')||{}).value.trim(),
+    phase: (document.getElementById('a-f-phase')||{}).value,
+    cost, life, buyDate, salvage,
+    efficiency: parseInt((document.getElementById('a-f-eff')||{}).value)||85,
+    nbv: Math.round(nbv), accDep: Math.round(accDep)
+  });
+  ST.assetFormBusy=true; render();
+  try{
+    await fmSyncKind('assets', item);
+    ST.assetFormOpen=false; ST.assetFormBusy=false; render();
+    toast(th?'✅ บันทึกแล้ว':'✅ Saved');
+  }catch(err){ ST.assetFormBusy=false; render(); toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+async function assetDeleteM(id){
+  const th = ST.lang==='th';
+  if(!confirm(th?'ลบสินทรัพย์นี้ใช่หรือไม่?':'Delete this asset?')) return;
+  try{ await fmDeleteKind('assets', id); render(); toast(th?'🗑 ลบแล้ว':'🗑 Deleted'); }
+  catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+function assetRegister(){
+  const th = ST.lang==='th';
+  let assets = assetsNormM();
+  if(ST.assetRegQ){ const q=ST.assetRegQ.toLowerCase(); assets = assets.filter(function(a){ return (a.id+a.name+(a.dept||'')+(a.location||'')).toLowerCase().indexOf(q)>=0; }); }
+  return '<div style="display:flex;gap:8px;margin-bottom:10px">'
+    +'<input class="input" style="flex:1" placeholder="'+(th?'ค้นหา ID/ชื่อ/สถานที่':'Search ID/name/location')+'" value="'+esc(ST.assetRegQ)+'" oninput="ST.assetRegQ=this.value;render()">'
+    +'<div class="tap" data-act="asset-new-open" style="flex-shrink:0;font-size:13px;font-weight:700;padding:9px 12px;border-radius:8px;background:var(--color-accent);color:#fff">+ '+(th?'เพิ่ม':'New')+'</div>'
+    +'</div>'
+    +'<div style="font-size:12px;color:var(--color-neutral-700);margin-bottom:8px">'+assets.length+' / '+assetsDataM().length+' '+(th?'รายการ':'items')+'</div>'
+    + (assets.length ? '<div style="display:flex;flex-direction:column;gap:8px">' + assets.map(function(a){
+        return fmCard(
+          '<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-family:monospace;font-size:13px">'+esc(a.id)+'</b>'+assetStatusChipM(a.status, th)+'</div>'
+          +'<div style="font-size:15px;font-weight:700;margin-top:2px">'+esc(a.name||'')+'</div>'
+          +'<div style="font-size:12.5px;color:var(--color-neutral-700)">'+esc(a.dept||'-')+' · '+esc(a.location||'-')+'</div>'
+          +'<div style="font-size:12.5px;color:var(--color-neutral-700)">NBV: '+fmMoney(a.nbv)+' · '+(th?'ประสิทธิภาพ':'Eff.')+' '+a.efficiency+'%</div>'
+          +'<div style="display:flex;gap:8px;margin-top:6px">'
+          +'<div class="tap" data-act="asset-edit-open" data-id="'+esc(a.id)+'" style="font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:8px;border:1px solid var(--color-divider)">✏ '+(th?'แก้ไข':'Edit')+'</div>'
+          +'<div class="tap" data-act="asset-delete" data-id="'+esc(a.id)+'" style="font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:8px;border:1px solid var(--danger);color:var(--danger)">🗑</div>'
+          +'</div>'
+        );
+      }).join('') + '</div>' : fmEmpty(th?'ไม่พบสินทรัพย์ตามเงื่อนไข':'No assets match the filters'))
+    + assetFormOverlay();
+}
+
+/* ── Lifecycle Tracker ── */
+function assetLifecycle(){
+  const th = ST.lang==='th';
+  const assets = assetsNormM();
+  if(!ST.assetLcId && assets.length) ST.assetLcId = assets[0].id;
+  const a = assets.find(function(x){ return String(x.id)===String(ST.assetLcId); });
+  let body = fmEmpty(th?'ยังไม่มีสินทรัพย์ — เพิ่มในทะเบียนก่อน':'No assets yet — add one in Register first');
+  if(a){
+    const currentIdx = ASSET_PHASES_M.indexOf(a.phase);
+    const lifeLeft = Math.max(0, a.life - a.yearsOwned);
+    const depYr = a.life ? (a.cost-a.salvage)/a.life : 0;
+    body = '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">'
+      + ASSET_PHASES_M.map(function(p,i){
+          const isDone = i<currentIdx, isCur = i===currentIdx;
+          const bg = isDone ? 'var(--green)' : (isCur ? '#EAB308' : 'var(--color-divider)');
+          const fg = isDone||isCur ? '#fff' : 'var(--color-neutral-700)';
+          return '<div style="flex:1;min-width:60px;text-align:center;font-size:10.5px;font-weight:700;padding:6px 3px;border-radius:6px;background:'+bg+';color:'+fg+'">'+(i+1)+'. '+(th?ASSET_PHASE_TH_M[p]:p)+'</div>';
+        }).join('')
+      +'</div>'
+      + fmCard('<b>'+(th?'ใช้งาน':'Operation')+'</b>'
+        +'<div style="font-size:13px;margin-top:4px">'+(th?'แผนก':'Dept')+': '+esc(a.dept||'-')+'</div>'
+        +'<div style="font-size:13px">'+(th?'สถานที่':'Location')+': '+esc(a.location||'-')+'</div>'
+        +'<div style="font-size:13px;color:var(--green)">'+(th?'ประสิทธิภาพ':'Efficiency')+': '+a.efficiency+'%</div>')
+      + fmCard('<b>'+(th?'จำหน่าย':'Disposal')+'</b>'
+        +'<div style="font-size:13px;margin-top:4px">'+(th?'อายุปัจจุบัน':'Current age')+': '+(Math.round(a.yearsOwned*10)/10)+' '+(th?'ปี':'yr')+'</div>'
+        +'<div style="font-size:13px">'+(th?'อายุคงเหลือ':'Life remaining')+': '+(Math.round(lifeLeft*10)/10)+' '+(th?'ปี':'yr')+'</div>')
+      + fmCard('<b>'+(th?'มูลค่า':'Value')+'</b>'
+        +'<div style="font-size:13px;margin-top:4px">'+(th?'ค่าเสื่อม/ปี':'Dep./yr')+': '+fmMoney(depYr)+'</div>'
+        +'<div style="font-size:13px;color:var(--danger)">'+(th?'ค่าเสื่อมสะสม':'Acc. Dep.')+': '+fmMoney(a.accDep)+'</div>'
+        +'<div style="font-size:13px;color:var(--green);font-weight:700">NBV: '+fmMoney(a.nbv)+'</div>');
+  }
+  return (assets.length ? '<select class="input" style="margin-bottom:10px" onchange="ST.assetLcId=this.value;render()">'+assets.map(function(x){ return '<option value="'+esc(x.id)+'" '+(String(x.id)===String(ST.assetLcId)?'selected':'')+'>'+esc(x.id)+' — '+esc(x.name||'')+'</option>'; }).join('')+'</select>' : '') + body;
+}
+
+/* ── QR Code Assets ── */
+function assetQR(){
+  const th = ST.lang==='th';
+  let assets = assetsNormM();
+  if(ST.assetQrQ){ const q=ST.assetQrQ.toLowerCase(); assets = assets.filter(function(a){ return (a.id+a.name).toLowerCase().indexOf(q)>=0; }); }
+  const html = '<input class="input" style="margin-bottom:10px" placeholder="'+(th?'ค้นหา ID/ชื่อ':'Search ID/name')+'" value="'+esc(ST.assetQrQ)+'" oninput="ST.assetQrQ=this.value;render()">'
+    + (assets.length ? '<div style="display:flex;flex-direction:column;gap:8px">' + assets.map(function(a){
+        return fmCard('<div style="display:flex;gap:12px;align-items:center"><div id="aqr-'+esc(a.id)+'" style="width:76px;height:76px;background:#fff;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center"></div>'
+          +'<div><div style="font-weight:700;font-size:14px">'+esc(a.name||'')+'</div><div style="font-family:monospace;font-size:12px;color:var(--color-neutral-700)">'+esc(a.id)+'</div><div style="font-size:12px;color:var(--color-neutral-700)">'+esc(a.dept||'-')+'</div></div></div>');
+      }).join('') + '</div>' : fmEmpty(th?'ไม่พบสินทรัพย์':'No matching assets'));
+  setTimeout(function(){
+    assets.forEach(function(a){
+      const el = document.getElementById('aqr-'+a.id);
+      if(el && !el.hasChildNodes() && window.QRCode) new QRCode(el, { text: String(a.id), width:68, height:68, correctLevel: QRCode.CorrectLevel.M });
+    });
+  }, 30);
+  return html;
+}
+
+/* ── Annual Review ── */
+const ASSET_INSP_LABEL_M = { found:['✅ พบ/ปกติ','✅ Found/OK','green'], moved:['📍 ย้ายที่','📍 Moved','orange'], damaged:['⚠ ชำรุด','⚠ Damaged','orange'], missing:['❌ ไม่พบ','❌ Missing','red'] };
+function assetInspectionForM(assetId){ return assetInspectionsDataM().find(function(x){ return String(x.assetId)===String(assetId); }); }
+function assetReview(){
+  const th = ST.lang==='th';
+  const assets = assetsNormM();
+  const rows = assets.map(function(a){ return { a:a, insp: assetInspectionForM(a.id) }; });
+  const done = rows.filter(function(r){ return r.insp && r.insp.result==='found'; }).length;
+  const issue = rows.filter(function(r){ return r.insp && r.insp.result && r.insp.result!=='found'; }).length;
+  const pending = rows.length - done - issue;
+  const pct = rows.length ? Math.round(((done+issue)/rows.length)*100) : 0;
+  return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">'
+    + statCard(th?'ตรวจแล้ว':'Reviewed', done) + statCard(th?'ยังไม่ตรวจ':'Pending', pending) + statCard(th?'ผิดปกติ':'Issues', issue)
+    +'</div>'
+    +'<div style="font-size:12px;color:var(--color-neutral-700);margin-bottom:10px">'+(done+issue)+' / '+rows.length+' ('+pct+'%)</div>'
+    + (rows.length ? '<div style="display:flex;flex-direction:column;gap:8px">' + rows.map(function(r){
+        const insp = r.insp, res = insp && insp.result;
+        const lbl = res && ASSET_INSP_LABEL_M[res] ? fmChip(th?ASSET_INSP_LABEL_M[res][0]:ASSET_INSP_LABEL_M[res][1], ASSET_INSP_LABEL_M[res][2]) : fmChip(th?'รอตรวจ':'Pending','gray');
+        return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-family:monospace;font-size:13px">'+esc(r.a.id)+'</b>'+lbl+'</div>'
+          +'<div style="font-size:14px;font-weight:700;margin-top:2px">'+esc(r.a.name||'')+'</div>'
+          +'<div style="font-size:12.5px;color:var(--color-neutral-700)">'+esc(r.a.location||'-')+'</div>'
+          +'<div class="tap" data-act="asset-review-open" data-id="'+esc(r.a.id)+'" style="margin-top:6px;display:inline-block;font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:8px;background:var(--color-accent);color:#fff">'+(th?'ตรวจสอบ':'Inspect')+'</div>');
+      }).join('') + '</div>' : fmEmpty(th?'ยังไม่มีสินทรัพย์':'No assets yet'))
+    + assetReviewOverlay();
+}
+function assetReviewOverlay(){
+  if(!ST.assetInspId) return '';
+  const th = ST.lang==='th';
+  const a = assetsNormM().find(function(x){ return String(x.id)===String(ST.assetInspId); });
+  if(!a) return '';
+  const insp = assetInspectionForM(a.id) || {};
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div style="font-weight:700;font-size:17px">🔍 '+(th?'ตรวจสอบสินทรัพย์':'Inspect Asset')+'</div>'
+    +'<div class="tap" data-act="asset-review-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +'<div style="font-size:13px;margin-bottom:10px"><b>'+esc(a.id)+'</b> — '+esc(a.name||'')+'<br><span style="color:var(--color-neutral-700)">'+esc(a.location||'-')+'</span></div>'
+    +'<div class="field"><label>'+(th?'ผลตรวจสอบ':'Result')+'</label><select class="input" id="a-insp-result" onchange="assetInspToggleMovedM()">'
+      +'<option value="found" '+(insp.result==='found'?'selected':'')+'>✅ '+(th?'พบ/ปกติ':'Found/OK')+'</option>'
+      +'<option value="moved" '+(insp.result==='moved'?'selected':'')+'>📍 '+(th?'ย้ายที่':'Moved')+'</option>'
+      +'<option value="damaged" '+(insp.result==='damaged'?'selected':'')+'>⚠ '+(th?'ชำรุด':'Damaged')+'</option>'
+      +'<option value="missing" '+(insp.result==='missing'?'selected':'')+'>❌ '+(th?'ไม่พบ':'Missing')+'</option>'
+    +'</select></div>'
+    +'<div id="a-insp-loc-row" class="field" style="'+(insp.result==='moved'?'':'display:none')+'"><label>'+(th?'สถานที่ใหม่':'New location')+'</label><input class="input" id="a-insp-newloc" value="'+esc(insp.newLocation||'')+'"></div>'
+    +'<div class="field"><label>'+(th?'ผู้ตรวจ':'Inspector')+'</label><input class="input" id="a-insp-inspector" value="'+esc(insp.inspector||((getUser()&&(getUser().full_name||getUser().username))||''))+'"></div>'
+    +'<div class="field"><label>'+(th?'หมายเหตุ':'Remark')+'</label><textarea class="input" id="a-insp-remark" rows="2">'+esc(insp.remark||'')+'</textarea></div>'
+    +'<div class="tap" data-act="asset-review-submit" style="margin-top:10px;text-align:center;font-size:15px;font-weight:700;padding:12px;border-radius:10px;background:var(--color-accent);color:#fff">'+(th?'💾 บันทึก':'💾 Save')+'</div>'
+  );
+}
+function assetReviewOpenM(id){ ST.assetInspId=id; render(); }
+function assetReviewCloseM(){ ST.assetInspId=null; render(); }
+function assetInspToggleMovedM(){
+  const v = (document.getElementById('a-insp-result')||{}).value;
+  const row = document.getElementById('a-insp-loc-row'); if(row) row.style.display = v==='moved' ? 'block' : 'none';
+}
+async function assetReviewSubmitM(){
+  const th = ST.lang==='th';
+  const assetId = ST.assetInspId;
+  const result = (document.getElementById('a-insp-result')||{}).value;
+  const inspector = (document.getElementById('a-insp-inspector')||{}).value.trim();
+  const remark = (document.getElementById('a-insp-remark')||{}).value.trim();
+  const existing = assetInspectionForM(assetId) || { id:'INSP-'+assetId, assetId:assetId };
+  const item = Object.assign({}, existing, { result, inspDate:new Date().toISOString(), inspector, remark });
+  try{
+    if(result==='moved'){
+      const newLoc = (document.getElementById('a-insp-newloc')||{}).value.trim();
+      item.newLocation = newLoc;
+      const a = assetsDataM().find(function(x){ return String(x.id)===String(assetId); });
+      if(a && newLoc){ a.location = newLoc; await fmSyncKind('assets', a); }
+    }
+    await fmSyncKind('inspections', item);
+    ST.assetInspId=null; render();
+    toast((result==='missing'||result==='damaged') ? (th?'🔔 บันทึกแล้ว (Demo)':'🔔 Saved (Demo)') : (th?'✅ บันทึกผลตรวจสอบแล้ว':'✅ Inspection saved'));
+  }catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+
+/* ── Overview Value Add ── */
+function assetValuation(){
+  const th = ST.lang==='th';
+  const assets = assetsNormM();
+  const totalCost = assets.reduce(function(s,a){ return s+a.cost; },0);
+  const totalAccDep = assets.reduce(function(s,a){ return s+a.accDep; },0);
+  const totalNbv = assets.reduce(function(s,a){ return s+a.nbv; },0);
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
+    + statCard(th?'ราคาซื้อรวม':'Original Cost', fmMoney(totalCost)) + statCard(th?'ค่าเสื่อมสะสม':'Acc. Dep.', fmMoney(totalAccDep))
+    + statCard(th?'มูลค่าสุทธิ':'Net Book Value', fmMoney(totalNbv)) + statCard(th?'จำนวนสินทรัพย์':'Assets', assets.length)
+    +'</div>'
+    + (assets.length ? '<div style="display:flex;flex-direction:column;gap:8px">' + assets.map(function(a){
+        const depYr = a.life ? (a.cost-a.salvage)/a.life : 0;
+        return fmCard('<b style="font-family:monospace;font-size:13px">'+esc(a.id)+'</b> — '+esc(a.name||'')
+          +'<div style="font-size:12.5px;color:var(--color-neutral-700);margin-top:2px">'+(th?'ค่าเสื่อม/ปี':'Dep./yr')+': '+fmMoney(depYr)+' · '+(th?'สะสม':'Acc.')+': '+fmMoney(a.accDep)+'</div>'
+          +'<div style="font-size:13px;color:var(--green);font-weight:700">NBV: '+fmMoney(a.nbv)+'</div>');
+      }).join('') + '</div>' : fmEmpty(th?'ยังไม่มีสินทรัพย์':'No assets yet'));
+}
+
+/* ── Asset Groups (K-of-N redundancy) ── */
+function assetGrpFormOverlay(){
+  if(!ST.assetGrpFormOpen) return '';
+  const th = ST.lang==='th';
+  const editing = !!ST.assetGrpFormEditId;
+  const g = editing ? (assetGroupsDataM().find(function(x){ return String(x.id)===String(ST.assetGrpFormEditId); }) || {}) : {};
+  const selected = g.assetIds || [];
+  const assets = assetsDataM();
+  return wrOverlayShell(
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +'<div style="font-weight:700;font-size:17px">'+(editing?(th?'✏ แก้ไขกลุ่มสำรอง':'✏ Edit Group'):(th?'+ เพิ่มกลุ่มสำรอง':'+ New Group'))+'</div>'
+    +'<div class="tap" data-act="asset-grp-close" style="font-size:22px;line-height:1;color:var(--color-neutral-600)">×</div></div>'
+    +'<div class="field"><label>'+(th?'ชื่อกลุ่ม':'Group name')+' *</label><input class="input" id="ag-f-name" value="'+esc(g.name||'')+'"></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<div class="field" style="flex:1"><label>N</label><input class="input" type="number" id="ag-f-n" value="'+(g.n||assets.length||1)+'"></div>'
+    +'<div class="field" style="flex:1"><label>K</label><input class="input" type="number" id="ag-f-k" value="'+(g.k||1)+'"></div></div>'
+    +'<div class="field"><label>'+(th?'สินทรัพย์ในกลุ่ม':'Member assets')+'</label>'
+    +'<div style="max-height:160px;overflow-y:auto;border:1px solid var(--color-divider);border-radius:8px;padding:8px">'
+    + (assets.length ? assets.map(function(a){
+        const checked = selected.indexOf(a.id)!==-1;
+        return '<label style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px"><input type="checkbox" '+(checked?'checked':'')+' value="'+esc(a.id)+'" class="ag-f-asset"> '+esc(a.id)+' — '+esc(a.name||'')
+          +' <span style="margin-left:auto;font-size:11px;color:var(--color-neutral-700)"><label style="display:inline-flex;gap:4px;align-items:center"><input type="checkbox" '+((a.online!==false)?'checked':'')+' class="ag-f-online" data-id="'+esc(a.id)+'"> online</label></span></label>';
+      }).join('') : (th?'ยังไม่มีสินทรัพย์':'No assets yet'))
+    +'</div></div>'
+    +'<div class="tap" data-act="asset-grp-submit" style="margin-top:10px;text-align:center;font-size:15px;font-weight:700;padding:12px;border-radius:10px;background:var(--color-accent);color:#fff">'+(th?'💾 บันทึก':'💾 Save')+'</div>'
+  );
+}
+function assetGrpOpenM(id){ ST.assetGrpFormOpen=true; ST.assetGrpFormEditId=id||null; render(); }
+function assetGrpCloseM(){ ST.assetGrpFormOpen=false; render(); }
+async function assetGrpSubmitM(){
+  const th = ST.lang==='th';
+  const name = (document.getElementById('ag-f-name')||{}).value.trim();
+  if(!name){ toast(th?'กรุณากรอกชื่อกลุ่ม':'Please enter a group name'); return; }
+  const assetIds = Array.prototype.slice.call(document.querySelectorAll('.ag-f-asset:checked')).map(function(el){ return el.value; });
+  const onlineToggles = Array.prototype.slice.call(document.querySelectorAll('.ag-f-online'));
+  for(const t of onlineToggles){
+    const aid = t.getAttribute('data-id');
+    const a = assetsDataM().find(function(x){ return String(x.id)===String(aid); });
+    if(a && a.online !== t.checked){ a.online = t.checked; await fmSyncKind('assets', a); }
+  }
+  const isEdit = !!ST.assetGrpFormEditId;
+  const id = isEdit ? ST.assetGrpFormEditId : ('GRP-'+Date.now());
+  const item = { id, name, n: parseInt((document.getElementById('ag-f-n')||{}).value)||assetIds.length||1, k: parseInt((document.getElementById('ag-f-k')||{}).value)||1, assetIds };
+  try{
+    await fmSyncKind('assetGroups', item);
+    ST.assetGrpFormOpen=false; render();
+    toast(th?'✅ บันทึกแล้ว':'✅ Saved');
+  }catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+async function assetGrpDeleteM(id){
+  const th = ST.lang==='th';
+  if(!confirm(th?'ลบกลุ่มนี้ใช่หรือไม่?':'Delete this group?')) return;
+  try{ await fmDeleteKind('assetGroups', id); render(); toast(th?'🗑 ลบแล้ว':'🗑 Deleted'); }
+  catch(err){ toast((th?'ไม่สำเร็จ: ':'Failed: ')+(err.message||err)); }
+}
+function assetGroupsTab(){
+  const th = ST.lang==='th';
+  const groups = assetGroupsDataM();
+  const byId = {}; assetsDataM().forEach(function(a){ byId[a.id]=a; });
+  return '<div class="tap" data-act="asset-grp-open" style="margin-bottom:10px;display:inline-block;font-size:13px;font-weight:700;padding:9px 12px;border-radius:8px;background:var(--color-accent);color:#fff">+ '+(th?'เพิ่มกลุ่ม':'New Group')+'</div>'
+    + (groups.length ? '<div style="display:flex;flex-direction:column;gap:8px">' + groups.map(function(g){
+        const members = (g.assetIds||[]).map(function(id){ return byId[id]; }).filter(Boolean);
+        const online = members.filter(function(a){ return a.online!==false; }).length;
+        const n = g.n || members.length || 1, k = g.k || 1;
+        const pct = online>=k ? 100 : Math.round((online/k)*100);
+        const kind = pct>=100?'green':pct>=60?'orange':'red';
+        return fmCard('<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:14px">'+esc(g.name)+'</b>'+fmChip(pct+'%', kind)+'</div>'
+          +'<div style="font-size:12.5px;color:var(--color-neutral-700);margin-top:4px">'+online+'/'+n+' online · K='+k+'</div>'
+          +'<div style="display:flex;gap:8px;margin-top:6px">'
+          +'<div class="tap" data-act="asset-grp-open" data-id="'+esc(g.id)+'" style="font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:8px;border:1px solid var(--color-divider)">✏ '+(th?'แก้ไข':'Edit')+'</div>'
+          +'<div class="tap" data-act="asset-grp-delete" data-id="'+esc(g.id)+'" style="font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:8px;border:1px solid var(--danger);color:var(--danger)">🗑</div>'
+          +'</div>');
+      }).join('') + '</div>' : fmEmpty(th?'ยังไม่มีกลุ่มสำรอง':'No redundancy groups yet'))
+    + assetGrpFormOverlay();
+}
+
+function screenModuleAsset(){
+  const th = ST.lang==='th';
+  const mods = opsModules(); const m = mods.find(function(x){return x.key==='asset';});
+  const sub = ST.assetSub || 'overview';
+  let body = '';
+  if(sub==='overview') body = assetOverview();
+  else if(sub==='valuation') body = assetValuation();
+  else if(sub==='lifecycle') body = assetLifecycle();
+  else if(sub==='qr') body = assetQR();
+  else if(sub==='review') body = assetReview();
+  else if(sub==='register') body = assetRegister();
+  else if(sub==='groups') body = assetGroupsTab();
+  return '<div class="stack">'
+    + modHeader(m.name, 'asset')
+    + assetSubTabs(sub)
+    + body
     +'</div>';
 }
 
@@ -4646,6 +5073,21 @@ document.addEventListener('click', function(e){
   else if(act==='inv-issue-new-open'){ invIssueNewOpen(); }
   else if(act==='inv-issue-new-close'){ invIssueNewClose(); }
   else if(act==='inv-issue-submit'){ if(!ST.invIssueBusy) invIssueSubmit(); }
+  else if(act==='asset-sub'){ ST.assetSub = el.getAttribute('data-sub'); render(); }
+  else if(act==='asset-refresh'){ loadFmKind('assets'); loadFmKind('assetGroups'); loadFmKind('inspections'); }
+  else if(act==='asset-new-open'){ assetNewOpenM(); }
+  else if(act==='asset-new-close'){ assetNewCloseM(); }
+  else if(act==='asset-gen-id'){ assetGenIdM(); }
+  else if(act==='asset-submit'){ if(!ST.assetFormBusy) assetSubmitM(); }
+  else if(act==='asset-edit-open'){ assetEditOpenM(el.getAttribute('data-id')); }
+  else if(act==='asset-delete'){ assetDeleteM(el.getAttribute('data-id')); }
+  else if(act==='asset-review-open'){ assetReviewOpenM(el.getAttribute('data-id')); }
+  else if(act==='asset-review-close'){ assetReviewCloseM(); }
+  else if(act==='asset-review-submit'){ assetReviewSubmitM(); }
+  else if(act==='asset-grp-open'){ assetGrpOpenM(el.getAttribute('data-id')); }
+  else if(act==='asset-grp-close'){ assetGrpCloseM(); }
+  else if(act==='asset-grp-submit'){ assetGrpSubmitM(); }
+  else if(act==='asset-grp-delete'){ assetGrpDeleteM(el.getAttribute('data-id')); }
   else if(act==='wr-sub'){
     const sub = el.getAttribute('data-sub');
     if(sub==='__more__'){ ST.wrMoreOpen = true; }
@@ -4750,7 +5192,7 @@ async function loadModuleData(key){
   }
   if(key==='asset'){
     loadFmWR(); loadFmKind('ppm'); loadFmKind('maVisits'); loadFmKind('invtx');
-    loadFmKind('assets'); loadFmKind('assetGroups');
+    loadFmKind('assets'); loadFmKind('assetGroups'); loadFmKind('inspections');
     return;
   }
   /* mv / advisory / bot are static-summary screens for now — no fetch needed */

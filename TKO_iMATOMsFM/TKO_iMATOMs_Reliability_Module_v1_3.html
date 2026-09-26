@@ -2816,7 +2816,7 @@ const DB = {
 
 // Kinds backed by the generic /api/fm-records/:kind store on the server.
 const FM_RECORD_KINDS = ['ppm','ma','maVisits','inv','invtx',
-  'omRecords','omTemplates','omSchedule','ppmTemplates','assets','techNames'];
+  'omRecords','omTemplates','omSchedule','ppmTemplates','assets','techNames','assetGroups','inspections'];
 
 const _kindSyncTimers = {};
 function syncKindToBackend(kind, items){
@@ -3058,6 +3058,15 @@ let assets = DB.get('assets', []).map(normalizeAsset);
     if (typeof renderAssets === 'function' && document.getElementById('asset-table-body')) renderAssets();
   }
 })();
+// Pick up Annual Review inspections and K-of-N Asset Groups recorded from the
+// new iMATOMsAsset webapp / Mobile App, which share these same backend kinds.
+(async () => {
+  const freshInsp = await loadKindFromBackend('inspections');
+  if (freshInsp) {
+    inspections = freshInsp;
+    if (typeof renderInspection === 'function' && document.getElementById('view-inspection')) renderInspection();
+  }
+})();
 let workRequests = DB.get('wr', []);
 // Refresh from the real backend once the page has loaded so this dashboard
 // picks up WR created from the webapp's simpler WR tab or the Mobile App.
@@ -3201,7 +3210,7 @@ function seedData() {
   DB.set('inv', inventory);
 
   // Inspection seed
-  inspections = assets.map(a => ({ assetId: a.id, name: a.name, dept: a.dept, location: a.location, status: a.status, result: null, inspDate: null, inspector: null, remark: null }));
+  inspections = assets.map(a => ({ id: 'INSP-'+a.id, assetId: a.id, name: a.name, dept: a.dept, location: a.location, status: a.status, result: null, inspDate: null, inspector: null, remark: null }));
   DB.set('inspections', inspections);
 }
 
@@ -3684,7 +3693,7 @@ function printAllQR() { window.print(); }
 //  INSPECTION
 // ═══════════════════════════════════════════════════════════
 function renderInspection() {
-  inspections = DB.get('inspections', assets.map(a=>({assetId:a.id,name:a.name,dept:a.dept,location:a.location,status:a.status,result:null,inspDate:null,inspector:null,remark:null})));
+  inspections = DB.get('inspections', assets.map(a=>({id:'INSP-'+a.id,assetId:a.id,name:a.name,dept:a.dept,location:a.location,status:a.status,result:null,inspDate:null,inspector:null,remark:null})));
   const done = inspections.filter(i=>i.result==='found').length;
   const issue = inspections.filter(i=>i.result&&i.result!=='found').length;
   const pending = inspections.filter(i=>!i.result).length;
