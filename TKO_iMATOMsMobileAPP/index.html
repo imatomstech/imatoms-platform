@@ -1485,7 +1485,7 @@ function wrSubTabs(active){
   const counts = wrBadgeCounts();
   const primary = [
     { k:'overview', label: th?'ภาพรวม':'Overview' },
-    { k:'new', label: th?'แจ้งใหม่':'New WR', badge: counts.new },
+    { k:'new', label: th?'เปิดงาน':'Open', badge: counts.new },
     { k:'inprogress', label: th?'กำลังทำ':'In Progress', badge: counts.inprogress },
     { k:'closed', label: th?'ปิดงาน':'Closed' },
     { k:'evaluate', label: th?'ประเมิน & อนุมัติ':'Evaluate & Approve', badge: counts.evaluate },
@@ -1567,8 +1567,9 @@ function wrOverview(){
   const allCost = wr.reduce(function(s,w){return s+(w.totalCost||0);},0);
   const total = wr.length || 1;
   const trendSrc = closed.slice().sort(function(a,b){ return new Date(a.closeDate||a.date||0) - new Date(b.closeDate||b.date||0); }).slice(-10).filter(function(w){return w.mttr;});
+  const newBtn = '<div style="display:flex;margin-bottom:10px"><div class="tap" data-act="wr-new-open" style="font-size:14px;font-weight:700;padding:7px 12px;border-radius:8px;background:var(--color-accent);color:#fff;text-align:center">+ '+(th?'แจ้งงานใหม่':'New WR')+'</div></div>';
 
-  return wrQualitativeSummary(th)
+  return newBtn + wrQualitativeSummary(th)
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + statCard(th?'แจ้งซ่อม':'List WR', open.length, 'new') + statCard(th?'กำลังทำ':'In Progress', ip.length, 'inprogress')
     + statCard(th?'ปิดงาน':'Closed', closed.length, 'closed') + statCard(th?'MTTR เฉลี่ย (ชม.)':'Avg MTTR (hrs)', avgMttr!=null?avgMttr:'—', 'maintain')
