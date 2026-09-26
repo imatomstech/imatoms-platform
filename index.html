@@ -359,7 +359,7 @@ body:not(.tko-authed) .mobile-badge{ display:none !important }
   <a class="mobile-badge" href="/TKO_iMATOMsMobileAPP/" style="--card-a:var(--amber2); --card-b:var(--sky)">
     <div class="mobile-badge-icon">📱</div>
     <div class="mobile-badge-text">
-      <div class="mobile-badge-code">08 &middot; APP</div>
+      <div class="mobile-badge-code">09 &middot; APP</div>
       <div class="mobile-badge-title" data-th="แอปพลิเคชันมือถือ" data-en="Mobile Application">แอปพลิเคชันมือถือ</div>
       <div class="mobile-badge-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </div>
@@ -456,9 +456,17 @@ body:not(.tko-authed) .mobile-badge{ display:none !important }
       <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
     </a>
 
+    <a class="node" data-mod="asset" href="/TKO_iMATOMsAsset/" style="--card-a:var(--amber); --card-b:var(--amber2)">
+      <div class="node-circle">🏷️</div>
+      <div class="node-code">06 &middot; ASSET</div>
+      <div class="node-title" data-th="บริหารวงจรชีวิตสินทรัพย์" data-en="Asset Life-Cycle Management">บริหารวงจรชีวิตสินทรัพย์</div>
+      <div class="node-title-en">iMATOMs Asset</div>
+      <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
+    </a>
+
     <a class="node" data-mod="market" href="/TKO_IsanFoodMarket/" style="--card-a:var(--red); --card-b:var(--purple)">
       <div class="node-circle">🍜</div>
-      <div class="node-code">06 &middot; MARKET</div>
+      <div class="node-code">07 &middot; MARKET</div>
       <div class="node-title" data-th="ตลาดอาหารอีสาน" data-en="Isan Food Market">ตลาดอาหารอีสาน</div>
       <div class="node-title-en">Isan Food Market</div>
       <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
@@ -466,7 +474,7 @@ body:not(.tko-authed) .mobile-badge{ display:none !important }
 
     <a class="node" data-mod="coffee" href="/TKO_MeeHangCoffee/" style="--card-a:var(--purple); --card-b:var(--indigo)">
       <div class="node-circle">☕</div>
-      <div class="node-code">07 &middot; CAFE</div>
+      <div class="node-code">08 &middot; CAFE</div>
       <div class="node-title" data-th="มีฮัง คอฟฟี่" data-en="MeeHang Coffee">มีฮัง คอฟฟี่</div>
       <div class="node-title-en">MeeHang Coffee</div>
       <div class="node-cta"><span data-th="เข้าใช้งาน" data-en="Enter">เข้าใช้งาน</span><span class="arrow">→</span></div>
@@ -500,15 +508,16 @@ function setLang(lang){
 
 /* ================== AUTH / HUB GATE ================== */
 var API_BASE = 'https://api.imatomstech.com/api';
-var MODULE_KEYS = ['fm','iot','mv','adv','bot','market','coffee'];
+var MODULE_KEYS = ['fm','iot','mv','adv','bot','asset','market','coffee'];
 var MODULE_LABELS = {
   fm:{th:'01 · บริหารจัดการอาคาร (FM)', en:'01 · Facility Management'},
   iot:{th:'02 · ระบบ IoT', en:'02 · IoT Monitoring'},
   mv:{th:'03 · Measurement & Validation', en:'03 · Measurement & Validation'},
   adv:{th:'04 · ที่ปรึกษาพลังงาน (Advisory)', en:'04 · Energy Advisory'},
   bot:{th:'05 · หุ่นยนต์ & อัตโนมัติ', en:'05 · Robotics & Automation'},
-  market:{th:'06 · ตลาดอาหารอีสาน', en:'06 · Isan Food Market'},
-  coffee:{th:'07 · มีฮัง คอฟฟี่', en:'07 · MeeHang Coffee'}
+  asset:{th:'06 · บริหารวงจรชีวิตสินทรัพย์', en:'06 · Asset Life-Cycle Management'},
+  market:{th:'07 · ตลาดอาหารอีสาน', en:'07 · Isan Food Market'},
+  coffee:{th:'08 · มีฮัง คอฟฟี่', en:'08 · MeeHang Coffee'}
 };
 
 function getToken(){ try{ return localStorage.getItem('imatoms_jwt'); }catch(e){ return null; } }

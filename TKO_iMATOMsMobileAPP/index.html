@@ -205,6 +205,7 @@ const MODULE_URLS = {
   mv: '/TKO_iMATOMsMV/',
   advisory: '/TKO_iMATOMsadV/',
   bot: '/TKO_iMATOMsBOT/',
+  asset: '/TKO_iMATOMsAsset/',
 };
 
 /* ============== copy ============== */
@@ -269,6 +270,7 @@ function opsModules(){
     { key:'mv', code:'M&V', name:'iMATOMs M&V', tagline: th?'วัดผลและทวนสอบพลังงาน':'Measurement & Verification', status: th?'เร็วๆ นี้':'Coming Soon', tagClass:'tag-neutral' },
     { key:'advisory', code:'ADV', name:'iMATOMs Advisory', tagline: th?'ที่ปรึกษา & รางวัล':'Energy Consulting & Awards', status: th?'พร้อมใช้งาน':'Available', tagClass:'tag-accent' },
     { key:'bot', code:'BOT', name:'iMATOMs BOT', tagline: th?'หุ่นยนต์ & ระบบอัตโนมัติ':'Automation Fleet', status: th?'เร็วๆ นี้':'Coming Soon', tagClass:'tag-neutral' },
+    { key:'asset', code:'ASSET', name:'iMATOMs Asset', tagline: th?'บริหารวงจรชีวิตสินทรัพย์':'Asset Life-Cycle Management', status: th?'พร้อมใช้งาน':'Available', tagClass:'tag-accent' },
   ];
 }
 
@@ -4371,6 +4373,89 @@ function screenModuleBOT(){
     +'<div style="font-size:14px;color:var(--color-neutral-700)">'+t.botDesc+'</div></div></div>';
 }
 
+/* ══════════════ iMATOMs Asset — Asset Life-Cycle Management (module 6):
+   read-only predictive dashboard pulling from the same generic
+   /fm-records/assets + /fm-records/assetGroups kinds the new
+   TKO_iMATOMsAsset webapp reads/writes, plus the same cross-module
+   metrics (Reliability-MTBF from PPM, Maintainability-MTTR from WR,
+   MA Performance, Inventory Availability) already computed elsewhere
+   in this file — reused here, not recalculated differently. Full
+   CRUD (Asset Register/Lifecycle/QR/Annual Review/Valuation/Asset
+   Groups) lives in the webapp; Mobile is a lightweight pull-through. */
+function assetsDataM(){ return (fmKindData('assets') || fmDB('assets') || []).slice(); }
+function assetGroupsDataM(){ return (fmKindData('assetGroups') || fmDB('assetGroups') || []).slice(); }
+function assetYearsOwned(a){
+  const d = a.buyDate || a.installDate; if(!d) return 0;
+  const dt = new Date(d); if(isNaN(dt)) return 0;
+  return Math.max(0, (new Date()-dt)/(365.25*86400000));
+}
+function assetReliabilityPct(){
+  const vals = ppmData().filter(function(p){ return p.mtbf; }).map(function(p){ return p.mtbf; });
+  if(!vals.length) return null;
+  const avg = vals.reduce(function(s,v){ return s+v; },0)/vals.length;
+  return Math.round(Math.exp(-8760/avg)*100*10)/10;
+}
+function assetMaintainabilityPct(){
+  const closed = wrData().filter(function(w){ return w.mttr; });
+  if(!closed.length) return null;
+  const avg = closed.reduce(function(s,w){ return s+w.mttr; },0)/closed.length;
+  if(!avg) return null;
+  return Math.round((1-Math.exp(-4/avg))*100*10)/10;
+}
+function assetAvailabilityKN(){
+  const groups = assetGroupsDataM(); if(!groups.length) return null;
+  const byId = {}; assetsDataM().forEach(function(a){ byId[a.id]=a; });
+  let sum = 0;
+  groups.forEach(function(g){
+    const members = (g.assetIds||[]).map(function(id){ return byId[id]; }).filter(Boolean);
+    const online = members.filter(function(a){ return a.online!==false; }).length;
+    const k = g.k||1;
+    sum += online>=k ? 100 : Math.round((online/k)*100);
+  });
+  return Math.round((sum/groups.length)*10)/10;
+}
+function assetMAPerformancePct(){
+  const scores = maVisitsData().filter(function(v){ return v.status==='approved'; }).map(computeVisitScore).filter(function(s){ return s!=null; });
+  if(!scores.length) return null;
+  const avg = scores.reduce(function(s,v){ return s+v; },0)/scores.length;
+  return Math.round((avg/5)*100*10)/10;
+}
+function assetInventoryAvailPct(){
+  const tx = (fmKindData('invtx') || fmDB('invtx') || []).filter(function(t){ return t.type==='issue'; });
+  const ok = tx.filter(function(t){ return t.fulfilled!==false; }).length;
+  const bad = tx.filter(function(t){ return t.fulfilled===false; }).length;
+  if(!(ok+bad)) return null;
+  return Math.round((ok/(ok+bad))*100*10)/10;
+}
+function screenModuleAsset(){
+  const th = ST.lang==='th';
+  const mods = opsModules(); const m = mods.find(function(x){return x.key==='asset';});
+  const assets = assetsDataM();
+  const totalCost = assets.reduce(function(s,a){ return s+(a.cost||0); },0);
+  const totalNbv = assets.reduce(function(s,a){ return s+(a.nbv||0); },0);
+  const avgAge = assets.length ? Math.round((assets.reduce(function(s,a){ return s+assetYearsOwned(a); },0)/assets.length)*10)/10 : 0;
+  const rel = assetReliabilityPct(), maint = assetMaintainabilityPct(), avail = assetAvailabilityKN(), maPerf = assetMAPerformancePct(), invAvail = assetInventoryAvailPct();
+  function metric(label, val){
+    return statCard(label, val!=null?val+'%':'—');
+  }
+  return '<div class="stack">'
+    + modHeader(m.name, 'asset')
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + statCard(th?'สินทรัพย์ทั้งหมด':'Total Assets', assets.length) + statCard(th?'อายุเฉลี่ย (ปี)':'Avg Age (yr)', avgAge)
+    + statCard(th?'มูลค่าซื้อรวม':'Original Cost', fmMoney(totalCost)) + statCard(th?'มูลค่าคงเหลือ':'Net Book Value', fmMoney(totalNbv))
+    +'</div>'
+    +'<div style="margin-top:10px"><h4 style="font-size:15px;margin-bottom:6px">'+(th?'ตัวชี้วัดคาดการณ์':'Predictive Metrics')+'</h4>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + metric(th?'% ความน่าเชื่อถือ (MTBF)':'% Reliability (MTBF)', rel)
+    + metric(th?'% ซ่อมบำรุงได้ (MTTR)':'% Maintainability (MTTR)', maint)
+    + metric(th?'% พร้อมใช้ (K/N)':'% Availability (K/N)', avail)
+    + metric(th?'% ผลงาน MA':'% MA Performance', maPerf)
+    + metric(th?'% พร้อมจ่ายอะไหล่':'% Inventory Availability', invAvail)
+    +'</div></div>'
+    +'<a class="tap" data-act="open-full-app" data-key="asset" style="display:block;text-align:center;margin-top:14px;font-size:14px;font-weight:700;padding:11px;border-radius:10px;background:var(--color-accent);color:#fff;text-decoration:none">'+(th?'เปิดเว็บแอปฉบับเต็ม':'Open Full Web App')+' →</a>'
+    +'</div>';
+}
+
 function screenModuleDetail(){
   const key = ST.activeModule;
   if(key==='fm') return screenModuleFM();
@@ -4378,6 +4463,7 @@ function screenModuleDetail(){
   if(key==='mv') return screenModuleMV();
   if(key==='advisory') return screenModuleAdvisory();
   if(key==='bot') return screenModuleBOT();
+  if(key==='asset') return screenModuleAsset();
   return '';
 }
 
@@ -4660,6 +4746,11 @@ async function loadModuleData(key){
       ST.modData.iot = { __error: true };
     }
     ST.modLoading.iot = false; render();
+    return;
+  }
+  if(key==='asset'){
+    loadFmWR(); loadFmKind('ppm'); loadFmKind('maVisits'); loadFmKind('invtx');
+    loadFmKind('assets'); loadFmKind('assetGroups');
     return;
   }
   /* mv / advisory / bot are static-summary screens for now — no fetch needed */
