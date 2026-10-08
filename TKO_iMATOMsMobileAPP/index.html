@@ -6,7 +6,7 @@
 <title>TKO iMATOMs Mobile</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link rel="manifest" href="manifest.json">
@@ -106,10 +106,37 @@ textarea.input{min-height:80px;resize:vertical}
 .icon-btn{width:32px;height:32px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;cursor:pointer}
 
 /* ---- bottom tab bar ---- */
-.tabbar{display:flex;border-top:1px solid var(--color-divider);flex-shrink:0;padding:8px 8px calc(10px + env(safe-area-inset-bottom));background:var(--color-bg)}
-.tabitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:var(--color-neutral-600)}
+.tabbar{display:flex;border-top:1px solid var(--color-divider);flex-shrink:0;padding:10px 4px calc(12px + env(safe-area-inset-bottom));background:var(--color-bg)}
+.tabitem{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--color-neutral-600)}
 .tabitem.active{color:var(--color-accent-700)}
-.tabitem span{font-size:11px;font-family:var(--font-heading);letter-spacing:.02em}
+.tabitem svg{width:24px;height:24px}
+.tabitem span{font-size:16px;line-height:1.1;font-family:var(--font-heading);letter-spacing:.01em;white-space:nowrap}
+
+/* ---- theme + font preferences (Settings tab) ---- */
+body.theme-dark{
+  --color-bg:#0d1117; --color-surface:#161b22; --color-text:#e6edf3;
+  --color-accent:#5b8fc4; --color-accent-2:#7aa6d4;
+  --color-divider:rgba(230,237,243,.18);
+  --color-neutral-100:#161b22; --color-neutral-200:#21262d; --color-neutral-300:#30363d;
+  --color-neutral-500:#6e7681; --color-neutral-600:#8b949e; --color-neutral-700:#a0a8b3; --color-neutral-800:#c9d1d9;
+  --color-accent-100:#14263a; --color-accent-400:#5b8fc4; --color-accent-600:#7aa6d4; --color-accent-700:#8fb8e3; --color-accent-800:#bcd6f0;
+  --color-accent-2-100:#14263a; --color-accent-2-800:#bcd6f0;
+  --danger:#ff6b5b;
+}
+body.theme-dark .field>label{color:rgba(230,237,243,.72)}
+body.theme-dark .blueprint.tap:hover,body.theme-dark .blueprint.tap:active{background-color:#1c2330;box-shadow:0 10px 20px -6px rgba(0,0,0,.6)}
+body.theme-dark .blueprint.tap:hover *,body.theme-dark .blueprint.tap:active *{text-shadow:none}
+body.theme-dark .btn-secondary:not(:disabled):hover{background:rgba(230,237,243,.08)}
+body.theme-dark .msg.ok{color:#4fd17a}
+@media(min-width:901px){ body.theme-dark{background:#05080c} }
+body.font-courier{--font-heading:"Courier New",Courier,monospace; --font-body:"Courier New",Courier,monospace}
+body.font-sarabun{--font-heading:"Sarabun",system-ui,sans-serif; --font-body:"Sarabun",system-ui,sans-serif}
+.pref-opt{cursor:pointer;border:2px solid var(--color-divider);padding:12px 8px;text-align:center;flex:1;min-width:0}
+.pref-opt.active{border-color:var(--color-accent);background:var(--color-accent-100)}
+.switch{width:46px;height:26px;border-radius:13px;background:var(--color-neutral-300);position:relative;flex-shrink:0;transition:background .2s}
+.switch::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}
+.switch.on{background:var(--color-accent)}
+.switch.on::after{transform:translateX(20px)}
 
 /* ---- views ---- */
 .view-body{flex:1;overflow:auto;padding:0 18px 22px}
@@ -143,7 +170,26 @@ textarea.input{min-height:80px;resize:vertical}
 
 <script>
 const API_BASE = 'https://api.imatomstech.com/api';
-const LS = { token:'imatoms_jwt', refresh:'imatoms_refresh', user:'imatoms_user', lang:'imatoms_mobile_lang' };
+const LS = { token:'imatoms_jwt', refresh:'imatoms_refresh', user:'imatoms_user', lang:'imatoms_mobile_lang',
+  theme:'imatoms_mobile_theme', font:'imatoms_mobile_font', hidden:'imatoms_mobile_hidden' };
+
+/* ---- display preferences (Settings tab): theme / font / which platforms show ---- */
+function getPref(k, def){ try{ return localStorage.getItem(LS[k]) || def; }catch(e){ return def; } }
+function applyPrefs(){
+  const th = getPref('theme','light'), ft = getPref('font','default');
+  document.body.classList.toggle('theme-dark', th==='dark');
+  document.body.classList.remove('font-courier','font-sarabun');
+  if(ft==='courier') document.body.classList.add('font-courier');
+  else if(ft==='sarabun') document.body.classList.add('font-sarabun');
+  const m = document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content', th==='dark'?'#0D1117':'#f2f2f3');
+}
+function hiddenKeys(){ try{ return JSON.parse(localStorage.getItem(LS.hidden)||'[]'); }catch(e){ return []; } }
+function isShown(key){ return hiddenKeys().indexOf(key) < 0; }
+function toggleShown(key){
+  const h = hiddenKeys(), i = h.indexOf(key);
+  if(i>=0) h.splice(i,1); else h.push(key);
+  try{ localStorage.setItem(LS.hidden, JSON.stringify(h)); }catch(e){}
+}
 
 function getToken(){ try{ return localStorage.getItem(LS.token); }catch(e){ return null; } }
 function getUser(){ try{ return JSON.parse(localStorage.getItem(LS.user)||'null'); }catch(e){ return null; } }
@@ -203,6 +249,7 @@ const ST = {
   assetGrpFormOpen: false, assetGrpFormEditId: null, assetGrpFormBusy: false,
 };
 
+applyPrefs();
 function setLang(l){ ST.lang = l; try{ localStorage.setItem(LS.lang, l); }catch(e){} render(); }
 
 /* module -> real webapp URL. FM has a live app; the rest are still
@@ -220,7 +267,7 @@ const MODULE_URLS = {
 function L(){
   const th = ST.lang === 'th';
   return th ? {
-    backToPlatform:'← กลับสู่แพลตฟอร์ม', navHome:'หน้าหลัก', navOps:'ระบบงาน', navLifestyle:'ไลฟ์สไตล์', navProfile:'โปรไฟล์',
+    backToPlatform:'← กลับสู่แพลตฟอร์ม', navHome:'หน้าหลัก', navOps:'ระบบงาน', navLifestyle:'ไลฟ์สไตล์', navProfile:'โปรไฟล์', navSettings:'ตั้งค่า',
     homeGreeting:'สวัสดี, ' + ((getUser()&&(getUser().full_name||getUser().username)) || 'คุณผู้ใช้งาน'),
     homeRole:'TKO iMATOMs Platform · Facility & Energy',
     platformsTitle:'แพลตฟอร์มในเครือ', platformsSub:'กดเพื่อเข้าใช้งานเว็บแอปจริงของแต่ละระบบ',
@@ -244,7 +291,7 @@ function L(){
     advM3:'รางวัลพลังงาน', advM3d:'MEA / Thailand Energy Awards / ASEAN Energy Awards',
     botTitle:'ระบบหุ่นยนต์ & อัตโนมัติ', botDesc:'โมดูลนี้อยู่ระหว่างการพัฒนา จะเปิดให้ใช้งานเร็วๆ นี้',
   } : {
-    backToPlatform:'← Back to Platform', navHome:'Home', navOps:'Operations', navLifestyle:'Lifestyle', navProfile:'Profile',
+    backToPlatform:'← Back to Platform', navHome:'Home', navOps:'Operations', navLifestyle:'Lifestyle', navProfile:'Profile', navSettings:'Setting',
     homeGreeting:'Welcome back, ' + ((getUser()&&(getUser().full_name||getUser().username)) || 'User'),
     homeRole:'TKO iMATOMs Platform · Facility & Energy',
     platformsTitle:'Platforms', platformsSub:'Tap to open the real web app for each system',
@@ -415,6 +462,7 @@ function computeFailureCauseBreakdown(topN){
   return topN ? rows.slice(0, topN) : rows;
 }
 
+function visibleModules(){ return opsModules().filter(function(m){ return isShown(m.key); }); }
 function moduleTile(m, compact){
   const pad = compact ? '12px' : '14px';
   return '<div class="blueprint tap" data-act="open-module" data-key="'+m.key+'" style="padding:'+pad+';display:flex;flex-direction:column;gap:8px;min-height:112px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
@@ -432,7 +480,8 @@ function screenHome(){
   const ipCnt = (wo.find(function(r){return r.status==='in_progress';})||{}).cnt || 0;
   const pm = d ? (d.pm_due_30days||0) : '–';
   const notif = d ? (d.unread_notif||0) : '–';
-  const mods = opsModules();
+  const mods = visibleModules();
+  const showMarket = isShown('market'), showCoffee = isShown('coffee');
   return '<div class="stack">'
     +'<div><h2 style="font-size:22px;margin-bottom:2px">'+t.homeGreeting+'</h2><div style="font-size:14px;color:var(--color-neutral-700)">'+t.homeRole+'</div></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
@@ -442,17 +491,17 @@ function screenHome(){
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + mods.map(function(m){ return moduleTile(m, true); }).join('')
     +'</div></div>'
-    +'<div><h3 style="font-size:17px;margin-bottom:10px">'+t.lifestyleTitle+'</h3><div style="display:flex;flex-direction:column;gap:10px">'
-    +'<div class="blueprint tap" data-act="goto-market" style="padding:12px;display:flex;justify-content:space-between;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-    +'<div><div style="font-family:var(--font-heading);font-size:17px">'+t.marketName+'</div><div style="font-size:13px;color:var(--color-neutral-700)">'+t.marketTagline+'</div></div><span class="tag tag-accent">'+t.open+'</span></div>'
-    +'<div class="blueprint tap" data-act="goto-coffee" style="padding:12px;display:flex;justify-content:space-between;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-    +'<div><div style="font-family:var(--font-heading);font-size:17px">'+t.coffeeName+'</div><div style="font-size:13px;color:var(--color-neutral-700)">'+t.coffeeTagline+'</div></div><span class="tag tag-accent">'+t.open+'</span></div>'
-    +'</div></div>'
+    + ((showMarket||showCoffee) ? '<div><h3 style="font-size:17px;margin-bottom:10px">'+t.lifestyleTitle+'</h3><div style="display:flex;flex-direction:column;gap:10px">'
+    + (showMarket ? '<div class="blueprint tap" data-act="goto-market" style="padding:12px;display:flex;justify-content:space-between;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    +'<div><div style="font-family:var(--font-heading);font-size:17px">'+t.marketName+'</div><div style="font-size:13px;color:var(--color-neutral-700)">'+t.marketTagline+'</div></div><span class="tag tag-accent">'+t.open+'</span></div>' : '')
+    + (showCoffee ? '<div class="blueprint tap" data-act="goto-coffee" style="padding:12px;display:flex;justify-content:space-between;align-items:center"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    +'<div><div style="font-family:var(--font-heading);font-size:17px">'+t.coffeeName+'</div><div style="font-size:13px;color:var(--color-neutral-700)">'+t.coffeeTagline+'</div></div><span class="tag tag-accent">'+t.open+'</span></div>' : '')
+    +'</div></div>' : '')
     +'</div>';
 }
 
 function screenOpsList(){
-  const t = L(); const mods = opsModules();
+  const t = L(); const mods = visibleModules();
   return '<div class="stack">'
     +'<div><h2 style="font-size:22px;margin-bottom:2px">'+t.opsTitle+'</h2><div style="font-size:14px;color:var(--color-neutral-700)">'+t.opsSub+'</div></div>'
     +'<div style="display:flex;flex-direction:column;gap:10px">'
@@ -468,9 +517,9 @@ function screenOpsList(){
 function screenLifestyle(){
   const t = L();
   const items = [
-    { act:'goto-market', code:'01', name:t.marketName, tagline:t.marketTagline },
-    { act:'goto-coffee', code:'02', name:t.coffeeName, tagline:t.coffeeTagline },
-  ];
+    { key:'market', act:'goto-market', code:'01', name:t.marketName, tagline:t.marketTagline },
+    { key:'coffee', act:'goto-coffee', code:'02', name:t.coffeeName, tagline:t.coffeeTagline },
+  ].filter(function(it){ return isShown(it.key); });
   return '<div class="stack">'
     +'<div><h2 style="font-size:22px;margin-bottom:2px">'+t.lifestyleTitle+'</h2><div style="font-size:14px;color:var(--color-neutral-700)">'+t.opsSub+'</div></div>'
     +'<div style="display:flex;flex-direction:column;gap:10px">'
@@ -497,6 +546,44 @@ function screenProfile(){
     + mods.map(function(m){ return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--color-divider)"><span style="font-size:15px">'+m.name+'</span><span class="tag tag-accent">'+t.granted+'</span></div>'; }).join('')
     +'</div></div>'
     +'<button class="btn btn-secondary btn-block" data-act="logout">'+t.signOut+'</button>'
+    +'</div>';
+}
+
+function screenSettings(){
+  const th = ST.lang==='th';
+  const theme = getPref('theme','light'), font = getPref('font','default');
+  function opt(act, attr, val, active, big, small, fontStyle){
+    return '<div class="pref-opt tap '+(active?'active':'')+'" data-act="'+act+'" '+attr+'="'+val+'">'
+      +'<div style="font-size:20px;'+(fontStyle||'')+'">'+big+'</div>'
+      +'<div style="font-size:12.5px;color:var(--color-neutral-700);margin-top:2px">'+small+'</div></div>';
+  }
+  function row(key, label, sub){
+    const on = isShown(key);
+    return '<div class="tap" data-act="toggle-vis" data-key="'+key+'" style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-divider)">'
+      +'<div style="min-width:0"><div style="font-family:var(--font-heading);font-size:16px">'+esc(label)+'</div><div style="font-size:13px;color:var(--color-neutral-700)">'+esc(sub)+'</div></div>'
+      +'<div class="switch '+(on?'on':'')+'"></div></div>';
+  }
+  const t = L();
+  const mods = opsModules();
+  return '<div class="stack">'
+    +'<h2 style="font-size:22px">'+(th?'ตั้งค่า':'Setting')+'</h2>'
+    +'<div><h4 style="font-size:16px;margin-bottom:8px">'+(th?'แพลตฟอร์มที่แสดง':'Visible Platforms')+'</h4>'
+    +'<div style="font-size:13px;color:var(--color-neutral-700);margin-bottom:4px">'+(th?'เปิด/ปิดการแสดงผลบนหน้าหลักและแท็บระบบงาน':'Show or hide on Home and Operations')+'</div>'
+    + mods.map(function(m){ return row(m.key, m.name, m.tagline); }).join('')
+    +'</div>'
+    +'<div><h4 style="font-size:16px;margin-bottom:4px">'+t.lifestyleTitle+'</h4>'
+    + row('market', t.marketName, t.marketTagline)
+    + row('coffee', t.coffeeName, t.coffeeTagline)
+    +'</div>'
+    +'<div><h4 style="font-size:16px;margin-bottom:8px">'+(th?'ธีม':'Theme')+'</h4><div style="display:flex;gap:10px">'
+    + opt('set-theme','data-v','dark', theme==='dark', '🌙', th?'Dark · กลางคืน':'Dark · Night')
+    + opt('set-theme','data-v','light', theme!=='dark', '☀️', th?'Light · กลางวัน':'Light · Day')
+    +'</div></div>'
+    +'<div><h4 style="font-size:16px;margin-bottom:8px">'+(th?'ตัวอักษร':'Font')+'</h4><div style="display:flex;gap:10px">'
+    + opt('set-font','data-v','default', font==='default', 'Aa', th?'ค่าเริ่มต้น':'Default')
+    + opt('set-font','data-v','courier', font==='courier', 'Aa', 'Courier New', 'font-family:\'Courier New\',monospace')
+    + opt('set-font','data-v','sarabun', font==='sarabun', 'Aa ก', 'Sarabun', 'font-family:Sarabun,sans-serif')
+    +'</div></div>'
     +'</div>';
 }
 
@@ -4901,6 +4988,7 @@ function screenMain(){
   else if(ST.tab === 'ops') inner = screenOpsList();
   else if(ST.tab === 'lifestyle') inner = screenLifestyle();
   else if(ST.tab === 'profile') inner = screenProfile();
+  else if(ST.tab === 'settings') inner = screenSettings();
   return screenMainWithBody(inner);
 }
 function screenMainWithBody(inner){
@@ -4922,6 +5010,7 @@ function screenMainWithBody(inner){
     +'<div class="tabitem tap '+(ST.tab==='ops'?'active':'')+'" data-act="tab-ops"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="8" height="8"></rect><rect x="13" y="3" width="8" height="8"></rect><rect x="3" y="13" width="8" height="8"></rect><rect x="13" y="13" width="8" height="8"></rect></svg><span>'+t.navOps+'</span></div>'
     +'<div class="tabitem tap '+(ST.tab==='lifestyle'?'active':'')+'" data-act="tab-lifestyle"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h13v6a5 5 0 01-5 5H8a5 5 0 01-5-5V8z"></path><path d="M16 8h3a2 2 0 012 2v1a2 2 0 01-2 2h-3"></path><path d="M7 2v2M11 2v2"></path></svg><span>'+t.navLifestyle+'</span></div>'
     +'<div class="tabitem tap '+(ST.tab==='profile'?'active':'')+'" data-act="tab-profile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"></path></svg><span>'+t.navProfile+'</span></div>'
+    +'<div class="tabitem tap '+(ST.tab==='settings'?'active':'')+'" data-act="tab-settings"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"></path></svg><span>'+t.navSettings+'</span></div>'
     +'</div></div>';
 }
 
@@ -4987,6 +5076,10 @@ document.addEventListener('click', function(e){
   else if(act==='tab-ops'){ ST.tab='ops'; ST.screen='main'; ST.activeModule=null; render(); }
   else if(act==='tab-lifestyle'){ ST.tab='lifestyle'; ST.screen='main'; ST.activeModule=null; render(); }
   else if(act==='tab-profile'){ ST.tab='profile'; ST.screen='main'; ST.activeModule=null; render(); }
+  else if(act==='tab-settings'){ ST.tab='settings'; ST.screen='main'; ST.activeModule=null; render(); }
+  else if(act==='toggle-vis'){ toggleShown(el.getAttribute('data-key')); render(); }
+  else if(act==='set-theme'){ try{ localStorage.setItem(LS.theme, el.getAttribute('data-v')); }catch(err){} applyPrefs(); render(); }
+  else if(act==='set-font'){ try{ localStorage.setItem(LS.font, el.getAttribute('data-v')); }catch(err){} applyPrefs(); render(); }
   else if(act==='open-module'){ const key = el.getAttribute('data-key'); ST.activeModule = key; ST.fromTab = ST.tab; ST.screen = 'module'; if(key==='fm'){ ST.fmSub='overview'; ST.wrSub='overview'; } render(); loadModuleData(key); }
   else if(act==='module-back'){ ST.screen = 'main'; ST.tab = ST.fromTab || 'ops'; ST.activeModule = null; render(); }
   else if(act==='open-full-app'){ e.preventDefault(); const key = el.getAttribute('data-key'); const url = MODULE_URLS[key]; if(url) window.location.href = url; }
