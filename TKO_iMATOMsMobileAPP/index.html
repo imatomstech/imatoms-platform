@@ -4907,8 +4907,12 @@ function screenMainWithBody(inner){
   const t = L();
   return '<div style="display:flex;flex-direction:column;min-height:100vh">'
     +'<div class="topbar">'
-    +'<div class="brand">iMATOMs</div>'
-    +'<div style="display:flex;align-items:center;gap:10px">'
+    +'<div class="brand-wrap" style="display:flex;align-items:center;gap:10px;min-width:0">'
+    +'<div style="width:46px;height:46px;flex-shrink:0">'+atomHtml(46,40,15,9)+'</div>'
+    +'<div style="min-width:0"><div class="brand" style="font-size:24px;font-weight:700;line-height:1.1">iMATOMs</div>'
+    +'<div style="font-size:11px;letter-spacing:.06em;color:var(--color-neutral-700);margin-top:2px;line-height:1.3">TKO Group · Technology · Innovation · Sustainability</div></div>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;gap:10px;flex-shrink:0">'
     +'<div class="icon-btn tap" data-act="logout" title="'+t.signOut+'"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="1.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path></svg></div>'
     + segLangHtml()
     +'</div></div>'
