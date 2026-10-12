@@ -262,6 +262,8 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 .fp-room-edit{cursor:move}
 .fp-room-handle{cursor:nwse-resize}
 #fp-svg.editing g[id^="fp-pin-"]{pointer-events:none;opacity:.45}
+@keyframes bldgBlink{0%,100%{box-shadow:0 0 0 0 var(--bc,#F97316);border-color:var(--bc,#F97316)}50%{box-shadow:0 0 12px 3px var(--bc,#F97316);border-color:transparent}}
+.bldg-blink{animation:bldgBlink .9s ease-in-out infinite}
 .wr-er{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.3);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700}
 .wr-cm{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(59,130,246,.3);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700}
 .wr-pj{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(168,85,247,.3);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700}
@@ -15286,7 +15288,7 @@ function renderFloorPlan(){
         ${radar}${ringSVG}
         <circle cx="${px}" cy="${py}" r="13" fill="${coreC}"/>
         <text x="${px}" y="${py}" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="10" font-family="sans-serif">${ico}</text>
-        <text x="${px}" y="${py+58}" text-anchor="middle" fill="#E6EDF3" font-size="9" font-family="Orbitron,sans-serif" font-weight="bold">${a.sys}</text>
+        <text x="${px}" y="${py+58}" text-anchor="middle" fill="#E6EDF3" font-size="9" font-family="Orbitron,sans-serif" font-weight="bold">${a.sys||a.type||a.category||''}</text>
         <text x="${px}" y="${py+68}" text-anchor="middle" fill="#8B949E" font-size="8" font-family="Orbitron,sans-serif">${a.id}</text>
         ${wrN>0?`<circle cx="${px+22}" cy="${py-22}" r="9" fill="#EF4444"/><text x="${px+22}" y="${py-22}" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="8" font-weight="bold">${wrN}</text>`:''}
         ${customPos[a.id]?`<circle cx="${px-22}" cy="${py-22}" r="4" fill="#F97316" opacity=".7"/>`:''}
@@ -15573,7 +15575,7 @@ function renderFloorSummary(fid){
   const o=(BLDG._st||bldgFloorStatus())[fid]||{n:0,r1:0,r2:0,r3:0,r4:0,items:[],bad:false,crit:0};
   const names=['WR','OPT','PPM','MA'],keys=['r1','r2','r3','r4'];
   const views=['workrequest','operation','ppm','contract'];
-  const chips=keys.map((k,i)=>`<button onclick="bldgPickRing('${k}')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:20px;border:2px solid ${BR_COL[i]};background:${_bldgRing===k?BR_COL[i]+'33':'transparent'};color:var(--text);font-size:12px;font-weight:700">
+  const chips=keys.map((k,i)=>`<button class="${o[k]?'bldg-blink':''}" onclick="bldgPickRing('${k}')" style="--bc:${BR_COL[i]};cursor:pointer;display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:20px;border:2px solid ${BR_COL[i]};background:${_bldgRing===k?BR_COL[i]+'33':'transparent'};color:var(--text);font-size:12px;font-weight:700">
       <span style="width:12px;height:12px;border-radius:50%;background:${o[k]?BR_COL[i]:'#22C55E'}"></span>${names[i]} <b style="color:${o[k]?BR_COL[i]:'var(--green)'}">${o[k]||'OK'}</b></button>`).join('');
   const ri=keys.indexOf(_bldgRing);
   const rows=o.items.filter(it=>it.rs[_bldgRing]);
@@ -15591,7 +15593,7 @@ function renderFloorSummary(fid){
           <span style="color:${w.priority==='critical'?'#EF4444':'var(--text3)'};font-weight:700">${bEsc(String(w.status||'').toUpperCase())}</span>
           <button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();wrOpenDetail('${bEsc(w.id)}')">📋 เปิด WR / มอบหมาย</button></div>`).join('');
       }
-      return`<div style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-left:3px solid ${BR_COL[ri]};border-radius:var(--radius);margin-top:8px;cursor:pointer" onclick="showAssetStatusModal('${bEsc(a.id)}')">
+      return`<div class="bldg-blink" style="--bc:${BR_COL[ri]};padding:10px;background:var(--bg3);border:1px solid ${BR_COL[ri]};border-left:3px solid ${BR_COL[ri]};border-radius:var(--radius);margin-top:8px;cursor:pointer" onclick="showAssetStatusModal('${bEsc(a.id)}')">
         <div style="display:flex;gap:8px;align-items:center"><span class="tag ffm">${bEsc(a.id)}</span><b style="font-size:12px">${bEsc(String(a.name||'').substring(0,40))}</b>
         <span style="margin-left:auto;font-size:11px;color:${BR_COL[ri]};font-weight:700">${bEsc(why)}</span></div>${wrx}</div>`;
     }).join('');
