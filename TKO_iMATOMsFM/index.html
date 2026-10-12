@@ -254,6 +254,14 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
 @keyframes fpcritpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
 @keyframes fpring{0%{transform:scale(.7);opacity:.9}100%{transform:scale(2.2);opacity:0}}
 @keyframes fpblink{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes fpSlideIn{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
+#fp-detail-panel.slide{animation:fpSlideIn .38s cubic-bezier(.2,.8,.2,1)}
+.bldg-floor{cursor:pointer;transition:filter .15s}
+.bldg-floor:hover{filter:brightness(1.35)}
+.bldg-floor.sel .bldg-slab{stroke:#F97316;stroke-width:3}
+.fp-room-edit{cursor:move}
+.fp-room-handle{cursor:nwse-resize}
+#fp-svg.editing g[id^="fp-pin-"]{pointer-events:none;opacity:.45}
 .wr-er{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.3);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700}
 .wr-cm{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(59,130,246,.3);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700}
 .wr-pj{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(168,85,247,.3);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700}
@@ -1704,7 +1712,7 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
       <div class="sh">
         <div><div class="st">🏢 Building Critical Status</div><div class="ss">Real-time Status · 4-Ring System · WR · OPT · PPM · MA · กวาดสายตาดูได้ทันที</div></div>
         <div class="flex g8 fw">
-          <select class="form-control" style="width:140px" id="fp-floor" onchange="onFloorChange()">
+          <select class="form-control" style="width:150px" id="fp-floor" onchange="onFloorChange()">
             <option value="roof">Roof Level</option>
             <option value="l3">ชั้น 3</option>
             <option value="l2">ชั้น 2</option>
@@ -1712,9 +1720,11 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
             <option value="b1">ชั้น B1</option>
             <option value="b2">ชั้น B2</option>
           </select>
-          <button class="btn btn-secondary btn-sm" onclick="renderFloorPlan()">↻ Refresh</button>
-          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fp-pdf-input').click()" title="โหลด PDF แผนผัง">🗺 Load PDF</button>
-          <input type="file" id="fp-pdf-input" accept=".pdf" style="display:none" onchange="fpLoadPDF(event)">
+          <button class="btn btn-secondary btn-sm" onclick="bldgRefreshAll()">↻ Refresh</button>
+          <button class="btn btn-secondary btn-sm" onclick="bldgOpenSetup()" title="ตั้งจำนวนชั้นและชื่อชั้น">🏗 ตั้งค่าอาคาร</button>
+          <button class="btn btn-secondary btn-sm" onclick="bldgToggleEdit()" id="bldg-edit-btn" title="ลาก/ย่อ-ขยายกล่องห้อง เพิ่มห้องเครื่องจักร">✏ แก้ไขผังห้อง</button>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fp-pdf-input').click()" title="อัปโหลดรูป/PDF floor plan ของชั้นนี้">🗺 Floor Plan (รูป/PDF)</button>
+          <input type="file" id="fp-pdf-input" accept=".pdf,image/*" style="display:none" onchange="fpLoadPDF(event)">
           <button class="btn btn-danger btn-xs" onclick="fpClearPDF()" id="fp-clear-pdf" style="display:none" title="ลบ PDF">✕ PDF</button>
           <button class="btn btn-success btn-sm" onclick="fpExportCSV()">📊 Export CSV</button>
           <button class="btn btn-blue btn-sm" onclick="document.getElementById('fp-csv-input').click()">📂 Import CSV</button>
@@ -1724,6 +1734,20 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
         </div>
       </div>
 
+      <!-- ═══ BUILDING OVERVIEW (frame + floors) + sliding floor-plan panel ═══ -->
+      <div id="fp-layout" style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+        <div id="bldg-wrap" style="flex:0 0 380px;max-width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;position:relative">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-family:var(--font-display);font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.8px;text-transform:uppercase">🏢 อาคาร — คลิกชั้นเพื่อดูผัง</div>
+            <div style="font-size:10px;color:var(--text3)"><span style="color:#22C55E">●</span> ปกติ <span style="color:#F97316">●</span> เตือน <span style="color:#EF4444">●</span> วิกฤต</div>
+          </div>
+          <div id="bldg-svg-scroll" style="max-height:78vh;overflow-y:auto"><svg id="bldg-svg" style="width:100%;display:block"></svg></div>
+          <div id="bldg-tip" style="display:none;position:fixed;z-index:300;pointer-events:none;background:var(--bg2);border:1px solid var(--orange);border-radius:var(--radius);padding:8px 10px;box-shadow:0 8px 24px rgba(0,0,0,.6);font-size:11px;min-width:150px"></div>
+        </div>
+        <div id="fp-detail-hint" style="flex:1;min-width:260px;display:flex;align-items:center;justify-content:center;min-height:260px;color:var(--text3);font-size:13px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius-lg);padding:20px">
+          เลื่อนเมาส์ไปที่ชั้นเพื่อดูชื่อชั้น<br>ชั้นสีส้ม/แดง = มีกิจกรรมใน 4 วง (WR / OPT / PPM / MA)<br>คลิกชั้นเพื่อเปิดผัง floor plan
+        </div>
+        <div id="fp-detail-panel" style="flex:1;min-width:0;display:none">
       <!-- Place Mode Banner -->
       <div id="fp-place-banner" style="display:none;padding:10px 16px;background:var(--orange-dim);border:1px solid rgba(249,115,22,.4);border-radius:var(--radius-lg);margin-bottom:12px;display:none">
         <div class="flex fca g10">
@@ -1828,6 +1852,9 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
           <tbody id="fp-tbody"></tbody>
         </table></div>
       </div>
+
+        </div><!-- /fp-detail-panel -->
+      </div><!-- /fp-layout -->
 
       <!-- IoT SENSOR PANEL — iframe embed -->
       <div id="iot-panel" style="display:none;margin-top:16px">
@@ -3542,6 +3569,30 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
   </div>
 </div>
 
+
+<!-- ═══ BUILDING SETUP MODAL (floors) ═══ -->
+<div class="modal-overlay" id="m-bldg-setup">
+  <div class="modal modal-lg">
+    <div class="mhd"><div class="mttl">🏗 ตั้งค่าอาคาร — จำนวนชั้นและชื่อชั้น</div><button class="mclose" onclick="closeModal('m-bldg-setup')">✕</button></div>
+    <div style="padding:16px">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">สร้างรายชื่อชั้นอัตโนมัติ (เช่น B4…B1, G, 2…22, Roof) แล้วแก้ชื่อ/ลำดับ/ลบรายชั้นได้ตามต้องการ — กด “บันทึก” เพื่อใช้งานและ sync ขึ้น backend</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+        <div class="form-group" style="margin:0"><label class="form-label">ชั้นใต้ดิน (B)</label><input type="number" class="form-control" id="bs-basement" min="0" max="10" value="2" style="width:90px"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">ชั้นบนสุด (เลขชั้น เช่น 22)</label><input type="number" class="form-control" id="bs-above" min="0" max="80" value="3" style="width:110px"></div>
+        <div class="form-group" style="margin:0"><label class="form-label"><input type="checkbox" id="bs-roof" checked> มี Roof</label></div>
+        <button class="btn btn-secondary btn-sm" onclick="bldgGenerateFloors()">⚡ สร้างรายชื่อชั้น</button>
+        <button class="btn btn-secondary btn-sm" onclick="bldgAddFloorRow()">+ เพิ่มชั้น</button>
+      </div>
+      <div style="max-height:46vh;overflow:auto;border:1px solid var(--border);border-radius:var(--radius)">
+        <table><thead><tr><th style="width:50px">ลำดับ</th><th>รหัสชั้น (ย่อ)</th><th>ชื่อเต็ม</th><th style="width:130px">จัดลำดับ</th></tr></thead><tbody id="bs-tbody"></tbody></table>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('m-bldg-setup')">ยกเลิก</button>
+        <button class="btn btn-primary btn-sm" onclick="bldgSaveSetup()">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ ASSET 4-RING DETAIL MODAL ═══ -->
 <div class="modal-overlay" id="m-asset-status">
@@ -7764,13 +7815,11 @@ const META={
 };
 const accMap={assets:'s1',lifecycle:'s1',qrcode:'s1',inspection:'s1',valuation:'s1',workrequest:'s1',ppm:'s1',operation:'s1',contract:'s1',inventory:'s1',inspection:'s2',ncr:'s2',fmea:'s2',audit:'s2',budget:'s3',costanalysis:'s3',valuation:'s3',energy:'s4',carbon:'s4',waste:'s4',esgkpi:'s4',training:'s5',competency:'s5',certification:'s5',knowledgebase:'s5',exam:'s5',incident:'s6',hazard:'s6',permit:'s6',safetystat:'s6',ai:'s7',integrations:'s8',notifications:'s9','db-assets':'s10','db-floorplan':'s10','db-custom':'s10',config:'s11',cloud:'s12',adminmgmt:'s13'};
 const renderMap={dashboard:refreshDash,assets:renderAssets,workrequest:renderWR,ppm:renderPPM,contract:renderMA,inventory:renderInv,adminmgmt:renderAdm,ai:aiCtx,valuation:renderVal,budget:renderBudget,costanalysis:renderCostA,safetystat:renderSafeStat,incident:renderIncident,hazard:renderHazard,permit:renderPermit,energy:renderEnergy,carbon:renderCarbon,waste:renderWaste,esgkpi:renderEsgKpi,operation:renderOp,inspection:renderAnnualInspection,ncr:renderNCR,fmea:renderFMEA,audit:renderAudit,modules:renderModules,notifications:renderNotifCenter,exam:renderExam,competency:renderCompetency,certification:renderCertification,knowledgebase:renderKnowledgeBase,training:renderTraining,floorplan:()=>{
-  // คืนค่า floor ก่อน render
-  const sel=document.getElementById('fp-floor');
-  if(sel){const saved=localStorage.getItem('fp_last_floor')||'l1';if(sel.querySelector(`option[value="${saved}"]`))sel.value=saved;}
-  renderFloorPlan();
+  // Building Critical Status v2: draw the building first (local data), then refresh from backend
+  bldgPopulateSelect();
+  renderBuilding();
   initIoTPanel();
-  const _f=document.getElementById('fp-floor')?.value||'l1';
-  fetchIoTForFloorPlan().then(()=>{if((document.getElementById('fp-floor')?.value||'l1')===_f)renderFloorPlan();});
+  bldgRefreshAll();
 },'db-assets':renderDbAssets,'db-floorplan':renderDbAssets,'db-custom':()=>{},'config':loadConfig,'cloud':()=>{}};
 
 function showView(id){
@@ -14278,63 +14327,7 @@ function getAssetFloor(a){const loc=(a.loc||'').toLowerCase();for(const[k,v]of O
 
 
 // ══ FLOOR PLAN PDF BACKGROUND ══
-let _fpPdfData=null;
-
-async function fpLoadPDF(evt){
-  const file=evt.target.files[0];if(!file)return;
-  if(!window.pdfjsLib){showToast('⚠ PDF.js ยังโหลดไม่เสร็จ กรุณารอสักครู่');return;}
-  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  showToast('⏳ กำลังโหลด PDF แผนผัง...');
-  const reader=new FileReader();
-  reader.onload=async e=>{
-    try{
-      const pdf=await pdfjsLib.getDocument({data:e.target.result}).promise;
-      const page=await pdf.getPage(1); // ใช้หน้าแรก
-      const wrap=document.getElementById('fp-canvas-wrap');
-      const canvas=document.getElementById('fp-pdf-canvas');
-      if(!canvas||!wrap)return;
-      const displayW=wrap.clientWidth||900;
-      const viewport=page.getViewport({scale:1});
-      const scale=displayW/viewport.width;
-      const scaledVP=page.getViewport({scale});
-      canvas.width=scaledVP.width;
-      canvas.height=scaledVP.height;
-      canvas.style.display='block';
-      wrap.style.height=scaledVP.height+'px';
-      const ctx=canvas.getContext('2d');
-      await page.render({canvasContext:ctx,viewport:scaledVP}).promise;
-      // Make SVG match PDF height
-      const svg=document.getElementById('fp-svg');
-      const ratio=900/scaledVP.width;
-      const svgH=Math.round(scaledVP.height*ratio);
-      svg.setAttribute('viewBox',`0 0 900 ${svgH}`);
-      _fpPdfData={w:scaledVP.width,h:scaledVP.height,svgH};
-      DB.set('fp_has_pdf',true);
-      document.getElementById('fp-clear-pdf').style.display='inline-flex';
-      showToast('✅ โหลด PDF แผนผังแล้ว — คลิก 📌 วางตำแหน่ง Asset ได้เลย');
-      renderFloorPlan();
-    }catch(err){
-      showToast('❌ ไม่สามารถอ่าน PDF: '+err.message);
-      console.error(err);
-    }
-  };
-  reader.readAsArrayBuffer(file);
-  evt.target.value='';
-}
-
-function fpClearPDF(){
-  const canvas=document.getElementById('fp-pdf-canvas');
-  if(canvas){canvas.style.display='none';canvas.width=0;canvas.height=0;}
-  const svg=document.getElementById('fp-svg');
-  if(svg)svg.setAttribute('viewBox','0 0 900 540');
-  const wrap=document.getElementById('fp-canvas-wrap');
-  if(wrap)wrap.style.height='';
-  _fpPdfData=null;
-  DB.del('fp_has_pdf');
-  document.getElementById('fp-clear-pdf').style.display='none';
-  showToast('🗑 ลบ PDF แผนผังแล้ว');
-  renderFloorPlan();
-}
+// (per-floor plan upload: fpLoadPDF / fpClearPDF are defined in the BUILDING CRITICAL STATUS v2 block)
 
 
 // ══ ASSET 4-RING DETAIL MODAL ══
@@ -14937,9 +14930,11 @@ function assetPinDragEnd(evt){
       const scaleX=900/rect.width;
       const scaleY=(svg.viewBox?.baseVal?.height||540)/rect.height;
       const finalX=Math.max(50,Math.min(850,Math.round(_assetDrag.pinX+(evt.clientX-_assetDrag.startX)*scaleX)));
-      const finalY=Math.max(50,Math.min(500,Math.round(_assetDrag.pinY+(evt.clientY-_assetDrag.startY)*scaleY)));
+      const _vbH=svg.viewBox?.baseVal?.height||540;
+      const finalY=Math.max(30,Math.min(_vbH-30,Math.round(_assetDrag.pinY+(evt.clientY-_assetDrag.startY)*scaleY)));
       const pos=fpGetPositions();
       pos[_assetDrag.id]={floor:_assetDrag.floor,x:finalX,y:finalY};
+      _bldgLastMoved=Date.now();
       fpSavePositions(pos);
       showToast('📌 ย้าย '+_assetDrag.id+' → ('+finalX+','+finalY+')');
     }
@@ -14950,7 +14945,14 @@ function assetPinDragEnd(evt){
 
 // ══ FLOOR PLAN CUSTOM POSITIONS ══
 function fpGetPositions(){ return DB.get('fp_positions',{}); }
-function fpSavePositions(pos){ DB.set('fp_positions',pos); }
+function fpSavePositions(pos){
+  const old=DB.get('fp_positions',{});
+  DB.set('fp_positions',pos);
+  // sync changed / removed pins to backend (bldgPins)
+  Object.keys(pos).forEach(id=>{const n=pos[id],o=old[id];
+    if(!o||o.floor!==n.floor||o.x!==n.x||o.y!==n.y)fmSyncItem('bldgPins',{id,floor:n.floor,x:n.x,y:n.y});});
+  Object.keys(old).forEach(id=>{if(!pos[id])fmDelItem('bldgPins',id);});
+}
 
 let _fpPlaceMode=false;
 let fpTableShowAll=false;
@@ -14983,7 +14985,7 @@ function fpCanvasClick(evt){
   const svg=document.getElementById('fp-svg');
   const rect=svg.getBoundingClientRect();
   const scaleX=900/rect.width;
-  const scaleY=540/rect.height;
+  const scaleY=(svg.viewBox?.baseVal?.height||540)/rect.height;
   const x=Math.round((evt.clientX-rect.left)*scaleX);
   const y=Math.round((evt.clientY-rect.top)*scaleY);
   const floor=document.getElementById('fp-floor')?.value||'l1';
@@ -15133,6 +15135,7 @@ function fpHideTooltip(){
 function onFloorChange(){
   window._iotPendingFloor=null;
   const fl=document.getElementById('fp-floor')?.value||'l1';
+  if(_bldgSel!==fl){bldgSelectFloor(fl);return;}   // dropdown change → slide the floor plan in
   localStorage.setItem('fp_last_floor', fl);
   // แสดง/ซ่อน IoT panel ตามชั้น + สิทธิ์บริษัท
   const allowedCompany=['BHIRAJBURI','BITEC Bangna','BITEC'];
@@ -15161,27 +15164,25 @@ function renderFloorPlan(){
     }
   }
   const floor=sel?.value||'l1';
-  const layout=FLOOR_LAYOUT[floor]||FLOOR_LAYOUT.l1;
+  const _fobj=bldgFloorById(floor);
   const lbl=document.getElementById('fp-label');
-  if(lbl)lbl.textContent=layout.label;
+  if(lbl)lbl.textContent=_fobj?(_fobj.code+' — '+_fobj.name):floor;
   const allAssets=bFilter(DB.get('assets',[]));
   const openWRs=bFilter(DB.get('wr',[]));
   const customPos=fpGetPositions();
-  // Assets for this floor: either custom positioned here, or auto-detected
-  const floorAssets=allAssets.filter(a=>{
-    if(customPos[a.id]) return customPos[a.id].floor===floor;
-    return getAssetFloor(a)===floor;
-  });
+  // Assets for this floor: custom positioned here, else auto-detected from floor/location text
+  const floorAssets=allAssets.filter(a=>assetFloorId(a,customPos)===floor);
   const pin={active:'#22C55E',warning:'#EAB308',critical:'#EF4444',inactive:'#6B7280'};
-  // Build SVG
-  const svgH=_fpPdfData?.svgH||540;
-  let s=_fpPdfData?'':`<rect width="900" height="${svgH}" fill="#0D1117"/>`;
-  if(!_fpPdfData) layout.rooms.forEach(r=>{
-    s+=`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="8" fill="${r.fill}" stroke="#30363D" stroke-width="1.5"/>`;
-    if(r.label)s+=`<text x="${r.x+10}" y="${r.y+16}" text-anchor="start" fill="#6E7681" font-size="10" font-family="Orbitron,sans-serif" font-weight="600">${r.label}</text>`;
-  });
-  // Place mode grid hint
-  if(!_fpPdfData) {/* rooms already drawn */}
+  // Build SVG (uploaded floor plan image for this floor, if any)
+  if(_bldgEdit)bldgEnsureRooms(floor);
+  const _plan=BLDG.plans[floor];
+  const svgH=_plan?_plan.svgH:540;
+  const _svgEl=document.getElementById('fp-svg');
+  if(_svgEl){_svgEl.setAttribute('viewBox',`0 0 900 ${svgH}`);_svgEl.classList.toggle('editing',_bldgEdit);}
+  const _clr=document.getElementById('fp-clear-pdf');if(_clr)_clr.style.display=_plan?'inline-flex':'none';
+  let s=`<rect width="900" height="${svgH}" fill="#0D1117"/>`;
+  if(_plan)s+=`<image href="${_plan.dataUrl}" x="0" y="0" width="900" height="${svgH}" preserveAspectRatio="none" opacity=".92"/>`;
+  s+=bldgRoomsSVG(floor,!!_plan);
   if(_fpPlaceMode){
     s+=`<text x="450" y="${svgH-20}" text-anchor="middle" fill="rgba(249,115,22,.6)" font-size="11" font-family="sans-serif">📌 คลิกบน Building Critical Status เพื่อวาง Asset</text>`;
   }
@@ -15192,7 +15193,7 @@ function renderFloorPlan(){
 
   function getRS(aid){
     // Ring1: WR
-    const aws=allWR4.filter(w=>w.assetId===aid&&w.status!=='closed');
+    const aws=allWR4.filter(w=>w.assetId===aid&&bldgWrOpen(w));
     const cw=aws.filter(w=>w.priority==='critical');
     const r1=cw.length?{c:'#EF4444',blink:true,n:'WR Critical'}:
              aws.length?{c:'#F97316',blink:true,n:'WR Open'}:
@@ -15279,7 +15280,7 @@ function renderFloorPlan(){
       const wrN=rs.r1.blink?allWR4.filter(w=>w.assetId===a.id&&w.status!=='closed').length:0;
       s+=`<g id="fp-pin-${a.id}" style="cursor:grab"
          onmousedown="assetPinDragStart(event,'${a.id}','${floor}',${px},${py})"
-         onclick="fpHighlightPin('${a.id}')"
+         onclick="fpPinClick('${a.id}')"
          onmouseenter="fpPinHover('${a.id}',${px},${py})"
          onmouseleave="fpStartHideTimer()">
         ${radar}${ringSVG}
@@ -15335,6 +15336,448 @@ function renderFloorPlan(){
 }
 
 
+// ═══════════════════════════════════════════════════════════
+// BUILDING CRITICAL STATUS v2 — building diagram · floor config ·
+// per-floor plan (room boxes / uploaded image-PDF) · 4-ring roll-up
+// Data kinds (backend /fm-records): bldgFloors · bldgRooms · bldgPlans · bldgPins
+// ═══════════════════════════════════════════════════════════
+const BLDG={floors:DB.get('bldg_floors',[]),rooms:DB.get('bldg_rooms',[]),plans:{},loaded:false};
+let _bldgSel=null,_bldgEdit=false,_bldgRoomSel=null,_bsRows=[],_bldgRing='r1',_bldgRaf=0,_bldgRD=null,_bldgLastMoved=0;
+const bEsc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const bIsBase=c=>/^b\d+$/i.test(String(c).trim());
+
+function bldgIdFromCode(code){
+  const c=String(code).trim();
+  if(/^roof$/i.test(c))return'roof';
+  if(/^g$/i.test(c))return'l1';
+  if(/^b\d+$/i.test(c))return c.toLowerCase();
+  if(/^\d+$/.test(c)&&c!=='1')return'l'+c;
+  return'f_'+(c.toLowerCase().replace(/[^a-z0-9]+/g,'_')||Date.now().toString(36));
+}
+function bldgNameFromCode(c){
+  if(/^roof$/i.test(c))return'Roof Level';
+  if(/^g$/i.test(c))return'Ground Floor (G)';
+  if(bIsBase(c))return'ชั้น '+String(c).toUpperCase();
+  if(/^\d+$/.test(c))return'ชั้น '+c;
+  return String(c);
+}
+function bldgMakeFloors(basement,top,roof,prev){
+  basement=Math.max(0,Math.min(10,basement|0));top=Math.max(1,Math.min(80,top|0));
+  const codes=[];
+  if(roof)codes.push('Roof');
+  for(let n=top;n>=2;n--)codes.push(String(n));
+  codes.push('G');
+  for(let n=1;n<=basement;n++)codes.push('B'+n);
+  const old={};(prev||[]).forEach(f=>old[f.id]=f);
+  return codes.map((c,i)=>{const id=bldgIdFromCode(c);return{id,code:c,name:(old[id]&&old[id].name)||bldgNameFromCode(c),order:codes.length-i};});
+}
+function bldgFloors(){
+  const f=BLDG.floors.length?BLDG.floors:bldgMakeFloors(2,3,true);
+  return f.slice().sort((a,b)=>b.order-a.order);
+}
+function bldgFloorById(id){return bldgFloors().find(f=>f.id===id);}
+function bldgWrOpen(w){return w.status!=='closed'&&w.status!=='approved'&&w.status!=='cancelled';}
+
+// ── Data load (backend first, local fallback) ──
+async function bldgFetch(kind,lsKey,cache){
+  try{const rows=await API.get('/fm-records/'+kind);if(cache){try{DB.set(lsKey,rows);}catch(e){}}return rows;}
+  catch(e){console.warn('bldg load error ('+kind+')',e);return cache?DB.get(lsKey,[]):[];}
+}
+async function bldgLoadAll(){
+  const [fl,rm,pl,pn]=await Promise.all([
+    bldgFetch('bldgFloors','bldg_floors',true),
+    bldgFetch('bldgRooms','bldg_rooms',true),
+    bldgFetch('bldgPlans','bldg_plans',false),
+    bldgFetch('bldgPins','bldg_pins',false)
+  ]);
+  BLDG.floors=(fl||[]).filter(f=>f&&f.id);
+  BLDG.rooms=(rm||[]).filter(r=>r&&r.id);
+  BLDG.plans={};(pl||[]).forEach(p=>{if(p&&p.floorId)BLDG.plans[p.floorId]=p;});
+  // pins: backend → fp_positions (migrate existing local pins up if backend is empty)
+  const local=DB.get('fp_positions',{});
+  if((pn||[]).length){
+    const m={};pn.forEach(p=>{if(p&&p.id)m[p.id]={floor:p.floor,x:p.x,y:p.y};});
+    DB.set('fp_positions',m);
+  }else if(Object.keys(local).length){
+    Object.keys(local).forEach(id=>fmSyncItem('bldgPins',{id,floor:local[id].floor,x:local[id].x,y:local[id].y}));
+  }
+  BLDG.loaded=true;
+}
+async function bldgRefreshAll(){
+  try{
+    const jobs=[bldgLoadAll(),fmLoad('ppm','ppm'),fmLoad('ma','ma')];
+    jobs.push((async()=>{try{const w=(await API.get('/work-orders')).map(normalizeWO);WR=w;DB.set('wr',w);}catch(e){}})());
+    await Promise.all(jobs);
+  }catch(e){console.warn(e);}
+  bldgPopulateSelect();
+  renderBuilding();
+  if(_bldgSel&&bldgFloorById(_bldgSel)){renderFloorPlan();renderFloorSummary(_bldgSel);}
+  else bldgHidePanel();
+}
+function bldgPopulateSelect(){
+  const sel=document.getElementById('fp-floor');if(!sel)return;
+  const cur=_bldgSel||localStorage.getItem('fp_last_floor')||'l1';
+  sel.innerHTML=bldgFloors().map(f=>`<option value="${bEsc(f.id)}">${bEsc(f.code)} — ${bEsc(f.name)}</option>`).join('');
+  if(sel.querySelector(`option[value="${cur}"]`))sel.value=cur;
+}
+
+// ── Asset ⇄ floor mapping ──
+function assetFloorId(a,cp){
+  cp=cp||fpGetPositions();
+  const fl=bldgFloors();const ids=new Set(fl.map(f=>f.id));
+  if(cp[a.id]&&ids.has(cp[a.id].floor))return cp[a.id].floor;
+  const raw=String(a.floor||'').trim().toLowerCase();
+  if(raw){
+    const t=raw.replace(/^(ชั้น|floor|level|fl\.?|f)\s*/,'').replace(/\s+/g,'');
+    const hit=fl.find(f=>String(f.code).toLowerCase()===t||String(f.name).toLowerCase()===raw);
+    if(hit)return hit.id;
+    if(/^(ground|g\/f|gf)$/.test(t)&&ids.has('l1'))return'l1';
+  }
+  const txt=(String(a.floor||'')+' '+String(a.loc||'')).toLowerCase();
+  let m=txt.match(/\bb\s?(\d+)\b/);if(m&&ids.has('b'+m[1]))return'b'+m[1];
+  m=txt.match(/ชั้น\s*(\d+)/)||txt.match(/\b(\d+)\s*(?:f|fl|\/f)\b/)||txt.match(/\bl(\d+)\b/);
+  if(m){const id=m[1]==='1'?'l1':'l'+m[1];if(ids.has(id))return id;}
+  if(/roof|rooftop|cooling tower/.test(txt)&&ids.has('roof'))return'roof';
+  for(const[k,v]of Object.entries(ASSET_FLOOR_MAP)){if(txt.includes(k)&&ids.has(v))return v;}
+  if(ids.has('l1'))return'l1';
+  const nb=fl.filter(f=>!bIsBase(f.code)&&!/^roof$/i.test(f.code));
+  return(nb[nb.length-1]||fl[fl.length-1]||{}).id||'l1';
+}
+
+// ── Ring roll-up (mirrors the pin logic in renderFloorPlan) ──
+function bldgCtx(){return{wr:bFilter(DB.get('wr',[])),ppm:bFilter(DB.get('ppm',[])),ma:bFilter(DB.get('ma',[])),now:new Date()};}
+function bldgAssetRS(a,x){
+  const id=a.id,now=x.now;
+  const ow=x.wr.filter(w=>w.assetId===id&&bldgWrOpen(w));
+  const crit=ow.some(w=>w.priority==='critical');
+  const cl=x.wr.filter(w=>w.assetId===id&&w.status==='closed'&&w.mttr);
+  const avg=cl.length?cl.reduce((s,w)=>s+(w.mttr||0),0)/cl.length:0;
+  const avail=avg>0?Math.max(0,Math.min(100,100-(avg/720*100))):99;
+  const ap=x.ppm.filter(p=>p.assetId===id);
+  const in7=new Date(now.getTime()+7*864e5),in30=new Date(now.getTime()+30*864e5);
+  const od=ap.filter(p=>p.status!=='done'&&p.planDate&&new Date(p.planDate)<now).length;
+  const d7=ap.filter(p=>p.status!=='done'&&p.planDate&&new Date(p.planDate)>=now&&new Date(p.planDate)<=in7).length;
+  const d30=ap.filter(p=>p.status!=='done'&&p.planDate&&p.needParts&&new Date(p.planDate)>=now&&new Date(p.planDate)<=in30).length;
+  const rel=ap.length?ap.filter(p=>p.status==='done').length/ap.length*100:100;
+  const bm=x.ma.filter(m=>m.assetId===id&&(m.status==='expired'||m.status==='expiring')).length;
+  const st=a.status==='critical'||a.status==='warning';
+  return{
+    wrs:ow,
+    r1:ow.length>0, r1n:ow.length?(crit?'WR Critical ':'WR Open ')+ow.length:'',
+    r2:avail<98,    r2n:avail<98?'Availability '+avail.toFixed(1)+'%':'',
+    r3:!!(od||d7||d30||rel<90), r3n:od?'PPM เกินกำหนด '+od:d7?'PPM ใน 7 วัน '+d7:d30?'PPM+อะไหล่ ใน 30 วัน '+d30:rel<90?'Reliability '+Math.round(rel)+'%':'',
+    r4:bm>0,        r4n:bm?'MA หมด/ใกล้หมด '+bm:'',
+    crit:crit||a.status==='critical', warn:st
+  };
+}
+function bldgFloorStatus(){
+  const assets=bFilter(DB.get('assets',[])),x=bldgCtx(),cp=fpGetPositions(),out={};
+  bldgFloors().forEach(f=>out[f.id]={n:0,r1:0,r2:0,r3:0,r4:0,crit:0,warn:0,items:[]});
+  assets.forEach(a=>{
+    const o=out[assetFloorId(a,cp)];if(!o)return;
+    const rs=bldgAssetRS(a,x);o.n++;
+    if(rs.r1)o.r1++;if(rs.r2)o.r2++;if(rs.r3)o.r3++;if(rs.r4)o.r4++;
+    if(rs.crit)o.crit++;if(rs.warn)o.warn++;
+    if(rs.r1||rs.r2||rs.r3||rs.r4||rs.warn||rs.crit)o.items.push({a,rs});
+  });
+  Object.values(out).forEach(o=>{o.bad=(o.r1+o.r2+o.r3+o.r4+o.warn+o.crit)>0;});
+  return out;
+}
+
+// ── Building diagram ──
+const BR_COL=['#F97316','#06B6D4','#A855F7','#EC4899'];
+function renderBuilding(){
+  const svg=document.getElementById('bldg-svg');if(!svg)return;
+  const fl=bldgFloors(),st=bldgFloorStatus();BLDG._st=st;
+  const W=360,H=36,G=3,TOP=46,X=28,SW=304;
+  const lastUp=fl.map(f=>!bIsBase(f.code)).lastIndexOf(true);
+  let y=TOP,s='';
+  const hasBase=fl.some(f=>bIsBase(f.code));
+  const total=TOP+fl.length*(H+G)+(hasBase?22:0)+16;
+  // roof cap + frame
+  s+=`<polygon points="${X-10},${TOP-4} ${W/2},10 ${W-X+10},${TOP-4}" fill="#1C2333" stroke="#30363D" stroke-width="2"/>`;
+  s+=`<text x="${W/2}" y="34" text-anchor="middle" fill="#8B949E" font-size="10" font-family="Orbitron,sans-serif" font-weight="700">TKO BUILDING</text>`;
+  s+=`<rect x="${X-8}" y="${TOP-4}" width="${SW+16}" height="${total-TOP-8}" rx="4" fill="#0D1117" stroke="#30363D" stroke-width="2"/>`;
+  fl.forEach((f,i)=>{
+    const o=st[f.id]||{n:0,r1:0,r2:0,r3:0,r4:0,crit:0,bad:false};
+    const col=o.crit?'#DC2626':o.bad?'#F97316':'#16A34A';
+    const sel=_bldgSel===f.id;
+    s+=`<g class="bldg-floor${sel?' sel':''}" onmouseenter="bldgTip(event,'${f.id}')" onmousemove="bldgTipMove(event)" onmouseleave="bldgTipHide()" onclick="bldgSelectFloor('${f.id}')">`;
+    s+=`<rect class="bldg-slab" x="${X}" y="${y}" width="${SW}" height="${H}" rx="5" fill="${col}" fill-opacity="${o.bad?.85:.55}" stroke="${sel?'#F97316':'rgba(255,255,255,.12)'}" stroke-width="${sel?3:1}">${o.bad?`<animate attributeName="fill-opacity" values=".9;.5;.9" dur="1.6s" repeatCount="indefinite"/>`:''}</rect>`;
+    s+=`<text x="${X+10}" y="${y+H/2+1}" dominant-baseline="middle" fill="#fff" font-size="13" font-weight="800" font-family="Orbitron,sans-serif">${bEsc(f.code)}</text>`;
+    s+=`<text x="${X+52}" y="${y+H/2+1}" dominant-baseline="middle" fill="rgba(255,255,255,.9)" font-size="10.5" font-family="sans-serif">${bEsc(String(f.name).substring(0,18))}</text>`;
+    [o.r1,o.r2,o.r3,o.r4].forEach((n,k)=>{
+      const cx=X+SW-84+k*22,cy=y+H/2;
+      s+=`<circle cx="${cx}" cy="${cy}" r="8" fill="${n?BR_COL[k]:'rgba(0,0,0,.35)'}" stroke="${n?'#fff':'rgba(255,255,255,.25)'}" stroke-width="1.5"/>`;
+      if(n)s+=`<text x="${cx}" y="${cy+.5}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="9" font-weight="800">${n}</text>`;
+    });
+    s+='</g>';
+    y+=H+G;
+    if(i===lastUp&&hasBase){
+      s+=`<rect x="${X-8}" y="${y}" width="${SW+16}" height="16" fill="#3F2D1A" stroke="#6B4F2A"/>`;
+      s+=`<text x="${W/2}" y="${y+8.5}" text-anchor="middle" dominant-baseline="middle" fill="#C9A66B" font-size="8.5" font-family="Orbitron,sans-serif" letter-spacing="2">GROUND LEVEL</text>`;
+      y+=22;
+    }
+  });
+  svg.setAttribute('viewBox',`0 0 ${W} ${total}`);
+  svg.innerHTML=s;
+}
+function bldgTip(evt,fid){
+  const f=bldgFloorById(fid),o=(BLDG._st||{})[fid];const tip=document.getElementById('bldg-tip');if(!f||!tip)return;
+  const row=(c,l,n)=>`<div style="display:flex;justify-content:space-between;gap:14px"><span style="color:${c}">● ${l}</span><b style="color:${n?c:'var(--green)'}">${n||'OK'}</b></div>`;
+  tip.innerHTML=`<div style="font-weight:800;color:var(--orange);font-size:12px;margin-bottom:2px">${bEsc(f.code)} — ${bEsc(f.name)}</div><div style="color:var(--text3);margin-bottom:6px">${o?o.n:0} assets · ${o&&o.bad?'<span style="color:#F97316">⚠ มีกิจกรรม</span>':'<span style="color:var(--green)">✔ ปกติ</span>'}</div>`+
+    (o?row(BR_COL[0],'WR',o.r1)+row(BR_COL[1],'OPT',o.r2)+row(BR_COL[2],'PPM',o.r3)+row(BR_COL[3],'MA',o.r4):'');
+  tip.style.display='block';bldgTipMove(evt);
+}
+function bldgTipMove(evt){const t=document.getElementById('bldg-tip');if(!t)return;t.style.left=Math.min(evt.clientX+16,window.innerWidth-200)+'px';t.style.top=(evt.clientY+12)+'px';}
+function bldgTipHide(){const t=document.getElementById('bldg-tip');if(t)t.style.display='none';}
+
+// ── Select floor → floor plan slides in ──
+function bldgHidePanel(){
+  _bldgSel=null;
+  const p=document.getElementById('fp-detail-panel'),h=document.getElementById('fp-detail-hint');
+  if(p)p.style.display='none';if(h)h.style.display='flex';
+  renderBuilding();
+}
+function bldgSelectFloor(fid){
+  if(!bldgFloorById(fid))return;
+  _bldgSel=fid;localStorage.setItem('fp_last_floor',fid);
+  const sel=document.getElementById('fp-floor');if(sel){bldgPopulateSelect();sel.value=fid;}
+  const p=document.getElementById('fp-detail-panel'),h=document.getElementById('fp-detail-hint');
+  if(h)h.style.display='none';
+  if(p){p.style.display='block';p.classList.remove('slide');void p.offsetWidth;p.classList.add('slide');}
+  renderBuilding();
+  onFloorChange();            // draws floor plan + IoT + alerts
+  renderFloorSummary(fid);
+  if(window.innerWidth<900&&p)p.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function bldgEnsureSummaryEl(){
+  const p=document.getElementById('fp-detail-panel');if(!p)return null;
+  let el=document.getElementById('fp-ring-summary');
+  if(!el){
+    el=document.createElement('div');el.id='fp-ring-summary';
+    el.style.cssText='background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:12px';
+    p.insertBefore(el,p.firstChild);
+    const eb=document.createElement('div');eb.id='bldg-edit-bar';
+    eb.style.cssText='display:none;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:var(--orange-dim);border:1px solid rgba(249,115,22,.4);border-radius:var(--radius-lg);margin-bottom:12px';
+    eb.innerHTML=`<b style="color:var(--orange);font-size:12px">✏ โหมดแก้ไขผังห้อง</b><span style="font-size:11px;color:var(--text2)">ลากกล่อง = ย้าย · ลากมุมส้ม = ย่อ/ขยาย · ดับเบิลคลิก = เปลี่ยนชื่อ</span>
+      <button class="btn btn-primary btn-xs" onclick="bldgAddRoom()">+ เพิ่มห้อง/เครื่องจักร</button>
+      <button class="btn btn-danger btn-xs" onclick="bldgDeleteRoom()">🗑 ลบกล่องที่เลือก</button>
+      <button class="btn btn-secondary btn-xs" onclick="bldgToggleEdit()">เสร็จสิ้น</button>`;
+    p.insertBefore(eb,el.nextSibling);
+  }
+  return el;
+}
+function renderFloorSummary(fid){
+  const el=bldgEnsureSummaryEl();const f=bldgFloorById(fid);if(!el||!f)return;
+  const o=(BLDG._st||bldgFloorStatus())[fid]||{n:0,r1:0,r2:0,r3:0,r4:0,items:[],bad:false,crit:0};
+  const names=['WR','OPT','PPM','MA'],keys=['r1','r2','r3','r4'];
+  const views=['workrequest','operation','ppm','contract'];
+  const chips=keys.map((k,i)=>`<button onclick="bldgPickRing('${k}')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:20px;border:2px solid ${BR_COL[i]};background:${_bldgRing===k?BR_COL[i]+'33':'transparent'};color:var(--text);font-size:12px;font-weight:700">
+      <span style="width:12px;height:12px;border-radius:50%;background:${o[k]?BR_COL[i]:'#22C55E'}"></span>${names[i]} <b style="color:${o[k]?BR_COL[i]:'var(--green)'}">${o[k]||'OK'}</b></button>`).join('');
+  const ri=keys.indexOf(_bldgRing);
+  const rows=o.items.filter(it=>it.rs[_bldgRing]);
+  let list='';
+  if(!rows.length){
+    list=`<div style="padding:12px;text-align:center;color:var(--green);font-size:12px">✅ วง ${names[ri]} ปกติ ในชั้นนี้</div>`;
+  }else{
+    list=rows.map(({a,rs})=>{
+      const why=rs[_bldgRing+'n'];
+      let wrx='';
+      if(_bldgRing==='r1'){
+        wrx=rs.wrs.map(w=>`<div style="display:flex;align-items:center;gap:6px;margin-top:6px;padding:6px 8px;background:var(--bg2);border-radius:6px;font-size:11px">
+          <span class="ffm" style="color:var(--orange)">${bEsc(w.id)}</span>
+          <span style="flex:1;color:var(--text2)">${bEsc(String(w.desc||'—').substring(0,60))}</span>
+          <span style="color:${w.priority==='critical'?'#EF4444':'var(--text3)'};font-weight:700">${bEsc(String(w.status||'').toUpperCase())}</span>
+          <button class="btn btn-secondary btn-xs" onclick="event.stopPropagation();wrOpenDetail('${bEsc(w.id)}')">📋 เปิด WR / มอบหมาย</button></div>`).join('');
+      }
+      return`<div style="padding:10px;background:var(--bg3);border:1px solid var(--border);border-left:3px solid ${BR_COL[ri]};border-radius:var(--radius);margin-top:8px;cursor:pointer" onclick="showAssetStatusModal('${bEsc(a.id)}')">
+        <div style="display:flex;gap:8px;align-items:center"><span class="tag ffm">${bEsc(a.id)}</span><b style="font-size:12px">${bEsc(String(a.name||'').substring(0,40))}</b>
+        <span style="margin-left:auto;font-size:11px;color:${BR_COL[ri]};font-weight:700">${bEsc(why)}</span></div>${wrx}</div>`;
+    }).join('');
+  }
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      <div style="font-family:var(--font-display);font-size:15px;font-weight:800;color:var(--orange)">${bEsc(f.code)} — ${bEsc(f.name)}</div>
+      <span style="font-size:11px;padding:2px 10px;border-radius:12px;background:${o.crit?'#DC262633':o.bad?'#F9731633':'#16A34A33'};color:${o.crit?'#EF4444':o.bad?'#F97316':'#22C55E'};font-weight:700">${o.crit?'วิกฤต':o.bad?'มีกิจกรรม':'ปกติ'}</span>
+      <span style="font-size:11px;color:var(--text3)">${o.n} assets</span>
+      <button class="btn btn-secondary btn-xs" style="margin-left:auto" onclick="bldgHidePanel()">✕ ปิดผัง</button></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">${chips}
+      <button class="btn btn-secondary btn-xs" style="margin-left:auto" onclick="showView('${views[ri]}')">ไปหน้า ${names[ri]} →</button></div>${list}`;
+}
+function bldgPickRing(k){_bldgRing=k;if(_bldgSel)renderFloorSummary(_bldgSel);}
+
+// ── Floor setup modal ──
+function bldgOpenSetup(){
+  _bsRows=bldgFloors().map(f=>({...f}));
+  const base=_bsRows.filter(f=>bIsBase(f.code)).length;
+  const nums=_bsRows.map(f=>/^\d+$/.test(f.code)?+f.code:0);
+  document.getElementById('bs-basement').value=base;
+  document.getElementById('bs-above').value=Math.max(1,...nums);
+  document.getElementById('bs-roof').checked=_bsRows.some(f=>/^roof$/i.test(f.code));
+  bldgSetupRender();openModal('m-bldg-setup');
+}
+function bldgSetupRender(){
+  const tb=document.getElementById('bs-tbody');if(!tb)return;
+  tb.innerHTML=_bsRows.map((f,i)=>`<tr>
+    <td class="ffm" style="font-size:11px;color:var(--text3)">${i+1}</td>
+    <td><input class="form-control" style="width:90px" value="${bEsc(f.code)}" oninput="_bsRows[${i}].code=this.value"></td>
+    <td><input class="form-control" value="${bEsc(f.name)}" oninput="_bsRows[${i}].name=this.value"></td>
+    <td><button class="btn btn-secondary btn-xs" onclick="bldgSetupMove(${i},-1)">▲</button> <button class="btn btn-secondary btn-xs" onclick="bldgSetupMove(${i},1)">▼</button> <button class="btn btn-danger btn-xs" onclick="bldgSetupDel(${i})">✕</button></td></tr>`).join('');
+}
+function bldgGenerateFloors(){
+  const b=+document.getElementById('bs-basement').value||0,t=+document.getElementById('bs-above').value||1,r=document.getElementById('bs-roof').checked;
+  _bsRows=bldgMakeFloors(b,t,r,_bsRows);bldgSetupRender();
+}
+function bldgAddFloorRow(){_bsRows.unshift({id:'f_'+Date.now().toString(36),code:'',name:'ชั้นใหม่',order:0});bldgSetupRender();}
+function bldgSetupMove(i,d){const j=i+d;if(j<0||j>=_bsRows.length)return;[_bsRows[i],_bsRows[j]]=[_bsRows[j],_bsRows[i]];bldgSetupRender();}
+function bldgSetupDel(i){_bsRows.splice(i,1);bldgSetupRender();}
+async function bldgSaveSetup(){
+  if(!_bsRows.length){showToast('⚠ ต้องมีอย่างน้อย 1 ชั้น');return;}
+  const codes=new Set(),ids=new Set();
+  for(const r of _bsRows){
+    r.code=String(r.code||'').trim();r.name=String(r.name||'').trim()||bldgNameFromCode(r.code);
+    if(!r.code){showToast('⚠ มีชั้นที่ยังไม่ใส่รหัส');return;}
+    if(codes.has(r.code.toLowerCase())){showToast('⚠ รหัสชั้นซ้ำ: '+r.code);return;}
+    codes.add(r.code.toLowerCase());
+    if(ids.has(r.id))r.id='f_'+Date.now().toString(36)+ids.size;
+    ids.add(r.id);
+  }
+  const n=_bsRows.length,next=_bsRows.map((r,i)=>({id:r.id,code:r.code,name:r.name,order:n-i}));
+  const old=BLDG.floors.map(f=>f.id);
+  BLDG.floors=next;DB.set('bldg_floors',next);
+  old.filter(id=>!ids.has(id)).forEach(id=>fmDelItem('bldgFloors',id));
+  await Promise.all(next.map(f=>fmSyncItem('bldgFloors',f)));
+  closeModal('m-bldg-setup');
+  bldgPopulateSelect();
+  if(_bldgSel&&!ids.has(_bldgSel))bldgHidePanel();
+  renderBuilding();if(_bldgSel){renderFloorPlan();renderFloorSummary(_bldgSel);}
+  showToast('✅ บันทึกอาคาร '+n+' ชั้น และ sync เข้า backend แล้ว');
+}
+
+// ── Rooms: edit mode ──
+function bldgFloorRooms(fid){
+  const r=BLDG.rooms.filter(x=>x.floorId===fid);if(r.length)return r;
+  const d=FLOOR_LAYOUT[fid];
+  if(d)return d.rooms.map((x,i)=>({id:'dflt_'+fid+'_'+i,floorId:fid,label:x.label,x:x.x,y:x.y,w:x.w,h:x.h,fill:x.fill,_dflt:true}));
+  return[{id:'dflt_'+fid+'_0',floorId:fid,label:'',x:50,y:40,w:800,h:450,fill:'#1C2333',_dflt:true}];
+}
+function bldgEnsureRooms(fid){
+  if(BLDG.rooms.some(x=>x.floorId===fid))return;
+  bldgFloorRooms(fid).forEach((r,i)=>{
+    const n={id:'r_'+Date.now().toString(36)+i,floorId:fid,label:r.label,x:r.x,y:r.y,w:r.w,h:r.h,fill:r.fill};
+    BLDG.rooms.push(n);fmSyncItem('bldgRooms',n);
+  });
+}
+function bldgRoomsSVG(fid,hasPlan){
+  let s='';
+  bldgFloorRooms(fid).forEach(r=>{
+    if(hasPlan&&r._dflt)return;
+    const sel=_bldgEdit&&_bldgRoomSel===r.id;
+    const ev=_bldgEdit?` class="fp-room-edit" onmousedown="bldgRoomDown(event,'${r.id}','move')" ondblclick="bldgRoomRename('${r.id}')"`:'';
+    s+=`<g${ev}><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="8" fill="${r.fill||'#21262D'}" fill-opacity="${hasPlan?.4:1}" stroke="${sel?'#F97316':(hasPlan?'#F97316':'#30363D')}" stroke-width="${sel?2.5:1.5}" ${hasPlan?'stroke-opacity=".6" stroke-dasharray="5 3"':''}/>`;
+    if(r.label)s+=`<text x="${r.x+10}" y="${r.y+16}" fill="${hasPlan?'#FDBA74':'#6E7681'}" font-size="10" font-family="Orbitron,sans-serif" font-weight="600" style="pointer-events:none">${bEsc(r.label)}</text>`;
+    if(_bldgEdit)s+=`<rect class="fp-room-handle" x="${r.x+r.w-12}" y="${r.y+r.h-12}" width="14" height="14" rx="3" fill="#F97316" onmousedown="bldgRoomDown(event,'${r.id}','resize')"/>`;
+    s+='</g>';
+  });
+  return s;
+}
+function bldgToggleEdit(){
+  const fid=document.getElementById('fp-floor')?.value||_bldgSel;
+  if(!_bldgEdit&&(!_bldgSel)){if(fid)bldgSelectFloor(fid);else{showToast('⚠ เลือกชั้นก่อน');return;}}
+  _bldgEdit=!_bldgEdit;_bldgRoomSel=null;
+  if(_bldgEdit&&_bldgSel)bldgEnsureRooms(_bldgSel);
+  const b=document.getElementById('bldg-edit-btn');if(b){b.style.background=_bldgEdit?'var(--orange)':'';b.style.color=_bldgEdit?'#fff':'';}
+  bldgEnsureSummaryEl();
+  const eb=document.getElementById('bldg-edit-bar');if(eb)eb.style.display=_bldgEdit?'flex':'none';
+  const svg=document.getElementById('fp-svg');if(svg)svg.classList.toggle('editing',_bldgEdit);
+  renderFloorPlan();
+}
+function bldgSvgPt(evt){
+  const svg=document.getElementById('fp-svg'),r=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal;
+  return{x:(evt.clientX-r.left)*vb.width/r.width,y:(evt.clientY-r.top)*vb.height/r.height};
+}
+function bldgRoomDown(evt,id,mode){
+  if(!_bldgEdit)return;
+  evt.preventDefault();evt.stopPropagation();
+  const r=BLDG.rooms.find(x=>x.id===id);if(!r)return;
+  _bldgRoomSel=id;
+  _bldgRD={id,mode,p:bldgSvgPt(evt),o:{x:r.x,y:r.y,w:r.w,h:r.h}};
+  window.addEventListener('mousemove',bldgRoomMove);window.addEventListener('mouseup',bldgRoomUp);
+  renderFloorPlan();
+}
+function bldgRoomMove(evt){
+  if(!_bldgRD)return;
+  const r=BLDG.rooms.find(x=>x.id===_bldgRD.id);if(!r)return;
+  const p=bldgSvgPt(evt),dx=p.x-_bldgRD.p.x,dy=p.y-_bldgRD.p.y,o=_bldgRD.o;
+  if(_bldgRD.mode==='move'){r.x=Math.round(o.x+dx);r.y=Math.round(o.y+dy);}
+  else{r.w=Math.max(40,Math.round(o.w+dx));r.h=Math.max(30,Math.round(o.h+dy));}
+  if(!_bldgRaf)_bldgRaf=requestAnimationFrame(()=>{_bldgRaf=0;renderFloorPlan();});
+}
+function bldgRoomUp(){
+  window.removeEventListener('mousemove',bldgRoomMove);window.removeEventListener('mouseup',bldgRoomUp);
+  if(!_bldgRD)return;
+  const r=BLDG.rooms.find(x=>x.id===_bldgRD.id);_bldgRD=null;
+  if(r){fmSyncItem('bldgRooms',r);}
+  renderFloorPlan();
+}
+function bldgRoomRename(id){
+  const r=BLDG.rooms.find(x=>x.id===id);if(!r)return;
+  const v=prompt('ชื่อห้อง/เครื่องจักร:',r.label||'');if(v===null)return;
+  r.label=v.trim();fmSyncItem('bldgRooms',r);renderFloorPlan();
+}
+function bldgAddRoom(){
+  if(!_bldgSel)return;
+  const v=prompt('ชื่อห้องเครื่องจักร / เครื่องจักรหลัก:','ห้องเครื่อง');if(v===null)return;
+  const r={id:'r_'+Date.now().toString(36),floorId:_bldgSel,label:v.trim(),x:120,y:100,w:200,h:120,fill:'#21262D'};
+  BLDG.rooms.push(r);_bldgRoomSel=r.id;fmSyncItem('bldgRooms',r);renderFloorPlan();
+}
+function bldgDeleteRoom(){
+  if(!_bldgRoomSel){showToast('⚠ คลิกเลือกกล่องก่อน');return;}
+  const r=BLDG.rooms.find(x=>x.id===_bldgRoomSel);if(!r)return;
+  if(!confirm('ลบกล่อง "'+(r.label||'(ไม่มีชื่อ)')+'" ?'))return;
+  BLDG.rooms=BLDG.rooms.filter(x=>x.id!==r.id);fmDelItem('bldgRooms',r.id);_bldgRoomSel=null;renderFloorPlan();
+}
+
+// ── Pin click (ignore the click that ends a drag) ──
+function fpPinClick(id){if(Date.now()-_bldgLastMoved<350)return;showAssetStatusModal(id);}
+
+// ── Floor plan image / PDF per floor ──
+async function fpLoadPDF(evt){
+  const file=evt.target.files[0];evt.target.value='';if(!file)return;
+  const fid=document.getElementById('fp-floor')?.value||_bldgSel||'l1';
+  try{
+    showToast('⏳ กำลังประมวลผล floor plan...');
+    const MAXW=1600,cv=document.createElement('canvas'),ctx=cv.getContext('2d');
+    if(/pdf/i.test(file.type)||/\.pdf$/i.test(file.name)){
+      if(!window.pdfjsLib){showToast('⚠ PDF.js ยังโหลดไม่เสร็จ กรุณารอสักครู่');return;}
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+      const page=await pdf.getPage(1),v0=page.getViewport({scale:1}),vp=page.getViewport({scale:MAXW/v0.width});
+      cv.width=Math.round(vp.width);cv.height=Math.round(vp.height);
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);
+      await page.render({canvasContext:ctx,viewport:vp}).promise;
+    }else{
+      const url=URL.createObjectURL(file),img=new Image();
+      await new Promise((ok,ng)=>{img.onload=ok;img.onerror=ng;img.src=url;});
+      const sc=Math.min(1,MAXW/img.naturalWidth);
+      cv.width=Math.round(img.naturalWidth*sc);cv.height=Math.round(img.naturalHeight*sc);
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(img,0,0,cv.width,cv.height);
+      URL.revokeObjectURL(url);
+    }
+    const plan={id:fid,floorId:fid,dataUrl:cv.toDataURL('image/jpeg',.8),w:cv.width,h:cv.height,svgH:Math.round(cv.height*900/cv.width)};
+    BLDG.plans[fid]=plan;
+    await fmSyncItem('bldgPlans',plan);
+    showToast('✅ อัปโหลด floor plan ของชั้นนี้แล้ว (sync เข้า backend)');
+    renderFloorPlan();
+  }catch(err){showToast('❌ ไม่สามารถอ่านไฟล์: '+(err.message||err));console.error(err);}
+}
+function fpClearPDF(){
+  const fid=document.getElementById('fp-floor')?.value||_bldgSel||'l1';
+  if(!BLDG.plans[fid])return;
+  delete BLDG.plans[fid];fmDelItem('bldgPlans',fid);
+  showToast('🗑 ลบ floor plan ของชั้นนี้แล้ว');renderFloorPlan();
+}
+
 // ══ FLOOR PLAN ALERT NOTIFY PANEL ══
 let _fpBlinkTimer=null;
 
@@ -15344,7 +15787,7 @@ function renderFpAlerts(floor){
   const customPos=fpGetPositions();
   const floorAssets=allAssets.filter(a=>{
     if(customPos[a.id]) return customPos[a.id].floor===floor;
-    return getAssetFloor(a)===floor;
+    return assetFloorId(a,customPos)===floor;
   });
   const criticals=floorAssets.filter(a=>a.status==='critical');
   const warnings=floorAssets.filter(a=>a.status==='warning');
