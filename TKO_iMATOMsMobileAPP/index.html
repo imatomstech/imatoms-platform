@@ -762,6 +762,7 @@ function fmSubTabs(active){
   const th = ST.lang==='th';
   const tabs = [
     { k:'overview', label: th?'ภาพรวม':'Overview' },
+    { k:'bldg', label: th?'อาคาร':'Building' },
     { k:'wr', label:'WR' },
     { k:'om', label:'OM' },
     { k:'ppm', label:'PPM' },
@@ -4403,11 +4404,187 @@ function fmInv(){
     + invItemFormOverlay() + invItemDetailOverlay() + invReceiveFormOverlay() + invIssueFormOverlay();
 }
 
+/* ══ Building Critical Status — same data as Desktop FM (bldgFloors / bldgRooms /
+   bldgPlans / bldgPins via /fm-records, plus WR / PPM / MA / assets) ══ */
+const MB_COL = ['#F97316','#06B6D4','#A855F7','#EC4899'];
+function mbIsBase(c){ return /^b\d+$/i.test(String(c).trim()); }
+function mbIdFromCode(c){
+  c = String(c).trim();
+  if(/^roof$/i.test(c)) return 'roof';
+  if(/^g$/i.test(c)) return 'l1';
+  if(/^b\d+$/i.test(c)) return c.toLowerCase();
+  if(/^\d+$/.test(c) && c!=='1') return 'l'+c;
+  return c;
+}
+function mbFloors(){
+  let rows = (fmKindData('bldgFloors')||[]).filter(function(f){return f && f.id;});
+  if(!rows.length){
+    const d = [['Roof','Roof Level'],['3','ชั้น 3'],['2','ชั้น 2'],['G','Ground Floor (G)'],['B1','ชั้น B1'],['B2','ชั้น B2']];
+    rows = d.map(function(a,i){ return { id:mbIdFromCode(a[0]), code:a[0], name:a[1], order:d.length-i }; });
+  }
+  return rows.slice().sort(function(a,b){ return (b.order||0)-(a.order||0); });
+}
+function mbPins(){
+  const m = {};
+  (fmKindData('bldgPins')||[]).forEach(function(p){ if(p && p.id) m[p.id] = p; });
+  return m;
+}
+function mbAssetFloor(a, pins, floors){
+  const ids = {}; floors.forEach(function(f){ ids[f.id]=1; });
+  if(pins[a.id] && ids[pins[a.id].floor]) return pins[a.id].floor;
+  const raw = String(a.floor||'').trim().toLowerCase();
+  if(raw){
+    const t = raw.replace(/^(ชั้น|floor|level|fl\.?|f)\s*/,'').replace(/\s+/g,'');
+    const hit = floors.find(function(f){ return String(f.code).toLowerCase()===t || String(f.name).toLowerCase()===raw; });
+    if(hit) return hit.id;
+    if(/^(ground|g\/f|gf)$/.test(t) && ids.l1) return 'l1';
+  }
+  const txt = (String(a.floor||'')+' '+String(a.loc||'')).toLowerCase();
+  let m = txt.match(/\bb\s?(\d+)\b/); if(m && ids['b'+m[1]]) return 'b'+m[1];
+  m = txt.match(/ชั้น\s*(\d+)/) || txt.match(/\b(\d+)\s*(?:f|fl|\/f)\b/) || txt.match(/\bl(\d+)\b/);
+  if(m){ const id = m[1]==='1' ? 'l1' : 'l'+m[1]; if(ids[id]) return id; }
+  if(/roof|rooftop|cooling tower/.test(txt) && ids.roof) return 'roof';
+  if(ids.l1) return 'l1';
+  const nb = floors.filter(function(f){ return !mbIsBase(f.code) && !/^roof$/i.test(f.code); });
+  return (nb[nb.length-1] || floors[floors.length-1] || {}).id || 'l1';
+}
+function mbAssetRS(a, wr, ppm, ma){
+  const id = a.id, now = new Date();
+  const ow = wr.filter(function(w){ return w.assetId===id && w.status!=='closed' && w.status!=='approved' && w.status!=='cancelled'; });
+  const crit = ow.some(function(w){ return w.priority==='critical'; });
+  const cl = wr.filter(function(w){ return w.assetId===id && w.status==='closed' && w.mttr; });
+  const avg = cl.length ? cl.reduce(function(s,w){return s+(w.mttr||0);},0)/cl.length : 0;
+  const avail = avg>0 ? Math.max(0,Math.min(100,100-(avg/720*100))) : 99;
+  const ap = ppm.filter(function(p){ return p.assetId===id; });
+  const in7 = new Date(now.getTime()+7*864e5), in30 = new Date(now.getTime()+30*864e5);
+  const od = ap.filter(function(p){ return p.status!=='done' && p.planDate && new Date(p.planDate)<now; }).length;
+  const d7 = ap.filter(function(p){ return p.status!=='done' && p.planDate && new Date(p.planDate)>=now && new Date(p.planDate)<=in7; }).length;
+  const d30 = ap.filter(function(p){ return p.status!=='done' && p.planDate && p.needParts && new Date(p.planDate)>=now && new Date(p.planDate)<=in30; }).length;
+  const rel = ap.length ? ap.filter(function(p){return p.status==='done';}).length/ap.length*100 : 100;
+  const bm = ma.filter(function(m){ return m.assetId===id && (m.status==='expired'||m.status==='expiring'); }).length;
+  return {
+    wrs: ow, crit: crit || a.status==='critical', warn: a.status==='warning',
+    r1: ow.length>0, r1n: ow.length ? ('WR '+ow.length) : '',
+    r2: avail<98, r2n: avail<98 ? ('Availability '+avail.toFixed(1)+'%') : '',
+    r3: !!(od||d7||d30||rel<90), r3n: od ? ('PPM overdue '+od) : d7 ? ('PPM ≤7d '+d7) : d30 ? ('PPM+parts ≤30d '+d30) : rel<90 ? ('Reliability '+Math.round(rel)+'%') : '',
+    r4: bm>0, r4n: bm ? ('MA '+bm) : ''
+  };
+}
+function mbStatus(floors){
+  const assets = (ST.modData.fm && ST.modData.fm.assets) || [];
+  const wr = wrData(), ppm = fmKindData('ppm') || fmDB('ppm') || [], ma = fmKindData('ma') || fmDB('ma') || [];
+  const pins = mbPins(), out = {};
+  floors.forEach(function(f){ out[f.id] = { n:0, c:[0,0,0,0], crit:0, warn:0, items:[] }; });
+  assets.forEach(function(a){
+    const o = out[mbAssetFloor(a, pins, floors)]; if(!o) return;
+    const rs = mbAssetRS(a, wr, ppm, ma); o.n++;
+    [rs.r1,rs.r2,rs.r3,rs.r4].forEach(function(b,i){ if(b) o.c[i]++; });
+    if(rs.crit) o.crit++; if(rs.warn) o.warn++;
+    if(rs.r1||rs.r2||rs.r3||rs.r4||rs.crit||rs.warn) o.items.push({ a:a, rs:rs });
+  });
+  Object.keys(out).forEach(function(k){ const o = out[k]; o.bad = (o.c[0]+o.c[1]+o.c[2]+o.c[3]+o.crit+o.warn)>0; });
+  return out;
+}
+function mbPlanSvg(fid, items, floorAssets, pins){
+  const plan = ((fmKindData('bldgPlans')||[]).find(function(p){ return p.floorId===fid; })) || null;
+  const H = plan ? plan.svgH : 540;
+  let s = '<rect width="900" height="'+H+'" fill="#0D1117"/>';
+  if(plan && plan.dataUrl) s += '<image href="'+plan.dataUrl+'" x="0" y="0" width="900" height="'+H+'" preserveAspectRatio="none" opacity=".92"/>';
+  (fmKindData('bldgRooms')||[]).filter(function(r){ return r.floorId===fid; }).forEach(function(r){
+    s += '<rect x="'+r.x+'" y="'+r.y+'" width="'+r.w+'" height="'+r.h+'" rx="8" fill="'+(r.fill||'#21262D')+'" fill-opacity="'+(plan?0.4:1)+'" stroke="'+(plan?'#F97316':'#30363D')+'" stroke-width="1.5"/>';
+    if(r.label) s += '<text x="'+(r.x+10)+'" y="'+(r.y+18)+'" fill="'+(plan?'#FDBA74':'#8B949E')+'" font-size="15" font-weight="600">'+esc(r.label)+'</text>';
+  });
+  const cols = Math.min(floorAssets.length,5) || 1;
+  floorAssets.forEach(function(it, i){
+    const a = it.a, rs = it.rs, p = pins[a.id];
+    let px, py;
+    if(p && p.floor===fid){ px = p.x; py = p.y; }
+    else {
+      const col = i%cols, row = Math.floor(i/cols), rows = Math.ceil(floorAssets.length/cols);
+      px = 100 + (cols>1 ? col/(cols-1)*700 : 350);
+      py = 90 + (rows>1 ? row/(rows-1)*Math.max(120,H-260) : 120);
+    }
+    const flags = [rs.r4, rs.r3, rs.r2, rs.r1], rad = [46,36,26,16];
+    let g = '';
+    flags.forEach(function(bad, k){
+      const c = bad ? MB_COL[3-k] : '#22C55E';
+      g += '<circle cx="'+px+'" cy="'+py+'" r="'+rad[k]+'" fill="'+c+'" fill-opacity="'+(bad?.22:.08)+'" stroke="'+c+'" stroke-width="4">'
+        + (bad ? '<animate attributeName="stroke-opacity" values="1;.15;1" dur=".8s" repeatCount="indefinite"/>' : '') + '</circle>';
+    });
+    g += '<circle cx="'+px+'" cy="'+py+'" r="8" fill="'+(rs.crit?'#EF4444':rs.warn?'#EAB308':'#22C55E')+'"/>';
+    g += '<text x="'+px+'" y="'+(py+62)+'" text-anchor="middle" fill="#E6EDF3" font-size="14" font-weight="700">'+esc(String(a.name||a.id).substring(0,16))+'</text>';
+    s += '<g class="tap" data-act="bldg-asset" data-id="'+esc(a.id)+'">'+g+'</g>';
+  });
+  return '<svg viewBox="0 0 900 '+H+'" style="width:100%;display:block;border-radius:10px;border:1px solid var(--color-divider)">'+s+'</svg>';
+}
+function fmBldg(){
+  const th = ST.lang==='th';
+  const floors = mbFloors(), st = mbStatus(floors);
+  if(ST.bldgSel && !floors.some(function(f){return f.id===ST.bldgSel;})) ST.bldgSel = null;
+  const ring = ST.bldgRing || 0, names = ['WR','OPT','PPM','MA'], subs = ['wr','om','ppm','ma'];
+  const lastUp = floors.map(function(f){return !mbIsBase(f.code);}).lastIndexOf(true);
+  const hasBase = floors.some(function(f){return mbIsBase(f.code);});
+  let h = '<style>@keyframes mbBlink{0%,100%{box-shadow:0 0 0 0 var(--bc,#F97316);opacity:1}50%{box-shadow:0 0 10px 3px var(--bc,#F97316);opacity:.72}}.mb-blink{animation:mbBlink .9s ease-in-out infinite}</style>';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between"><div style="font-size:13px;color:var(--color-neutral-700)">'+(th?'แตะชั้นเพื่อดูผังและสถานะ 4 วง':'Tap a floor to see its plan & 4 rings')+'</div>'
+    + '<div class="tap" data-act="bldg-refresh" style="font-size:13px;font-weight:600;padding:5px 10px;border:1px solid var(--color-divider);border-radius:8px">↻ '+(th?'รีเฟรช':'Refresh')+'</div></div>';
+  h += '<div style="display:flex;gap:10px;font-size:12px;color:var(--color-neutral-700)"><span style="color:#16A34A">● '+(th?'ปกติ':'OK')+'</span><span style="color:#F97316">● '+(th?'มีกิจกรรม':'Activity')+'</span><span style="color:#DC2626">● '+(th?'วิกฤต':'Critical')+'</span>'
+    + MB_COL.map(function(c,i){ return '<span style="color:'+c+'">● '+names[i]+'</span>'; }).join('')+'</div>';
+  h += '<div style="border:2px solid var(--color-divider);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:4px">';
+  floors.forEach(function(f, i){
+    const o = st[f.id] || { n:0, c:[0,0,0,0], crit:0, bad:false };
+    const col = o.crit ? '#DC2626' : o.bad ? '#F97316' : '#16A34A';
+    const sel = ST.bldgSel===f.id;
+    h += '<div class="tap '+(o.bad?'mb-blink':'')+'" data-act="bldg-floor" data-id="'+esc(f.id)+'" style="--bc:'+col+';display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:'+col+';color:#fff;border:3px solid '+(sel?'#fff':'transparent')+';outline:'+(sel?'2px solid '+col:'none')+'">'
+      + '<b style="font-size:16px;min-width:38px">'+esc(f.code)+'</b><span style="font-size:13px;flex:1;opacity:.95">'+esc(f.name)+'</span>'
+      + o.c.map(function(n,k){ return '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;background:'+(n?MB_COL[k]:'rgba(0,0,0,.3)')+';border:1.5px solid '+(n?'#fff':'rgba(255,255,255,.3)')+'">'+(n||'')+'</span>'; }).join('')
+      + '</div>';
+    if(i===lastUp && hasBase) h += '<div style="text-align:center;font-size:10px;letter-spacing:2px;padding:2px;background:#7A5C32;color:#F1DDB5;border-radius:4px">GROUND LEVEL</div>';
+  });
+  h += '</div>';
+  if(ST.bldgSel){
+    const f = floors.find(function(x){return x.id===ST.bldgSel;}), o = st[f.id] || { n:0, c:[0,0,0,0], items:[] };
+    h += '<div class="blueprint" style="padding:12px;display:flex;flex-direction:column;gap:10px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+      + '<div style="display:flex;align-items:center;gap:8px"><div style="font-family:var(--font-heading);font-size:17px;flex:1">'+esc(f.code)+' — '+esc(f.name)+'</div>'
+      + '<span style="font-size:12px;color:var(--color-neutral-700)">'+o.n+' assets</span>'
+      + '<div class="tap" data-act="bldg-close" style="font-size:13px;padding:4px 10px;border:1px solid var(--color-divider);border-radius:8px">✕</div></div>';
+    h += '<div style="display:flex;gap:6px;flex-wrap:wrap">' + names.map(function(nm,k){
+      const bad = o.c[k]>0;
+      return '<div class="tap '+(bad?'mb-blink':'')+'" data-act="bldg-ring" data-k="'+k+'" style="--bc:'+MB_COL[k]+';font-size:13px;font-weight:700;padding:5px 12px;border-radius:18px;border:2px solid '+MB_COL[k]+';background:'+(ring===k?MB_COL[k]+'33':'transparent')+'">'
+        + '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+(bad?MB_COL[k]:'#22C55E')+';margin-right:6px"></span>'+nm+' '+(bad?o.c[k]:'OK')+'</div>';
+    }).join('') + '</div>';
+    const rows = o.items.filter(function(it){ return it.rs['r'+(ring+1)]; });
+    if(!rows.length) h += '<div style="font-size:14px;color:var(--green);text-align:center;padding:6px">✅ '+(th?'วง ':'Ring ')+names[ring]+(th?' ปกติในชั้นนี้':' is normal on this floor')+'</div>';
+    else {
+      h += rows.map(function(it){
+        const a = it.a, rs = it.rs;
+        return '<div class="tap mb-blink" data-act="bldg-asset" data-id="'+esc(a.id)+'" style="--bc:'+MB_COL[ring]+';padding:10px;border-radius:8px;border:2px solid '+MB_COL[ring]+'">'
+          + '<div style="display:flex;gap:8px;align-items:center"><b style="font-size:14px;flex:1">'+esc(a.name||a.id)+'</b><span style="font-size:12px;color:'+MB_COL[ring]+';font-weight:700">'+esc(rs['r'+(ring+1)+'n'])+'</span></div>'
+          + '<div style="font-size:12px;color:var(--color-neutral-700)">'+esc(a.id)+'</div>'
+          + (ring===0 ? rs.wrs.map(function(w){ return '<div style="font-size:12px;margin-top:4px">'+esc(w.id||'')+' · '+esc(String(w.desc||'—').substring(0,50))+' · <b>'+esc(String(w.status||'').toUpperCase())+'</b></div>'; }).join('') : '')
+          + '</div>';
+      }).join('');
+    }
+    h += '<div class="tap" data-act="bldg-goto" data-sub="'+subs[ring]+'" style="text-align:center;font-size:14px;font-weight:600;padding:8px;border-radius:8px;background:var(--color-accent);color:#fff">'+(th?'ไปหน้า ':'Open ')+names[ring]+' →</div>';
+    const pins = mbPins();
+    const assets = (ST.modData.fm && ST.modData.fm.assets) || [];
+    const wr = wrData(), ppm = fmKindData('ppm') || [], ma = fmKindData('ma') || [];
+    const fa = assets.filter(function(a){ return mbAssetFloor(a, pins, floors)===f.id; }).map(function(a){ return { a:a, rs:mbAssetRS(a, wr, ppm, ma) }; });
+    h += mbPlanSvg(f.id, o.items, fa, pins);
+    h += '</div>';
+  }
+  return '<div style="display:flex;flex-direction:column;gap:10px">' + h + '</div>';
+}
+function loadMbData(){
+  ['bldgFloors','bldgRooms','bldgPlans','bldgPins','ppm','ma'].forEach(function(k){ loadFmKind(k); });
+  loadFmAssets(); loadFmWR();
+}
+
 function screenModuleFM(){
   const t = L(); const mods = opsModules(); const m = mods.find(function(x){return x.key==='fm';});
   const sub = ST.fmSub || 'overview';
   let body = '';
-  if(sub==='overview') body = fmOverview();
+  if(sub==='bldg') body = fmBldg();
+  else if(sub==='overview') body = fmOverview();
   else if(sub==='wr') body = fmWR();
   else if(sub==='om') body = fmOM();
   else if(sub==='ppm') body = fmPPM();
@@ -5096,6 +5273,7 @@ document.addEventListener('click', function(e){
   else if(act==='fm-sub'){
     ST.fmSub = el.getAttribute('data-sub'); if(ST.fmSub!=='wr') ST.wrSub='overview'; render();
     if(ST.fmSub==='wr') loadFmWR();
+    else if(ST.fmSub==='bldg') loadMbData();
     else if(ST.fmSub==='ppm'){ ST.ppmSub='overview'; loadFmKind('ppm'); loadFmKind('ppmTemplates'); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
     else if(ST.fmSub==='ma'){ ST.maSub='overview'; loadFmKind('ma'); loadFmKind('maVisits'); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
     else if(ST.fmSub==='inv'){
@@ -5107,6 +5285,12 @@ document.addEventListener('click', function(e){
     else if(ST.fmSub==='om'){ ST.omSub='overview'; loadFmKind('omRecords'); loadFmKind('omTemplates'); loadFmKind('omSchedule'); if(!(ST.modData.fm && ST.modData.fm.assets && ST.modData.fm.assets.length)) loadFmAssets(); }
   }
   else if(act==='refresh-wr'){ loadFmWR(); }
+  else if(act==='bldg-floor'){ ST.bldgSel = el.getAttribute('data-id'); render(); }
+  else if(act==='bldg-close'){ ST.bldgSel = null; render(); }
+  else if(act==='bldg-ring'){ ST.bldgRing = parseInt(el.getAttribute('data-k'),10)||0; render(); }
+  else if(act==='bldg-refresh'){ loadMbData(); }
+  else if(act==='bldg-goto'){ const tb = document.querySelector('[data-act="fm-sub"][data-sub="'+el.getAttribute('data-sub')+'"]'); if(tb) tb.click(); }
+  else if(act==='bldg-asset'){ ST.fmSub = 'wr'; ST.wrSub = 'overview'; render(); loadFmWR(); }
   else if(act==='refresh-om'){ loadFmKind('omRecords'); loadFmKind('omTemplates'); loadFmKind('omSchedule'); }
   else if(act==='om-sub'){ ST.omSub = el.getAttribute('data-sub'); render(); }
   else if(act==='om-new-open'){ omNewOpen(); }
@@ -5282,7 +5466,7 @@ async function loadDashboard(){
 /* light per-module data fetch — FM/M&V reuse the shared dashboard;
    only IoT needs its own call (bas.imatomstech.com sensor gateway). */
 async function loadModuleData(key){
-  if(key==='fm'){ loadFmWR(); loadFmKind('ppm'); loadFmKind('ma'); loadFmAssets(); return; } /* WR/PPM/MA/Inv/OM now come from the real backend */
+  if(key==='fm'){ loadFmWR(); loadFmKind('ppm'); loadFmKind('ma'); loadFmAssets(); ['bldgFloors','bldgRooms','bldgPlans','bldgPins'].forEach(function(k){ loadFmKind(k); }); return; } /* WR/PPM/MA/Inv/OM now come from the real backend */
   if(key==='iot'){
     ST.modLoading.iot = true; ST.modData.iot = {}; render();
     try{
