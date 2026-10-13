@@ -15193,7 +15193,7 @@ function renderFloorPlan(){
   const _clr=document.getElementById('fp-clear-pdf');if(_clr)_clr.style.display=_plan?'inline-flex':'none';
   let s=`<rect width="900" height="${svgH}" fill="#0D1117"/>`;
   if(_plan)s+=`<image href="${_plan.dataUrl}" x="0" y="0" width="900" height="${svgH}" preserveAspectRatio="none" opacity=".92"/>`;
-  s+=bldgRoomsSVG(floor,!!_plan);
+  s+='\u0001ROOMS\u0001';   // rooms are drawn after the asset status is known (abnormal rooms blink)
   if(_fpPlaceMode){
     s+=`<text x="450" y="${svgH-20}" text-anchor="middle" fill="rgba(249,115,22,.6)" font-size="11" font-family="sans-serif">📌 คลิกบน Building Critical Status เพื่อวาง Asset</text>`;
   }
@@ -15308,6 +15308,7 @@ function renderFloorPlan(){
   } else {
     s+=`<text x="450" y="270" text-anchor="middle" fill="#6E7681" font-size="14" font-family="Orbitron,sans-serif">ไม่มี Asset — กด 📌 วางตำแหน่ง</text>`;
   }
+  s=s.replace('\u0001ROOMS\u0001',()=>bldgRoomsSVG(floor,!!_plan,_fp3));
   s=renderIoTPinsOnFloor(s,floor);
   document.getElementById('fp-svg').innerHTML=s;
   fp3dSync(floor,svgH,_plan,_fp3);
@@ -15764,6 +15765,7 @@ function fp3dInit(){
       F3.anim.forEach(a=>{
         if(a.k==='blink'){const v=0.5+0.5*Math.sin(s*7+a.ph);a.m.opacity=0.2+0.8*v;if(a.fill)a.fill.opacity=0.05+0.25*v;}
         else if(a.k==='radar'){const p=(s*0.8+a.ph)%1;a.o.scale.set(1+p*0.9,1+p*0.9,1);a.m.opacity=0.8*(1-p);}
+        else if(a.k==='room'){const q=0.5+0.5*Math.sin(s*6+a.ph);a.m.opacity=0.08+0.34*q;if(a.w)a.w.emissiveIntensity=0.15+0.6*q;}
       });
       const rp=F3.rad*Math.sin(F3.ph);
       F3.cam.position.set(rp*Math.sin(F3.th),F3.rad*Math.cos(F3.ph),rp*Math.cos(F3.th));
@@ -15789,12 +15791,18 @@ function fp3dBuild(floor,svgH,plan,items){
     const pl=new THREE.Mesh(new THREE.PlaneGeometry(W,D),pm);pl.rotation.x=-Math.PI/2;pl.position.y=0.011;g.add(pl);
   }
   // rooms: coloured floor tile + low walls (taller at the back/left, like the cut-away reference)
-  const wallM=new THREE.MeshStandardMaterial({color:F3C('#3B4659'),roughness:.7,transparent:!!plan,opacity:plan?.6:1});
   let ci=0;
   bldgFloorRooms(floor).forEach(r=>{
     if(r._dflt&&plan)return;
     if(!r.label&&r.w>=700&&r.h>=400)return;                 // outer outline = ground slab
+    const bad=!!r.label&&bldgRoomBad(r,items);
+    const wallM=new THREE.MeshStandardMaterial({color:bad?F3C('#7C3A12'):F3C('#3B4659'),roughness:.7,transparent:!!plan,opacity:plan?.6:1,emissive:new THREE.Color(0xF97316),emissiveIntensity:bad?.3:0});
     const w=r.w/U,h=r.h/U,cx=X(r.x+r.w/2),cz=Z(r.y+r.h/2),col=F3C(F3_PAL[(ci++)%F3_PAL.length]);
+    if(bad){   // blinking orange glow on the room whose asset is abnormal
+      const gm=new THREE.MeshBasicMaterial({color:0xF97316,transparent:true,opacity:.3,depthWrite:false,side:THREE.DoubleSide});
+      const gl=new THREE.Mesh(new THREE.PlaneGeometry(w,h),gm);gl.rotation.x=-Math.PI/2;gl.position.set(cx,0.125,cz);g.add(gl);
+      F3.anim.push({k:'room',m:gm,w:wallM,ph:ci});
+    }
     if(!plan){const tile=new THREE.Mesh(new THREE.BoxGeometry(w,0.1,h),new THREE.MeshStandardMaterial({color:col,roughness:.85}));tile.position.set(cx,0.05,cz);g.add(tile);}
     const T=0.08,hb=plan?0.25:0.8,hf=plan?0.25:0.3;
     [[0,-h/2,w,T,hb],[0,h/2,w,T,hf],[-w/2,0,T,h,hb],[w/2,0,T,h,hf]].forEach(a=>{
@@ -16000,14 +16008,18 @@ function bldgEnsureRooms(fid){
     BLDG.rooms.push(n);fmSyncItem('bldgRooms',n);
   });
 }
-function bldgRoomsSVG(fid,hasPlan){
+// a room is "bad" (blinks orange) when an asset sitting inside it has an abnormal ring / warning / critical status
+function bldgRoomBad(r,items){
+  return (items||[]).some(q=>{const rs=q.rs||{};return (rs.r1&&rs.r1.blink||rs.r2&&rs.r2.blink||rs.r3&&rs.r3.blink||rs.r4&&rs.r4.blink||q.a.status==='critical'||q.a.status==='warning')&&q.px>=r.x&&q.px<=r.x+r.w&&q.py>=r.y&&q.py<=r.y+r.h;});
+}
+function bldgRoomsSVG(fid,hasPlan,items){
   let s='';
   bldgFloorRooms(fid).forEach(r=>{
     if(hasPlan&&r._dflt)return;
-    const sel=_bldgEdit&&_bldgRoomSel===r.id;
+    const sel=_bldgEdit&&_bldgRoomSel===r.id,bad=!_bldgEdit&&r.label&&bldgRoomBad(r,items);
     const ev=_bldgEdit?` class="fp-room-edit" onmousedown="bldgRoomDown(event,'${r.id}','move')" ondblclick="bldgRoomRename('${r.id}')"`:'';
-    s+=`<g${ev}><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="8" fill="${r.fill||'#21262D'}" fill-opacity="${hasPlan?.4:1}" stroke="${sel?'#F97316':(hasPlan?'#F97316':'#30363D')}" stroke-width="${sel?2.5:1.5}" ${hasPlan?'stroke-opacity=".6" stroke-dasharray="5 3"':''}/>`;
-    if(r.label)s+=`<text x="${r.x+10}" y="${r.y+16}" fill="${hasPlan?'#FDBA74':'#6E7681'}" font-size="10" font-family="Orbitron,sans-serif" font-weight="600" style="pointer-events:none">${bEsc(r.label)}</text>`;
+    s+=`<g${ev}><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="8" fill="${bad?'#F97316':(r.fill||'#21262D')}" fill-opacity="${bad?.14:(hasPlan?.4:1)}" stroke="${sel||bad?'#F97316':(hasPlan?'#F97316':'#30363D')}" stroke-width="${sel?2.5:bad?3.5:1.5}" ${hasPlan&&!bad?'stroke-opacity=".6" stroke-dasharray="5 3"':''}>${bad?'<animate attributeName="stroke-opacity" values="1;.2;1" dur=".9s" repeatCount="indefinite"/><animate attributeName="fill-opacity" values=".26;.05;.26" dur=".9s" repeatCount="indefinite"/>':''}</rect>`;
+    if(r.label)s+=`<text x="${r.x+10}" y="${r.y+16}" fill="${bad||hasPlan?'#FDBA74':'#6E7681'}" font-size="10" font-family="Orbitron,sans-serif" font-weight="600" style="pointer-events:none">${bEsc(r.label)}</text>`;
     if(_bldgEdit)s+=`<rect class="fp-room-handle" x="${r.x+r.w-12}" y="${r.y+r.h-12}" width="14" height="14" rx="3" fill="#F97316" onmousedown="bldgRoomDown(event,'${r.id}','resize')"/>`;
     s+='</g>';
   });
