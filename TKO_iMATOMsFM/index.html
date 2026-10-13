@@ -15973,12 +15973,17 @@ async function bldgSaveSetup(){
   const old=BLDG.floors.map(f=>f.id);
   BLDG.floors=next;DB.set('bldg_floors',next);
   old.filter(id=>!ids.has(id)).forEach(id=>fmDelItem('bldgFloors',id));
-  await Promise.all(next.map(f=>fmSyncItem('bldgFloors',f)));
+  let syncMsg='';
+  try{
+    await API.post('/fm-records/bldgFloors/sync',{items:next});
+    const chk=await API.get('/fm-records/bldgFloors');
+    syncMsg=' · backend '+(chk||[]).length+' ชั้น';
+  }catch(e){syncMsg=' · ❌ sync backend ไม่สำเร็จ ('+(e&&e.message||e)+') — ตรวจ server.js / pm2 restart / login';console.warn(e);}
   closeModal('m-bldg-setup');
   bldgPopulateSelect();
   if(_bldgSel&&!ids.has(_bldgSel))bldgHidePanel();
   renderBuilding();if(_bldgSel){renderFloorPlan();renderFloorSummary(_bldgSel);}
-  showToast('✅ บันทึกอาคาร '+n+' ชั้น และ sync เข้า backend แล้ว');
+  showToast('บันทึกอาคาร '+n+' ชั้น'+syncMsg);
 }
 
 // ── Rooms: edit mode ──

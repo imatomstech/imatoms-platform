@@ -5058,6 +5058,7 @@ function fmBldg(){
   });
   bh += '</div>';
   h += mbModeBar();
+  if(!(fmKindData('bldgFloors')||[]).length) h += '<div style="font-size:12px;padding:6px 8px;border-radius:8px;background:rgba(234,179,8,.15);color:#B45309">⚠ '+(th?'ยังไม่มีข้อมูลชั้นจาก server — แสดงชั้นตัวอย่าง (เปิดเว็บ → ตั้งค่าอาคาร → บันทึก แล้วกด Refresh)':'No floors on the server yet — showing sample floors (Web → Building Setup → Save, then Refresh)')+'</div>';
   if(mbBld3Want()) bh = '<div id="mb-3d-bldg" style="position:relative;height:'+(cp?'400px':'420px')+';border-radius:10px;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,#1b2a3a 0%,#0d1117 85%);border:2px solid var(--color-divider)"></div>';
   if(!cp) return '<div style="display:flex;flex-direction:column;gap:10px">' + h + bh + '</div>' + mbSetupOverlay();
 
