@@ -15689,8 +15689,8 @@ function bldg3dRender(fl,st){
     const mech=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.5,0.9),plain);mech.position.set(0.8,top+0.47,0.8);g.add(mech);
     const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1.7,8),trim);ant.position.set(0.8,top+1.5,0.8);g.add(ant);
   }
-  const ped=new THREE.Mesh(new THREE.BoxGeometry(9,0.3,9),new THREE.MeshStandardMaterial({color:0x8B95A3,roughness:.8}));ped.position.y=yb-0.15-0.02;g.add(ped);
-  if(nBase){const gp=new THREE.Mesh(new THREE.BoxGeometry(9,0.06,9),new THREE.MeshStandardMaterial({color:0xC7CEDA,transparent:true,opacity:.3,depthWrite:false}));gp.position.y=0;g.add(gp);}
+  const ped=new THREE.Mesh(new THREE.BoxGeometry(9,0.3,9),new THREE.MeshStandardMaterial({color:F3C('#1E242E'),roughness:.9}));ped.position.y=yb-0.15-0.02;g.add(ped);   // basement base: darkest grey
+  if(nBase){const gp=new THREE.Mesh(new THREE.BoxGeometry(9,0.06,9),new THREE.MeshStandardMaterial({color:F3C('#4A5361'),transparent:true,opacity:.65,depthWrite:false,roughness:.9}));gp.position.y=0;g.add(gp);}   // ground-level plane: mid dark grey
   B3.scene.add(g);
   B3.mid=yb+(n+1)/2-0.3;B3.yb=yb;B3.top=top;
   const fit=Math.max(13,n*1.15+9);
