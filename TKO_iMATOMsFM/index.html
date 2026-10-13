@@ -1743,9 +1743,13 @@ tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <div style="font-family:var(--font-display);font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.8px;text-transform:uppercase">🏢 อาคาร — คลิกชั้นเพื่อดูผัง</div>
             <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text3)"><span style="color:#22C55E">●</span> ปกติ <span style="color:#F97316">●</span> เตือน <span style="color:#EF4444">●</span> วิกฤต
-              <button class="btn btn-secondary btn-xs" id="bldg-mode-3d" onclick="bldgSetMode('3d')">3D</button><button class="btn btn-secondary btn-xs" id="bldg-mode-2d" onclick="bldgSetMode('2d')">2D</button></div>
+              <button class="btn btn-secondary btn-xs" id="bldg-mode-3d" onclick="bldgSetMode('3d')" title="ตึกกระจก">3D-1</button><button class="btn btn-secondary btn-xs" id="bldg-mode-3d2" onclick="bldgSetMode('3d2')" title="ตึกขาว Modern + แกนบันได">3D-2</button><button class="btn btn-secondary btn-xs" id="bldg-mode-3d3" onclick="bldgSetMode('3d3')" title="บล็อกเหลื่อม + ระเบียง">3D-3</button><button class="btn btn-secondary btn-xs" id="bldg-mode-2d" onclick="bldgSetMode('2d')">2D</button></div>
           </div>
-          <div id="bldg-3d" style="display:none;width:100%;position:relative;border-radius:var(--radius);background:radial-gradient(ellipse at 50% 30%,#1b2a3a 0%,#0d1117 75%);overflow:hidden;cursor:grab;touch-action:none"><div style="position:absolute;left:8px;bottom:6px;font-size:10px;color:var(--text3);pointer-events:none;z-index:2">ลากเมาส์ = หมุน · ล้อเมาส์ = ซูม · คลิกชั้น = เปิดผัง</div></div>
+          <div id="bldg-3d" style="display:none;width:100%;position:relative;border-radius:var(--radius);background:radial-gradient(ellipse at 50% 30%,#1b2a3a 0%,#0d1117 75%);overflow:hidden;cursor:grab;touch-action:none"><div style="position:absolute;left:8px;bottom:6px;font-size:10px;color:var(--text3);pointer-events:none;z-index:2">ลาก = หมุน · คลิกขวาลาก = เลื่อนขึ้น/ลง · ล้อเมาส์ = ซูม · คลิกชั้น = เปิดผัง</div>
+            <div style="position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:4px;z-index:3">
+              <button class="btn btn-secondary btn-xs" onclick="b3Pan(3)" title="เลื่อนมองชั้นบน">▲</button>
+              <button class="btn btn-secondary btn-xs" onclick="b3Pan(-3)" title="เลื่อนมองชั้นล่าง / ใต้ดิน">▼</button>
+              <button class="btn btn-secondary btn-xs" onclick="b3Reset()" title="รีเซ็ตมุมมอง">⟳</button></div></div>
           <div id="bldg-svg-scroll" style="max-height:78vh;overflow-y:auto"><svg id="bldg-svg" style="width:100%;display:block"></svg></div>
           <div id="bldg-tip" style="display:none;position:fixed;z-index:300;pointer-events:none;background:var(--bg2);border:1px solid var(--orange);border-radius:var(--radius);padding:8px 10px;box-shadow:0 8px 24px rgba(0,0,0,.6);font-size:11px;min-width:150px"></div>
         </div>
@@ -15535,12 +15539,12 @@ function renderBuilding(){
 }
 // ── 3D rotatable building (three.js r128) — falls back to the 2D diagram if WebGL/three.js is unavailable ──
 const B3={ok:null,renderer:null,scene:null,cam:null,group:null,mats:[],pick:[],th:0.75,ph:1.0,rad:16,cy:0,n:-1,drag:null,raf:0,el:null,rc:null,hov:null};
-function bldgWant3D(){return (localStorage.getItem('bldg_mode')||'3d')==='3d'&&!!window.THREE&&B3.ok!==false;}
+function bldgWant3D(){return /^3d/.test(localStorage.getItem('bldg_mode')||'3d')&&!!window.THREE&&B3.ok!==false;}
 function bldgSetMode(m){localStorage.setItem('bldg_mode',m);renderBuilding();}
 function bldgModeBtns(){
   const m=(localStorage.getItem('bldg_mode')||'3d');
-  ['3d','2d'].forEach(k=>{const b=document.getElementById('bldg-mode-'+k);if(b){b.style.background=m===k?'var(--orange)':'';b.style.color=m===k?'#fff':'';}});
-  const w=document.getElementById('bldg-wrap');if(w)w.style.flexBasis=(m==='3d'&&window.THREE&&B3.ok!==false)?'470px':'380px';
+  ['3d','3d2','3d3','2d'].forEach(k=>{const b=document.getElementById('bldg-mode-'+k);if(b){b.style.background=m===k?'var(--orange)':'';b.style.color=m===k?'#fff':'';}});
+  const w=document.getElementById('bldg-wrap');if(w)w.style.flexBasis=(/^3d/.test(m)&&window.THREE&&B3.ok!==false)?'470px':'380px';
 }
 function b3Facade(f,o){
   const cv=document.createElement('canvas');cv.width=512;cv.height=96;const c=cv.getContext('2d');
@@ -15583,12 +15587,17 @@ function b3Init(){
     const d2=new THREE.DirectionalLight(0x9fd8ff,0.35);d2.position.set(-8,6,-9);B3.scene.add(d2);
     el.insertBefore(r.domElement,el.firstChild);r.domElement.style.display='block';
     const cv=r.domElement;
-    cv.addEventListener('pointerdown',e=>{B3.drag={x:e.clientX,y:e.clientY,moved:false};try{cv.setPointerCapture(e.pointerId);}catch(_){}cv.style.cursor='grabbing';bldgTipHide();});
+    cv.addEventListener('contextmenu',e=>e.preventDefault());
+    cv.addEventListener('pointerdown',e=>{B3.drag={x:e.clientX,y:e.clientY,moved:false,pan:e.button===2||e.shiftKey||e.button===1};try{cv.setPointerCapture(e.pointerId);}catch(_){}cv.style.cursor='grabbing';bldgTipHide();});
     cv.addEventListener('pointermove',e=>{
       if(B3.drag){
         const dx=e.clientX-B3.drag.x,dy=e.clientY-B3.drag.y;
         if(Math.abs(dx)+Math.abs(dy)>3)B3.drag.moved=true;
-        if(B3.drag.moved){B3.th-=dx*0.008;B3.ph=Math.max(0.25,Math.min(1.45,B3.ph-dy*0.006));B3.drag.x=e.clientX;B3.drag.y=e.clientY;}
+        if(B3.drag.moved){
+          if(B3.drag.pan)b3Pan(dy*B3.rad*0.0022);                       // right-drag / shift-drag = move up/down
+          else{B3.th-=dx*0.008;B3.ph=Math.max(0.2,Math.min(1.5,B3.ph-dy*0.006));}
+          B3.drag.x=e.clientX;B3.drag.y=e.clientY;
+        }
         return;
       }
       const fid=b3Pick(e);cv.style.cursor=fid?'pointer':'grab';
@@ -15596,10 +15605,10 @@ function b3Init(){
     });
     cv.addEventListener('pointerup',e=>{
       const d=B3.drag;B3.drag=null;cv.style.cursor='grab';
-      if(d&&!d.moved){const fid=b3Pick(e);if(fid)bldgSelectFloor(fid);}
+      if(d&&!d.moved&&!d.pan){const fid=b3Pick(e);if(fid)bldgSelectFloor(fid);}
     });
     cv.addEventListener('pointerleave',()=>{B3.hov=null;bldgTipHide();});
-    cv.addEventListener('wheel',e=>{e.preventDefault();B3.rad=Math.max(6,Math.min(120,B3.rad*(e.deltaY>0?1.1:0.9)));},{passive:false});
+    cv.addEventListener('wheel',e=>{e.preventDefault();B3.rad=Math.max(2.5,Math.min(120,B3.rad*(e.deltaY>0?1.1:0.9)));},{passive:false});
     B3.ok=true;
     const loop=t=>{
       B3.raf=requestAnimationFrame(loop);
@@ -15608,6 +15617,7 @@ function b3Init(){
       if(B3._w!==w||B3._h!==h){B3._w=w;B3._h=h;B3.renderer.setSize(w,h);B3.cam.aspect=w/h;B3.cam.updateProjectionMatrix();}
       const s=0.5+0.5*Math.sin(t/230);
       B3.mats.forEach(m=>{m.m.emissiveIntensity=m.bad?(0.12+0.35*s):(m.sel?0.35:0.05);});
+      if(B3.tcy!=null)B3.cy+=(B3.tcy-B3.cy)*0.14;
       const rp=B3.rad*Math.sin(B3.ph);
       B3.cam.position.set(rp*Math.sin(B3.th),B3.cy+B3.rad*Math.cos(B3.ph),rp*Math.cos(B3.th));
       B3.cam.lookAt(0,B3.cy,0);
@@ -15633,28 +15643,62 @@ function bldg3dRender(fl,st){
   const FW=4,FH=0.9;
   const trim=new THREE.MeshStandardMaterial({color:0xE5E7EB,roughness:.6});
   const plain=new THREE.MeshStandardMaterial({color:0xD1D5DB,roughness:.7});
+  const sty=bldgStyle();                       // 1 = glass tower · 2 = white modern + core · 3 = offset blocks + balconies
+  const white=new THREE.MeshStandardMaterial({color:0xF4F6F8,roughness:.55});
+  const rail=new THREE.MeshStandardMaterial({color:0x9ED8F0,transparent:true,opacity:.45,roughness:.1});
+  const blue=new THREE.MeshStandardMaterial({color:0x3B9AE1,roughness:.5});
+  let floorY={};
   asc.forEach((f,k)=>{
     const o=st[f.id]||{n:0,r1:0,r2:0,r3:0,r4:0,crit:0,bad:false},sel=_bldgSel===f.id;
     const col=o.crit?0xDC2626:o.bad?0xF97316:0x1FA971;
-    const side=new THREE.MeshStandardMaterial({map:b3Facade(f,o),roughness:.3,metalness:.12,emissive:new THREE.Color(col),emissiveIntensity:.05,transparent:bIsBase(f.code),opacity:bIsBase(f.code)?.88:1});
-    const y=yb+k+0.5;
-    const m=new THREE.Mesh(new THREE.BoxGeometry(FW,FH,FW),[side,side,plain,plain,side,side]);
-    m.position.y=y;m.userData.fid=f.id;if(sel)m.scale.set(1.07,1,1.07);
+    const base=bIsBase(f.code);
+    const side=new THREE.MeshStandardMaterial({map:b3Facade(f,o),roughness:.3,metalness:.12,emissive:new THREE.Color(col),emissiveIntensity:.05,transparent:base,opacity:base?.88:1});
+    const y=yb+k+0.5;floorY[f.id]=y;
+    // footprint per style
+    let w=FW,ox=0,oz=0;
+    if(sty===2&&k>n*0.72&&!base)w=FW-0.7;               // set-back upper floors
+    if(sty===3&&!base){ox=(k%2?-0.3:0.3);}               // alternating offset blocks
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,FH,w),[side,side,plain,plain,side,side]);
+    m.position.set(ox,y,oz);m.userData.fid=f.id;if(sel)m.scale.set(1.07,1,1.07);
     g.add(m);B3.pick.push(m);B3.mats.push({m:side,bad:o.bad,sel});
-    const slab=new THREE.Mesh(new THREE.BoxGeometry(FW+0.28,0.1,FW+0.28),trim);slab.position.y=yb+k+0.05;g.add(slab);
-    if(sel){const ln=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(FW*1.07+.02,FH+.02,FW*1.07+.02)),new THREE.LineBasicMaterial({color:0xFFFFFF}));ln.position.y=y;g.add(ln);}
+    const slab=new THREE.Mesh(new THREE.BoxGeometry(w+(sty===2?0.5:0.28),0.1,w+(sty===2?0.5:0.28)),sty===3?white:trim);slab.position.set(ox,yb+k+0.05,oz);g.add(slab);
+    if(sty===2&&!base){                                  // white corner pillars
+      [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(c=>{const p=new THREE.Mesh(new THREE.BoxGeometry(0.22,FH,0.22),white);p.position.set(ox+c[0]*(w/2),y,oz+c[1]*(w/2));g.add(p);});
+    }
+    if(sty===3&&!base&&k%2===0){                         // cantilever balcony + glass rail on the front
+      const b=new THREE.Mesh(new THREE.BoxGeometry(w*0.9,0.1,1.05),white);b.position.set(ox,yb+k+0.05,oz+w/2+0.5);g.add(b);
+      const r=new THREE.Mesh(new THREE.BoxGeometry(w*0.9,0.4,0.04),rail);r.position.set(ox,yb+k+0.3,oz+w/2+1.0);g.add(r);
+    }
+    if(sel){const ln=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w*1.07+.02,FH+.02,w*1.07+.02)),new THREE.LineBasicMaterial({color:0xFFFFFF}));ln.position.set(ox,y,oz);g.add(ln);}
   });
   const top=yb+n;
-  const cap=new THREE.Mesh(new THREE.BoxGeometry(FW-0.5,0.22,FW-0.5),trim);cap.position.y=top+0.11;g.add(cap);
-  const mech=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.5,0.9),plain);mech.position.set(0.8,top+0.47,0.8);g.add(mech);
-  const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1.7,8),trim);ant.position.set(0.8,top+1.5,0.8);g.add(ant);
-  const ped=new THREE.Mesh(new THREE.BoxGeometry(8.4,0.3,8.4),new THREE.MeshStandardMaterial({color:0x8B95A3,roughness:.8}));ped.position.y=yb-0.15-0.02;g.add(ped);
-  if(nBase){const gp=new THREE.Mesh(new THREE.BoxGeometry(8.4,0.06,8.4),new THREE.MeshStandardMaterial({color:0xC7CEDA,transparent:true,opacity:.35,depthWrite:false}));gp.position.y=0;g.add(gp);}
+  if(sty===2){                                           // vertical core with dark glass strips
+    const core=new THREE.Mesh(new THREE.BoxGeometry(1.1,n+0.9,1.1),white);core.position.set(FW/2-0.2,yb+(n+0.9)/2,FW/2-0.2);g.add(core);
+    const strip=new THREE.Mesh(new THREE.BoxGeometry(0.12,n*0.92,0.6),new THREE.MeshStandardMaterial({color:0x2B7F8A,roughness:.2}));strip.position.set(FW/2-0.2,yb+n/2,FW/2+0.38);g.add(strip);
+    const roofBox=new THREE.Mesh(new THREE.BoxGeometry(FW-1.6,0.55,FW-1.6),white);roofBox.position.set(-0.3,top+0.3,-0.3);g.add(roofBox);
+  }else if(sty===3){                                     // blue stair/lift core + roof volume
+    const core=new THREE.Mesh(new THREE.BoxGeometry(1.5,n+1.6,1.5),blue);core.position.set(-FW/2+0.3,yb+(n+1.6)/2,-FW/2+0.3);g.add(core);
+    const rv=new THREE.Mesh(new THREE.BoxGeometry(FW-1.2,0.9,FW-1.2),white);rv.position.set(0.4,top+0.45,0.2);g.add(rv);
+  }else{
+    const cap=new THREE.Mesh(new THREE.BoxGeometry(FW-0.5,0.22,FW-0.5),trim);cap.position.y=top+0.11;g.add(cap);
+    const mech=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.5,0.9),plain);mech.position.set(0.8,top+0.47,0.8);g.add(mech);
+    const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1.7,8),trim);ant.position.set(0.8,top+1.5,0.8);g.add(ant);
+  }
+  const ped=new THREE.Mesh(new THREE.BoxGeometry(9,0.3,9),new THREE.MeshStandardMaterial({color:0x8B95A3,roughness:.8}));ped.position.y=yb-0.15-0.02;g.add(ped);
+  if(nBase){const gp=new THREE.Mesh(new THREE.BoxGeometry(9,0.06,9),new THREE.MeshStandardMaterial({color:0xC7CEDA,transparent:true,opacity:.3,depthWrite:false}));gp.position.y=0;g.add(gp);}
   B3.scene.add(g);
-  B3.cy=yb+(n+1)/2-0.3;
-  if(B3.n!==n){B3.rad=Math.max(13,n*1.15+9);B3.n=n;}
+  B3.mid=yb+(n+1)/2-0.3;B3.yb=yb;B3.top=top;
+  const fit=Math.max(13,n*1.15+9);
+  if(B3.n!==n||B3.sty!==sty){B3.rad=fit;B3.tcy=B3.mid;B3.cy=B3.mid;B3.n=n;B3.sty=sty;}
+  B3.fit=fit;
+  // click / dropdown selection → camera glides to that floor so basements & upper floors can be inspected
+  if(_bldgSel&&B3.lastSel!==_bldgSel&&floorY[_bldgSel]!=null){B3.tcy=floorY[_bldgSel];B3.rad=Math.min(B3.rad,Math.max(7,fit*0.55));}
+  B3.lastSel=_bldgSel;
   return true;
 }
+function bldgStyle(){const m=localStorage.getItem('bldg_mode')||'3d';return m==='3d3'?3:m==='3d2'?2:1;}
+function b3Pan(d){B3.tcy=Math.max(B3.yb-1,Math.min(B3.top+1,(B3.tcy!=null?B3.tcy:B3.cy)+d));}
+function b3Reset(){B3.tcy=B3.mid;B3.rad=B3.fit||16;B3.th=0.75;B3.ph=1.0;B3.lastSel=null;}
 
 function bldgTip(evt,fid){
   const f=bldgFloorById(fid),o=(BLDG._st||{})[fid];const tip=document.getElementById('bldg-tip');if(!f||!tip)return;
