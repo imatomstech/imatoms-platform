@@ -15707,7 +15707,8 @@ function b3Reset(){B3.tcy=B3.mid;B3.rad=B3.fit||16;B3.th=0.75;B3.ph=1.0;B3.lastS
 
 // ── 3D isometric floor plan (rooms as cut-away blocks, assets with live 4-ring status) ──
 const F3={ok:null,renderer:null,scene:null,cam:null,group:null,el:null,pick:[],anim:[],th:0.6,ph:0.95,rad:20,drag:null,rc:null,floor:null,tex:{}};
-const F3_PAL=['#E8D5B5','#B7D3D9','#F3E6A8','#C9D6E3','#D6E8D0','#EAC9C1','#D9CFE8'];
+const F3_PAL=['#232B3A','#212F3F','#2A2A3C','#24332F','#30283A','#2B3445','#33302A'];   // dark room tiles, close to the 2D theme
+const F3C=h=>new THREE.Color(h).convertSRGBToLinear();                                  // hex is sRGB → match the 2D colours exactly
 function fpMode(){return localStorage.getItem('fp_mode')||'3d';}
 function fpSetMode(m){localStorage.setItem('fp_mode',m);renderFloorPlan();}
 function fp3dWant(){return fpMode()==='3d'&&!!window.THREE&&F3.ok!==false&&!_bldgEdit&&!_fpPlaceMode;}
@@ -15725,8 +15726,8 @@ function fp3dInit(){
     const r=new THREE.WebGLRenderer({antialias:true,alpha:true});
     r.outputEncoding=THREE.sRGBEncoding;r.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
     F3.renderer=r;F3.el=el;F3.scene=new THREE.Scene();F3.cam=new THREE.PerspectiveCamera(32,1.5,0.1,300);F3.rc=new THREE.Raycaster();
-    F3.scene.add(new THREE.HemisphereLight(0xffffff,0x7a8699,1.0));
-    const d=new THREE.DirectionalLight(0xffffff,0.8);d.position.set(8,16,9);F3.scene.add(d);
+    F3.scene.add(new THREE.HemisphereLight(0xffffff,0x3a4658,0.8));
+    const d=new THREE.DirectionalLight(0xffffff,0.55);d.position.set(8,16,9);F3.scene.add(d);
     el.insertBefore(r.domElement,el.firstChild);r.domElement.style.display='block';
     const cv=r.domElement,tip=()=>document.getElementById('fp3d-tip');
     const pick=e=>{const b=cv.getBoundingClientRect();F3.rc.setFromCamera({x:((e.clientX-b.left)/b.width)*2-1,y:-((e.clientY-b.top)/b.height)*2+1},F3.cam);const h=F3.rc.intersectObjects(F3.pick,false)[0];return h?h.object.userData.aid:null;};
@@ -15772,7 +15773,7 @@ function fp3dBuild(floor,svgH,plan,items){
   const U=50,W=900/U,D=svgH/U;
   const X=px=>(px-450)/U,Z=py=>(py-svgH/2)/U;
   // ground slab (+ uploaded plan image)
-  const slab=new THREE.Mesh(new THREE.BoxGeometry(W+0.6,0.2,D+0.6),new THREE.MeshStandardMaterial({color:plan?0x0D1117:0x94A3B8,roughness:.8}));slab.position.y=-0.1;g.add(slab);
+  const slab=new THREE.Mesh(new THREE.BoxGeometry(W+0.6,0.2,D+0.6),new THREE.MeshStandardMaterial({color:F3C(plan?'#0D1117':'#161B22'),roughness:.9}));slab.position.y=-0.1;g.add(slab);
   if(plan&&plan.dataUrl){
     const pm=new THREE.MeshBasicMaterial({color:0xffffff});
     const t=F3.tex[floor]&&F3.tex[floor].u===plan.dataUrl?F3.tex[floor].t:null;
@@ -15780,30 +15781,30 @@ function fp3dBuild(floor,svgH,plan,items){
     const pl=new THREE.Mesh(new THREE.PlaneGeometry(W,D),pm);pl.rotation.x=-Math.PI/2;pl.position.y=0.011;g.add(pl);
   }
   // rooms: coloured floor tile + low walls (taller at the back/left, like the cut-away reference)
-  const wallM=new THREE.MeshStandardMaterial({color:0xF8FAFC,roughness:.6,transparent:!!plan,opacity:plan?.55:1});
+  const wallM=new THREE.MeshStandardMaterial({color:F3C('#3B4659'),roughness:.7,transparent:!!plan,opacity:plan?.6:1});
   let ci=0;
   bldgFloorRooms(floor).forEach(r=>{
     if(r._dflt&&plan)return;
     if(!r.label&&r.w>=700&&r.h>=400)return;                 // outer outline = ground slab
-    const w=r.w/U,h=r.h/U,cx=X(r.x+r.w/2),cz=Z(r.y+r.h/2),col=new THREE.Color(F3_PAL[(ci++)%F3_PAL.length]);
-    if(!plan){const tile=new THREE.Mesh(new THREE.BoxGeometry(w,0.1,h),new THREE.MeshStandardMaterial({color:col,roughness:.7}));tile.position.set(cx,0.05,cz);g.add(tile);}
-    const T=0.08,hb=plan?0.25:0.95,hf=plan?0.25:0.4;
+    const w=r.w/U,h=r.h/U,cx=X(r.x+r.w/2),cz=Z(r.y+r.h/2),col=F3C(F3_PAL[(ci++)%F3_PAL.length]);
+    if(!plan){const tile=new THREE.Mesh(new THREE.BoxGeometry(w,0.1,h),new THREE.MeshStandardMaterial({color:col,roughness:.85}));tile.position.set(cx,0.05,cz);g.add(tile);}
+    const T=0.08,hb=plan?0.25:0.8,hf=plan?0.25:0.3;
     [[0,-h/2,w,T,hb],[0,h/2,w,T,hf],[-w/2,0,T,h,hb],[w/2,0,T,h,hf]].forEach(a=>{
       const m=new THREE.Mesh(new THREE.BoxGeometry(a[2],a[4],a[3]),wallM);m.position.set(cx+a[0],a[4]/2,cz+a[1]);g.add(m);
     });
-    if(r.label){const tx=f3Text(String(r.label),512,96,'bold 44px Arial',plan?'#FDBA74':'#334155',plan?'rgba(0,0,0,.55)':null);
+    if(r.label){const tx=f3Text(String(r.label),512,96,'bold 44px Arial',plan?'#FDBA74':'#8B949E',plan?'rgba(0,0,0,.55)':null);
       const lp=new THREE.Mesh(new THREE.PlaneGeometry(Math.min(w-0.3,3.4),Math.min(w-0.3,3.4)*96/512),new THREE.MeshBasicMaterial({map:tx,transparent:true,depthWrite:false}));
       lp.rotation.x=-Math.PI/2;lp.position.set(cx,0.13,cz-h/2+0.45);g.add(lp);}
   });
   // assets: machine block + the four status rings (outer MA → inner WR) that blink when abnormal
   items.forEach(it=>{
     const x=X(it.px),z=Z(it.py),rs=it.rs;F3.info[it.a.id]=it;
-    const body=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.5,0.55),new THREE.MeshStandardMaterial({color:new THREE.Color(it.coreC),roughness:.4}));
+    const body=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.5,0.55),new THREE.MeshStandardMaterial({color:F3C(it.coreC),roughness:.5}));
     body.position.set(x,0.3,z);body.userData.aid=it.a.id;g.add(body);F3.pick.push(body);
-    const top=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.25,12),new THREE.MeshStandardMaterial({color:0xE2E8F0}));top.position.set(x,0.67,z);g.add(top);
+    const top=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.25,12),new THREE.MeshStandardMaterial({color:F3C('#CBD5E1')}));top.position.set(x,0.67,z);g.add(top);
     const hit=new THREE.Mesh(new THREE.CylinderGeometry(0.95,0.95,0.8,16),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));hit.position.set(x,0.4,z);hit.userData.aid=it.a.id;g.add(hit);F3.pick.push(hit);
     [{r:0.92,s:rs.r4,p:0},{r:0.74,s:rs.r3,p:.8},{r:0.56,s:rs.r2,p:1.6},{r:0.38,s:rs.r1,p:2.4}].forEach(d=>{
-      const col=new THREE.Color(d.s.c);
+      const col=F3C(d.s.c);
       const fm=new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:d.s.blink?.2:.1,depthWrite:false,side:THREE.DoubleSide});
       const disc=new THREE.Mesh(new THREE.CircleGeometry(d.r,40),fm);disc.rotation.x=-Math.PI/2;disc.position.set(x,0.075,z);g.add(disc);
       const tm=new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:1});
@@ -15814,8 +15815,20 @@ function fp3dBuild(floor,svgH,plan,items){
     const nm=String(it.a.name||it.a.id).substring(0,18);
     const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:f3Text(nm,320,64,'bold 30px Arial','#fff','rgba(15,23,42,.78)'),transparent:true,depthTest:false}));
     sp.scale.set(2.0,0.4,1);sp.position.set(x,1.25,z);sp.renderOrder=5;g.add(sp);
-    const wn=rs.r1.blink?(it.rs.wrN||0):0;
   });
+  // IoT sensor (B1 AF_Store Receiving) — same data / position as the 2D pin: temperature + humidity label
+  if(floor==='b1'){
+    Object.values(_iotSensorCache).filter(s=>s.location?.toLowerCase().includes('b1')||s.name?.toLowerCase().includes('store')||s.name?.toLowerCase().includes('receiving')).forEach(s=>{
+      let px=655,py=385;const sp0=JSON.parse(localStorage.getItem('iot_pin_pos_'+floor)||'null');if(sp0){px=sp0.x;py=sp0.y;}
+      const tOk=+s.temp>=20&&+s.temp<=35,hOk=+s.humi>=30&&+s.humi<=80,ok=(s.status==='normal'||!s.status)&&tOk&&hOk;
+      const x=X(px),z=Z(py),c=F3C(ok?'#06B6D4':'#F97316');
+      const core=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,0.3,16),new THREE.MeshStandardMaterial({color:F3C('#06B6D4')}));core.position.set(x,0.2,z);g.add(core);
+      const rm=new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:1}),rg=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.04,8,40),rm);rg.rotation.x=Math.PI/2;rg.position.set(x,0.09,z);g.add(rg);
+      if(!ok)F3.anim.push({k:'blink',m:rm,ph:0});
+      const tx=f3Text('🌡 '+(+s.temp).toFixed(1)+'°C   💧 '+(+s.humi).toFixed(1)+'%',420,64,'bold 30px Arial',ok?'#4ADE80':'#FB923C','rgba(15,23,42,.82)');
+      const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true,depthTest:false}));sp.scale.set(2.6,0.4,1);sp.position.set(x,1.0,z);sp.renderOrder=6;g.add(sp);
+    });
+  }
   F3.scene.add(g);
   const fit=Math.max(16,Math.max(W,D*1.6)*1.05+3);
   if(F3.floor!==floor){F3.rad=fit;F3.floor=floor;}
