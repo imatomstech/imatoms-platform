@@ -4542,7 +4542,7 @@ function mbFloorAssets(fid, floors){
 function mbPlanHtml(){
   const floors = mbFloors(), f = floors.find(function(x){ return x.id===ST.bldgSel; });
   if(!f) return '';
-  if(mbPlan3Want()) return '<div id="mb-3d-plan" style="position:relative;width:100%;height:300px;border-radius:10px;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#1b2a3a 0%,#0d1117 80%);border:1px solid var(--color-divider)"></div>';
+  if(mbPlan3Want()) return '<div id="mb-3d-plan" style="position:relative;width:100%;height:min(60vh,460px);min-height:320px;border-radius:10px;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#1b2a3a 0%,#0d1117 80%);border:1px solid var(--color-divider)"></div>';
   return mbPlanSvg(f.id, [], mbFloorAssets(f.id, floors), mbPins());
 }
 
@@ -5048,9 +5048,10 @@ function fmBldg(){
     return '<div class="tap '+(bad?'mb-blink':'')+'" data-act="bldg-ring" data-k="'+k+'" style="--bc:'+MB_COL[k]+';font-size:12px;font-weight:700;padding:3px 9px;border-radius:16px;border:2px solid '+MB_COL[k]+';background:'+(ring===k?MB_COL[k]+'33':'transparent')+'">'
       + '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(bad?MB_COL[k]:'#22C55E')+';margin-right:4px"></span>'+nm+' '+(bad?o.c[k]:'OK')+'</div>';
   }).join('') + '</div>';
+  let pl = '';   // plan block (edit bar + 3D/2D toggle + plan) — shown full width below the grid
   if(ST.mbEdit){
     const bs = 'font-size:12px;font-weight:600;padding:4px 8px;border:1px solid var(--color-divider);border-radius:8px';
-    dh += '<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:6px;border-radius:8px;background:rgba(249,115,22,.12)">'
+    pl += '<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:6px;border-radius:8px;background:rgba(249,115,22,.12)">'
       + '<span style="font-size:11px;color:var(--color-neutral-700)">'+(th?'ลาก=ย้าย · ลากมุมส้ม=ปรับขนาด':'Drag=move · orange corner=resize')+'</span>'
       + '<div class="tap" data-act="mb-room-add" style="'+bs+'">＋ '+(th?'ห้อง':'Room')+'</div>'
       + '<div class="tap" data-act="mb-room-ren" style="'+bs+'">✎ '+(th?'ชื่อ':'Rename')+'</div>'
@@ -5059,11 +5060,12 @@ function fmBldg(){
   }
   if(mbHas3D() && !ST.mbEdit){
     const pm = mbPMode(), pb = 'font-size:11px;font-weight:700;padding:2px 9px;border-radius:12px;border:1px solid var(--color-divider);';
-    dh += '<div style="display:flex;gap:5px;align-items:center"><span style="font-size:11px;color:var(--color-neutral-700)">'+(th?'ผัง':'Plan')+':</span>'
+    pl += '<div style="display:flex;gap:5px;align-items:center"><span style="font-size:11px;color:var(--color-neutral-700)">'+(th?'ผัง':'Plan')+':</span>'
       + '<div class="tap" data-act="mb-pmode" data-m="3d" style="'+pb+(pm==='3d'?'background:var(--color-accent);color:#fff;border-color:var(--color-accent)':'')+'">3D</div>'
       + '<div class="tap" data-act="mb-pmode" data-m="2d" style="'+pb+(pm==='2d'?'background:var(--color-accent);color:#fff;border-color:var(--color-accent)':'')+'">2D</div></div>';
   }
-  dh += '<div id="mb-plan-wrap">' + mbPlanHtml() + '</div>';
+  pl += '<div id="mb-plan-wrap">' + mbPlanHtml() + '</div>';
+  pl = '<div class="blueprint" style="padding:8px;display:flex;flex-direction:column;gap:8px;min-width:0"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>' + pl + '</div>';
   const rows = o.items.filter(function(it){ return it.rs['r'+(ring+1)]; });
   if(!rows.length) dh += '<div style="font-size:13px;color:var(--green);text-align:center;padding:4px">✅ '+(th?'วง ':'Ring ')+names[ring]+(th?' ปกติในชั้นนี้':' is normal on this floor')+'</div>';
   else {
@@ -5079,7 +5081,7 @@ function fmBldg(){
   dh += '<div class="tap" data-act="bldg-goto" data-sub="'+subs[ring]+'" style="text-align:center;font-size:13px;font-weight:600;padding:6px;border-radius:8px;background:var(--color-accent);color:#fff">'+(th?'ไปหน้า ':'Open ')+names[ring]+' →</div>';
   dh += '</div>';
   return '<div style="display:flex;flex-direction:column;gap:8px">' + h
-    + '<div style="display:grid;grid-template-columns:minmax(118px,32%) 1fr;gap:8px;align-items:start">' + bh + dh + '</div></div>' + mbSetupOverlay();
+    + '<div style="display:grid;grid-template-columns:minmax(118px,32%) 1fr;gap:8px;align-items:start">' + bh + dh + '</div>' + pl + '</div>' + mbSetupOverlay();
 }
 function loadMbData(){
   ['bldgFloors','bldgRooms','bldgPlans','bldgPins','ppm','ma'].forEach(function(k){ loadFmKind(k); });
