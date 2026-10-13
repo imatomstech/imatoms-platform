@@ -762,7 +762,7 @@ function fmSubTabs(active){
   const th = ST.lang==='th';
   const tabs = [
     { k:'overview', label: th?'ภาพรวม':'Overview' },
-    { k:'bldg', label: th?'อาคาร':'Building' },
+    { k:'bldg', label: th?'สถานะอาคาร':'Building Status' },
     { k:'wr', label:'WR' },
     { k:'om', label:'OM' },
     { k:'ppm', label:'PPM' },
@@ -4529,50 +4529,56 @@ function fmBldg(){
     + '<div class="tap" data-act="bldg-refresh" style="font-size:13px;font-weight:600;padding:5px 10px;border:1px solid var(--color-divider);border-radius:8px">↻ '+(th?'รีเฟรช':'Refresh')+'</div></div>';
   h += '<div style="display:flex;gap:10px;font-size:12px;color:var(--color-neutral-700)"><span style="color:#16A34A">● '+(th?'ปกติ':'OK')+'</span><span style="color:#F97316">● '+(th?'มีกิจกรรม':'Activity')+'</span><span style="color:#DC2626">● '+(th?'วิกฤต':'Critical')+'</span>'
     + MB_COL.map(function(c,i){ return '<span style="color:'+c+'">● '+names[i]+'</span>'; }).join('')+'</div>';
-  h += '<div style="border:2px solid var(--color-divider);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:4px">';
+  /* Layout: nothing selected → building full width. Floor selected → narrow building
+     column on the left, details (chips · plan · scrolling list) on the right, so
+     everything fits on one screen without scrolling. */
+  const cp = !!ST.bldgSel;
+  let bh = '<div style="border:2px solid var(--color-divider);border-radius:10px;padding:'+(cp?'5px':'8px')+';display:flex;flex-direction:column;gap:'+(cp?'3px':'4px')+'">';
   floors.forEach(function(f, i){
     const o = st[f.id] || { n:0, c:[0,0,0,0], crit:0, bad:false };
     const col = o.crit ? '#DC2626' : o.bad ? '#F97316' : '#16A34A';
     const sel = ST.bldgSel===f.id;
-    h += '<div class="tap '+(o.bad?'mb-blink':'')+'" data-act="bldg-floor" data-id="'+esc(f.id)+'" style="--bc:'+col+';display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:'+col+';color:#fff;border:3px solid '+(sel?'#fff':'transparent')+';outline:'+(sel?'2px solid '+col:'none')+'">'
-      + '<b style="font-size:16px;min-width:38px">'+esc(f.code)+'</b><span style="font-size:13px;flex:1;opacity:.95">'+esc(f.name)+'</span>'
-      + o.c.map(function(n,k){ return '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;background:'+(n?MB_COL[k]:'rgba(0,0,0,.3)')+';border:1.5px solid '+(n?'#fff':'rgba(255,255,255,.3)')+'">'+(n||'')+'</span>'; }).join('')
+    const dot = cp ? 13 : 22;
+    bh += '<div class="tap '+(o.bad?'mb-blink':'')+'" data-act="bldg-floor" data-id="'+esc(f.id)+'" title="'+esc(f.name)+'" style="--bc:'+col+';display:flex;align-items:center;gap:'+(cp?'4px':'10px')+';padding:'+(cp?'5px 6px':'10px 12px')+';border-radius:8px;background:'+col+';color:#fff;border:'+(cp?'2px':'3px')+' solid '+(sel?'#fff':'transparent')+'">'
+      + '<b style="font-size:'+(cp?'13px':'16px')+';min-width:'+(cp?'28px':'38px')+'">'+esc(f.code)+'</b>'+(cp?'<span style="flex:1"></span>':'<span style="font-size:13px;flex:1;opacity:.95">'+esc(f.name)+'</span>')
+      + o.c.map(function(n,k){ return '<span style="display:inline-flex;align-items:center;justify-content:center;width:'+dot+'px;height:'+dot+'px;border-radius:50%;font-size:'+(cp?'9px':'11px')+';font-weight:700;background:'+(n?MB_COL[k]:'rgba(0,0,0,.3)')+';border:1.5px solid '+(n?'#fff':'rgba(255,255,255,.3)')+'">'+(n||'')+'</span>'; }).join('')
       + '</div>';
-    if(i===lastUp && hasBase) h += '<div style="text-align:center;font-size:10px;letter-spacing:2px;padding:2px;background:#7A5C32;color:#F1DDB5;border-radius:4px">GROUND LEVEL</div>';
+    if(i===lastUp && hasBase) bh += '<div style="text-align:center;font-size:'+(cp?'8px':'10px')+';letter-spacing:'+(cp?'1px':'2px')+';padding:2px;background:#7A5C32;color:#F1DDB5;border-radius:4px">GROUND'+(cp?'':' LEVEL')+'</div>';
   });
-  h += '</div>';
-  if(ST.bldgSel){
-    const f = floors.find(function(x){return x.id===ST.bldgSel;}), o = st[f.id] || { n:0, c:[0,0,0,0], items:[] };
-    h += '<div class="blueprint" style="padding:12px;display:flex;flex-direction:column;gap:10px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
-      + '<div style="display:flex;align-items:center;gap:8px"><div style="font-family:var(--font-heading);font-size:17px;flex:1">'+esc(f.code)+' — '+esc(f.name)+'</div>'
-      + '<span style="font-size:12px;color:var(--color-neutral-700)">'+o.n+' assets</span>'
-      + '<div class="tap" data-act="bldg-close" style="font-size:13px;padding:4px 10px;border:1px solid var(--color-divider);border-radius:8px">✕</div></div>';
-    h += '<div style="display:flex;gap:6px;flex-wrap:wrap">' + names.map(function(nm,k){
-      const bad = o.c[k]>0;
-      return '<div class="tap '+(bad?'mb-blink':'')+'" data-act="bldg-ring" data-k="'+k+'" style="--bc:'+MB_COL[k]+';font-size:13px;font-weight:700;padding:5px 12px;border-radius:18px;border:2px solid '+MB_COL[k]+';background:'+(ring===k?MB_COL[k]+'33':'transparent')+'">'
-        + '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+(bad?MB_COL[k]:'#22C55E')+';margin-right:6px"></span>'+nm+' '+(bad?o.c[k]:'OK')+'</div>';
+  bh += '</div>';
+  if(!cp) return '<div style="display:flex;flex-direction:column;gap:10px">' + h + bh + '</div>';
+
+  const f = floors.find(function(x){return x.id===ST.bldgSel;}), o = st[f.id] || { n:0, c:[0,0,0,0], items:[] };
+  let dh = '<div class="blueprint" style="padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>'
+    + '<div style="display:flex;align-items:center;gap:8px"><div style="font-family:var(--font-heading);font-size:15px;flex:1;min-width:0">'+esc(f.code)+' — '+esc(f.name)+'</div>'
+    + '<span style="font-size:11px;color:var(--color-neutral-700)">'+o.n+' assets</span>'
+    + '<div class="tap" data-act="bldg-close" style="font-size:13px;padding:2px 9px;border:1px solid var(--color-divider);border-radius:8px">✕</div></div>';
+  dh += '<div style="display:flex;gap:5px;flex-wrap:wrap">' + names.map(function(nm,k){
+    const bad = o.c[k]>0;
+    return '<div class="tap '+(bad?'mb-blink':'')+'" data-act="bldg-ring" data-k="'+k+'" style="--bc:'+MB_COL[k]+';font-size:12px;font-weight:700;padding:3px 9px;border-radius:16px;border:2px solid '+MB_COL[k]+';background:'+(ring===k?MB_COL[k]+'33':'transparent')+'">'
+      + '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(bad?MB_COL[k]:'#22C55E')+';margin-right:4px"></span>'+nm+' '+(bad?o.c[k]:'OK')+'</div>';
+  }).join('') + '</div>';
+  const pins = mbPins();
+  const assets = (ST.modData.fm && ST.modData.fm.assets) || [];
+  const wr = wrData(), ppm = fmKindData('ppm') || [], ma = fmKindData('ma') || [];
+  const fa = assets.filter(function(a){ return mbAssetFloor(a, pins, floors)===f.id; }).map(function(a){ return { a:a, rs:mbAssetRS(a, wr, ppm, ma) }; });
+  dh += mbPlanSvg(f.id, o.items, fa, pins);
+  const rows = o.items.filter(function(it){ return it.rs['r'+(ring+1)]; });
+  if(!rows.length) dh += '<div style="font-size:13px;color:var(--green);text-align:center;padding:4px">✅ '+(th?'วง ':'Ring ')+names[ring]+(th?' ปกติในชั้นนี้':' is normal on this floor')+'</div>';
+  else {
+    dh += '<div style="display:flex;flex-direction:column;gap:5px;max-height:190px;overflow-y:auto">' + rows.map(function(it){
+      const a = it.a, rs = it.rs;
+      return '<div class="tap mb-blink" data-act="bldg-asset" data-id="'+esc(a.id)+'" style="--bc:'+MB_COL[ring]+';padding:6px 8px;border-radius:8px;border:2px solid '+MB_COL[ring]+'">'
+        + '<div style="display:flex;gap:6px;align-items:center"><b style="font-size:13px;flex:1;min-width:0">'+esc(a.name||a.id)+'</b><span style="font-size:11px;color:'+MB_COL[ring]+';font-weight:700;white-space:nowrap">'+esc(rs['r'+(ring+1)+'n'])+'</span></div>'
+        + '<div style="font-size:11px;color:var(--color-neutral-700)">'+esc(a.id)+'</div>'
+        + (ring===0 ? rs.wrs.map(function(w){ return '<div style="font-size:11px;margin-top:3px">'+esc(w.id||'')+' · '+esc(String(w.desc||'—').substring(0,40))+' · <b>'+esc(String(w.status||'').toUpperCase())+'</b></div>'; }).join('') : '')
+        + '</div>';
     }).join('') + '</div>';
-    const rows = o.items.filter(function(it){ return it.rs['r'+(ring+1)]; });
-    if(!rows.length) h += '<div style="font-size:14px;color:var(--green);text-align:center;padding:6px">✅ '+(th?'วง ':'Ring ')+names[ring]+(th?' ปกติในชั้นนี้':' is normal on this floor')+'</div>';
-    else {
-      h += rows.map(function(it){
-        const a = it.a, rs = it.rs;
-        return '<div class="tap mb-blink" data-act="bldg-asset" data-id="'+esc(a.id)+'" style="--bc:'+MB_COL[ring]+';padding:10px;border-radius:8px;border:2px solid '+MB_COL[ring]+'">'
-          + '<div style="display:flex;gap:8px;align-items:center"><b style="font-size:14px;flex:1">'+esc(a.name||a.id)+'</b><span style="font-size:12px;color:'+MB_COL[ring]+';font-weight:700">'+esc(rs['r'+(ring+1)+'n'])+'</span></div>'
-          + '<div style="font-size:12px;color:var(--color-neutral-700)">'+esc(a.id)+'</div>'
-          + (ring===0 ? rs.wrs.map(function(w){ return '<div style="font-size:12px;margin-top:4px">'+esc(w.id||'')+' · '+esc(String(w.desc||'—').substring(0,50))+' · <b>'+esc(String(w.status||'').toUpperCase())+'</b></div>'; }).join('') : '')
-          + '</div>';
-      }).join('');
-    }
-    h += '<div class="tap" data-act="bldg-goto" data-sub="'+subs[ring]+'" style="text-align:center;font-size:14px;font-weight:600;padding:8px;border-radius:8px;background:var(--color-accent);color:#fff">'+(th?'ไปหน้า ':'Open ')+names[ring]+' →</div>';
-    const pins = mbPins();
-    const assets = (ST.modData.fm && ST.modData.fm.assets) || [];
-    const wr = wrData(), ppm = fmKindData('ppm') || [], ma = fmKindData('ma') || [];
-    const fa = assets.filter(function(a){ return mbAssetFloor(a, pins, floors)===f.id; }).map(function(a){ return { a:a, rs:mbAssetRS(a, wr, ppm, ma) }; });
-    h += mbPlanSvg(f.id, o.items, fa, pins);
-    h += '</div>';
   }
-  return '<div style="display:flex;flex-direction:column;gap:10px">' + h + '</div>';
+  dh += '<div class="tap" data-act="bldg-goto" data-sub="'+subs[ring]+'" style="text-align:center;font-size:13px;font-weight:600;padding:6px;border-radius:8px;background:var(--color-accent);color:#fff">'+(th?'ไปหน้า ':'Open ')+names[ring]+' →</div>';
+  dh += '</div>';
+  return '<div style="display:flex;flex-direction:column;gap:8px">' + h
+    + '<div style="display:grid;grid-template-columns:minmax(118px,32%) 1fr;gap:8px;align-items:start">' + bh + dh + '</div></div>';
 }
 function loadMbData(){
   ['bldgFloors','bldgRooms','bldgPlans','bldgPins','ppm','ma'].forEach(function(k){ loadFmKind(k); });
