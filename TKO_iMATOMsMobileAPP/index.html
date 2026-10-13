@@ -4486,6 +4486,27 @@ function mbStatus(floors){
   Object.keys(out).forEach(function(k){ const o = out[k]; o.bad = (o.c[0]+o.c[1]+o.c[2]+o.c[3]+o.crit+o.warn)>0; });
   return out;
 }
+/* default room layout — identical to Desktop FLOOR_LAYOUT, used until rooms are saved for a floor */
+const MB_LAYOUT = {
+  roof:[[50,40,800,450,'','#1C2333'],[80,70,220,140,'Cooling Tower Area','#21262D'],[340,70,200,140,'AHU Plant Room','#21262D'],[580,70,220,140,'Solar / Utility','#21262D'],[80,250,720,200,'Roof Walkway & Pipe Route','#161B22']],
+  l1:[[50,40,800,450,'','#1C2333'],[80,70,200,180,'Lobby/Reception','#21262D'],[320,70,250,180,'Main Office','#21262D'],[610,70,190,180,'Server Room','#161B22'],[80,290,280,160,'11kV Substation','#161B22'],[400,290,200,160,'Elec. Room','#21262D'],[640,290,160,160,'Security Cmd','#21262D']],
+  b1:[[50,40,800,450,'','#1C2333'],[80,70,260,200,'Pump Room','#21262D'],[380,70,200,200,'Fire Pump Room','#161B22'],[620,70,180,200,'Chiller Plant','#161B22'],[80,310,400,150,'Parking / Underground','#21262D'],[510,310,290,150,'AF_Store Receiving','#1A2535']],
+  b2:[[50,40,800,450,'','#1C2333'],[80,70,720,170,'Parking B2','#21262D'],[80,280,360,170,'Water Tank','#161B22'],[480,280,320,170,'Waste / Utility','#21262D']],
+  l2:[[50,40,800,450,'','#1C2333'],[80,70,350,190,'Meeting Rooms','#21262D'],[470,70,330,190,'Office L2','#21262D'],[80,300,720,150,'AHU L2 + Corridor','#161B22']],
+  l3:[[50,40,800,450,'','#1C2333'],[80,70,720,210,'Office L3','#21262D'],[80,320,720,140,'Technical Area','#161B22']]
+};
+function mbFloorRooms(fid){
+  const r = (fmKindData('bldgRooms')||[]).filter(function(x){ return x.floorId===fid; });
+  if(r.length) return r;
+  const d = MB_LAYOUT[fid] || [[50,40,800,450,'','#1C2333']];
+  return d.map(function(x,i){ return { id:'dflt_'+fid+'_'+i, floorId:fid, x:x[0], y:x[1], w:x[2], h:x[3], label:x[4], fill:x[5], _dflt:true }; });
+}
+function mbEnsureRooms(fid){
+  if((fmKindData('bldgRooms')||[]).some(function(x){ return x.floorId===fid; })) return;
+  mbFloorRooms(fid).forEach(function(r,i){
+    fmSyncKind('bldgRooms', { id:'r_'+Date.now().toString(36)+i, floorId:fid, label:r.label, x:r.x, y:r.y, w:r.w, h:r.h, fill:r.fill });
+  });
+}
 function mbPlanOf(fid){ return (fmKindData('bldgPlans')||[]).find(function(p){ return p.floorId===fid; }) || null; }
 function mbItemPos(fid, floorAssets, pins, H){
   const cols = Math.min(floorAssets.length,5) || 1;
@@ -4511,7 +4532,8 @@ function mbPlanSvg(fid, items, floorAssets, pins){
   let s = '<rect width="900" height="'+H+'" fill="#0D1117"/>';
   if(plan && plan.dataUrl) s += '<image href="'+plan.dataUrl+'" x="0" y="0" width="900" height="'+H+'" preserveAspectRatio="none" opacity=".92"/>';
   const edit = !!ST.mbEdit;
-  (fmKindData('bldgRooms')||[]).filter(function(r){ return r.floorId===fid; }).forEach(function(r){
+  mbFloorRooms(fid).forEach(function(r){
+    if(r._dflt && plan) return;
     const sel = edit && String(ST.mbRoomSel)===String(r.id), bad = !edit && mbRoomBad(r, pos);
     s += '<g'+(edit?' data-room="'+esc(r.id)+'" style="touch-action:none"':'')+'><rect x="'+r.x+'" y="'+r.y+'" width="'+r.w+'" height="'+r.h+'" rx="8" fill="'+(bad?'#F97316':(r.fill||'#21262D'))+'" fill-opacity="'+(bad?0.14:(plan?0.4:1))+'" stroke="'+(sel||bad?'#F97316':(plan?'#F97316':'#30363D'))+'" stroke-width="'+(sel?4:bad?5:1.5)+'">'
       + (bad ? '<animate attributeName="stroke-opacity" values="1;.2;1" dur=".9s" repeatCount="indefinite"/><animate attributeName="fill-opacity" values=".26;.05;.26" dur=".9s" repeatCount="indefinite"/>' : '') + '</rect>';
@@ -4706,7 +4728,7 @@ function mbAct(act, el){
   else if(act==='mb-s-save') mbSetupSave();
   else if(act==='mb-edit'){
     if(!ST.bldgSel){ toast(th?'เลือกชั้นก่อน':'Select a floor first'); return; }
-    ST.mbEdit = !ST.mbEdit; ST.mbRoomSel = null; render();
+    ST.mbEdit = !ST.mbEdit; ST.mbRoomSel = null; if(ST.mbEdit) mbEnsureRooms(ST.bldgSel); render();
   }
   else if(act==='mb-plan-pick') mbPlanPick();
   else if(act==='mb-plan-del'){
@@ -4926,7 +4948,7 @@ function mb3SyncBldg(v){
 function mb3SyncPlan(v){
   const fid = ST.bldgSel; if(!fid) return;
   const floors = mbFloors(), fa = mbFloorAssets(fid, floors), plan = mbPlanOf(fid), H = plan ? plan.svgH : 540;
-  const pos = mbItemPos(fid, fa, mbPins(), H), rooms = mbRooms().filter(function(r){ return r.floorId===fid; });
+  const pos = mbItemPos(fid, fa, mbPins(), H), rooms = mbFloorRooms(fid);
   const sig = fid+'|'+(plan&&plan.dataUrl?plan.dataUrl.length:0)+'|'+H+'|'+JSON.stringify(rooms.map(function(r){ return [r.id,r.x,r.y,r.w,r.h,r.label]; }))
     +'|'+pos.map(function(q){ return q.a.id+':'+Math.round(q.px)+','+Math.round(q.py)+':'+[q.rs.r1,q.rs.r2,q.rs.r3,q.rs.r4,q.rs.crit,q.rs.warn].map(Number).join(''); }).join(';');
   if(v.sig===sig) return; v.sig = sig;
@@ -4944,6 +4966,7 @@ function mb3SyncPlan(v){
   let ci = 0;
   rooms.forEach(function(r){
     if(!r.label && r.w>=700 && r.h>=400) return;
+    if(r._dflt && plan) return;
     const w = r.w/U, h = r.h/U, cx = X(r.x+r.w/2), cz = Z(r.y+r.h/2), col = mbC(PAL[(ci++)%PAL.length]);
     const bad = mbRoomBad(r, pos);
     const wallM = new THREE.MeshStandardMaterial({ color:bad ? mbC('#7C3A12') : mbC('#3B4659'), roughness:.7, transparent:!!plan, opacity:plan?.6:1, emissive:new THREE.Color(0xF97316), emissiveIntensity:bad?.3:0 });

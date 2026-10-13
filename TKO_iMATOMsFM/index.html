@@ -15395,9 +15395,10 @@ function bldgWrOpen(w){return w.status!=='closed'&&w.status!=='approved'&&w.stat
 // ── Data load (backend first, local fallback) ──
 async function bldgFetch(kind,lsKey,cache){
   try{const rows=await API.get('/fm-records/'+kind);if(cache){try{DB.set(lsKey,rows);}catch(e){}}return rows;}
-  catch(e){console.warn('bldg load error ('+kind+')',e);return cache?DB.get(lsKey,[]):[];}
+  catch(e){console.warn('bldg load error ('+kind+')',e);BLDG.apiErr=true;return cache?DB.get(lsKey,[]):[];}
 }
 async function bldgLoadAll(){
+  BLDG.apiErr=false;
   const [fl,rm,pl,pn]=await Promise.all([
     bldgFetch('bldgFloors','bldg_floors',true),
     bldgFetch('bldgRooms','bldg_rooms',true),
@@ -15414,6 +15415,13 @@ async function bldgLoadAll(){
     DB.set('fp_positions',m);
   }else if(Object.keys(local).length){
     Object.keys(local).forEach(id=>fmSyncItem('bldgPins',{id,floor:local[id].floor,x:local[id].x,y:local[id].y}));
+  }
+  // floors/rooms that only exist in this browser's cache → push them to the backend so Mobile sees the same building
+  if(BLDG.apiErr){try{showToast('⚠ Backend ไม่รองรับข้อมูลอาคาร (bldg*) — ต้อง git pull + pm2 restart server.js แล้วเปิดหน้านี้ใหม่');}catch(e){}}
+  else{
+    const lf=DB.get('bldg_floors',[]),lr=DB.get('bldg_rooms',[]);
+    if(!(fl||[]).length&&lf.length){BLDG.floors=lf.filter(f=>f&&f.id);BLDG.floors.forEach(f=>fmSyncItem('bldgFloors',f));}
+    if(!(rm||[]).length&&lr.length){BLDG.rooms=lr.filter(r=>r&&r.id);BLDG.rooms.forEach(r=>fmSyncItem('bldgRooms',r));}
   }
   BLDG.loaded=true;
 }
