@@ -4495,6 +4495,24 @@ const MB_LAYOUT = {
   l2:[[50,40,800,450,'','#1C2333'],[80,70,350,190,'Meeting Rooms','#21262D'],[470,70,330,190,'Office L2','#21262D'],[80,300,720,150,'AHU L2 + Corridor','#161B22']],
   l3:[[50,40,800,450,'','#1C2333'],[80,70,720,210,'Office L3','#21262D'],[80,320,720,140,'Technical Area','#161B22']]
 };
+/* IoT sensor (B1 · AF_Store Receiving) — same BAS endpoint and position as the Desktop floor plan */
+let MB_IOT = null;
+async function mbFetchIot(){
+  try{
+    const c = new AbortController(), t = setTimeout(function(){ c.abort(); }, 8000);
+    const r = await fetch('https://bas.imatomstech.com/api/sensor', { mode:'cors', signal:c.signal }); clearTimeout(t);
+    if(!r.ok) return;
+    const d = await r.json(); if(!Array.isArray(d) || !d.length) return;
+    MB_IOT = { temp:parseFloat(d[0].temperature)||0, humi:parseFloat(d[0].humidity)||0 };
+    if(ST.fmSub==='bldg') render();
+  }catch(e){}
+}
+function mbIotInfo(){
+  if(!MB_IOT) return null;
+  const tOk = MB_IOT.temp>=20 && MB_IOT.temp<=35, hOk = MB_IOT.humi>=30 && MB_IOT.humi<=80;
+  let x = 655, y = 385; try{ const p = JSON.parse(localStorage.getItem('iot_pin_pos_b1')||'null'); if(p){ x = p.x; y = p.y; } }catch(e){}
+  return { x:x, y:y, ok:tOk&&hOk, txt:'🌡 '+MB_IOT.temp.toFixed(1)+'°C   💧 '+MB_IOT.humi.toFixed(1)+'%' };
+}
 function mbFloorRooms(fid){
   const r = (fmKindData('bldgRooms')||[]).filter(function(x){ return x.floorId===fid; });
   if(r.length) return r;
@@ -4543,7 +4561,7 @@ function mbPlanSvg(fid, items, floorAssets, pins){
   });
   pos.forEach(function(it){
     const a = it.a, rs = it.rs, px = it.px, py = it.py;
-    const flags = [rs.r4, rs.r3, rs.r2, rs.r1], rad = [46,36,26,16];
+    const flags = [rs.r4, rs.r3, rs.r2, rs.r1], rad = [32,25,18,11];
     let g = '';
     flags.forEach(function(bad, k){
       const c = bad ? MB_COL[3-k] : '#22C55E';
@@ -4551,9 +4569,17 @@ function mbPlanSvg(fid, items, floorAssets, pins){
         + (bad ? '<animate attributeName="stroke-opacity" values="1;.15;1" dur=".8s" repeatCount="indefinite"/>' : '') + '</circle>';
     });
     g += '<circle cx="'+px+'" cy="'+py+'" r="8" fill="'+(rs.crit?'#EF4444':rs.warn?'#EAB308':'#22C55E')+'"/>';
-    g += '<text x="'+px+'" y="'+(py+62)+'" text-anchor="middle" fill="#E6EDF3" font-size="14" font-weight="700">'+esc(String(a.name||a.id).substring(0,16))+'</text>';
+    g += '<text x="'+px+'" y="'+(py+44)+'" text-anchor="middle" fill="#E6EDF3" font-size="14" font-weight="700">'+esc(String(a.name||a.id).substring(0,16))+'</text>';
     s += '<g class="tap" data-act="bldg-asset" data-id="'+esc(a.id)+'"'+(edit?' style="pointer-events:none;opacity:.45"':'')+'>'+g+'</g>';
   });
+  const iot = fid==='b1' ? mbIotInfo() : null;
+  if(iot){
+    const c = iot.ok ? '#22C55E' : '#F97316';
+    s += '<g style="pointer-events:none"><circle cx="'+iot.x+'" cy="'+iot.y+'" r="20" fill="'+c+'" fill-opacity=".2" stroke="'+c+'" stroke-width="3">'+(iot.ok?'':'<animate attributeName="opacity" values="1;.3;1" dur=".8s" repeatCount="indefinite"/>')+'</circle>'
+      + '<circle cx="'+iot.x+'" cy="'+iot.y+'" r="8" fill="#06B6D4"/>'
+      + '<rect x="'+(iot.x-100)+'" y="'+(iot.y-52)+'" width="200" height="26" rx="8" fill="rgba(15,23,42,.85)"/>'
+      + '<text x="'+iot.x+'" y="'+(iot.y-39)+'" text-anchor="middle" dominant-baseline="middle" fill="'+(iot.ok?'#4ADE80':'#FB923C')+'" font-size="15" font-weight="700">'+iot.txt+'</text></g>';
+  }
   return '<svg id="mb-plan-svg" viewBox="0 0 900 '+H+'" style="width:100%;display:block;border-radius:10px;border:1px solid '+(edit?'#F97316':'var(--color-divider)')+(edit?';touch-action:none':'')+'">'+s+'</svg>';
 }
 function mbFloorAssets(fid, floors){
@@ -4873,6 +4899,7 @@ function mb3Get(key){
         v.anim.forEach(function(a){
           if(a.k==='blink'){ const q = 0.5+0.5*Math.sin(s*7+a.ph); a.m.opacity = 0.2+0.8*q; if(a.fill) a.fill.opacity = 0.05+0.25*q; }
           else if(a.k==='radar'){ const p2 = (s*0.8+a.ph)%1; a.o.scale.set(1+p2*0.9,1+p2*0.9,1); a.m.opacity = 0.8*(1-p2); }
+          else if(a.k==='pillar'){ const q = 0.5+0.5*Math.sin(s*7+a.ph), c = a.cols[Math.floor(s*1.5)%a.cols.length]; a.ms.forEach(function(m){ m.color.copy(c); m.emissive.copy(c); m.emissiveIntensity = 0.15+0.85*q; }); }
           else if(a.k==='room'){ const q = 0.5+0.5*Math.sin(s*6+a.ph); a.m.opacity = 0.08+0.34*q; if(a.w) a.w.emissiveIntensity = 0.15+0.6*q; }
         });
       }
@@ -4949,7 +4976,8 @@ function mb3SyncPlan(v){
   const fid = ST.bldgSel; if(!fid) return;
   const floors = mbFloors(), fa = mbFloorAssets(fid, floors), plan = mbPlanOf(fid), H = plan ? plan.svgH : 540;
   const pos = mbItemPos(fid, fa, mbPins(), H), rooms = mbFloorRooms(fid);
-  const sig = fid+'|'+(plan&&plan.dataUrl?plan.dataUrl.length:0)+'|'+H+'|'+JSON.stringify(rooms.map(function(r){ return [r.id,r.x,r.y,r.w,r.h,r.label]; }))
+  const iot = fid==='b1' ? mbIotInfo() : null;
+  const sig = fid+'|'+(iot?iot.txt+iot.x+iot.y:'')+'|'+(plan&&plan.dataUrl?plan.dataUrl.length:0)+'|'+H+'|'+JSON.stringify(rooms.map(function(r){ return [r.id,r.x,r.y,r.w,r.h,r.label]; }))
     +'|'+pos.map(function(q){ return q.a.id+':'+Math.round(q.px)+','+Math.round(q.py)+':'+[q.rs.r1,q.rs.r2,q.rs.r3,q.rs.r4,q.rs.crit,q.rs.warn].map(Number).join(''); }).join(';');
   if(v.sig===sig) return; v.sig = sig;
   mb3Clear(v);
@@ -4988,11 +5016,16 @@ function mb3SyncPlan(v){
   });
   pos.forEach(function(it){
     const x = X(it.px), z = Z(it.py), rs = it.rs, coreC = rs.crit ? '#EF4444' : rs.warn ? '#EAB308' : '#22C55E';
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.55,0.5,0.55), new THREE.MeshStandardMaterial({ color:mbC(coreC), roughness:.5 }));
+    // pillar colour = abnormal ring colour(s) (blinks, cycling if several); green when normal
+    const abn = [[rs.r1,0],[rs.r2,1],[rs.r3,2],[rs.r4,3]].filter(function(q){ return q[0]; }).map(function(q){ return mbC(MB_COL[q[1]]); });
+    const mkM = function(base){ return new THREE.MeshStandardMaterial({ color:abn.length?abn[0]:mbC(base), roughness:.5, emissive:abn.length?abn[0].clone():new THREE.Color(0x000000), emissiveIntensity:abn.length?.6:0 }); };
+    const bm = mkM(coreC), tm2 = mkM('#CBD5E1');
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.55,0.5,0.55), bm);
     body.position.set(x,0.3,z); body.userData.aid = it.a.id; g.add(body); v.pick.push(body);
-    const tp = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.25,12), new THREE.MeshStandardMaterial({ color:mbC('#CBD5E1') })); tp.position.set(x,0.67,z); g.add(tp);
-    const hit = new THREE.Mesh(new THREE.CylinderGeometry(0.95,0.95,0.8,16), new THREE.MeshBasicMaterial({ transparent:true, opacity:0, depthWrite:false })); hit.position.set(x,0.4,z); hit.userData.aid = it.a.id; g.add(hit); v.pick.push(hit);
-    [{ r:0.92, b:rs.r4, k:3, p:0 },{ r:0.74, b:rs.r3, k:2, p:.8 },{ r:0.56, b:rs.r2, k:1, p:1.6 },{ r:0.38, b:rs.r1, k:0, p:2.4 }].forEach(function(d){
+    const tp = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.25,12), tm2); tp.position.set(x,0.67,z); g.add(tp);
+    if(abn.length) v.anim.push({ k:'pillar', ms:[bm,tm2], cols:abn, ph:x+z });
+    const hit = new THREE.Mesh(new THREE.CylinderGeometry(0.67,0.67,0.8,16), new THREE.MeshBasicMaterial({ transparent:true, opacity:0, depthWrite:false })); hit.position.set(x,0.4,z); hit.userData.aid = it.a.id; g.add(hit); v.pick.push(hit);
+    [{ r:0.64, b:rs.r4, k:3, p:0 },{ r:0.52, b:rs.r3, k:2, p:.8 },{ r:0.39, b:rs.r2, k:1, p:1.6 },{ r:0.27, b:rs.r1, k:0, p:2.4 }].forEach(function(d){
       const col = mbC(d.b ? MB_COL[d.k] : '#22C55E');
       const fm = new THREE.MeshBasicMaterial({ color:col, transparent:true, opacity:d.b?.2:.1, depthWrite:false, side:THREE.DoubleSide });
       const disc = new THREE.Mesh(new THREE.CircleGeometry(d.r,40), fm); disc.rotation.x = -Math.PI/2; disc.position.set(x,0.075,z); g.add(disc);
@@ -5000,10 +5033,18 @@ function mb3SyncPlan(v){
       const ring = new THREE.Mesh(new THREE.TorusGeometry(d.r,0.05,8,56), tm); ring.rotation.x = Math.PI/2; ring.position.set(x,0.09,z); g.add(ring);
       if(d.b) v.anim.push({ k:'blink', m:tm, fill:fm, ph:d.p });
     });
-    if(it.a.status==='critical'){ const rm = new THREE.MeshBasicMaterial({ color:0xEF4444, transparent:true, opacity:.8 }), rr = new THREE.Mesh(new THREE.TorusGeometry(0.92,0.03,8,56), rm); rr.rotation.x = Math.PI/2; rr.position.set(x,0.1,z); g.add(rr); v.anim.push({ k:'radar', m:rm, o:rr, ph:0 }); }
+    if(it.a.status==='critical'){ const rm = new THREE.MeshBasicMaterial({ color:0xEF4444, transparent:true, opacity:.8 }), rr = new THREE.Mesh(new THREE.TorusGeometry(0.64,0.03,8,56), rm); rr.rotation.x = Math.PI/2; rr.position.set(x,0.1,z); g.add(rr); v.anim.push({ k:'radar', m:rm, o:rr, ph:0 }); }
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:mbText(String(it.a.name||it.a.id).substring(0,18),320,64,'bold 30px Arial','#fff','rgba(15,23,42,.78)'), transparent:true, depthTest:false }));
     sp.scale.set(2.0,0.4,1); sp.position.set(x,1.25,z); sp.renderOrder = 5; g.add(sp);
   });
+  if(iot){   // IoT sensor: temperature + humidity label (same as Desktop)
+    const x = X(iot.x), z = Z(iot.y), c = mbC(iot.ok ? '#06B6D4' : '#F97316');
+    const core = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,0.3,16), new THREE.MeshStandardMaterial({ color:mbC('#06B6D4') })); core.position.set(x,0.2,z); g.add(core);
+    const rm = new THREE.MeshBasicMaterial({ color:c, transparent:true, opacity:1 }), rg = new THREE.Mesh(new THREE.TorusGeometry(0.42,0.04,8,40), rm); rg.rotation.x = Math.PI/2; rg.position.set(x,0.09,z); g.add(rg);
+    if(!iot.ok) v.anim.push({ k:'blink', m:rm, ph:0 });
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:mbText(iot.txt,420,64,'bold 30px Arial', iot.ok?'#4ADE80':'#FB923C','rgba(15,23,42,.82)'), transparent:true, depthTest:false }));
+    sp.scale.set(2.6,0.4,1); sp.position.set(x,1.0,z); sp.renderOrder = 6; g.add(sp);
+  }
   v.scene.add(g);
   v.W = W; v.D = D;
   if(v.floor!==fid){ v.floor = fid; v.fitSet = false; v.th = .6; v.ph = .95; }
@@ -5109,6 +5150,7 @@ function fmBldg(){
 }
 function loadMbData(){
   ['bldgFloors','bldgRooms','bldgPlans','bldgPins','ppm','ma'].forEach(function(k){ loadFmKind(k); });
+  mbFetchIot();
   loadFmAssets(); loadFmWR();
 }
 

@@ -15277,10 +15277,10 @@ function renderFloorPlan(){
       const coreC=a.status==='critical'?'#EF4444':a.status==='warning'?'#EAB308':a.status==='inactive'?'#6B7280':'#22C55E';
       // 4 rings: r4=outermost(MA) r3=PPM r2=OPT r1=WR(innermost)
       const ringDefs=[
-        {r:46,rs:rs.r4,delay:'0s'},
-        {r:37,rs:rs.r3,delay:'.15s'},
-        {r:28,rs:rs.r2,delay:'.3s'},
-        {r:19,rs:rs.r1,delay:'.45s'},
+        {r:32,rs:rs.r4,delay:'0s'},
+        {r:26,rs:rs.r3,delay:'.15s'},
+        {r:20,rs:rs.r2,delay:'.3s'},
+        {r:13,rs:rs.r1,delay:'.45s'},
       ];
       let ringSVG='';
       ringDefs.forEach(rd=>{
@@ -15289,7 +15289,7 @@ function renderFloorPlan(){
         ringSVG+=`<circle cx="${px}" cy="${py}" r="${rd.r}" fill="${rd.rs.c}" fill-opacity="${rd.rs.blink?'0.15':'0.08'}" stroke="${rd.rs.c}" stroke-width="2.8">${blinkA}${fillA}</circle>`;
       });
       // Radar pulse for critical
-      const radar=a.status==='critical'?`<circle cx="${px}" cy="${py}" r="46" fill="none" stroke="#EF4444" stroke-width="1.5"><animate attributeName="r" values="46;70;46" dur="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values=".8;0;.8" dur="1.4s" repeatCount="indefinite"/></circle>`:'';
+      const radar=a.status==='critical'?`<circle cx="${px}" cy="${py}" r="32" fill="none" stroke="#EF4444" stroke-width="1.5"><animate attributeName="r" values="32;49;32" dur="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values=".8;0;.8" dur="1.4s" repeatCount="indefinite"/></circle>`:'';
       const wrN=rs.r1.blink?allWR4.filter(w=>w.assetId===a.id&&w.status!=='closed').length:0;
       s+=`<g id="fp-pin-${a.id}" style="cursor:grab"
          onmousedown="assetPinDragStart(event,'${a.id}','${floor}',${px},${py})"
@@ -15765,6 +15765,7 @@ function fp3dInit(){
       F3.anim.forEach(a=>{
         if(a.k==='blink'){const v=0.5+0.5*Math.sin(s*7+a.ph);a.m.opacity=0.2+0.8*v;if(a.fill)a.fill.opacity=0.05+0.25*v;}
         else if(a.k==='radar'){const p=(s*0.8+a.ph)%1;a.o.scale.set(1+p*0.9,1+p*0.9,1);a.m.opacity=0.8*(1-p);}
+        else if(a.k==='pillar'){const q=0.5+0.5*Math.sin(s*7+a.ph),c=a.cols[Math.floor(s*1.5)%a.cols.length];a.ms.forEach(m=>{m.color.copy(c);m.emissive.copy(c);m.emissiveIntensity=0.15+0.85*q;});}
         else if(a.k==='room'){const q=0.5+0.5*Math.sin(s*6+a.ph);a.m.opacity=0.08+0.34*q;if(a.w)a.w.emissiveIntensity=0.15+0.6*q;}
       });
       const rp=F3.rad*Math.sin(F3.ph);
@@ -15815,11 +15816,16 @@ function fp3dBuild(floor,svgH,plan,items){
   // assets: machine block + the four status rings (outer MA → inner WR) that blink when abnormal
   items.forEach(it=>{
     const x=X(it.px),z=Z(it.py),rs=it.rs;F3.info[it.a.id]=it;
-    const body=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.5,0.55),new THREE.MeshStandardMaterial({color:F3C(it.coreC),roughness:.5}));
+    // pillar colour = abnormal ring colour(s) (blinks, cycling if several rings are abnormal); green when everything is normal
+    const abn=[rs.r1,rs.r2,rs.r3,rs.r4].filter(q=>q.blink).map(q=>F3C(q.c));
+    const bm=new THREE.MeshStandardMaterial({color:abn.length?abn[0]:F3C(it.coreC),roughness:.5,emissive:abn.length?abn[0].clone():new THREE.Color(0x000000),emissiveIntensity:abn.length?.6:0});
+    const body=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.5,0.55),bm);
     body.position.set(x,0.3,z);body.userData.aid=it.a.id;g.add(body);F3.pick.push(body);
-    const top=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.25,12),new THREE.MeshStandardMaterial({color:F3C('#CBD5E1')}));top.position.set(x,0.67,z);g.add(top);
-    const hit=new THREE.Mesh(new THREE.CylinderGeometry(0.95,0.95,0.8,16),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));hit.position.set(x,0.4,z);hit.userData.aid=it.a.id;g.add(hit);F3.pick.push(hit);
-    [{r:0.92,s:rs.r4,p:0},{r:0.74,s:rs.r3,p:.8},{r:0.56,s:rs.r2,p:1.6},{r:0.38,s:rs.r1,p:2.4}].forEach(d=>{
+    const tm2=new THREE.MeshStandardMaterial({color:abn.length?abn[0]:F3C('#CBD5E1'),roughness:.5,emissive:abn.length?abn[0].clone():new THREE.Color(0x000000),emissiveIntensity:abn.length?.6:0});
+    const top=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.25,12),tm2);top.position.set(x,0.67,z);g.add(top);
+    if(abn.length)F3.anim.push({k:'pillar',ms:[bm,tm2],cols:abn,ph:x+z});
+    const hit=new THREE.Mesh(new THREE.CylinderGeometry(0.67,0.67,0.8,16),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));hit.position.set(x,0.4,z);hit.userData.aid=it.a.id;g.add(hit);F3.pick.push(hit);
+    [{r:0.64,s:rs.r4,p:0},{r:0.52,s:rs.r3,p:.8},{r:0.39,s:rs.r2,p:1.6},{r:0.27,s:rs.r1,p:2.4}].forEach(d=>{
       const col=F3C(d.s.c);
       const fm=new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:d.s.blink?.2:.1,depthWrite:false,side:THREE.DoubleSide});
       const disc=new THREE.Mesh(new THREE.CircleGeometry(d.r,40),fm);disc.rotation.x=-Math.PI/2;disc.position.set(x,0.075,z);g.add(disc);
@@ -15827,7 +15833,7 @@ function fp3dBuild(floor,svgH,plan,items){
       const ring=new THREE.Mesh(new THREE.TorusGeometry(d.r,0.05,8,56),tm);ring.rotation.x=Math.PI/2;ring.position.set(x,0.09,z);g.add(ring);
       if(d.s.blink)F3.anim.push({k:'blink',m:tm,fill:fm,ph:d.p});
     });
-    if(it.a.status==='critical'){const rm=new THREE.MeshBasicMaterial({color:0xEF4444,transparent:true,opacity:.8});const rr=new THREE.Mesh(new THREE.TorusGeometry(0.92,0.03,8,56),rm);rr.rotation.x=Math.PI/2;rr.position.set(x,0.1,z);g.add(rr);F3.anim.push({k:'radar',m:rm,o:rr,ph:0});}
+    if(it.a.status==='critical'){const rm=new THREE.MeshBasicMaterial({color:0xEF4444,transparent:true,opacity:.8});const rr=new THREE.Mesh(new THREE.TorusGeometry(0.64,0.03,8,56),rm);rr.rotation.x=Math.PI/2;rr.position.set(x,0.1,z);g.add(rr);F3.anim.push({k:'radar',m:rm,o:rr,ph:0});}
     const nm=String(it.a.name||it.a.id).substring(0,18);
     const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:f3Text(nm,320,64,'bold 30px Arial','#fff','rgba(15,23,42,.78)'),transparent:true,depthTest:false}));
     sp.scale.set(2.0,0.4,1);sp.position.set(x,1.25,z);sp.renderOrder=5;g.add(sp);
